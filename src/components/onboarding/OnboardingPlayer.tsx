@@ -141,7 +141,12 @@ export default function OnboardingPlayer() {
     )
   }
 
-  async function runAnalysis() {
+  async function runAnalysis(forceReanalyze = false) {
+    // Fix 2: skip API call if analysis already exists, unless explicitly re-analyzing
+    if (analysis && !forceReanalyze) {
+      go('review')
+      return
+    }
     go('analyzing')
     setLoading(true)
     try {
@@ -258,7 +263,8 @@ export default function OnboardingPlayer() {
     setLoading(false)
   }
 
-  const glyphValues = { charming: 0.65, volatile: 0.35, reckless: 0.40, withdrawn: 0.35, guarded: 0.55, present: 0.40 }
+  // Fix 3: balanced 0.5 across all states for the palette preview hexagram
+  const glyphValues = { charming: 0.5, volatile: 0.5, reckless: 0.5, withdrawn: 0.5, guarded: 0.5, present: 0.5 }
   const dotScreen = screen === 'analyzing' ? 'review' : screen
 
   return (
@@ -561,7 +567,7 @@ export default function OnboardingPlayer() {
               <button className="btn-gold flex-1 py-3" onClick={() => go('q4')}>Back</button>
               <button className="btn-gold-solid flex-1 py-3 disabled:opacity-40"
                 disabled={q5StressResponses.length === 0 || loading}
-                onClick={runAnalysis}>
+                onClick={() => runAnalysis()}>
                 {loading ? 'Analyzing...' : 'Build Profile →'}
               </button>
             </div>
@@ -588,44 +594,53 @@ export default function OnboardingPlayer() {
             <h2 className="font-cinzel text-lg tracking-wider" style={{ color: 'var(--text)' }}>
               Claude&rsquo;s reading of your character
             </h2>
+
+            {/* Character name */}
             <div>
               <p className="label-caps mb-1">Character Name</p>
               <input value={characterName} onChange={e => setCharacterName(e.target.value)} className="w-full px-4 py-2" />
             </div>
-            <div className="card-dark card-gold-border p-4">
+
+            {/* Voice summary — Fix 4: warm white, 16px, regular weight */}
+            <div style={{ background: '#1a1008', border: '1px solid var(--gold-faint)', borderLeft: '2px solid var(--accent)', borderRadius: 2, padding: '1rem 1.25rem' }}>
               <p className="label-caps mb-2">Voice Summary</p>
-              <p className="font-garamond leading-relaxed" style={{ color: 'var(--text-dim)' }}>{analysis.voiceSummary}</p>
+              <p className="font-garamond leading-relaxed" style={{ color: '#f0e6d3', fontSize: 16, fontWeight: 400 }}>
+                {analysis.voiceSummary}
+              </p>
             </div>
+
+            {/* Character-specific categories — Fix 4: improved contrast */}
             {analysis.characterConfig && (
               <div className="space-y-2">
                 <p className="label-caps">Character-specific categories</p>
-                <div className="card-dark p-3 flex gap-3 items-center">
-                  <span className="text-xl">{analysis.characterConfig.dangerous_element_category.icon}</span>
-                  <div>
-                    <p className="font-cinzel text-xs tracking-wider" style={{ color: 'var(--accent)' }}>
-                      {analysis.characterConfig.dangerous_element_category.name}
-                    </p>
-                    <p className="font-garamond text-xs" style={{ color: 'var(--text-faint)' }}>
-                      {analysis.characterConfig.dangerous_element_category.description}
-                    </p>
+                {[
+                  analysis.characterConfig.dangerous_element_category,
+                  analysis.characterConfig.antagonist_category,
+                ].map(cat => (
+                  <div key={cat.id} style={{ background: '#1a1008', border: '1px solid var(--gold-faint)', borderRadius: 2, padding: '0.75rem 1rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 20, lineHeight: 1, marginTop: 2, flexShrink: 0 }}>{cat.icon}</span>
+                    <div>
+                      <p className="font-cinzel tracking-wider" style={{ color: '#c9a84c', fontSize: 14, marginBottom: 4 }}>
+                        {cat.name}
+                      </p>
+                      <p className="font-garamond" style={{ color: '#c0b090', fontSize: 14, fontWeight: 400 }}>
+                        {cat.description}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="card-dark p-3 flex gap-3 items-center">
-                  <span className="text-xl">{analysis.characterConfig.antagonist_category.icon}</span>
-                  <div>
-                    <p className="font-cinzel text-xs tracking-wider" style={{ color: 'var(--accent)' }}>
-                      {analysis.characterConfig.antagonist_category.name}
-                    </p>
-                    <p className="font-garamond text-xs" style={{ color: 'var(--text-faint)' }}>
-                      {analysis.characterConfig.antagonist_category.description}
-                    </p>
-                  </div>
-                </div>
+                ))}
               </div>
             )}
+
+            {/* Fix 4: Re-analyze is outline/secondary; Looks Right is primary gold */}
             <div className="flex gap-3">
-              <button className="btn-gold flex-1 py-3" onClick={runAnalysis}>Re-analyze</button>
-              <button className="btn-gold-solid flex-1 py-3" onClick={() => go('color')}>Looks right →</button>
+              <button className="btn-gold py-3" style={{ flex: '0 0 auto', paddingLeft: '1.25rem', paddingRight: '1.25rem', opacity: 0.7 }}
+                onClick={() => runAnalysis(true)}>
+                Re-analyze
+              </button>
+              <button className="btn-gold-solid flex-1 py-3" onClick={() => go('color')}>
+                Looks right →
+              </button>
             </div>
           </div>
         )}
@@ -659,29 +674,42 @@ export default function OnboardingPlayer() {
 
         {/* ── Emotion palette ────────────────────────────── */}
         {screen === 'palette' && (
-          <div className="animate-fade-in space-y-6">
+          <div className="animate-fade-in space-y-5">
             <h2 className="font-cinzel text-lg tracking-wider" style={{ color: 'var(--text)' }}>Your emotion palette</h2>
             <p className="font-garamond leading-relaxed" style={{ color: 'var(--text-dim)' }}>
-              Six states on your arcane glyph. Claude named them from your dossier — adjust if needed.
+              Six states on your arcane glyph. Claude named them — adjust if needed.
             </p>
-            <div className="flex justify-center">
-              <ArcaneGlyph values={glyphValues} states={emotionPalette} size={200} />
+
+            {/* Fix 3: balanced preview glyph, sized to not overflow */}
+            <div style={{ display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+              <ArcaneGlyph values={glyphValues} states={emotionPalette} size={240} />
             </div>
-            <div className="space-y-3">
+
+            {/* Fix 5: card layout — one card per state, full description wraps */}
+            <div className="space-y-2">
               {emotionPalette.map((state, i) => (
-                <div key={state.key} className="grid grid-cols-2 gap-2">
-                  <input value={state.label}
+                <div key={state.key} className="card-dark p-3 space-y-2">
+                  <input
+                    value={state.label}
                     onChange={e => setEmotionPalette(prev => prev.map((s, j) => j === i ? { ...s, label: e.target.value } : s))}
-                    className="px-3 py-2 text-sm font-cinzel" placeholder="State name" />
-                  <input value={state.desc}
+                    className="w-full px-3 py-1.5 text-sm font-cinzel"
+                    style={{ minHeight: 36 }}
+                    placeholder="State name"
+                  />
+                  <input
+                    value={state.desc}
                     onChange={e => setEmotionPalette(prev => prev.map((s, j) => j === i ? { ...s, desc: e.target.value } : s))}
-                    className="px-3 py-2 text-sm" placeholder="Short descriptor..." />
+                    className="w-full px-3 py-1.5 text-sm font-garamond"
+                    style={{ minHeight: 40, whiteSpace: 'pre-wrap' }}
+                    placeholder="Short descriptor — what this looks like in play"
+                  />
                 </div>
               ))}
             </div>
+
             <div className="flex gap-3">
               <button className="btn-gold flex-1 py-3" onClick={() => go('color')}>Back</button>
-              <button className="btn-gold-solid flex-1 py-3" onClick={() => go('apikey')}>Set Palette →</button>
+              <button className="btn-gold-solid flex-1 py-3" onClick={() => go('campaign')}>Set Palette →</button>
             </div>
           </div>
         )}
