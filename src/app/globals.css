@@ -51,19 +51,18 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
-  background-color: var(--bg);
+  /* No hardcoded background — pages control their own bg to avoid flash */
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Dark app default — applied only inside the app, not on landing */
 body {
-  background-color: var(--bg);
   font-family: 'EB Garamond', Georgia, serif;
   font-size: 18px;
   line-height: 1.7;
   min-height: 100vh;
-  transition: background-color 300ms ease, color 300ms ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -75,7 +74,7 @@ h1, h2, h3, h4, h5, h6 {
 ::selection { background: var(--gold-faint, #3a2f14); color: var(--text); }
 
 ::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 /* ── Touch targets ─────────────────────────────────────── */

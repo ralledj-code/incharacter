@@ -59,7 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="min-h-screen">
+      <body className="min-h-screen" style={{ background: 'transparent' }}>
         <PostHogProvider>
           {children}
         </PostHogProvider>
