@@ -20,8 +20,7 @@ function LoginForm() {
     setLoading(true)
     setError('')
 
-    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}&role=${role}`
-    const result = await sendMagicLink(email, redirectTo)
+    const result = await sendMagicLink(email, next, role)
 
     if (result.error) {
       setError(result.error)

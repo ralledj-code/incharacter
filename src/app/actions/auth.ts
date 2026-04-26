@@ -2,8 +2,15 @@
 
 import { createClient } from '@/lib/supabase/server'
 
-export async function sendMagicLink(email: string, redirectTo: string): Promise<{ error: string | null }> {
+export async function sendMagicLink(
+  email: string,
+  next: string,
+  role: string
+): Promise<{ error: string | null }> {
   try {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://incharacter.cloud'
+    const redirectTo = `${siteUrl}/auth/callback?next=${encodeURIComponent(next)}&role=${encodeURIComponent(role)}`
+
     const supabase = await createClient()
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
