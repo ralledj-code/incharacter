@@ -27,18 +27,44 @@
 
 /* ── Landing page — light "real world" theme ───────────── */
 [data-theme="light"] {
-  --bg:         #faf9f7;
-  --surface:    #ffffff;
-  --surface2:   #f5f3f0;
-  --surface3:   #eeebe6;
+  --bg:         #f5f0e8;
+  --surface:    #fffdf9;
+  --surface2:   #f0ebe0;
+  --surface3:   #e8e1d4;
   --text:       #1a1a1a;
   --text-dim:   #4a4a4a;
   --text-faint: #8a8a8a;
-  --border:     #e8e4df;
+  --border:     #e2d9cc;
   --accent:     #c9a84c;
   --accent-dim: #8a6e2e;
   --red:        #c0392b;
   --red-dim:    #922b21;
+}
+
+/* ── Landing warmth extras ───────────────────────────── */
+/* Noise grain overlay on landing pages */
+[data-theme="light"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+}
+
+/* Warm card shadow on landing */
+[data-theme="light"] .card-light {
+  box-shadow: 0 2px 12px rgba(201,168,76,0.08), 0 1px 3px rgba(0,0,0,0.04) !important;
+}
+
+/* Landing section fade divider */
+[data-theme="light"] .section-fade {
+  background: linear-gradient(to bottom, transparent, rgba(201,168,76,0.06) 50%, transparent);
+  height: 1px;
+  border: none;
 }
 
 /* ── Color scheme presets (dark app only) ──────────────── */

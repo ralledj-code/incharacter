@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
-// Smart redirect: routes user to the correct destination based on role and character status.
+// Smart redirect — routes user to the correct destination based on role and character status.
+// Admin users get player view if they have a character; /admin is always in burger menu.
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -18,10 +19,9 @@ export default async function DashboardPage() {
 
   const role = (profile as { role: string | null }).role
 
-  if (role === 'admin') redirect('/admin')
   if (role === 'dm') redirect('/dm/dashboard')
 
-  // Player — check if they have a character
+  // Player or admin — check if they have a character
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: character } = await (supabase.from('characters') as any)
     .select('id')
@@ -29,7 +29,11 @@ export default async function DashboardPage() {
     .limit(1)
     .single()
 
-  if (!character) redirect('/onboarding?role=player')
+  if (!character) {
+    // No character yet — go to onboarding, then /admin accessible from burger
+    redirect('/onboarding?role=player')
+  }
 
+  // Has a character → play view; admin panel reachable via burger menu
   redirect('/play/now')
 }

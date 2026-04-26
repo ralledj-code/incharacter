@@ -9,7 +9,7 @@ export default function LandingPage() {
     <>
       <LandingTheme />
 
-      <div className="min-h-screen" style={{ background: '#faf9f7', color: '#1a1a1a' }}>
+      <div className="min-h-screen" style={{ background: '#f5f0e8', color: '#1a1a1a' }}>
         <LandingNav />
         <BurgerMenu loggedIn={false} theme="light" />
 
@@ -31,11 +31,13 @@ export default function LandingPage() {
               FOR THE TABLE
             </p>
             <h1
-              className="font-cinzel mb-6 leading-tight"
+              className="font-cinzel mb-3 leading-tight"
               style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', color: '#1a1a1a' }}
             >
               Your character,<br />in character.
             </h1>
+            {/* Gold decorative line */}
+            <div className="mx-auto mb-8" style={{ width: 60, height: 1.5, background: '#c9a84c', opacity: 0.7 }} />
             <p
               className="font-garamond text-xl mb-10 leading-relaxed max-w-lg mx-auto"
               style={{ color: '#4a4a4a' }}
@@ -76,7 +78,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Section 2: How It Works ──────────────────────── */}
-        <section id="how-it-works" className="px-6 py-16" style={{ background: '#f5f3f0' }}>
+        <section id="how-it-works" className="px-6 py-16" style={{ background: '#ede6d6' }}>
           <div className="max-w-4xl mx-auto">
             <p className="font-cinzel text-xs tracking-widest text-center mb-3" style={{ color: '#c9a84c' }}>
               HOW IT WORKS
@@ -145,7 +147,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Section 4: For DMs ───────────────────────────── */}
-        <section className="px-6 py-20" style={{ background: '#f5f3f0' }}>
+        <section className="px-6 py-20" style={{ background: '#ede6d6' }}>
           <div className="max-w-3xl mx-auto text-center">
             <p className="font-cinzel text-xs tracking-widest mb-3" style={{ color: '#c9a84c' }}>FOR DMS TOO</p>
             <h2 className="font-cinzel text-3xl mb-5" style={{ color: '#1a1a1a' }}>

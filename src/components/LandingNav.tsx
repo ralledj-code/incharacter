@@ -13,9 +13,9 @@ export default function LandingNav() {
     <header
       className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-6 py-4"
       style={{
-        background: 'rgba(250,249,247,0.92)',
+        background: 'rgba(245,240,232,0.94)',
         backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #e8e4df',
+        borderBottom: '1px solid #e2d9cc',
       }}
     >
       <Link
