@@ -4,9 +4,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Design tokens ────────────────────────────────────── */
+/* ── App tokens (dark — in-character world) ────────────── */
 :root {
-  /* Core palette */
   --bg:           #0f0f0f;
   --surface:      #1a1a1a;
   --surface2:     #222222;
@@ -20,51 +19,36 @@
   --border:       #2e2e2e;
   --red:          #8b2e2e;
   --red-dim:      #5a1e1e;
-
-  /* Scheme accent — overridden by JS for color schemes */
   --accent:       #c9a84c;
   --accent-dim:   #8a6e2e;
   --glyph-hi:     rgba(201,168,76,0.45);
   --glyph-lo:     rgba(136,40,32,0.45);
 }
 
-/* Fix 4 — color scheme presets applied as data-scheme on <html> */
-[data-scheme="grimoire"] {
+/* ── Landing page — light "real world" theme ───────────── */
+[data-theme="light"] {
+  --bg:         #faf9f7;
+  --surface:    #ffffff;
+  --surface2:   #f5f3f0;
+  --surface3:   #eeebe6;
+  --text:       #1a1a1a;
+  --text-dim:   #4a4a4a;
+  --text-faint: #8a8a8a;
+  --border:     #e8e4df;
   --accent:     #c9a84c;
   --accent-dim: #8a6e2e;
-  --glyph-hi:   rgba(201,168,76,0.45);
-  --glyph-lo:   rgba(136,40,32,0.47);
-}
-[data-scheme="sanctum"] {
-  --accent:     #c0c8d8;
-  --accent-dim: #7a8898;
-  --glyph-hi:   rgba(140,175,220,0.45);
-  --glyph-lo:   rgba(20,40,100,0.47);
-}
-[data-scheme="wilds"] {
-  --accent:     #c8a45a;
-  --accent-dim: #887230;
-  --glyph-hi:   rgba(200,164,90,0.45);
-  --glyph-lo:   rgba(30,80,30,0.47);
-}
-[data-scheme="shadow"] {
-  --accent:     #9b7fc8;
-  --accent-dim: #604a90;
-  --glyph-hi:   rgba(155,127,200,0.45);
-  --glyph-lo:   rgba(10,5,20,0.60);
-}
-[data-scheme="forge"] {
-  --accent:     #c87840;
-  --accent-dim: #884820;
-  --glyph-hi:   rgba(200,120,64,0.45);
-  --glyph-lo:   rgba(100,20,20,0.47);
+  --red:        #c0392b;
+  --red-dim:    #922b21;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* ── Color scheme presets (dark app only) ──────────────── */
+[data-scheme="grimoire"] { --accent:#c9a84c; --accent-dim:#8a6e2e; --glyph-hi:rgba(201,168,76,0.45); --glyph-lo:rgba(136,40,32,0.47); }
+[data-scheme="sanctum"]  { --accent:#c0c8d8; --accent-dim:#7a8898; --glyph-hi:rgba(140,175,220,0.45); --glyph-lo:rgba(20,40,100,0.47); }
+[data-scheme="wilds"]    { --accent:#c8a45a; --accent-dim:#887230; --glyph-hi:rgba(200,164,90,0.45); --glyph-lo:rgba(30,80,30,0.47); }
+[data-scheme="shadow"]   { --accent:#9b7fc8; --accent-dim:#604a90; --glyph-hi:rgba(155,127,200,0.45); --glyph-lo:rgba(10,5,20,0.60); }
+[data-scheme="forge"]    { --accent:#c87840; --accent-dim:#884820; --glyph-hi:rgba(200,120,64,0.45); --glyph-lo:rgba(100,20,20,0.47); }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
   background-color: var(--bg);
@@ -76,9 +60,10 @@ html {
 body {
   background-color: var(--bg);
   font-family: 'EB Garamond', Georgia, serif;
-  font-size: 18px; /* Fix 11: bumped 2px */
+  font-size: 18px;
   line-height: 1.7;
   min-height: 100vh;
+  transition: background-color 300ms ease, color 300ms ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -87,115 +72,92 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
 }
 
-/* Fix 11: Remove italic from body, keep only for special cases */
-em, i {
-  font-style: normal;
-}
-.italic-permitted {
-  font-style: italic;
-}
-
-::selection {
-  background: var(--gold-faint);
-  color: var(--text);
-}
+::selection { background: var(--gold-faint, #3a2f14); color: var(--text); }
 
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--gold-faint); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-/* ── Fix 11: Minimum touch target ─────────────────────── */
-button, a, [role="button"] {
-  min-height: 44px;
-  min-width: 44px;
-}
+/* ── Touch targets ─────────────────────────────────────── */
+button, a { min-height: 44px; min-width: 44px; }
 
 @layer components {
   .font-cinzel   { font-family: 'Cinzel', serif; }
   .font-garamond { font-family: 'EB Garamond', Georgia, serif; }
 
-  /* Fix 11: card backgrounds updated */
+  /* ── Cards ─────────────────────────────────────────────── */
   .card-dark {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 2px;
+    border-radius: 3px;
+  }
+  .card-light {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   }
   .card-gold-border { border-left: 2px solid var(--accent); }
+  .card-hover {
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  }
 
+  /* ── Buttons ────────────────────────────────────────────── */
   .btn-gold {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: inline-flex; align-items: center; justify-content: center;
     background: transparent;
-    border: 1px solid var(--accent);
+    border: 1.5px solid var(--accent);
     color: var(--accent);
     font-family: 'Cinzel', serif;
-    font-size: 0.8rem;
-    letter-spacing: 0.1em;
-    padding: 0.65rem 1.5rem;
-    min-height: 44px;
-    cursor: pointer;
+    font-size: 0.8rem; letter-spacing: 0.1em;
+    padding: 0.65rem 1.5rem; min-height: 44px;
+    cursor: pointer; border-radius: 3px;
     transition: all 150ms ease;
-    border-radius: 2px;
   }
-  .btn-gold:hover { background: var(--accent); color: var(--bg); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-  .btn-gold:active { transform: scale(0.98) translateY(0); }
+  .btn-gold:hover { background: var(--accent); color: #fff; transform: translateY(-1px); }
+  .btn-gold:active { transform: scale(0.98); }
 
   .btn-gold-solid {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: inline-flex; align-items: center; justify-content: center;
     background: var(--accent);
-    border: 1px solid var(--accent);
-    color: var(--bg);
+    border: 1.5px solid var(--accent);
+    color: #fff;
     font-family: 'Cinzel', serif;
-    font-size: 0.8rem;
-    letter-spacing: 0.1em;
-    padding: 0.65rem 1.5rem;
-    min-height: 44px;
-    cursor: pointer;
+    font-size: 0.8rem; letter-spacing: 0.1em;
+    padding: 0.65rem 1.5rem; min-height: 44px;
+    cursor: pointer; border-radius: 3px;
     transition: all 150ms ease;
-    border-radius: 2px;
   }
-  .btn-gold-solid:hover { background: #d4b560; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-  .btn-gold-solid:active { transform: scale(0.98) translateY(0); }
+  .btn-gold-solid:hover { background: #d4b560; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(201,168,76,0.35); }
+  .btn-gold-solid:active { transform: scale(0.98); }
 
+  /* ── Typography utilities ───────────────────────────────── */
   .label-caps {
     font-family: 'Cinzel', serif;
-    font-size: 0.65rem;
-    letter-spacing: 0.18em;
-    color: var(--text-dim);
-    text-transform: uppercase;
+    font-size: 0.65rem; letter-spacing: 0.18em;
+    color: var(--text-faint); text-transform: uppercase;
   }
-
   .narrative-text {
     font-family: 'EB Garamond', serif;
-    color: var(--text-dim);
-    font-size: 1rem;
-    line-height: 1.7;
+    color: var(--text-dim); font-size: 1rem; line-height: 1.7;
   }
-
   .play-directive {
     font-family: 'Cinzel', serif;
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: var(--accent);
-    letter-spacing: 0.03em;
-    line-height: 1.45;
+    font-size: 1.05rem; font-weight: 600;
+    color: var(--accent); letter-spacing: 0.03em; line-height: 1.45;
   }
 
   .divider { border: none; border-top: 1px solid var(--border); }
 
   .tooltip-card {
-    background: var(--surface2);
-    border: 1px solid var(--accent-dim);
-    border-radius: 2px;
-    padding: 0.75rem 1rem;
-    font-family: 'EB Garamond', serif;
-    font-size: 0.95rem;
-    color: var(--text);
-    max-width: 240px;
+    background: var(--surface2); border: 1px solid var(--accent-dim);
+    border-radius: 3px; padding: 0.75rem 1rem;
+    font-family: 'EB Garamond', serif; font-size: 0.95rem;
+    color: var(--text); max-width: 240px;
   }
 
   .loading-shimmer {
@@ -208,69 +170,21 @@ button, a, [role="button"] {
   .tab-inactive { color: var(--text-faint); }
 
   .info-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.1rem;
-    height: 1.1rem;
-    border-radius: 50%;
-    border: 1px solid var(--accent-dim);
-    color: var(--accent-dim);
-    font-size: 0.65rem;
-    font-family: serif;
-    cursor: help;
-    flex-shrink: 0;
-  }
-
-  /* Fix 12: card hover */
-  .card-hover {
-    transition: transform 150ms ease, box-shadow 150ms ease;
-  }
-  .card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.1rem; height: 1.1rem; border-radius: 50%;
+    border: 1px solid var(--accent-dim); color: var(--accent-dim);
+    font-size: 0.65rem; font-family: serif; cursor: help; flex-shrink: 0;
   }
 }
 
-/* ── Animations ────────────────────────────────────────── */
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position:  200% 0; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* Fix 12: page transition */
-@keyframes pageFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-@keyframes glowPulse {
-  0%, 100% { opacity: 0.55; }
-  50%       { opacity: 0.95; }
-}
-
-/* Fix 12: glyph idle breathe */
-@keyframes glyphBreathe {
-  0%, 100% { transform: scale(1.0); }
-  50%       { transform: scale(1.02); }
-}
-
-/* Fix 12: landing glyph slow rotation */
-@keyframes slowRotate {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
-/* Fix 12: shimmer on button */
-@keyframes buttonShimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
+/* ── Animations ─────────────────────────────────────────── */
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes glowPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 0.95; } }
+@keyframes glyphBreathe { 0%, 100% { transform: scale(1.0); } 50% { transform: scale(1.02); } }
+@keyframes slowRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes buttonShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
 .animate-fade-in     { animation: fadeIn 200ms ease forwards; }
 .animate-page        { animation: pageFadeIn 200ms ease forwards; }
@@ -278,34 +192,40 @@ button, a, [role="button"] {
 .animate-breathe     { animation: glyphBreathe 4s ease-in-out infinite; }
 .animate-slow-rotate { animation: slowRotate 600s linear infinite; }
 
-/* Fix 13: shimmer on sent state */
 .btn-shimmer {
   background: linear-gradient(90deg, var(--accent) 0%, #d4b560 50%, var(--accent) 100%);
   background-size: 200% 100%;
   animation: buttonShimmer 1.5s ease infinite;
+  color: #fff;
 }
 
+/* ── Inputs ─────────────────────────────────────────────── */
 input, textarea, select {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: 'EB Garamond', serif;
-  font-size: 1rem;
-  outline: none;
-  transition: border-color 200ms ease;
-  border-radius: 2px;
-  min-height: 44px;
-  padding: 0.5rem 0.75rem;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-family: 'EB Garamond', serif;
+  font-size: 1rem; outline: none;
+  transition: border-color 200ms ease; border-radius: 3px;
+  min-height: 44px; padding: 0.5rem 0.75rem;
 }
-
 input:focus, textarea:focus, select:focus { border-color: var(--accent-dim); }
 input::placeholder, textarea::placeholder { color: var(--text-faint); }
-
 textarea { min-height: unset; }
 
-.safe-top    { padding-top:    env(safe-area-inset-top);    }
+.safe-top    { padding-top:    env(safe-area-inset-top); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 
-@layer utilities {
-  .text-balance { text-wrap: balance; }
+/* ── Landing-specific hover utilities ───────────────────── */
+.landing-nav-link:hover { color: #c9a84c !important; }
+.landing-state-card { border-top: 2px solid transparent; transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease; }
+.landing-state-card:hover { border-top-color: #c9a84c; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+
+/* ── Landing page overrides (light theme context) ────────── */
+[data-theme="light"] input,
+[data-theme="light"] textarea,
+[data-theme="light"] select {
+  background: #ffffff;
+  border-color: var(--border);
+  color: var(--text);
 }
+
+@layer utilities { .text-balance { text-wrap: balance; } }

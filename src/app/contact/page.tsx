@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import BurgerMenu from '@/components/BurgerMenu'
+import LandingTheme from '@/components/LandingTheme'
 
 export default function ContactPage() {
   const [name, setName] = useState('')
@@ -22,7 +23,7 @@ export default function ContactPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, message }),
       })
-      if (!res.ok) throw new Error('Send failed')
+      if (!res.ok) throw new Error()
       setSent(true)
     } catch {
       setError('Something went wrong. Try emailing ralledj@gmail.com directly.')
@@ -31,53 +32,66 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="animate-page min-h-screen" style={{ background: 'var(--bg)' }}>
-      <BurgerMenu loggedIn={false} />
-      <main className="max-w-lg mx-auto px-6 py-20">
-        <p className="label-caps mb-4" style={{ color: 'var(--text-faint)' }}>Contact</p>
-        <h1 className="font-cinzel text-3xl mb-12 tracking-wider" style={{ color: 'var(--text)' }}>
-          Get in touch.
-        </h1>
+    <>
+      <LandingTheme />
+      <div className="min-h-screen" style={{ background: '#faf9f7', color: '#1a1a1a' }}>
+        <BurgerMenu loggedIn={false} theme="light" />
+        <main className="max-w-lg mx-auto px-6 py-24 pt-20">
+          <Link href="/" className="font-cinzel text-sm tracking-widest mb-10 block"
+                style={{ color: '#c9a84c', minHeight: 'auto', minWidth: 'auto' }}>← In Character</Link>
+          <h1 className="font-cinzel text-4xl mb-12" style={{ color: '#1a1a1a' }}>Get in touch.</h1>
 
-        {sent ? (
-          <div className="card-dark card-gold-border p-8 text-center animate-fade-in">
-            <div className="text-3xl mb-4" style={{ color: 'var(--accent)' }}>✦</div>
-            <p className="font-garamond text-lg" style={{ color: 'var(--text)' }}>
-              Your message has been sent. We&rsquo;ll get back to you.
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="label-caps block mb-2">Name</label>
-              <input value={name} onChange={e => setName(e.target.value)}
-                     className="w-full px-4 py-3" placeholder="Your name" required />
+          {sent ? (
+            <div className="card-light p-10 text-center" style={{ borderLeft: '2px solid #c9a84c' }}>
+              <div className="text-3xl mb-4" style={{ color: '#c9a84c' }}>✦</div>
+              <p className="font-garamond text-xl" style={{ color: '#1a1a1a' }}>
+                Your message has been sent. We&rsquo;ll get back to you.
+              </p>
             </div>
-            <div>
-              <label className="label-caps block mb-2">Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                     className="w-full px-4 py-3" placeholder="you@somewhere.com" required />
-            </div>
-            <div>
-              <label className="label-caps block mb-2">Message</label>
-              <textarea value={message} onChange={e => setMessage(e.target.value)}
-                        className="w-full px-4 py-3 min-h-[140px]"
-                        placeholder="What's on your mind?" required />
-            </div>
-            {error && (
-              <p className="font-garamond text-sm" style={{ color: 'var(--red)' }}>{error}</p>
-            )}
-            <button type="submit" disabled={loading}
-                    className="btn-gold-solid w-full py-3 text-sm disabled:opacity-40">
-              {loading ? 'Sending...' : 'Send Message'}
-            </button>
-          </form>
-        )}
-
-        <div className="mt-10">
-          <Link href="/" className="btn-gold px-6 py-3 text-xs">← Back Home</Link>
-        </div>
-      </main>
-    </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {[
+                { label: 'Name', value: name, set: setName, type: 'text', placeholder: 'Your name' },
+                { label: 'Email', value: email, set: setEmail, type: 'email', placeholder: 'you@somewhere.com' },
+              ].map(field => (
+                <div key={field.label}>
+                  <label className="font-cinzel text-xs tracking-widest block mb-2"
+                         style={{ color: '#4a4a4a' }}>
+                    {field.label.toUpperCase()}
+                  </label>
+                  <input
+                    type={field.type}
+                    value={field.value}
+                    onChange={e => field.set(e.target.value)}
+                    placeholder={field.placeholder}
+                    className="w-full px-4 py-3"
+                    style={{ background: '#ffffff', border: '1px solid #e8e4df', color: '#1a1a1a' }}
+                    required
+                  />
+                </div>
+              ))}
+              <div>
+                <label className="font-cinzel text-xs tracking-widest block mb-2" style={{ color: '#4a4a4a' }}>
+                  MESSAGE
+                </label>
+                <textarea
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                  placeholder="What's on your mind?"
+                  className="w-full px-4 py-3 min-h-[140px]"
+                  style={{ background: '#ffffff', border: '1px solid #e8e4df', color: '#1a1a1a' }}
+                  required
+                />
+              </div>
+              {error && <p className="font-garamond text-sm" style={{ color: '#c0392b' }}>{error}</p>}
+              <button type="submit" disabled={loading}
+                      className="btn-gold-solid w-full py-3 text-sm disabled:opacity-40">
+                {loading ? 'Sending...' : 'Send Message'}
+              </button>
+            </form>
+          )}
+        </main>
+      </div>
+    </>
   )
 }

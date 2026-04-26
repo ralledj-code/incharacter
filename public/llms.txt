@@ -1,0 +1,28 @@
+# In Character
+
+> A psychological companion for tabletop RPG players.
+
+In Character helps players stay in character during tabletop RPG sessions. Players upload a character dossier, log significant moments during play, and receive behavioral guidance telling them how to play their character in the moment. Not stats. Not a character sheet. Behavioral direction.
+
+## What it does
+- Analyzes character dossiers using Claude AI to understand personality, flaws, relationships, and motivations
+- Tracks psychological state through six behavioral dimensions: Charming, Guarded, Reckless, Volatile, Withdrawn, Present
+- Generates "Play him/her as..." directives after significant events
+- Maintains session logs, clue boards, and relationship threads
+- Provides DM dashboard showing party psychological states before sessions
+
+## Who it's for
+- Tabletop RPG players who find staying in character difficult
+- Experienced roleplayers who want deeper character consistency
+- DMs who want insight into their party's psychological state
+- Works for D&D, Pathfinder, Call of Cthulhu, Blades in the Dark, and any character-based TTRPG
+
+## Technical
+- Free to use, bring your own Anthropic API key
+- Sessions cost approximately $0.05-0.10 in API costs
+- Data stored in US East, encrypted at rest
+- No passwords, magic link authentication only
+- Built with Next.js, Supabase, Claude AI
+
+## URL
+https://incharacter.cloud

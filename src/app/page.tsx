@@ -1,162 +1,214 @@
 import Link from 'next/link'
 import LandingGlyph from '@/components/LandingGlyph'
 import BurgerMenu from '@/components/BurgerMenu'
+import LandingNav from '@/components/LandingNav'
+import LandingTheme from '@/components/LandingTheme'
 
 export default function LandingPage() {
   return (
-    <div className="animate-page">
-      <BurgerMenu loggedIn={false} />
+    <>
+      <LandingTheme />
 
-      {/* ── Hero ──────────────────────────────────────────── */}
-      <section className="relative flex flex-col items-center justify-center min-h-screen px-6 text-center overflow-hidden">
-        {/* Slow-rotating background glyph */}
-        <div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
-          style={{ opacity: 0.06 }}
+      <div className="min-h-screen" style={{ background: '#faf9f7', color: '#1a1a1a' }}>
+        <LandingNav />
+        <BurgerMenu loggedIn={false} theme="light" />
+
+        {/* ── Hero ─────────────────────────────────────────── */}
+        <section
+          className="relative flex flex-col items-center justify-center min-h-screen px-6 text-center"
+          style={{ paddingTop: 80 }}
         >
-          <div className="animate-slow-rotate">
-            <LandingGlyph size={700} />
+          {/* Static glyph watermark — no animation on landing */}
+          <div
+            className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+            style={{ opacity: 0.04 }}
+          >
+            <LandingGlyph size={700} color="#c9a84c" />
           </div>
-        </div>
 
-        <div className="relative z-10 max-w-xl">
-          <h1 className="font-cinzel text-5xl md:text-7xl font-semibold mb-4 tracking-wider"
-              style={{ color: 'var(--gold)' }}>
-            In Character
-          </h1>
-
-          <p className="font-garamond text-xl md:text-2xl mb-4 italic-permitted"
-             style={{ color: 'var(--text-dim)', fontStyle: 'italic' }}>
-            Your character, in character.
-          </p>
-
-          <p className="font-garamond text-lg mb-12 leading-relaxed"
-             style={{ color: 'var(--text-dim)' }}>
-            The psychological companion for tabletop roleplayers.
-            Know who your character is. Play them that way.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/login?role=player"
-                  className="btn-gold-solid px-10 py-3 text-sm tracking-widest">
-              Start Playing
-            </Link>
-            <a href="#how-it-works"
-               className="btn-gold px-10 py-3 text-sm tracking-widest">
-              How It Works
-            </a>
+          <div className="relative z-10 max-w-2xl mx-auto">
+            <p className="font-cinzel text-xs tracking-widest mb-6" style={{ color: '#c9a84c' }}>
+              FOR THE TABLE
+            </p>
+            <h1
+              className="font-cinzel mb-6 leading-tight"
+              style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', color: '#1a1a1a' }}
+            >
+              Your character,<br />in character.
+            </h1>
+            <p
+              className="font-garamond text-xl mb-10 leading-relaxed max-w-lg mx-auto"
+              style={{ color: '#4a4a4a' }}
+            >
+              The psychological companion for tabletop roleplayers.
+              Know who your character is. Play them that way.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/auth/login?role=player" className="btn-gold-solid px-10 py-3 text-sm tracking-widest">
+                Start Playing
+              </Link>
+              <a href="#how-it-works" className="btn-gold px-10 py-3 text-sm tracking-widest">
+                See How It Works
+              </a>
+            </div>
           </div>
-        </div>
 
-        <div className="absolute bottom-8 left-0 right-0 flex justify-center">
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-px h-14 bg-gradient-to-b"
-                 style={{ background: `linear-gradient(to bottom, var(--gold-faint), transparent)` }} />
+          <div className="absolute bottom-8 flex flex-col items-center gap-2 pointer-events-none">
+            <div className="w-px h-12" style={{ background: 'linear-gradient(to bottom, #c9a84c44, transparent)' }} />
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── Section 1: The Problem ───────────────────────── */}
-      <section className="px-6 py-24 max-w-2xl mx-auto text-center">
-        <p className="label-caps mb-6" style={{ color: 'var(--text-faint)' }}>The Problem</p>
-        <p className="font-garamond text-xl leading-relaxed" style={{ color: 'var(--text)' }}>
-          Staying in character is hard. You know who your character is on paper. But in the moment,
-          under pressure, three hours into a session &mdash; it&rsquo;s easy to play yourself instead of them.
-        </p>
-      </section>
-
-      {/* ── Section 2: How It Works ──────────────────────── */}
-      <section id="how-it-works" className="px-6 py-16 max-w-4xl mx-auto">
-        <p className="label-caps text-center mb-10" style={{ color: 'var(--text-faint)' }}>How It Works</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            {
-              n: '01',
-              title: 'Upload your dossier',
-              body: 'Claude reads your character background and builds a psychological profile — tensions, voice, breaking points.',
-            },
-            {
-              n: '02',
-              title: 'Log what happens',
-              body: 'Three taps. No typing. Tap what occurred and how your character handled it. Claude writes the narrative.',
-            },
-            {
-              n: '03',
-              title: 'Know how to play them',
-              body: 'One behavioral directive. Always visible. Updated as things shift. Not stats — guidance.',
-            },
-          ].map(step => (
-            <div key={step.n} className="card-dark p-7 card-hover">
-              <p className="font-cinzel text-3xl mb-4" style={{ color: 'var(--gold-faint)' }}>{step.n}</p>
-              <h3 className="font-cinzel text-sm tracking-wider mb-3" style={{ color: 'var(--text)' }}>
-                {step.title}
-              </h3>
-              <p className="font-garamond leading-relaxed" style={{ color: 'var(--text-dim)' }}>
-                {step.body}
+        {/* ── Section 1: The Problem ───────────────────────── */}
+        <section className="px-6 py-24">
+          <div className="max-w-2xl mx-auto">
+            <div className="card-light card-hover p-10" style={{ textAlign: 'left' }}>
+              <div className="text-4xl mb-5">🎭</div>
+              <h2 className="font-cinzel text-2xl mb-4" style={{ color: '#1a1a1a' }}>
+                Staying in character is hard.
+              </h2>
+              <p className="font-garamond text-lg leading-relaxed" style={{ color: '#4a4a4a' }}>
+                You know who your character is on paper. But in the moment, under pressure,
+                three hours into a session &mdash; it&rsquo;s easy to play yourself instead of them.
+                In Character fixes that.
               </p>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Section 3: The Glyph ────────────────────────── */}
-      <section className="px-6 py-20 max-w-3xl mx-auto">
-        <p className="label-caps text-center mb-3" style={{ color: 'var(--text-faint)' }}>What It Tracks</p>
-        <p className="font-garamond text-center text-lg mb-12" style={{ color: 'var(--text-dim)' }}>
-          Six behavioral states, always in tension with each other.
-        </p>
-
-        <div className="flex flex-col md:flex-row items-center gap-12">
-          <div className="flex-shrink-0 animate-breathe">
-            <LandingGlyph size={280} />
           </div>
-          <div className="grid grid-cols-2 gap-4 flex-1">
-            {[
-              { label: 'CHARMING',  desc: 'The performance is holding' },
-              { label: 'GUARDED',   desc: 'The wound is talking' },
-              { label: 'RECKLESS',  desc: 'The bottle is speaking' },
-              { label: 'VOLATILE',  desc: 'The pressure is loud' },
-              { label: 'WITHDRAWN', desc: 'The mask is slipping' },
-              { label: 'PRESENT',   desc: 'He is here, right now' },
-            ].map(s => (
-              <div key={s.label} className="p-3"
-                   style={{ borderLeft: '2px solid var(--gold-faint)' }}>
-                <p className="font-cinzel text-xs tracking-widest mb-1"
-                   style={{ color: 'var(--accent)' }}>{s.label}</p>
-                <p className="font-garamond text-sm" style={{ color: 'var(--text-dim)' }}>{s.desc}</p>
-              </div>
-            ))}
+        </section>
+
+        {/* ── Section 2: How It Works ──────────────────────── */}
+        <section id="how-it-works" className="px-6 py-16" style={{ background: '#f5f3f0' }}>
+          <div className="max-w-4xl mx-auto">
+            <p className="font-cinzel text-xs tracking-widest text-center mb-3" style={{ color: '#c9a84c' }}>
+              HOW IT WORKS
+            </p>
+            <h2 className="font-cinzel text-3xl text-center mb-12" style={{ color: '#1a1a1a' }}>
+              Three steps. No disruption.
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                {
+                  n: '01', icon: '📄',
+                  title: 'Upload your dossier',
+                  body: 'Paste or upload your character background. Claude reads it and builds a psychological profile — tensions, voice, breaking points.',
+                },
+                {
+                  n: '02', icon: '⚡',
+                  title: 'Log what happens',
+                  body: 'Three taps, no typing. Tap what occurred and how they handled it. Never breaks immersion. Takes ten seconds.',
+                },
+                {
+                  n: '03', icon: '🧭',
+                  title: 'Know how to play them',
+                  body: 'One directive. Always visible. Updated in real time as things shift. Behavioral guidance — not stats.',
+                },
+              ].map(step => (
+                <div key={step.n} className="card-light card-hover p-7">
+                  <div className="text-3xl mb-4">{step.icon}</div>
+                  <p className="font-cinzel text-xs tracking-widest mb-3" style={{ color: '#c9a84c' }}>{step.n}</p>
+                  <h3 className="font-cinzel text-base tracking-wide mb-3" style={{ color: '#1a1a1a' }}>{step.title}</h3>
+                  <p className="font-garamond leading-relaxed" style={{ color: '#4a4a4a' }}>{step.body}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── CTA ─────────────────────────────────────────── */}
-      <section className="px-6 py-20 text-center">
-        <Link href="/auth/login?role=player"
-              className="btn-gold-solid inline-block px-14 py-4 text-sm tracking-widest">
-          Start Playing
-        </Link>
-        <p className="font-garamond mt-6 text-sm" style={{ color: 'var(--text-faint)' }}>
-          Free. Bring your own Anthropic API key. Sessions cost less than $0.10.
-        </p>
-      </section>
+        {/* ── Section 3: What It Tracks ────────────────────── */}
+        <section className="px-6 py-20">
+          <div className="max-w-4xl mx-auto">
+            <p className="font-cinzel text-xs tracking-widest text-center mb-3" style={{ color: '#c9a84c' }}>
+              WHAT IT TRACKS
+            </p>
+            <h2 className="font-cinzel text-3xl text-center mb-4" style={{ color: '#1a1a1a' }}>
+              Six states. Always in tension.
+            </h2>
+            <p className="font-garamond text-center text-lg mb-12" style={{ color: '#4a4a4a' }}>
+              Your character isn&rsquo;t one thing. In Character tracks the push and pull
+              between six behavioral states, updated with every logged moment.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[
+                { label: 'CHARMING',  desc: 'The performance is holding. The mask is up.' },
+                { label: 'GUARDED',   desc: 'The wound is talking. Walls are up.' },
+                { label: 'RECKLESS',  desc: 'Appetite driving decisions.' },
+                { label: 'VOLATILE',  desc: 'Internal pressure is building.' },
+                { label: 'WITHDRAWN', desc: 'The mask is slipping. Going quiet.' },
+                { label: 'PRESENT',   desc: 'Genuinely here. Rare, and real.' },
+              ].map(s => (
+                <div key={s.label} className="card-light landing-state-card p-5">
+                  <p className="font-cinzel text-xs tracking-widest mb-2" style={{ color: '#c9a84c' }}>{s.label}</p>
+                  <p className="font-garamond text-sm" style={{ color: '#4a4a4a' }}>{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-      {/* ── Footer ──────────────────────────────────────── */}
-      <footer className="border-t px-6 py-8 text-center"
-              style={{ borderColor: 'var(--border)' }}>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
-             style={{ color: 'var(--text-faint)' }}>
-          <span className="font-cinzel text-xs tracking-widest">incharacter.cloud</span>
-          <span className="hidden sm:inline opacity-30">·</span>
-          <Link href="/about"   className="font-garamond text-sm hover:text-[var(--text)] transition-colors">About</Link>
-          <Link href="/faq"     className="font-garamond text-sm hover:text-[var(--text)] transition-colors">FAQ</Link>
-          <Link href="/privacy" className="font-garamond text-sm hover:text-[var(--text)] transition-colors">Privacy</Link>
-          <Link href="/contact" className="font-garamond text-sm hover:text-[var(--text)] transition-colors">Contact</Link>
-          <span className="hidden sm:inline opacity-30">·</span>
-          <a href="https://buymeacoffee.com" target="_blank" rel="noopener noreferrer"
-             className="font-garamond text-sm hover:text-[var(--text)] transition-colors">Support</a>
-        </div>
-      </footer>
-    </div>
+        {/* ── Section 4: For DMs ───────────────────────────── */}
+        <section className="px-6 py-20" style={{ background: '#f5f3f0' }}>
+          <div className="max-w-3xl mx-auto text-center">
+            <p className="font-cinzel text-xs tracking-widest mb-3" style={{ color: '#c9a84c' }}>FOR DMS TOO</p>
+            <h2 className="font-cinzel text-3xl mb-5" style={{ color: '#1a1a1a' }}>
+              See your whole party at a glance.
+            </h2>
+            <p className="font-garamond text-xl leading-relaxed mb-8" style={{ color: '#4a4a4a' }}>
+              Know who&rsquo;s unraveling before they do. The DM dashboard shows each character&rsquo;s
+              current psychological state, recent events, and trajectory — all in one view.
+              Generate a pre-session brief for the whole party in one click.
+            </p>
+            <Link href="/auth/login?role=dm" className="btn-gold px-8 py-3 text-sm tracking-widest inline-block">
+              Set Up Your Campaign →
+            </Link>
+          </div>
+        </section>
+
+        {/* ── Section 5: Pricing ───────────────────────────── */}
+        <section className="px-6 py-20">
+          <div className="max-w-lg mx-auto text-center">
+            <p className="font-cinzel text-xs tracking-widest mb-3" style={{ color: '#c9a84c' }}>PRICING</p>
+            <h2 className="font-cinzel text-3xl mb-8" style={{ color: '#1a1a1a' }}>Free. Bring your own API key.</h2>
+            <div className="card-light p-8 mb-6">
+              <ul className="space-y-4 text-left">
+                {['In Character is free to use', 'You connect your own Anthropic API key', 'Sessions cost less than $0.10 in API usage'].map(item => (
+                  <li key={item} className="flex items-start gap-3">
+                    <span style={{ color: '#c9a84c', flexShrink: 0, marginTop: 2 }}>✦</span>
+                    <span className="font-garamond" style={{ color: '#4a4a4a' }}>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <p className="font-garamond text-sm" style={{ color: '#8a8a8a' }}>No subscription. No ads. No data selling.</p>
+          </div>
+        </section>
+
+        {/* ── Dark CTA ─────────────────────────────────────── */}
+        <section className="px-6 py-20 text-center" style={{ background: '#1a1a1a' }}>
+          <h2 className="font-cinzel text-3xl mb-4" style={{ color: '#ffffff' }}>Your character is waiting.</h2>
+          <p className="font-garamond text-lg mb-8" style={{ color: '#a0a0a0' }}>Upload a dossier. Log a session. Know who to play.</p>
+          <Link href="/auth/login?role=player" className="btn-gold-solid inline-block px-14 py-4 text-sm tracking-widest">
+            Start Playing
+          </Link>
+        </section>
+
+        {/* ── Footer ──────────────────────────────────────── */}
+        <footer className="px-6 py-10" style={{ background: '#1a1a1a', borderTop: '1px solid #2e2e2e' }}>
+          <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+            <span className="font-cinzel text-base tracking-wider" style={{ color: '#c9a84c' }}>In Character</span>
+            <nav className="flex flex-wrap justify-center gap-5">
+              {['/about', '/faq', '/privacy', '/contact'].map(href => (
+                <Link key={href} href={href} className="font-garamond text-sm"
+                      style={{ color: '#606060', minHeight: 'auto', minWidth: 'auto' }}>
+                  {href.slice(1).charAt(0).toUpperCase() + href.slice(2)}
+                </Link>
+              ))}
+            </nav>
+            <div className="text-right">
+              <p className="font-garamond text-sm" style={{ color: '#606060' }}>Built by Rasmus · Denmark</p>
+              <p className="font-garamond text-xs mt-1" style={{ color: '#404040' }}>Powered by Claude AI</p>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </>
   )
 }
