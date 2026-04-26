@@ -10,7 +10,7 @@ export default async function SessionPage() {
 
   const { data: character } = await supabase
     .from('characters')
-    .select('*')
+    .select('id, player_id, campaign_id, name, dossier_text, color_scheme, emotion_palette, tracker_config, portrait_url, created_at, updated_at')
     .eq('player_id', user.id)
     .order('created_at', { ascending: false })
     .limit(1)

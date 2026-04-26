@@ -53,7 +53,7 @@ export default function LongRestModal({ character, session, tracker, onComplete,
 
       // Generate waking monologue
       let waking = ''
-      if (character.api_key_encrypted) {
+      try {
         const res = await fetch('/api/claude/long-rest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -64,12 +64,12 @@ export default function LongRestModal({ character, session, tracker, onComplete,
             trackers: newTrackers,
             drank,
             dreamed,
-            apiKey: character.api_key_encrypted,
+            // apiKey fetched server-side
           }),
         })
         const data = await res.json()
         waking = data.monologue || ''
-      } else {
+      } catch {
         waking = `${drank ? 'The night was long and the bottle was honest.' : "I stayed clear last night."} ${dreamed ? 'The dreams came.' : "Sleep was mercifully dark."}`
       }
 

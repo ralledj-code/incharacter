@@ -132,7 +132,7 @@ export default function RelationshipsBoard({ character, relationships, keyRelati
           momentType,
           rawText,
           currentState,
-          apiKey: character.api_key_encrypted,
+          // apiKey fetched server-side
         }),
       })
       const data = await res.json()

@@ -6,22 +6,21 @@ import { useDropzone } from 'react-dropzone'
 import { createClient } from '@/lib/supabase/client'
 import { GLYPH_STATES as RAW_GLYPH_STATES } from '@/lib/constants'
 import ArcaneGlyph from '@/components/ArcaneGlyph'
-import InfoTip from '@/components/InfoTip'
 import type { CharacterConfig, InterviewAnswers } from '@/lib/api'
 
 type PaletteEntry = { key: string; label: string; desc: string }
 const GLYPH_STATES: PaletteEntry[] = RAW_GLYPH_STATES.map(s => ({ key: s.key, label: s.label, desc: s.desc }))
 
-// Screens in order
+// Screens in order — apikey is step 2, right after start
 type Screen =
-  | 'start' | 'upload'
+  | 'start' | 'apikey' | 'upload'
   | 'q1' | 'q2' | 'q3' | 'q4' | 'q5'
   | 'analyzing' | 'review'
-  | 'color' | 'palette' | 'apikey' | 'campaign' | 'final'
+  | 'color' | 'palette' | 'campaign' | 'final'
 
 const SCREEN_ORDER: Screen[] = [
-  'start', 'upload', 'q1', 'q2', 'q3', 'q4', 'q5',
-  'analyzing', 'review', 'color', 'palette', 'apikey', 'campaign', 'final',
+  'start', 'apikey', 'upload', 'q1', 'q2', 'q3', 'q4', 'q5',
+  'analyzing', 'review', 'color', 'palette', 'campaign', 'final',
 ]
 // 'analyzing' transitions automatically — not shown as a dot
 const DOT_SCREENS: Screen[] = SCREEN_ORDER.filter(s => s !== 'analyzing')
@@ -219,11 +218,20 @@ export default function OnboardingPlayer() {
         color_scheme: colorScheme,
         emotion_palette: emotionPalette,
         tracker_config,
-        api_key_encrypted: apiKey || null,
+        api_key_encrypted: null, // stored via server route below
         portrait_url: null,
       }).select().single()
 
       if (charErr) throw charErr
+
+      // Encrypt and store API key server-side — plaintext never written to DB from client
+      if (apiKey.trim()) {
+        await fetch('/api/character/update-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ characterId: character.id, apiKey: apiKey.trim() }),
+        })
+      }
 
       await db('tracker_states').insert({
         character_id: character.id,
@@ -273,9 +281,71 @@ export default function OnboardingPlayer() {
               We&rsquo;ll build your character&rsquo;s psychological profile step by step.
               Five minutes. One question at a time.
             </p>
-            <button className="btn-gold-solid w-full py-4 text-sm tracking-widest" onClick={() => go('upload')}>
+            <button className="btn-gold-solid w-full py-4 text-sm tracking-widest" onClick={() => go('apikey')}>
               Let&rsquo;s Begin
             </button>
+          </div>
+        )}
+
+        {/* ── API Key (Step 2) ───────────────────────────── */}
+        {screen === 'apikey' && (
+          <div className="animate-fade-in space-y-6">
+            <div>
+              <h2 className="font-cinzel text-lg tracking-wider mb-3" style={{ color: 'var(--text)' }}>
+                First, your API key.
+              </h2>
+              <p className="font-garamond leading-relaxed" style={{ color: 'var(--text-dim)' }}>
+                In Character uses Claude AI to learn your character and guide how you play them.
+                You&rsquo;ll need your own Anthropic API key &mdash; it takes 2 minutes to get one.
+              </p>
+            </div>
+
+            <a
+              href="https://console.anthropic.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-gold w-full py-3 text-sm text-center block"
+            >
+              Get your free API key →
+            </a>
+
+            <div>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={e => {
+                  setApiKey(e.target.value)
+                  setError('')
+                }}
+                className="w-full px-4 py-3 font-mono text-sm"
+                placeholder="sk-ant-..."
+                autoFocus
+              />
+              {error && (
+                <p className="font-garamond text-sm mt-2" style={{ color: 'var(--red)' }}>{error}</p>
+              )}
+              <p className="font-garamond text-sm mt-3 leading-relaxed" style={{ color: 'var(--text-faint)' }}>
+                Sessions typically cost less than $0.10. Your key is encrypted and stored securely &mdash;
+                we cannot see it, and it is never used for anything except your character.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button className="btn-gold flex-1 py-3" onClick={() => go('start')}>Back</button>
+              <button
+                className="btn-gold-solid flex-1 py-3 disabled:opacity-40"
+                onClick={() => {
+                  if (!apiKey.trim().startsWith('sk-ant-')) {
+                    setError("That doesn't look right. Anthropic API keys start with sk-ant-")
+                    return
+                  }
+                  go('upload')
+                }}
+                disabled={!apiKey.trim()}
+              >
+                Next →
+              </button>
+            </div>
           </div>
         )}
 
@@ -307,7 +377,7 @@ export default function OnboardingPlayer() {
             </div>
             {error && <p className="font-garamond text-sm" style={{ color: 'var(--red)' }}>{error}</p>}
             <div className="flex gap-3">
-              <button className="btn-gold flex-1 py-3" onClick={() => go('start')}>Back</button>
+              <button className="btn-gold flex-1 py-3" onClick={() => go('apikey')}>Back</button>
               <button className="btn-gold-solid flex-1 py-3 disabled:opacity-40"
                 onClick={() => go('q1')} disabled={!dossierText.trim() || loading}>
                 Continue →
@@ -616,35 +686,6 @@ export default function OnboardingPlayer() {
           </div>
         )}
 
-        {/* ── API Key ────────────────────────────────────── */}
-        {screen === 'apikey' && (
-          <div className="animate-fade-in space-y-6">
-            <div className="flex items-center gap-2">
-              <h2 className="font-cinzel text-lg tracking-wider" style={{ color: 'var(--text)' }}>Your Anthropic API Key</h2>
-              <InfoTip text="Your personal Anthropic key. Sessions cost pennies. Encrypted and never shared." />
-            </div>
-            <div className="card-dark card-gold-border p-4">
-              <p className="font-garamond text-sm leading-relaxed" style={{ color: 'var(--text-dim)' }}>
-                In Character uses Claude for narratives. You supply your own key — keeps costs low and data private.
-                Get one at console.anthropic.com.
-              </p>
-            </div>
-            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)}
-              className="w-full px-4 py-3 font-mono text-sm" placeholder="sk-ant-..." />
-            <div className="flex gap-3">
-              <button className="btn-gold flex-1 py-3" onClick={() => go('palette')}>Back</button>
-              <button className="btn-gold-solid flex-1 py-3 disabled:opacity-40"
-                onClick={() => go('campaign')} disabled={!apiKey.trim()}>
-                Save Key →
-              </button>
-            </div>
-            <button className="w-full text-center font-garamond text-sm transition-colors py-2"
-              style={{ color: 'var(--text-faint)', minHeight: 44 }} onClick={() => go('campaign')}>
-              Skip for now (some features won&rsquo;t work)
-            </button>
-          </div>
-        )}
-
         {/* ── Campaign code ──────────────────────────────── */}
         {screen === 'campaign' && (
           <div className="animate-fade-in space-y-6">
@@ -657,7 +698,7 @@ export default function OnboardingPlayer() {
             <input value={campaignCode} onChange={e => setCampaignCode(e.target.value)}
               className="w-full px-4 py-3 font-mono text-sm" placeholder="CAMP-XXXX-XXXX" />
             <div className="flex gap-3">
-              <button className="btn-gold flex-1 py-3" onClick={() => go('apikey')}>Back</button>
+              <button className="btn-gold flex-1 py-3" onClick={() => go('palette')}>Back</button>
               <button className="btn-gold flex-1 py-3" onClick={() => go('final')}>Skip</button>
               <button className="btn-gold-solid flex-1 py-3" onClick={() => go('final')}>Continue →</button>
             </div>

@@ -88,7 +88,7 @@ export default function CluesBoard({ character, clues, boardName = 'Clues', boar
           sourceType: selectedSource,
           rawText,
           existingBelief: latestBelief || '',
-          apiKey: character.api_key_encrypted,
+          // apiKey fetched server-side
         }),
       })
       const data = await res.json()

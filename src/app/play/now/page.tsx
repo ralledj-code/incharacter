@@ -9,9 +9,10 @@ export default async function NowPage() {
 
   if (!user) redirect('/auth/login')
 
+  // Exclude api_key_encrypted — never send to client; fetched server-side per Claude call
   const { data: character } = await supabase
     .from('characters')
-    .select('*')
+    .select('id, player_id, campaign_id, name, dossier_text, color_scheme, emotion_palette, tracker_config, portrait_url, created_at, updated_at')
     .eq('player_id', user.id)
     .order('created_at', { ascending: false })
     .limit(1)

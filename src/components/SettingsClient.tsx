@@ -7,7 +7,7 @@ import BurgerMenu from './BurgerMenu'
 
 interface SettingsClientProps {
   profile: { player_code?: string; role?: string } | null
-  character: { id: string; name: string; dossier_text?: string; api_key_encrypted?: string; color_scheme?: unknown } | null
+  character: { id: string; name: string; dossier_text?: string; color_scheme?: unknown; hasApiKey?: boolean } | null
   tracker: unknown | null
   email?: string
 }
@@ -45,14 +45,17 @@ export default function SettingsClient({ profile, character }: SettingsClientPro
 
   async function saveApiKey() {
     if (!character || !apiKey.trim()) return
-    const supabase = createClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('characters') as any)
-      .update({ api_key_encrypted: apiKey.trim() })
-      .eq('id', character.id)
-    setApiKey('')
-    setApiKeySaved(true)
-    setTimeout(() => setApiKeySaved(false), 2000)
+    // Key is encrypted server-side — never write plaintext to DB from client
+    const res = await fetch('/api/character/update-key', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ characterId: character.id, apiKey: apiKey.trim() }),
+    })
+    if (res.ok) {
+      setApiKey('')
+      setApiKeySaved(true)
+      setTimeout(() => setApiKeySaved(false), 2000)
+    }
   }
 
   function applyScheme(id: string) {
@@ -153,7 +156,7 @@ export default function SettingsClient({ profile, character }: SettingsClientPro
             <p className="label-caps mb-3">Anthropic API Key</p>
             <div className="card-dark p-4 space-y-3">
               <p className="font-garamond text-sm" style={{ color: 'var(--text-dim)' }}>
-                {character.api_key_encrypted ? 'Key stored. Update below.' : 'No key stored.'}
+                {character.hasApiKey ? 'Key stored. Update below.' : 'No key stored.'}
               </p>
               <div className="flex gap-2">
                 <input

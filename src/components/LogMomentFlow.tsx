@@ -61,7 +61,7 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
           category: selectedCategory,
           subcategory: selectedSubcategory,
           reaction,
-          apiKey: character.api_key_encrypted,
+          // apiKey fetched server-side
         }),
       })
       const narrativeData = await res.json()
@@ -90,7 +90,7 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
       // Check for threshold crossing
       let newDirective: string | undefined
       const maxDelta = Math.max(...Object.values(delta).map(Math.abs))
-      if (maxDelta >= 15 && character.api_key_encrypted) {
+      if (maxDelta >= 15) {
         const directiveRes = await fetch('/api/claude/directive', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -99,7 +99,7 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
             characterName: character.name,
             dossierSummary: character.dossier_text?.slice(0, 2000) || '',
             trackers: newTrackers,
-            apiKey: character.api_key_encrypted,
+            // apiKey fetched server-side
           }),
         })
         const dData = await directiveRes.json()

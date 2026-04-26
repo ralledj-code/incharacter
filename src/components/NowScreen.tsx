@@ -42,11 +42,6 @@ export default function NowScreen({ character, tracker: initialTracker, session,
   useEffect(() => { if (!directive && character.dossier_text) { generateDirective() } }, [])
 
   async function generateDirective() {
-    if (!character.api_key_encrypted) {
-      setDirective('Play him like the performance is the only thing holding him together.')
-      setDirectiveLoading(false)
-      return
-    }
     setDirectiveLoading(true)
     try {
       const res = await fetch('/api/claude/directive', {
@@ -58,7 +53,7 @@ export default function NowScreen({ character, tracker: initialTracker, session,
           dossierSummary: character.dossier_text?.slice(0, 2000) || '',
           trackers: { mask, dagger, bottle, wound },
           recentEvents: recentEvents.map(e => e.narrative || e.category),
-          apiKey: character.api_key_encrypted,
+          // apiKey is fetched server-side — never sent from client
         }),
       })
       const data = await res.json()

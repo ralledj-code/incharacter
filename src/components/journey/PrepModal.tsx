@@ -50,7 +50,7 @@ export default function PrepModal({ character, tracker, clues, relationships, on
           },
           cluesSummary: latestBelief || '',
           relationshipSummaries: relStates,
-          apiKey: character.api_key_encrypted,
+          // apiKey fetched server-side
         }),
       })
       const data = await res.json()
