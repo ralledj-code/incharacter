@@ -299,8 +299,40 @@ Write 150-200 words of prep text. First person. Present tense. How he's walking 
   }
 }
 
+export interface InterviewAnswers {
+  core_motivation: string
+  antagonist: { name: string; relationship: string } | null
+  primary_ally: { name: string; role: string } | null
+  dangerous_element: { name: string } | null
+  stress_responses: string[]
+}
+
+export interface CharacterConfig {
+  core_motivation: string
+  antagonist: { name: string; relationship: string } | null
+  primary_ally: { name: string; role: string } | null
+  dangerous_element: { name: string; exists: boolean } | null
+  stress_responses: string[]
+  // Dynamic category names derived from character
+  dangerous_element_category: {
+    id: string; icon: string; name: string; description: string
+    tracker_weights: Record<string, number>
+  }
+  antagonist_category: {
+    id: string; icon: string; name: string; description: string
+    tracker_weights: Record<string, number>
+  }
+  key_relationships: Array<{ name: string; role: string; description: string }>
+  clue_board_name: string
+  clue_board_subject: string
+  color_scheme_suggestion: string
+  // Legacy tracker names kept for backward compat
+  trackerNames: { mask: string; dagger: string; bottle: string; wound: string }
+}
+
 export async function analyzeDossier(params: {
   dossierText: string
+  interview?: InterviewAnswers
   apiKey?: string
 }): Promise<{
   characterName: string
@@ -310,52 +342,115 @@ export async function analyzeDossier(params: {
   colorScheme: { primary: string; secondary: string; accent: string }
   openingLine: string
   antagonistName: string
+  characterConfig: CharacterConfig | null
 }> {
+  const fallbackConfig: CharacterConfig = {
+    core_motivation: params.interview?.core_motivation || '',
+    antagonist: params.interview?.antagonist || null,
+    primary_ally: params.interview?.primary_ally || null,
+    dangerous_element: params.interview?.dangerous_element ? { name: params.interview.dangerous_element.name, exists: true } : null,
+    stress_responses: params.interview?.stress_responses || [],
+    dangerous_element_category: { id: 'special', icon: '✝', name: 'The Unknown', description: 'a surge, whisper, or moment of uncontrolled power', tracker_weights: { dagger: 10, mask: -4 } },
+    antagonist_category: { id: 'antagonist', icon: '🔍', name: 'The Mystery', description: 'clue, sighting, someone connected to it', tracker_weights: { dagger: 5, wound: 8 } },
+    key_relationships: [],
+    clue_board_name: 'The Mystery',
+    clue_board_subject: 'the antagonist',
+    color_scheme_suggestion: 'grimoire',
+    trackerNames: { mask: 'The Mask', dagger: 'The Dagger', bottle: 'The Bottle', wound: 'The Wound' },
+  }
+
   try {
     const client = buildClient(params.apiKey)
+    const interviewBlock = params.interview ? `
+INTERVIEW ANSWERS:
+- Core motivation: ${params.interview.core_motivation}
+- Antagonist: ${params.interview.antagonist ? `${params.interview.antagonist.name} — ${params.interview.antagonist.relationship}` : 'none yet'}
+- Primary ally: ${params.interview.primary_ally ? `${params.interview.primary_ally.name} (${params.interview.primary_ally.role})` : 'no one yet'}
+- Dangerous element: ${params.interview.dangerous_element ? params.interview.dangerous_element.name : 'none'}
+- Stress responses: ${params.interview.stress_responses.join(', ') || 'not specified'}
+` : ''
+
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 1500,
-      system: 'You are analyzing a tabletop RPG character dossier to extract character data for a psychological tracking app.',
+      max_tokens: 2000,
+      system: 'You are analyzing a tabletop RPG character to extract psychological profile data. Respond ONLY in valid JSON.',
       messages: [{
         role: 'user',
-        content: `Analyze this character dossier and extract the following. Respond in valid JSON only, no explanation.
+        content: `DOSSIER:\n${params.dossierText}\n${interviewBlock}
 
-DOSSIER:
-${params.dossierText}
-
-Extract:
+Extract character data and return ONLY this JSON structure:
 {
   "characterName": "character's name",
-  "voiceSummary": "2-3 sentences capturing who this character is and how they operate, third person",
+  "voiceSummary": "2-3 sentences, third person, who they are and how they operate",
   "trackerNames": {
-    "mask": "name for the public persona tracker (2-3 words)",
-    "dagger": "name for the internal pressure/darkness tracker (2-3 words)",
-    "bottle": "name for the self-medication/escapism tracker (2-3 words)",
-    "wound": "name for the emotional damage/walls tracker (2-3 words)"
+    "mask": "2-3 words for public persona tracker",
+    "dagger": "2-3 words for internal pressure/darkness",
+    "bottle": "2-3 words for self-medication/escapism",
+    "wound": "2-3 words for emotional damage/walls"
   },
   "emotionPalette": [
-    {"key": "charming", "label": "STATE_NAME", "desc": "8-word behavioral descriptor"},
-    {"key": "volatile", "label": "STATE_NAME", "desc": "8-word behavioral descriptor"},
-    {"key": "reckless", "label": "STATE_NAME", "desc": "8-word behavioral descriptor"},
-    {"key": "withdrawn", "label": "STATE_NAME", "desc": "8-word behavioral descriptor"},
-    {"key": "guarded", "label": "STATE_NAME", "desc": "8-word behavioral descriptor"},
-    {"key": "present", "label": "STATE_NAME", "desc": "8-word behavioral descriptor"}
+    {"key": "charming", "label": "ALL_CAPS_LABEL", "desc": "8-word behavioral descriptor specific to this character"},
+    {"key": "volatile", "label": "ALL_CAPS_LABEL", "desc": "8-word behavioral descriptor"},
+    {"key": "reckless", "label": "ALL_CAPS_LABEL", "desc": "8-word behavioral descriptor"},
+    {"key": "withdrawn", "label": "ALL_CAPS_LABEL", "desc": "8-word behavioral descriptor"},
+    {"key": "guarded", "label": "ALL_CAPS_LABEL", "desc": "8-word behavioral descriptor"},
+    {"key": "present", "label": "ALL_CAPS_LABEL", "desc": "8-word behavioral descriptor"}
   ],
-  "colorScheme": {
-    "primary": "#hex based on character themes",
-    "secondary": "#hex complementary",
-    "accent": "#hex accent"
+  "colorSchemeSuggestion": "grimoire|sanctum|wilds|shadow|forge",
+  "openingLine": "first-person sentence in character's voice, welcoming them to the app",
+  "antagonistName": "antagonist's name or 'the mystery'",
+  "dangerous_element_category": {
+    "id": "special",
+    "icon": "✝",
+    "name": "The Dagger (or character-specific name)",
+    "description": "short description of what this category tracks",
+    "tracker_weights": {"dagger": 10, "mask": -4}
   },
-  "openingLine": "A single sentence in character voice welcoming them to the app — first person, specific to this character's voice",
-  "antagonistName": "name of the central antagonist or mystery figure (or 'the mystery' if unclear)"
+  "antagonist_category": {
+    "id": "antagonist",
+    "icon": "🔍",
+    "name": "antagonist name or 'The Mystery'",
+    "description": "what this category tracks about the antagonist",
+    "tracker_weights": {"dagger": 5, "wound": 8}
+  },
+  "key_relationships": [
+    {"name": "NPC name", "role": "their role", "description": "one sentence about the relationship"}
+  ],
+  "clue_board_name": "e.g. 'The Severin Board'",
+  "clue_board_subject": "e.g. 'Severin Draik'"
 }`
       }]
     })
-    const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '{}'
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (jsonMatch) return JSON.parse(jsonMatch[0])
-    throw new Error('No JSON in response')
+    const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : '{}'
+    const jsonMatch = raw.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) throw new Error('No JSON')
+    const parsed = JSON.parse(jsonMatch[0])
+
+    const config: CharacterConfig = {
+      core_motivation: params.interview?.core_motivation || '',
+      antagonist: params.interview?.antagonist || null,
+      primary_ally: params.interview?.primary_ally || null,
+      dangerous_element: params.interview?.dangerous_element ? { name: params.interview.dangerous_element.name, exists: true } : null,
+      stress_responses: params.interview?.stress_responses || [],
+      dangerous_element_category: parsed.dangerous_element_category || fallbackConfig.dangerous_element_category,
+      antagonist_category: parsed.antagonist_category || fallbackConfig.antagonist_category,
+      key_relationships: parsed.key_relationships || [],
+      clue_board_name: parsed.clue_board_name || 'The Mystery',
+      clue_board_subject: parsed.clue_board_subject || parsed.antagonistName || 'the antagonist',
+      color_scheme_suggestion: parsed.colorSchemeSuggestion || 'grimoire',
+      trackerNames: parsed.trackerNames || fallbackConfig.trackerNames,
+    }
+
+    return {
+      characterName: parsed.characterName || 'Unknown Character',
+      voiceSummary: parsed.voiceSummary || '',
+      trackerNames: parsed.trackerNames || fallbackConfig.trackerNames,
+      emotionPalette: parsed.emotionPalette || [],
+      colorScheme: { primary: '#c9a84c', secondary: '#8a6e2e', accent: '#f0e6d3' },
+      openingLine: parsed.openingLine || 'The work begins.',
+      antagonistName: parsed.antagonistName || 'the mystery',
+      characterConfig: config,
+    }
   } catch {
     return {
       characterName: 'Unknown Character',
@@ -370,8 +465,9 @@ Extract:
         { key: 'present', label: 'PRESENT', desc: 'He is here, right now' },
       ],
       colorScheme: { primary: '#c9a84c', secondary: '#8b6a30', accent: '#f0e6d3' },
-      openingLine: 'The work begins. Let\'s see who you become.',
+      openingLine: "The work begins. Let's see who you become.",
       antagonistName: 'the mystery',
+      characterConfig: fallbackConfig,
     }
   }
 }

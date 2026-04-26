@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-// CJS modules — require avoids ESM interop issues in Next.js
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require('pdf-parse')
+import { extractText as extractPdfText } from 'unpdf'
+// mammoth is CJS — require avoids ESM interop issues
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const mammoth = require('mammoth')
 
@@ -12,21 +10,20 @@ function cleanText(raw: string): string {
     .replace(/\r/g, '\n')
     .replace(/[ \t]+/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
-    // Remove non-printable chars (keep tab, LF, CR, printable ASCII, and extended unicode)
-    .replace(/[^\x09\x0A\x0D\x20-\x7E -￿]/g, '')
+    .replace(/[^\x09\x0A\x0D\x20-\x7E -￿]/g, '')
     .trim()
     .slice(0, 50000)
 }
 
-async function extractText(file: File): Promise<string> {
+async function extractFromFile(file: File): Promise<string> {
   const buffer = Buffer.from(await file.arrayBuffer())
   const fileName = file.name.toLowerCase()
 
   if (fileName.endsWith('.pdf')) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data: any = await pdfParse(buffer)
-      return data.text || ''
+      const uint8 = new Uint8Array(buffer)
+      const { text } = await extractPdfText(uint8, { mergePages: true })
+      return text || ''
     } catch {
       throw new Error('Could not read PDF')
     }
@@ -46,7 +43,7 @@ async function extractText(file: File): Promise<string> {
     return buffer.toString('utf-8')
   }
 
-  // Fallback: try plain text decode for unknown types
+  // Unknown type — try plain text
   return buffer.toString('utf-8')
 }
 
@@ -56,7 +53,7 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File | null
     if (!file) return NextResponse.json({ text: '' })
 
-    const raw = await extractText(file)
+    const raw = await extractFromFile(file)
     const cleaned = cleanText(raw)
 
     if (cleaned.length < 100) {

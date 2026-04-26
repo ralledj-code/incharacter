@@ -8,6 +8,7 @@ import { RELATIONSHIP_MOMENT_TYPES, TRUST_DIRECTIONS, getRandomLoadingPhrase } f
 interface RelationshipsBoardProps {
   character: Character
   relationships: Relationship[]
+  keyRelationships?: Array<{ name: string; role: string }>
 }
 
 type AddStep = 'npc' | 'moment' | 'text' | 'generating'
@@ -90,7 +91,8 @@ function RelationshipGroup({ npcName, moments }: { npcName: string; moments: Rel
   )
 }
 
-export default function RelationshipsBoard({ character, relationships }: RelationshipsBoardProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function RelationshipsBoard({ character, relationships, keyRelationships }: RelationshipsBoardProps) {
   const router = useRouter()
   const [showAdd, setShowAdd] = useState(false)
   const [addStep, setAddStep] = useState<AddStep>('npc')

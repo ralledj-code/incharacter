@@ -8,6 +8,8 @@ import { CLUE_SOURCE_TYPES, getRandomLoadingPhrase } from '@/lib/constants'
 interface CluesBoardProps {
   character: Character
   clues: Clue[]
+  boardName?: string
+  boardSubject?: string
 }
 
 type AddStep = 'source' | 'text' | 'generating'
@@ -56,7 +58,8 @@ function ClueCard({ clue }: { clue: Clue }) {
   )
 }
 
-export default function CluesBoard({ character, clues }: CluesBoardProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function CluesBoard({ character, clues, boardName = 'Clues', boardSubject = 'the mystery' }: CluesBoardProps) {
   const router = useRouter()
   const [showAdd, setShowAdd] = useState(false)
   const [addStep, setAddStep] = useState<AddStep>('source')
@@ -136,7 +139,7 @@ export default function CluesBoard({ character, clues }: CluesBoardProps) {
             borderRadius: 2,
           }}
         >
-          <p className="label-caps mb-2">What He Currently Believes</p>
+          <p className="label-caps mb-2">What {character.name} currently believes about {boardSubject}</p>
           <p className="narrative-text">{latestBelief}</p>
         </div>
       )}

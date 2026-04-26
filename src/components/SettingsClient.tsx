@@ -31,6 +31,7 @@ export default function SettingsClient({ profile, character }: SettingsClientPro
   const [dossierSaving, setDossierSaving] = useState(false)
   const [showDeleteChar, setShowDeleteChar] = useState(false)
   const [showDeleteAccount, setShowDeleteAccount] = useState(false)
+  const [showRestartChar, setShowRestartChar] = useState(false)
   const [deleteHolding, setDeleteHolding] = useState(false)
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -99,6 +100,11 @@ export default function SettingsClient({ profile, character }: SettingsClientPro
       await supabase.auth.signOut()
       router.push('/')
     }
+  }
+
+  async function restartCharacter() {
+    const res = await fetch('/api/character/restart', { method: 'DELETE' })
+    if (res.ok) router.push('/onboarding?role=player')
   }
 
   function startHoldDelete(action: () => void) {
@@ -236,13 +242,22 @@ export default function SettingsClient({ profile, character }: SettingsClientPro
           <p className="label-caps mb-3" style={{ color: 'var(--red)' }}>Danger Zone</p>
           <div className="space-y-3">
             {character && (
-              <button
-                onClick={() => setShowDeleteChar(true)}
-                className="w-full card-dark p-4 text-left font-cinzel text-xs tracking-wider transition-colors"
-                style={{ color: 'var(--red)', borderColor: 'var(--red-dim)', minHeight: 56 }}
-              >
-                Delete Character
-              </button>
+              <>
+                <button
+                  onClick={() => setShowRestartChar(true)}
+                  className="w-full card-dark p-4 text-left font-cinzel text-xs tracking-wider transition-colors"
+                  style={{ color: 'var(--red)', borderColor: 'var(--red-dim)', minHeight: 56 }}
+                >
+                  Restart Character
+                </button>
+                <button
+                  onClick={() => setShowDeleteChar(true)}
+                  className="w-full card-dark p-4 text-left font-cinzel text-xs tracking-wider transition-colors"
+                  style={{ color: 'var(--red)', borderColor: 'var(--red-dim)', minHeight: 56 }}
+                >
+                  Delete Character
+                </button>
+              </>
             )}
             <button
               onClick={() => setShowDeleteAccount(true)}
@@ -277,6 +292,37 @@ export default function SettingsClient({ profile, character }: SettingsClientPro
               <button onClick={appendDossier} disabled={dossierSaving || !dossierAppend.trim()}
                       className="btn-gold-solid flex-1 py-3 text-xs disabled:opacity-40">
                 {dossierSaving ? 'Saving...' : 'Append →'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Restart character confirmation */}
+      {showRestartChar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6"
+             style={{ background: 'rgba(0,0,0,0.92)' }}>
+          <div className="w-full max-w-sm card-dark p-6 animate-fade-in" style={{ borderColor: 'var(--red-dim)' }}>
+            <h2 className="font-cinzel text-sm tracking-wider mb-4" style={{ color: 'var(--red)' }}>Restart Character</h2>
+            <p className="font-garamond mb-6" style={{ color: 'var(--text-dim)' }}>
+              This will delete everything &mdash; every session, every event, every clue.
+              Your account stays but your character starts over. This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowRestartChar(false)} className="btn-gold flex-1 py-3 text-xs">Cancel</button>
+              <button
+                onPointerDown={() => startHoldDelete(restartCharacter)}
+                onPointerUp={cancelHoldDelete}
+                onPointerLeave={cancelHoldDelete}
+                className="flex-1 py-3 font-cinzel text-xs tracking-wider transition-all"
+                style={{
+                  background: deleteHolding ? 'var(--red)' : 'transparent',
+                  border: '1px solid var(--red)',
+                  color: deleteHolding ? '#fff' : 'var(--red)',
+                  borderRadius: 2, minHeight: 44,
+                }}
+              >
+                {deleteHolding ? 'Hold...' : 'Hold to Restart'}
               </button>
             </div>
           </div>
