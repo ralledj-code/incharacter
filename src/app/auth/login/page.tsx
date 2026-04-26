@@ -2,9 +2,12 @@
 
 import { useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 type Tab = 'signin' | 'signup'
+
+const ROLE_KEY = 'ic_signup_role'
 
 function AuthForm() {
   const searchParams = useSearchParams()
@@ -12,6 +15,8 @@ function AuthForm() {
   const role = searchParams.get('role') || 'player'
   const next = searchParams.get('next') || '/dashboard'
   const confirmed = searchParams.get('confirmed') === 'true'
+
+  const isDM = role === 'dm'
 
   const [tab, setTab] = useState<Tab>('signin')
   const [email, setEmail] = useState('')
@@ -44,7 +49,7 @@ function AuthForm() {
         }
       } else {
         // After sign-in, save role from URL param if DM — trigger always inserts 'player'
-        if (role === 'dm') {
+        if (isDM) {
           const { data: { user: signedInUser } } = await supabase.auth.getUser()
           if (signedInUser) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,6 +80,11 @@ function AuthForm() {
     }
     setLoading(true)
     try {
+      // Persist role in localStorage so it survives the email confirmation redirect
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(ROLE_KEY, role)
+      }
+
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
       const supabase = createClient()
       const { error: err } = await supabase.auth.signUp({
@@ -82,7 +92,7 @@ function AuthForm() {
         password,
         options: {
           emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(next)}&role=${encodeURIComponent(role)}`,
-          data: { role },
+          data: { role }, // read by handle_new_user trigger
         },
       })
       if (err) {
@@ -142,22 +152,12 @@ function AuthForm() {
           <form onSubmit={handleForgot} className="space-y-4">
             <div>
               <label className="label-caps block mb-2">Your Email</label>
-              <input
-                type="email"
-                value={forgotEmail}
-                onChange={e => setForgotEmail(e.target.value)}
-                placeholder="you@somewhere.com"
-                className="w-full px-4 py-3"
-                autoFocus
-                required
-              />
+              <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
+                placeholder="you@somewhere.com" className="w-full px-4 py-3" autoFocus required />
             </div>
             {error && <p className="font-garamond text-sm" style={{ color: 'var(--red)' }}>{error}</p>}
-            <button
-              type="submit"
-              disabled={loading || !forgotEmail.trim()}
-              className="btn-gold-solid w-full py-3 disabled:opacity-40"
-            >
+            <button type="submit" disabled={loading || !forgotEmail.trim()}
+              className="btn-gold-solid w-full py-3 disabled:opacity-40">
               {loading ? 'Sending...' : 'Send Reset Link'}
             </button>
           </form>
@@ -176,7 +176,7 @@ function AuthForm() {
         </h2>
         <p className="font-garamond leading-relaxed" style={{ color: 'var(--text-dim)' }}>
           We sent a confirmation link to <span style={{ color: 'var(--text)' }}>{email}</span>.
-          Click it to activate your account, then come back and sign in.
+          Click it to activate your {isDM ? 'DM' : 'player'} account, then come back and sign in.
         </p>
         <button
           onClick={() => { setSignupDone(false); setTab('signin'); setPassword(''); setConfirmPassword('') }}
@@ -191,6 +191,14 @@ function AuthForm() {
 
   return (
     <div>
+      {/* Role indicator — makes it clear which path the user is on */}
+      <div className="mb-5 p-3 animate-fade-in"
+           style={{ background: isDM ? 'var(--gold-faint)' : 'var(--surface2)', borderLeft: '2px solid var(--accent)', borderRadius: 2 }}>
+        <p className="font-cinzel text-xs tracking-widest" style={{ color: 'var(--accent)' }}>
+          {isDM ? 'Creating a DM account' : 'Creating a player account'}
+        </p>
+      </div>
+
       {/* Confirmation banner */}
       {confirmed && (
         <div className="mb-5 p-4 animate-fade-in"
@@ -204,17 +212,13 @@ function AuthForm() {
       {/* Tabs */}
       <div className="flex mb-6" style={{ borderBottom: '1px solid var(--border)' }}>
         {(['signin', 'signup'] as Tab[]).map(t => (
-          <button
-            key={t}
-            onClick={() => { setTab(t); setError('') }}
+          <button key={t} onClick={() => { setTab(t); setError('') }}
             className="flex-1 pb-3 font-cinzel text-xs tracking-widest transition-colors"
             style={{
               color: tab === t ? 'var(--accent)' : 'var(--text-faint)',
               borderBottom: tab === t ? '1px solid var(--accent)' : '1px solid transparent',
-              marginBottom: -1,
-              minHeight: 'auto',
-            }}
-          >
+              marginBottom: -1, minHeight: 'auto',
+            }}>
             {t === 'signin' ? 'Sign In' : 'Sign Up'}
           </button>
         ))}
@@ -225,26 +229,13 @@ function AuthForm() {
         <form onSubmit={handleSignIn} className="space-y-4 animate-fade-in">
           <div>
             <label className="label-caps block mb-2">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@somewhere.com"
-              className="w-full px-4 py-3"
-              autoFocus
-              required
-            />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="you@somewhere.com" className="w-full px-4 py-3" autoFocus required />
           </div>
           <div>
             <label className="label-caps block mb-2">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full px-4 py-3"
-              required
-            />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••" className="w-full px-4 py-3" required />
           </div>
 
           {error && (
@@ -253,20 +244,14 @@ function AuthForm() {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading || !email.trim() || !password}
-            className="btn-gold-solid w-full py-3 disabled:opacity-40"
-          >
+          <button type="submit" disabled={loading || !email.trim() || !password}
+            className="btn-gold-solid w-full py-3 disabled:opacity-40">
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
 
-          <button
-            type="button"
-            onClick={() => { setShowForgot(true); setForgotEmail(email); setError('') }}
+          <button type="button" onClick={() => { setShowForgot(true); setForgotEmail(email); setError('') }}
             className="w-full text-center font-garamond text-sm"
-            style={{ color: 'var(--text-faint)', minHeight: 'auto' }}
-          >
+            style={{ color: 'var(--text-faint)', minHeight: 'auto' }}>
             Forgot password?
           </button>
         </form>
@@ -277,38 +262,18 @@ function AuthForm() {
         <form onSubmit={handleSignUp} className="space-y-4 animate-fade-in">
           <div>
             <label className="label-caps block mb-2">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@somewhere.com"
-              className="w-full px-4 py-3"
-              autoFocus
-              required
-            />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="you@somewhere.com" className="w-full px-4 py-3" autoFocus required />
           </div>
           <div>
             <label className="label-caps block mb-2">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="At least 8 characters"
-              className="w-full px-4 py-3"
-              minLength={8}
-              required
-            />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="At least 8 characters" className="w-full px-4 py-3" minLength={8} required />
           </div>
           <div>
             <label className="label-caps block mb-2">Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full px-4 py-3"
-              required
-            />
+            <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+              placeholder="••••••••" className="w-full px-4 py-3" required />
           </div>
 
           {error && (
@@ -317,13 +282,23 @@ function AuthForm() {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading || !email.trim() || !password || !confirmPassword}
-            className="btn-gold-solid w-full py-3 disabled:opacity-40"
-          >
-            {loading ? 'Creating account...' : 'Create Account'}
+          <button type="submit" disabled={loading || !email.trim() || !password || !confirmPassword}
+            className="btn-gold-solid w-full py-3 disabled:opacity-40">
+            {loading ? 'Creating account...' : isDM ? 'Create DM Account' : 'Create Account'}
           </button>
+
+          {/* Role switcher */}
+          <div className="text-center pt-1">
+            <Link
+              href={`/auth/login?role=${isDM ? 'player' : 'dm'}`}
+              className="font-garamond text-sm"
+              style={{ color: 'var(--text-faint)', minHeight: 'auto', minWidth: 'auto' }}
+            >
+              {isDM
+                ? 'Not a DM? Sign up as a player instead →'
+                : 'Running a campaign? Sign up as a DM instead →'}
+            </Link>
+          </div>
         </form>
       )}
     </div>
@@ -332,10 +307,8 @@ function AuthForm() {
 
 export default function LoginPage() {
   return (
-    <main
-      className="min-h-screen flex flex-col items-center justify-center px-6 py-12 animate-page"
-      style={{ background: 'var(--bg)' }}
-    >
+    <main className="min-h-screen flex flex-col items-center justify-center px-6 py-12 animate-page"
+          style={{ background: 'var(--bg)' }}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
           <h1 className="font-cinzel text-3xl tracking-wider mb-2" style={{ color: 'var(--accent)' }}>
