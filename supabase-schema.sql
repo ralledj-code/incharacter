@@ -142,15 +142,13 @@ alter table session_replays enable row level security;
 create policy "profiles_own" on profiles for all using (auth.uid() = id);
 
 -- Campaigns: DMs own their campaigns, members can read
+-- NOTE: The two policies below use SECURITY DEFINER helper functions to avoid
+-- infinite recursion. campaigns_member_read and campaign_members_dm previously
+-- referenced each other in subqueries, causing circular RLS evaluation.
+-- Run the fixed SQL in docs/fix-rls-circular.sql before using this schema.
 create policy "campaigns_dm_all" on campaigns for all using (auth.uid() = dm_id);
-create policy "campaigns_member_read" on campaigns for select using (
-  id in (select campaign_id from campaign_members where player_id = auth.uid())
-);
-
--- Campaign members: DMs can manage, members can see their own
-create policy "campaign_members_dm" on campaign_members for all using (
-  campaign_id in (select id from campaigns where dm_id = auth.uid())
-);
+-- campaigns_member_read: see docs/fix-rls-circular.sql
+-- campaign_members_dm: see docs/fix-rls-circular.sql
 create policy "campaign_members_own" on campaign_members for select using (player_id = auth.uid());
 
 -- Characters: players own their characters, DMs can read characters in their campaigns
