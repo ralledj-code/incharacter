@@ -7,12 +7,19 @@ import { createClient } from '@/lib/supabase/client'
 function LoginForm() {
   const searchParams = useSearchParams()
   const role = searchParams.get('role') || 'player'
-  const next = searchParams.get('next') || '/play/now'
+  const next = searchParams.get('next') || '/dashboard'
+  const errorParam = searchParams.get('error')
 
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const authFailedMessage = errorParam === 'auth_failed'
+    ? 'Something went wrong with that link. Links expire after 24 hours — request a new one below.'
+    : errorParam
+    ? decodeURIComponent(errorParam)
+    : ''
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -37,23 +44,25 @@ function LoginForm() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Try again.')
     }
-
     setLoading(false)
   }
 
   if (sent) {
     return (
       <div className="text-center animate-fade-in">
-        <div className="mb-6 text-gold text-3xl">✦</div>
-        <h2 className="font-cinzel text-ink text-lg tracking-wider mb-3">Check your email</h2>
-        <p className="font-garamond text-ink-dim leading-relaxed">
-          A link has been sent to <span className="text-ink">{email}</span>.
+        <div className="mb-6 text-3xl btn-shimmer rounded-full w-12 h-12 mx-auto flex items-center justify-center"
+             style={{ background: 'var(--accent)', color: 'var(--bg)' }}>
+          ✦
+        </div>
+        <h2 className="font-cinzel text-base tracking-wider mb-3" style={{ color: 'var(--text)' }}>
+          Check your email
+        </h2>
+        <p className="font-garamond leading-relaxed" style={{ color: 'var(--text-dim)' }}>
+          A link has been sent to <span style={{ color: 'var(--text)' }}>{email}</span>.
           Click it to continue. It expires in one hour.
         </p>
-        <button
-          onClick={() => setSent(false)}
-          className="mt-8 label-caps text-ink-faint hover:text-ink-dim transition-colors"
-        >
+        <button onClick={() => setSent(false)}
+                className="mt-8 label-caps" style={{ color: 'var(--text-faint)' }}>
           Use a different email
         </button>
       </div>
@@ -61,7 +70,15 @@ function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {(error || authFailedMessage) && (
+        <div className="card-dark p-4" style={{ borderColor: 'var(--red-dim)' }}>
+          <p className="font-garamond text-sm" style={{ color: 'var(--red)' }}>
+            {error || authFailedMessage}
+          </p>
+        </div>
+      )}
+
       <div>
         <label className="label-caps block mb-2">Your Email</label>
         <input
@@ -75,12 +92,6 @@ function LoginForm() {
         />
       </div>
 
-      {error && (
-        <p className="font-garamond text-sm italic" style={{ color: 'var(--red)' }}>
-          {error}
-        </p>
-      )}
-
       <button
         type="submit"
         disabled={loading || !email.trim()}
@@ -89,21 +100,31 @@ function LoginForm() {
         {loading ? 'Sending...' : 'Send Magic Link'}
       </button>
 
-      <p className="font-garamond text-ink-faint text-sm text-center leading-relaxed">
-        No passwords. A link arrives in your inbox.
-        Click it and you&rsquo;re in.
-      </p>
+      <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+        <p className="font-garamond text-sm leading-relaxed" style={{ color: 'var(--text-dim)' }}>
+          No password needed. Enter your email and we&rsquo;ll send you a link.
+          Click it and you&rsquo;re in. Same email always returns you to your character.
+        </p>
+        <p className="font-garamond text-sm mt-3 leading-relaxed" style={{ color: 'var(--text-faint)' }}>
+          New here? Enter your email to begin. Your DM can also invite you directly.
+        </p>
+      </div>
     </form>
   )
 }
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen bg-bg flex flex-col items-center justify-center px-6 py-12">
+    <main className="min-h-screen flex flex-col items-center justify-center px-6 py-12 animate-page"
+          style={{ background: 'var(--bg)' }}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
-          <h1 className="font-cinzel text-gold text-3xl tracking-wider mb-2">In Character</h1>
-          <p className="font-garamond text-ink-dim italic">Your character, in character.</p>
+          <h1 className="font-cinzel text-3xl tracking-wider mb-2" style={{ color: 'var(--accent)' }}>
+            In Character
+          </h1>
+          <p className="font-garamond italic-permitted" style={{ color: 'var(--text-dim)', fontStyle: 'italic' }}>
+            Your character, in character.
+          </p>
         </div>
 
         <div className="card-dark p-8">
@@ -111,13 +132,6 @@ export default function LoginPage() {
             <LoginForm />
           </Suspense>
         </div>
-
-        <p className="text-center mt-6 font-garamond text-ink-faint text-sm">
-          New here?{' '}
-          <span className="text-ink-dim">
-            Your DM will invite you by email, or create a character to get started.
-          </span>
-        </p>
       </div>
     </main>
   )

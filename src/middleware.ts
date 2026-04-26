@@ -1,22 +1,36 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const PUBLIC_PATHS = [
+  '/',
+  '/auth/login',
+  '/auth/callback',
+  '/auth/error',
+  '/about',
+  '/faq',
+  '/privacy',
+  '/contact',
+  '/api/contact',
+]
+
+function isPublic(pathname: string): boolean {
+  return PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith('/auth/'))
+}
+
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
+  let response = NextResponse.next({ request })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
+        getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
+          response = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            response.cookies.set(name, value, options)
           )
         },
       },
@@ -24,23 +38,23 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-
   const { pathname } = request.nextUrl
 
-  // Public routes
-  const publicRoutes = ['/', '/auth/login', '/auth/callback', '/auth/invited']
-  const isPublic = publicRoutes.some(r => pathname === r || pathname.startsWith('/auth/'))
-
-  // Protected routes
-  if (!user && !isPublic) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
-    url.searchParams.set('next', pathname)
-    return NextResponse.redirect(url)
+  // Unauthenticated → redirect to login for protected routes
+  if (!user && !isPublic(pathname)) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = '/auth/login'
+    loginUrl.searchParams.set('next', pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
-  // Admin route protection handled in the page itself
-  return supabaseResponse
+  // Authenticated + visiting /onboarding → verify they actually need it
+  if (user && pathname === '/onboarding') {
+    // Let them through — onboarding handles its own redirect after completion
+    return response
+  }
+
+  return response
 }
 
 export const config = {

@@ -11,6 +11,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
     "@hookform/resolvers": "^5.2.2",
+    "@react-pdf/renderer": "^4.5.1",
+    "@supabase/auth-helpers-nextjs": "^0.9.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.104.1",
     "@types/sharp": "^0.31.1",
@@ -23,6 +25,7 @@
     "react-dom": "^18",
     "react-dropzone": "^15.0.0",
     "react-hook-form": "^7.74.0",
+    "resend": "^6.12.2",
     "sharp": "^0.34.5",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"

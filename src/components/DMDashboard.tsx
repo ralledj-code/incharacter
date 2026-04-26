@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Campaign, Character, TrackerState } from '@/types/database'
 import ArcaneGlyph from './ArcaneGlyph'
+import BurgerMenu from './BurgerMenu'
 import { glyphValuesFromTrackers, GLYPH_STATES } from '@/lib/constants'
 
 interface DMDashboardProps {
@@ -194,16 +195,36 @@ export default function DMDashboard({ campaigns, members, characters, trackers, 
     setBriefLoading(false)
   }
 
+  const [sessionNotes, setSessionNotes] = useState('')
+  const [notesSaving, setNotesSaving] = useState(false)
+  const [notesSaved, setNotesSaved] = useState(false)
+
+  async function saveSessionNotes() {
+    if (!campaign || !sessionNotes.trim()) return
+    setNotesSaving(true)
+    try {
+      await fetch('/api/dm/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaignId: campaign.id, notes: sessionNotes }),
+      })
+      setNotesSaved(true)
+      setTimeout(() => setNotesSaved(false), 2000)
+    } catch {}
+    setNotesSaving(false)
+  }
+
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
+      <BurgerMenu loggedIn={true} role="dm" />
       {/* Header */}
       <div
         className="px-6 py-5"
         style={{ borderBottom: '1px solid var(--border)' }}
       >
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <h1 className="font-cinzel text-gold text-xl tracking-wider">In Character</h1>
-          <span className="label-caps">DM Dashboard</span>
+          <h1 className="font-cinzel text-xl tracking-wider" style={{ color: 'var(--accent)' }}>In Character</h1>
+          <span className="label-caps" style={{ paddingRight: 52 }}>DM Dashboard</span>
         </div>
       </div>
 
@@ -240,10 +261,12 @@ export default function DMDashboard({ campaigns, members, characters, trackers, 
 
             {campaign && (
               <>
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="font-cinzel text-ink text-lg tracking-wider">{campaign.name}</h2>
-                    <p className="font-garamond text-ink-faint text-sm">{campaignCharacters.length} character{campaignCharacters.length !== 1 ? 's' : ''}</p>
+                    <h2 className="font-cinzel text-lg tracking-wider" style={{ color: 'var(--text)' }}>{campaign.name}</h2>
+                    <p className="font-garamond text-sm" style={{ color: 'var(--text-faint)' }}>
+                      {campaignCharacters.length} character{campaignCharacters.length !== 1 ? 's' : ''}
+                    </p>
                   </div>
                   <div className="flex gap-3">
                     <a
@@ -284,6 +307,23 @@ export default function DMDashboard({ campaigns, members, characters, trackers, 
                     <p className="font-garamond text-ink-dim leading-relaxed text-sm whitespace-pre-wrap">{briefText}</p>
                   </div>
                 )}
+
+                {/* Fix 9: DM session notes — private, never shown to players */}
+                <div className="mb-6">
+                  <p className="label-caps mb-2">Session Notes (DM Only)</p>
+                  <textarea
+                    value={sessionNotes}
+                    onChange={e => setSessionNotes(e.target.value)}
+                    placeholder="Private notes for this session. Never visible to players."
+                    className="w-full px-4 py-3 min-h-[100px] text-sm"
+                  />
+                  <div className="flex justify-end mt-2">
+                    <button onClick={saveSessionNotes} disabled={notesSaving || !sessionNotes.trim()}
+                            className="btn-gold px-4 py-2 text-xs disabled:opacity-40">
+                      {notesSaved ? 'Saved!' : notesSaving ? 'Saving...' : 'Save Notes'}
+                    </button>
+                  </div>
+                </div>
 
                 {/* Character cards grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

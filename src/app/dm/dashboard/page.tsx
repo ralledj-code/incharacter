@@ -39,10 +39,11 @@ export default async function DMDashboardPage() {
   const typedMembers = (members || []) as Array<{ campaign_id: string; player_id: string; accepted: boolean }>
   const playerIds = [...new Set(typedMembers.map(m => m.player_id))]
 
+  // Fix 10: DMs get summary fields only — no API keys, no raw dossier text
   const { data: characters } = playerIds.length > 0
     ? await supabase
         .from('characters')
-        .select('*')
+        .select('id, player_id, campaign_id, name, portrait_url, color_scheme, emotion_palette, tracker_config, created_at, updated_at')
         .in('player_id', playerIds)
     : { data: [] }
 

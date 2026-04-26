@@ -4,20 +4,60 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design tokens ────────────────────────────────────── */
 :root {
-  --bg:           #0a0500;
-  --surface:      #110c04;
-  --surface2:     #1a1208;
-  --surface3:     #221a0d;
+  /* Core palette */
+  --bg:           #0f0f0f;
+  --surface:      #1a1a1a;
+  --surface2:     #222222;
+  --surface3:     #2a2a2a;
   --gold:         #c9a84c;
-  --gold-dim:     #7a6028;
-  --gold-faint:   #3d2e10;
-  --text:         #f0e6d3;
-  --text-dim:     #9e8a6a;
-  --text-faint:   #5a4a30;
-  --border:       #2a1e0a;
+  --gold-dim:     #8a6e2e;
+  --gold-faint:   #3a2f14;
+  --text:         #e8e8e8;
+  --text-dim:     #a0a0a0;
+  --text-faint:   #606060;
+  --border:       #2e2e2e;
   --red:          #8b2e2e;
   --red-dim:      #5a1e1e;
+
+  /* Scheme accent — overridden by JS for color schemes */
+  --accent:       #c9a84c;
+  --accent-dim:   #8a6e2e;
+  --glyph-hi:     rgba(201,168,76,0.45);
+  --glyph-lo:     rgba(136,40,32,0.45);
+}
+
+/* Fix 4 — color scheme presets applied as data-scheme on <html> */
+[data-scheme="grimoire"] {
+  --accent:     #c9a84c;
+  --accent-dim: #8a6e2e;
+  --glyph-hi:   rgba(201,168,76,0.45);
+  --glyph-lo:   rgba(136,40,32,0.47);
+}
+[data-scheme="sanctum"] {
+  --accent:     #c0c8d8;
+  --accent-dim: #7a8898;
+  --glyph-hi:   rgba(140,175,220,0.45);
+  --glyph-lo:   rgba(20,40,100,0.47);
+}
+[data-scheme="wilds"] {
+  --accent:     #c8a45a;
+  --accent-dim: #887230;
+  --glyph-hi:   rgba(200,164,90,0.45);
+  --glyph-lo:   rgba(30,80,30,0.47);
+}
+[data-scheme="shadow"] {
+  --accent:     #9b7fc8;
+  --accent-dim: #604a90;
+  --glyph-hi:   rgba(155,127,200,0.45);
+  --glyph-lo:   rgba(10,5,20,0.60);
+}
+[data-scheme="forge"] {
+  --accent:     #c87840;
+  --accent-dim: #884820;
+  --glyph-hi:   rgba(200,120,64,0.45);
+  --glyph-lo:   rgba(100,20,20,0.47);
 }
 
 * {
@@ -36,15 +76,23 @@ html {
 body {
   background-color: var(--bg);
   font-family: 'EB Garamond', Georgia, serif;
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: 18px; /* Fix 11: bumped 2px */
+  line-height: 1.7;
   min-height: 100vh;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Cinzel', serif;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   font-weight: 600;
+}
+
+/* Fix 11: Remove italic from body, keep only for special cases */
+em, i {
+  font-style: normal;
+}
+.italic-permitted {
+  font-style: italic;
 }
 
 ::selection {
@@ -52,120 +100,100 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text);
 }
 
-::-webkit-scrollbar {
-  width: 4px;
-}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--gold-faint); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
 
-::-webkit-scrollbar-track {
-  background: var(--bg);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--gold-faint);
-  border-radius: 2px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--gold-dim);
+/* ── Fix 11: Minimum touch target ─────────────────────── */
+button, a, [role="button"] {
+  min-height: 44px;
+  min-width: 44px;
 }
 
 @layer components {
-  .font-cinzel {
-    font-family: 'Cinzel', serif;
-  }
+  .font-cinzel   { font-family: 'Cinzel', serif; }
+  .font-garamond { font-family: 'EB Garamond', Georgia, serif; }
 
-  .font-garamond {
-    font-family: 'EB Garamond', Georgia, serif;
-  }
-
+  /* Fix 11: card backgrounds updated */
   .card-dark {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 2px;
   }
-
-  .card-gold-border {
-    border-left: 2px solid var(--gold);
-  }
+  .card-gold-border { border-left: 2px solid var(--accent); }
 
   .btn-gold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: transparent;
-    border: 1px solid var(--gold);
-    color: var(--gold);
+    border: 1px solid var(--accent);
+    color: var(--accent);
     font-family: 'Cinzel', serif;
-    font-size: 0.75rem;
-    letter-spacing: 0.12em;
-    padding: 0.6rem 1.5rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    padding: 0.65rem 1.5rem;
+    min-height: 44px;
     cursor: pointer;
-    transition: all 200ms ease;
+    transition: all 150ms ease;
+    border-radius: 2px;
   }
-
-  .btn-gold:hover {
-    background: var(--gold);
-    color: var(--bg);
-  }
-
-  .btn-gold:active {
-    transform: scale(0.98);
-  }
+  .btn-gold:hover { background: var(--accent); color: var(--bg); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+  .btn-gold:active { transform: scale(0.98) translateY(0); }
 
   .btn-gold-solid {
-    background: var(--gold);
-    border: 1px solid var(--gold);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent);
+    border: 1px solid var(--accent);
     color: var(--bg);
     font-family: 'Cinzel', serif;
-    font-size: 0.75rem;
-    letter-spacing: 0.12em;
-    padding: 0.6rem 1.5rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    padding: 0.65rem 1.5rem;
+    min-height: 44px;
     cursor: pointer;
-    transition: all 200ms ease;
+    transition: all 150ms ease;
+    border-radius: 2px;
   }
-
-  .btn-gold-solid:hover {
-    background: #d4b560;
-  }
-
-  .btn-gold-solid:active {
-    transform: scale(0.98);
-  }
+  .btn-gold-solid:hover { background: #d4b560; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+  .btn-gold-solid:active { transform: scale(0.98) translateY(0); }
 
   .label-caps {
     font-family: 'Cinzel', serif;
-    font-size: 0.6rem;
-    letter-spacing: 0.2em;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
     color: var(--text-dim);
     text-transform: uppercase;
   }
 
   .narrative-text {
     font-family: 'EB Garamond', serif;
-    font-style: italic;
     color: var(--text-dim);
-    font-size: 0.95rem;
+    font-size: 1rem;
     line-height: 1.7;
   }
 
   .play-directive {
     font-family: 'Cinzel', serif;
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 600;
-    color: var(--gold);
-    letter-spacing: 0.04em;
-    line-height: 1.4;
+    color: var(--accent);
+    letter-spacing: 0.03em;
+    line-height: 1.45;
   }
 
-  .divider {
-    border: none;
-    border-top: 1px solid var(--border);
-  }
+  .divider { border: none; border-top: 1px solid var(--border); }
 
   .tooltip-card {
     background: var(--surface2);
-    border: 1px solid var(--gold-dim);
+    border: 1px solid var(--accent-dim);
     border-radius: 2px;
     padding: 0.75rem 1rem;
     font-family: 'EB Garamond', serif;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     color: var(--text);
     max-width: 240px;
   }
@@ -176,52 +204,85 @@ h1, h2, h3, h4, h5, h6 {
     animation: shimmer 1.5s infinite;
   }
 
-  .tab-active {
-    color: var(--gold);
-    border-bottom: 1px solid var(--gold);
-  }
-
-  .tab-inactive {
-    color: var(--text-dim);
-  }
+  .tab-active   { color: var(--accent); border-bottom: 1px solid var(--accent); }
+  .tab-inactive { color: var(--text-faint); }
 
   .info-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1rem;
-    height: 1rem;
+    width: 1.1rem;
+    height: 1.1rem;
     border-radius: 50%;
-    border: 1px solid var(--gold-dim);
-    color: var(--gold-dim);
-    font-size: 0.6rem;
+    border: 1px solid var(--accent-dim);
+    color: var(--accent-dim);
+    font-size: 0.65rem;
     font-family: serif;
     cursor: help;
     flex-shrink: 0;
   }
+
+  /* Fix 12: card hover */
+  .card-hover {
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  }
 }
 
+/* ── Animations ────────────────────────────────────────── */
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Fix 12: page transition */
+@keyframes pageFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 @keyframes glowPulse {
-  0%, 100% { opacity: 0.6; }
-  50%       { opacity: 1; }
+  0%, 100% { opacity: 0.55; }
+  50%       { opacity: 0.95; }
 }
 
-.animate-fade-in {
-  animation: fadeIn 400ms ease forwards;
+/* Fix 12: glyph idle breathe */
+@keyframes glyphBreathe {
+  0%, 100% { transform: scale(1.0); }
+  50%       { transform: scale(1.02); }
 }
 
-.animate-glow {
-  animation: glowPulse 3s ease-in-out infinite;
+/* Fix 12: landing glyph slow rotation */
+@keyframes slowRotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Fix 12: shimmer on button */
+@keyframes buttonShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in     { animation: fadeIn 200ms ease forwards; }
+.animate-page        { animation: pageFadeIn 200ms ease forwards; }
+.animate-glow        { animation: glowPulse 3s ease-in-out infinite; }
+.animate-breathe     { animation: glyphBreathe 4s ease-in-out infinite; }
+.animate-slow-rotate { animation: slowRotate 600s linear infinite; }
+
+/* Fix 13: shimmer on sent state */
+.btn-shimmer {
+  background: linear-gradient(90deg, var(--accent) 0%, #d4b560 50%, var(--accent) 100%);
+  background-size: 200% 100%;
+  animation: buttonShimmer 1.5s ease infinite;
 }
 
 input, textarea, select {
@@ -233,21 +294,18 @@ input, textarea, select {
   outline: none;
   transition: border-color 200ms ease;
   border-radius: 2px;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
 }
 
-input:focus, textarea:focus, select:focus {
-  border-color: var(--gold-dim);
-}
+input:focus, textarea:focus, select:focus { border-color: var(--accent-dim); }
+input::placeholder, textarea::placeholder { color: var(--text-faint); }
 
-input::placeholder, textarea::placeholder {
-  color: var(--text-faint);
-}
+textarea { min-height: unset; }
 
 .safe-top    { padding-top:    env(safe-area-inset-top);    }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+  .text-balance { text-wrap: balance; }
 }

@@ -23,11 +23,14 @@ interface DossierAnalysis {
   antagonistName: string
 }
 
+// Fix 4: 6 color scheme presets
 const COLOR_PRESETS = [
-  { label: 'Gold on Black', primary: '#c9a84c', secondary: '#7a6028', accent: '#f0e6d3' },
-  { label: 'Crimson Depths', primary: '#8b2e2e', secondary: '#5a1e1e', accent: '#c9a84c' },
-  { label: 'Silver Ash', primary: '#a0a0a0', secondary: '#505050', accent: '#f0e6d3' },
-  { label: 'Deep Teal', primary: '#2e7a6e', secondary: '#1a4a45', accent: '#c9a84c' },
+  { id: 'grimoire', label: 'The Grimoire', desc: 'Gold · Amber to Crimson',      primary: '#c9a84c', secondary: '#8a6e2e', accent: '#f0e6d3' },
+  { id: 'sanctum',  label: 'The Sanctum',  desc: 'Silver · Ice Blue to Navy',    primary: '#c0c8d8', secondary: '#7a8898', accent: '#e8e8f0' },
+  { id: 'wilds',    label: 'The Wilds',    desc: 'Amber · Amber to Forest',      primary: '#c8a45a', secondary: '#887230', accent: '#f0e8d0' },
+  { id: 'shadow',   label: 'The Shadow',   desc: 'Purple · Purple to Black',     primary: '#9b7fc8', secondary: '#604a90', accent: '#e0d8f0' },
+  { id: 'forge',    label: 'The Forge',    desc: 'Copper · Copper to Crimson',   primary: '#c87840', secondary: '#884820', accent: '#f0dcc8' },
+  { id: 'custom',   label: 'Custom',       desc: 'Choose your own accent color', primary: '#c9a84c', secondary: '#8a6e2e', accent: '#f0e6d3' },
 ]
 
 function ProgressDots({ current, total }: { current: number; total: number }) {
@@ -171,16 +174,18 @@ export default function OnboardingPlayer() {
         session_number: 1,
       })
 
-      // Handle campaign join if code provided
+      // Handle campaign join if code provided (CAMP-XXXX-XXXX format)
       if (campaignCode.trim()) {
-        await db('campaign_members').upsert({
-          campaign_id: campaignCode.trim(),
-          player_id: user.id,
-          accepted: true,
-        })
-        await db('characters')
-          .update({ campaign_id: campaignCode.trim() })
-          .eq('id', character.id)
+        const code = campaignCode.trim().toUpperCase()
+        const { data: camp } = await db('campaigns').select('id').eq('campaign_code', code).single()
+        if (camp) {
+          await db('campaign_members').upsert({
+            campaign_id: camp.id,
+            player_id: user.id,
+            accepted: true,
+          })
+          await db('characters').update({ campaign_id: camp.id }).eq('id', character.id)
+        }
       }
 
       router.push('/play/now')
@@ -328,12 +333,15 @@ export default function OnboardingPlayer() {
             <div className="grid grid-cols-2 gap-3">
               {COLOR_PRESETS.map(preset => (
                 <button
-                  key={preset.label}
-                  onClick={() => setColorScheme(preset)}
+                  key={preset.id}
+                  onClick={() => {
+                    setColorScheme(preset)
+                    document.documentElement.setAttribute('data-scheme', preset.id)
+                  }}
                   className="p-4 text-left transition-all"
                   style={{
                     background: 'var(--surface)',
-                    border: `1px solid ${colorScheme.label === preset.label ? preset.primary : 'var(--border)'}`,
+                    border: `1px solid ${(colorScheme as { id?: string }).id === preset.id ? preset.primary : 'var(--border)'}`,
                     borderRadius: 2,
                   }}
                 >
@@ -342,9 +350,10 @@ export default function OnboardingPlayer() {
                       <div key={i} className="w-4 h-4 rounded-full" style={{ background: c }} />
                     ))}
                   </div>
-                  <p className="font-cinzel text-xs tracking-wider" style={{ color: preset.primary }}>
+                  <p className="font-cinzel text-xs tracking-wider mb-0.5" style={{ color: preset.primary }}>
                     {preset.label}
                   </p>
+                  <p className="font-garamond text-xs" style={{ color: 'var(--text-faint)' }}>{preset.desc}</p>
                 </button>
               ))}
             </div>
@@ -469,12 +478,13 @@ export default function OnboardingPlayer() {
         {/* Step 8: Campaign code */}
         {step === 8 && (
           <div className="animate-fade-in space-y-6">
-            <h2 className="font-cinzel text-ink text-lg tracking-wider mb-2">Join a campaign</h2>
+            <h2 className="font-cinzel text-ink text-lg tracking-wider mb-2">Do you have a campaign code?</h2>
             <p className="font-garamond text-ink-dim leading-relaxed">
-              If your DM has shared a campaign ID, enter it here. You can skip this and join later.
+              If your DM has shared a campaign code (format: CAMP-XXXX-XXXX), enter it here.
+              You can skip this and join later from Settings.
             </p>
             <div>
-              <p className="label-caps mb-2">Campaign ID</p>
+              <p className="label-caps mb-2">Campaign Code (from your DM)</p>
               <input
                 value={campaignCode}
                 onChange={e => setCampaignCode(e.target.value)}
