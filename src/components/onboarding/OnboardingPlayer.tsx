@@ -71,32 +71,39 @@ export default function OnboardingPlayer() {
   const next = () => setStep(s => Math.min(s + 1, 9) as Step)
   const back = () => setStep(s => Math.max(s - 1, 1) as Step)
 
-  // Step 2: Handle dossier upload
+  // Step 2: Handle dossier upload — all file types go through the extraction API
   const onDrop = useCallback(async (files: File[]) => {
     const file = files[0]
     if (!file) return
     setLoading(true)
+    setError('')
     try {
-      if (file.type === 'application/pdf') {
-        // For PDFs, we'll extract text via FormData to our API route
-        const formData = new FormData()
-        formData.append('file', file)
-        const res = await fetch('/api/extract-pdf', { method: 'POST', body: formData })
-        const data = await res.json()
-        setDossierText(data.text || '')
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/extract-pdf', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (data.error) {
+        setError(data.error)
+      } else if (data.text) {
+        setDossierText(data.text)
       } else {
-        const text = await file.text()
-        setDossierText(text)
+        setError("Couldn't read that file. Try copying and pasting your dossier as text in the field below.")
       }
     } catch {
-      setError('Could not read that file. Try pasting the text directly.')
+      setError("Couldn't read that file. Try copying and pasting your dossier as text in the field below.")
     }
     setLoading(false)
   }, [])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'text/plain': ['.txt'], 'application/pdf': ['.pdf'] },
+    accept: {
+      'application/pdf': ['.pdf'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/msword': ['.doc'],
+      'text/plain': ['.txt'],
+      'text/markdown': ['.md'],
+    },
     maxFiles: 1,
   })
 
@@ -229,19 +236,25 @@ export default function OnboardingPlayer() {
             <div>
               <h2 className="font-cinzel text-ink text-lg tracking-wider mb-2">Your character&rsquo;s dossier</h2>
               <p className="font-garamond text-ink-dim leading-relaxed mb-4">
-                Upload a PDF or paste your character background. The more detail, the better the profile.
+                Supports PDF, Word (.docx), and plain text files. Or paste your dossier directly below.
               </p>
               <div
                 {...getRootProps()}
                 className="card-dark border-dashed p-8 text-center cursor-pointer transition-colors"
-                style={{ borderColor: isDragActive ? 'var(--gold)' : 'var(--border)' }}
+                style={{ borderColor: isDragActive ? 'var(--accent)' : 'var(--border)' }}
               >
                 <input {...getInputProps()} />
-                <p className="font-cinzel text-gold text-sm tracking-widest mb-2">
-                  {isDragActive ? 'Drop it here' : 'Drop PDF or text file'}
+                <p className="font-cinzel text-sm tracking-widest mb-2" style={{ color: 'var(--accent)' }}>
+                  {isDragActive ? 'Drop it here' : 'Drop file or click to browse'}
                 </p>
-                <p className="font-garamond text-ink-faint text-sm">or click to browse</p>
-                {loading && <p className="font-garamond text-gold italic mt-3 animate-pulse">Reading...</p>}
+                <p className="font-garamond text-sm" style={{ color: 'var(--text-faint)' }}>
+                  PDF · Word (.docx) · Text (.txt, .md)
+                </p>
+                {loading && (
+                  <p className="font-garamond text-sm mt-3 animate-pulse" style={{ color: 'var(--accent)' }}>
+                    Reading...
+                  </p>
+                )}
               </div>
             </div>
 
