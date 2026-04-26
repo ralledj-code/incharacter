@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { sendMagicLink } from '@/app/actions/auth'
 
 function LoginForm() {
   const searchParams = useSearchParams()
@@ -20,16 +20,11 @@ function LoginForm() {
     setLoading(true)
     setError('')
 
-    const supabase = createClient()
-    const { error: err } = await supabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}&role=${role}`,
-      },
-    })
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}&role=${role}`
+    const result = await sendMagicLink(email, redirectTo)
 
-    if (err) {
-      setError(err.message)
+    if (result.error) {
+      setError(result.error)
       setLoading(false)
     } else {
       setSent(true)
