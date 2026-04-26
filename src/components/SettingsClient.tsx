@@ -8,7 +8,8 @@ import BurgerMenu from './BurgerMenu'
 interface SettingsClientProps {
   profile: { player_code?: string; role?: string } | null
   character: { id: string; name: string; dossier_text?: string; color_scheme?: unknown; hasApiKey?: boolean } | null
-  tracker: unknown | null
+  campaign?: { id: string; name: string; campaign_code?: string; hasDmApiKey?: boolean } | null
+  tracker?: unknown | null
   email?: string
 }
 
@@ -20,8 +21,9 @@ const COLOR_SCHEMES = [
   { id: 'forge',    label: 'The Forge',    desc: 'Copper · Copper to Crimson' },
 ]
 
-export default function SettingsClient({ profile, character }: SettingsClientProps) {
+export default function SettingsClient({ profile, character, campaign }: SettingsClientProps) {
   const router = useRouter()
+  const isDM = profile?.role === 'dm'
   const [copied, setCopied] = useState(false)
   const [apiKey, setApiKey] = useState('')
   const [apiKeySaved, setApiKeySaved] = useState(false)
@@ -36,26 +38,36 @@ export default function SettingsClient({ profile, character }: SettingsClientPro
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const playerCode = profile?.player_code || 'IC-????-????'
+  const campaignCode = campaign?.campaign_code || 'CAMP-????-????'
+  const displayCode = isDM ? campaignCode : playerCode
 
   function copyCode() {
-    navigator.clipboard.writeText(playerCode)
+    navigator.clipboard.writeText(displayCode)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
   async function saveApiKey() {
-    if (!character || !apiKey.trim()) return
+    if (!apiKey.trim()) return
     // Key is encrypted server-side — never write plaintext to DB from client
-    const res = await fetch('/api/character/update-key', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ characterId: character.id, apiKey: apiKey.trim() }),
-    })
-    if (res.ok) {
-      setApiKey('')
-      setApiKeySaved(true)
-      setTimeout(() => setApiKeySaved(false), 2000)
+    if (isDM && campaign) {
+      // DM API key stored on campaigns table
+      await fetch('/api/dm/update-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaignId: campaign.id, apiKey: apiKey.trim() }),
+      })
+    } else if (character) {
+      const res = await fetch('/api/character/update-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ characterId: character.id, apiKey: apiKey.trim() }),
+      })
+      if (!res.ok) return
     }
+    setApiKey('')
+    setApiKeySaved(true)
+    setTimeout(() => setApiKeySaved(false), 2000)
   }
 
   function applyScheme(id: string) {
@@ -130,33 +142,48 @@ export default function SettingsClient({ profile, character }: SettingsClientPro
         <h1 className="font-cinzel text-2xl tracking-wider mb-10"
             style={{ color: 'var(--accent)' }}>Settings</h1>
 
-        {/* Player Code */}
+        {/* Fix 7: DMs see campaign code, players see player code */}
         <section className="mb-10">
-          <p className="label-caps mb-3">Your Player Code</p>
+          <p className="label-caps mb-3">{isDM ? 'Campaign Code' : 'Your Player Code'}</p>
           <button
             onClick={copyCode}
             className="w-full card-dark p-6 text-left flex items-center justify-between"
             style={{ minHeight: 72 }}
           >
             <span className="font-cinzel text-2xl tracking-widest" style={{ color: 'var(--accent)' }}>
-              {playerCode}
+              {displayCode}
             </span>
             <span className="label-caps ml-4 flex-shrink-0" style={{ color: copied ? 'var(--accent)' : 'var(--text-faint)' }}>
               {copied ? 'Copied!' : 'Copy'}
             </span>
           </button>
           <p className="font-garamond text-sm mt-2" style={{ color: 'var(--text-faint)' }}>
-            Share this code with your DM to join their campaign.
+            {isDM
+              ? 'Share this code with your players. They enter it during onboarding or in Settings.'
+              : 'Share this code with your DM to join their campaign.'}
           </p>
         </section>
 
-        {/* API Key */}
-        {character && (
+        {isDM && campaign && (
+          <section className="mb-10">
+            <p className="label-caps mb-3">Campaign</p>
+            <div className="card-dark p-4">
+              <p className="font-cinzel text-sm tracking-wider" style={{ color: 'var(--text)' }}>
+                {campaign.name}
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* Fix 8: API Key — shown for both players and DMs */}
+        {(character || isDM) && (
           <section className="mb-10">
             <p className="label-caps mb-3">Anthropic API Key</p>
             <div className="card-dark p-4 space-y-3">
               <p className="font-garamond text-sm" style={{ color: 'var(--text-dim)' }}>
-                {character.hasApiKey ? 'Key stored. Update below.' : 'No key stored.'}
+                {isDM
+                  ? (campaign?.hasDmApiKey ? 'Key stored. Update below.' : 'No key stored. Required for Pre-Session Brief.')
+                  : (character?.hasApiKey ? 'Key stored. Update below.' : 'No key stored.')}
               </p>
               <div className="flex gap-2">
                 <input

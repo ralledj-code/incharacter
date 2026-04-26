@@ -101,11 +101,11 @@ export const EVENT_CATEGORIES = [
     icon: '🤝',
     desc: 'Trusted, let someone close, helped',
     subcategories: [
-      'Told someone something true',
-      'Asked for help and meant it',
-      'Let someone see past the performance',
-      'Did something kind without an angle',
-      'Stayed when his instinct was to leave',
+      'Trusted someone',
+      'Let someone see something real',
+      'Helped without calculation',
+      'Accepted help',
+      'Said something true',
     ],
   },
   {
@@ -182,12 +182,13 @@ export const CLUE_SOURCE_TYPES = [
 ] as const
 
 export const RELATIONSHIP_MOMENT_TYPES = [
-  'They came through',
-  'He pushed them away',
-  'She helped without asking why',
-  'He told them something true',
-  'They surprised him',
-  'He used them',
+  'Called me out',
+  'Helped without asking why',
+  'I pushed them away',
+  'They saw something they shouldn\'t have',
+  'I told them something true',
+  'They disappeared',
+  'They came back',
   'It got complicated',
 ] as const
 

@@ -56,10 +56,10 @@ export default function ArcaneGlyph({
 }: ArcaneGlyphProps) {
   const cx = size / 2
   const cy = size / 2
-  const outerR = size * 0.295
-  const labelR = size * 0.41
-  const fontSize = Math.max(size * 0.033, 7)
-  const descSize = Math.max(size * 0.027, 5.5)
+  const outerR = size * 0.285
+  const labelR = size * 0.415
+  const fontSize = Math.max(size * 0.038, 10)  // state name min 10px
+  const descSize = Math.max(size * 0.031, 8.5) // desc min 8.5px
 
   const stateKeys = states.map(s => s.key) as (keyof GlyphValues)[]
   const vals = stateKeys.map(k => values[k] ?? 0)
@@ -145,9 +145,10 @@ export default function ArcaneGlyph({
           transition={{ duration: 0.6, ease: 'easeInOut' }}
         />
 
-        {/* Diamond markers at data points */}
+        {/* Diamond markers — only show if value is above a minimum threshold */}
         {dataPoints.map(([x, y], i) => {
-          const dm = Math.max(size * 0.018, 3.5)
+          if (vals[i] < 0.08) return null // hide near-zero dots
+          const dm = Math.max(size * 0.016, 3)
           return (
             <motion.rect
               key={`diamond-${i}`}
@@ -156,7 +157,7 @@ export default function ArcaneGlyph({
               width={dm}
               height={dm}
               fill={strokeColor}
-              opacity={0.92}
+              opacity={0.85}
               transform={`rotate(45, ${x}, ${y})`}
               initial={false}
               animate={{ x: x - dm / 2, y: y - dm / 2 }}

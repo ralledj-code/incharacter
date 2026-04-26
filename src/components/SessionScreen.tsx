@@ -28,21 +28,27 @@ function EventCard({ event }: { event: Event }) {
       }}
       onClick={() => setExpanded(e => !e)}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <span style={{ fontSize: 16 }}>{cat?.icon || '◆'}</span>
-          <div>
-            <p className="font-cinzel text-gold text-xs tracking-wider mb-1">
+      {/* Fix 6: proper flex layout, no overlap */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: 1, minWidth: 0 }}>
+          <span style={{ fontSize: 18, flexShrink: 0 }}>{cat?.icon || '◆'}</span>
+          <div style={{ minWidth: 0 }}>
+            {/* Fix 5: 14px category label, gold */}
+            <p className="font-cinzel tracking-wider mb-1"
+               style={{ fontSize: 14, color: '#c9a84c' }}>
               {cat?.label || event.category}
             </p>
-            <p className="font-garamond text-ink-dim text-sm italic leading-relaxed">
+            {/* Fix 5: 16px narrative, warm white */}
+            <p className="font-garamond leading-relaxed"
+               style={{ fontSize: 16, color: '#f0e6d3' }}>
               {event.narrative || event.subcategory}
             </p>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1 flex-shrink-0">
-          <span className="font-garamond text-ink-faint text-xs">{time}</span>
-          <span className="font-garamond text-ink-faint text-xs">{expanded ? '▲' : '▼'}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+          {/* Fix 5: 12px timestamp */}
+          <span className="font-garamond" style={{ fontSize: 12, color: 'var(--text-faint)' }}>{time}</span>
+          <span className="font-garamond" style={{ fontSize: 12, color: 'var(--text-faint)' }}>{expanded ? '▲' : '▼'}</span>
         </div>
       </div>
 
@@ -144,8 +150,10 @@ export default function SessionScreen({ character, session, events, tracker }: S
           borderTop: '1px solid var(--border)',
         }}
       >
+        {/* Fix 5: 16px long rest button, full width */}
         <button
-          className="btn-gold w-full py-3 text-sm"
+          className="btn-gold w-full"
+          style={{ fontSize: 16, padding: '0.875rem' }}
           onClick={() => setShowLongRest(true)}
         >
           Long Rest

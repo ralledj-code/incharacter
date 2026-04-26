@@ -30,8 +30,8 @@ const PLAYER_LINKS = [
 
 const DM_LINKS = [
   { href: '/dm/dashboard', label: 'Dashboard' },
-  { href: '/dm/dashboard', label: 'Campaigns' },
-  { href: '/settings', label: 'Settings' },
+  { href: '/dm/campaign',  label: 'Campaign' },
+  { href: '/settings',     label: 'Settings' },
 ]
 
 const ADMIN_EXTRA = [{ href: '/admin', label: 'Admin Panel' }]
