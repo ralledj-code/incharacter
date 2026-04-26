@@ -43,6 +43,25 @@ function AuthForm() {
           setError(err.message)
         }
       } else {
+        // Fix 2: ensure profile has the correct role immediately after sign-in.
+        // This handles DM users whose profile was auto-created with role='player' by trigger.
+        if (role === 'dm') {
+          const { data: { user: signedInUser } } = await supabase.auth.getUser()
+          if (signedInUser) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: prof } = await (supabase.from('profiles') as any)
+              .select('role').eq('id', signedInUser.id).single()
+            // Only upgrade player→dm, never downgrade admin
+            if (!prof || prof.role === 'player') {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              await (supabase.from('profiles') as any).upsert({
+                id: signedInUser.id,
+                username: signedInUser.email?.split('@')[0] || null,
+                role: 'dm',
+              }, { onConflict: 'id' })
+            }
+          }
+        }
         router.push(next)
       }
     } catch {

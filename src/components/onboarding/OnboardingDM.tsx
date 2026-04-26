@@ -53,16 +53,24 @@ export default function OnboardingDM() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const db = (t: string) => (supabase.from(t) as any)
 
+      // Ensure profile exists with role='dm' — handles sign-up path where trigger set role='player'
+      const { data: existingProfile } = await db('profiles').select('id, role').eq('id', user.id).single()
+      if (!existingProfile) {
+        await db('profiles').insert({ id: user.id, username: user.email?.split('@')[0] || null, role: 'dm' })
+      } else if ((existingProfile as { role: string }).role === 'player') {
+        await db('profiles').update({ role: 'dm' }).eq('id', user.id)
+      }
+
       const { data: campaign, error: err } = await db('campaigns')
         .insert({ dm_id: user.id, name, description: `${tone ? `[${tone}] ` : ''}${description}` })
         .select()
         .single()
 
-      if (err) throw err
+      if (err) throw new Error(err.message)
       setCampaignId((campaign as { id: string }).id)
       setStep(2)
-    } catch {
-      setError('Could not create campaign. Try again.')
+    } catch (e) {
+      setError(`Could not create campaign: ${e instanceof Error ? e.message : String(e)}`)
     }
     setLoading(false)
   }

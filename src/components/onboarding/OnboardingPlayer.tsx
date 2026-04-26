@@ -191,16 +191,26 @@ export default function OnboardingPlayer() {
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
+      if (!user) throw new Error('Not authenticated — please sign in again.')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const db = (t: string) => (supabase.from(t) as any)
+
+      // Ensure profile exists — Supabase trigger may not have run if schema wasn't applied
+      const { data: existingProfile } = await db('profiles').select('id').eq('id', user.id).single()
+      if (!existingProfile) {
+        const { error: profileErr } = await db('profiles').insert({
+          id: user.id,
+          username: user.email?.split('@')[0] || null,
+          role: 'player',
+        })
+        if (profileErr) throw new Error(`Profile creation failed: ${profileErr.message}`)
+      }
 
       // Build the full tracker_config including interview answers and dynamic categories
       const config = analysis?.characterConfig
       const tracker_config = {
         ...(config || {}),
         trackerNames,
-        // Ensure dynamic categories are stored (fallback to defaults if no config)
         dangerous_element_category: config?.dangerous_element_category || {
           id: 'special', icon: '✝', name: 'The Unknown',
           description: 'a surge, whisper, or moment of uncontrolled power',
@@ -216,36 +226,42 @@ export default function OnboardingPlayer() {
         clue_board_subject: config?.clue_board_subject || 'the antagonist',
       }
 
+      // Fallback name if analysis never ran
+      const finalName = characterName.trim() || user.email?.split('@')[0] || 'My Character'
+
       const { data: character, error: charErr } = await db('characters').insert({
         player_id: user.id,
-        name: characterName,
-        dossier_text: dossierText,
+        name: finalName,
+        dossier_text: dossierText || null,
         color_scheme: colorScheme,
         emotion_palette: emotionPalette,
         tracker_config,
-        api_key_encrypted: null, // stored via server route below
+        api_key_encrypted: null, // set via server route below
         portrait_url: null,
       }).select().single()
 
-      if (charErr) throw charErr
+      if (charErr) throw new Error(`Character insert failed: ${charErr.message}`)
 
-      // Encrypt and store API key server-side — plaintext never written to DB from client
+      // Encrypt and store API key server-side — plaintext never written to DB directly
       if (apiKey.trim()) {
-        await fetch('/api/character/update-key', {
+        const keyRes = await fetch('/api/character/update-key', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ characterId: character.id, apiKey: apiKey.trim() }),
         })
+        if (!keyRes.ok) console.warn('[onboarding] API key storage failed — user can set it in Settings')
       }
 
-      await db('tracker_states').insert({
+      const { error: trackerErr } = await db('tracker_states').insert({
         character_id: character.id,
         mask: 50, dagger: 30, bottle: 40, wound: 60,
         play_directive: null,
         glyph_states: emotionPalette,
       })
+      if (trackerErr) throw new Error(`Tracker insert failed: ${trackerErr.message}`)
 
-      await db('sessions').insert({ character_id: character.id, session_number: 1 })
+      const { error: sessionErr } = await db('sessions').insert({ character_id: character.id, session_number: 1 })
+      if (sessionErr) throw new Error(`Session insert failed: ${sessionErr.message}`)
 
       if (campaignCode.trim()) {
         const code = campaignCode.trim().toUpperCase()
@@ -257,8 +273,10 @@ export default function OnboardingPlayer() {
       }
 
       router.push('/play/now')
-    } catch {
-      setError('Something went wrong creating your character. Try again.')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('[createCharacter]', msg)
+      setError(`Something went wrong: ${msg}`)
     }
     setLoading(false)
   }

@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
 // Smart redirect — routes user to the correct destination based on role and character status.
-// Admin users get player view if they have a character; /admin is always in burger menu.
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -10,30 +9,38 @@ export default async function DashboardPage() {
   if (!user) redirect('/auth/login')
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: profile } = await (supabase.from('profiles') as any)
-    .select('role')
-    .eq('id', user.id)
-    .single()
+  const db = (t: string) => (supabase.from(t) as any)
 
-  if (!profile) redirect('/onboarding?role=player')
+  // Ensure profile exists — may not exist if Supabase trigger wasn't set up
+  let { data: profile } = await db('profiles').select('role').eq('id', user.id).single()
+
+  if (!profile) {
+    // Create profile with default player role
+    await db('profiles').insert({
+      id: user.id,
+      username: user.email?.split('@')[0] || null,
+      role: 'player',
+    })
+    profile = { role: 'player' }
+  }
 
   const role = (profile as { role: string | null }).role
 
-  if (role === 'dm') redirect('/dm/dashboard')
+  if (role === 'admin') redirect('/admin')
 
-  // Player or admin — check if they have a character
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: character } = await (supabase.from('characters') as any)
-    .select('id')
-    .eq('player_id', user.id)
-    .limit(1)
-    .single()
-
-  if (!character) {
-    // No character yet — go to onboarding, then /admin accessible from burger
-    redirect('/onboarding?role=player')
+  if (role === 'dm') {
+    // DM: check if they have a campaign; if not, send to DM onboarding
+    const { data: campaign } = await db('campaigns')
+      .select('id').eq('dm_id', user.id).eq('archived', false).limit(1).single()
+    if (!campaign) redirect('/onboarding?role=dm')
+    redirect('/dm/dashboard')
   }
 
-  // Has a character → play view; admin panel reachable via burger menu
+  // Player or admin without character — go to player onboarding
+  const { data: character } = await db('characters')
+    .select('id').eq('player_id', user.id).limit(1).single()
+
+  if (!character) redirect('/onboarding?role=player')
+
   redirect('/play/now')
 }
