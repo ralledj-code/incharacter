@@ -6,11 +6,14 @@ const PUBLIC_PATHS = [
   '/auth/login',
   '/auth/callback',
   '/auth/error',
+  '/auth/reset-password',
   '/about',
   '/faq',
   '/privacy',
   '/contact',
   '/api/contact',
+  '/og',
+  '/sitemap.xml',
 ]
 
 function isPublic(pathname: string): boolean {
