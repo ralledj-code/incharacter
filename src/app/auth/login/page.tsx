@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { sendMagicLink } from '@/app/actions/auth'
+import { createClient } from '@/lib/supabase/client'
 
 function LoginForm() {
   const searchParams = useSearchParams()
@@ -20,15 +20,25 @@ function LoginForm() {
     setLoading(true)
     setError('')
 
-    const result = await sendMagicLink(email, next, role)
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+    const redirectTo = `${siteUrl}/auth/callback?next=${encodeURIComponent(next)}&role=${encodeURIComponent(role)}`
 
-    if (result.error) {
-      setError(result.error)
-      setLoading(false)
-    } else {
-      setSent(true)
-      setLoading(false)
+    try {
+      const supabase = createClient()
+      const { error: err } = await supabase.auth.signInWithOtp({
+        email: email.trim().toLowerCase(),
+        options: { emailRedirectTo: redirectTo },
+      })
+      if (err) {
+        setError(err.message)
+      } else {
+        setSent(true)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.')
     }
+
+    setLoading(false)
   }
 
   if (sent) {
