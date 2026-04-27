@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 const TABS = [
   { href: '/play/now',     label: 'Now' },
   { href: '/play/session', label: 'Session' },
-  { href: '/play/journey', label: 'Journey' },
+  { href: '/play/journey', label: 'Motivations' },
 ]
 
 export default function PlayerNav() {

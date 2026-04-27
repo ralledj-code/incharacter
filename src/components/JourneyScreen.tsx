@@ -1,37 +1,53 @@
 'use client'
 
+// FIX 3: Renamed to "Motivations" — only antagonist board + relationship boards
+// Sessions tab removed from here — sessions are in the Session tab
+
 import { useState } from 'react'
-import { Character, Session, Clue, Relationship, TrackerState } from '@/types/database'
+import { Character, Clue, Relationship, TrackerState } from '@/types/database'
 import CluesBoard from './journey/CluesBoard'
 import RelationshipsBoard from './journey/RelationshipsBoard'
-import Timeline from './journey/Timeline'
 import PrepModal from './journey/PrepModal'
 
-interface JourneyScreenProps {
+interface MotivationsScreenProps {
   character: Character
-  sessions: (Session & { events: unknown[] })[]
   clues: Clue[]
   relationships: Relationship[]
   tracker: TrackerState | null
 }
 
-type Tab = 'timeline' | 'clues' | 'relationships'
+type Tab = 'antagonist' | string // antagonist board + one tab per key relationship
 
-export default function JourneyScreen({ character, sessions, clues, relationships, tracker }: JourneyScreenProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('timeline')
+export default function JourneyScreen({ character, clues, relationships, tracker }: MotivationsScreenProps) {
+  const config = character.tracker_config as Record<string, unknown> | null
+  const clueBoardName    = (config?.clue_board_name as string)    || 'The Mystery'
+  const clueBoardSubject = (config?.clue_board_subject as string) || 'the antagonist'
+  const keyRelationships = (config?.key_relationships as Array<{ name: string; role: string }>) || []
+
+  // Build tabs: antagonist board first, then one per key relationship
+  const tabs: Array<{ id: Tab; label: string; type: 'antagonist' | 'relationship'; npcName?: string }> = [
+    { id: 'antagonist', label: clueBoardName, type: 'antagonist' },
+    ...keyRelationships.map(r => ({
+      id: `rel-${r.name}`,
+      label: r.name,
+      type: 'relationship' as const,
+      npcName: r.name,
+    })),
+    // If no key relationships defined but there are logged relationship moments, add a generic tab
+    ...(keyRelationships.length === 0 && relationships.length > 0
+      ? [{ id: 'rel-all', label: 'Bonds', type: 'relationship' as const, npcName: undefined }]
+      : []),
+  ]
+
+  const [activeTab, setActiveTab] = useState<Tab>(tabs[0]?.id || 'antagonist')
   const [showPrep, setShowPrep] = useState(false)
 
-  const config = character.tracker_config as Record<string, unknown> | null
-  const clueBoardName    = (config?.clue_board_name as string)    || 'Clues'
-  const clueBoardSubject = (config?.clue_board_subject as string) || 'the mystery'
-  const keyRelationships = (config?.key_relationships as Array<{ name: string; role: string }>) || []
-  const relTabLabel = keyRelationships[0]?.name || 'Relationships'
+  const activeTabDef = tabs.find(t => t.id === activeTab)
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'timeline',      label: 'Sessions' },
-    { id: 'clues',         label: clueBoardName },
-    { id: 'relationships', label: relTabLabel },
-  ]
+  // Filter relationships by NPC name for the active tab
+  const filteredRelationships = activeTabDef?.npcName
+    ? relationships.filter(r => r.npc_name === activeTabDef.npcName)
+    : relationships
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 80px)', background: 'var(--bg)' }}>
@@ -48,14 +64,20 @@ export default function JourneyScreen({ character, sessions, clues, relationship
 
       {/* Content */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {activeTab === 'timeline' && <Timeline sessions={sessions} character={character} />}
-        {activeTab === 'clues' && (
-          <CluesBoard character={character} clues={clues}
-            boardName={clueBoardName} boardSubject={clueBoardSubject} />
+        {activeTabDef?.type === 'antagonist' && (
+          <CluesBoard
+            character={character}
+            clues={clues}
+            boardName={clueBoardName}
+            boardSubject={clueBoardSubject}
+          />
         )}
-        {activeTab === 'relationships' && (
-          <RelationshipsBoard character={character} relationships={relationships}
-            keyRelationships={keyRelationships} />
+        {activeTabDef?.type === 'relationship' && (
+          <RelationshipsBoard
+            character={character}
+            relationships={filteredRelationships}
+            keyRelationships={keyRelationships}
+          />
         )}
       </div>
 
