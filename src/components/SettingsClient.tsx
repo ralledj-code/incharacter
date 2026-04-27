@@ -7,8 +7,9 @@ import BurgerMenu from './BurgerMenu'
 
 interface SettingsClientProps {
   profile: { player_code?: string; role?: string } | null
-  character: { id: string; name: string; dossier_text?: string; color_scheme?: unknown; hasApiKey?: boolean } | null
+  character: { id: string; name: string; dossier_text?: string; color_scheme?: unknown; hasApiKey?: boolean; campaign_id?: string } | null
   campaign?: { id: string; name: string; campaign_code?: string; hasDmApiKey?: boolean } | null
+  playerCampaign?: { id: string; name: string; campaign_code?: string } | null
   tracker?: unknown | null
   email?: string
 }
@@ -21,7 +22,7 @@ const COLOR_SCHEMES = [
   { id: 'ink',    label: 'Ink',    desc: 'Warm white, deep purple accent' },
 ]
 
-export default function SettingsClient({ profile, character, campaign }: SettingsClientProps) {
+export default function SettingsClient({ profile, character, campaign, playerCampaign }: SettingsClientProps) {
   const router = useRouter()
   const isDM = profile?.role === 'dm'
   const [copied, setCopied] = useState(false)
@@ -37,6 +38,11 @@ export default function SettingsClient({ profile, character, campaign }: Setting
   const [deleteHolding, setDeleteHolding] = useState(false)
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // FIX 7: campaign join state (player only)
+  const [campaignCodeInput, setCampaignCodeInput] = useState('')
+  const [campaignJoining, setCampaignJoining] = useState(false)
+  const [campaignJoinResult, setCampaignJoinResult] = useState<{ success?: string; error?: string } | null>(null)
+
   const playerCode = profile?.player_code || 'IC-????-????'
   const campaignCode = campaign?.campaign_code || 'CAMP-????-????'
   const displayCode = isDM ? campaignCode : playerCode
@@ -45,6 +51,55 @@ export default function SettingsClient({ profile, character, campaign }: Setting
     navigator.clipboard.writeText(displayCode)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  // FIX 7: join campaign from settings
+  async function joinCampaign() {
+    if (!campaignCodeInput.trim() || !character) return
+    setCampaignJoining(true)
+    setCampaignJoinResult(null)
+    try {
+      const code = campaignCodeInput.trim().toUpperCase()
+      const supabase = createClient()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const db = (t: string) => (supabase.from(t) as any)
+
+      const { data: camp, error: campErr } = await db('campaigns')
+        .select('id, name').eq('campaign_code', code).limit(1).single()
+      if (campErr || !camp) {
+        setCampaignJoinResult({ error: 'Campaign not found. Check the code and try again.' })
+        setCampaignJoining(false)
+        return
+      }
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      await db('campaign_members').upsert(
+        { campaign_id: camp.id, player_id: user.id, accepted: true, invited_at: new Date().toISOString() },
+        { onConflict: 'campaign_id,player_id' }
+      )
+      await db('characters').update({ campaign_id: camp.id }).eq('id', character.id).eq('player_id', user.id)
+
+      setCampaignJoinResult({ success: `Joined ${camp.name}.` })
+      setCampaignCodeInput('')
+      router.refresh()
+    } catch (e) {
+      setCampaignJoinResult({ error: e instanceof Error ? e.message : 'Something went wrong.' })
+    }
+    setCampaignJoining(false)
+  }
+
+  async function leaveCampaign() {
+    if (!character || !playerCampaign) return
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = (t: string) => (supabase.from(t) as any)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await db('campaign_members').delete().eq('campaign_id', playerCampaign.id).eq('player_id', user.id)
+    await db('characters').update({ campaign_id: null }).eq('id', character.id).eq('player_id', user.id)
+    router.refresh()
   }
 
   async function saveApiKey() {
@@ -258,6 +313,56 @@ export default function SettingsClient({ profile, character, campaign }: Setting
                 Update Dossier
               </button>
             </div>
+          </section>
+        )}
+
+        {/* FIX 7: Campaign section for players */}
+        {!isDM && (
+          <section className="mb-10">
+            <p className="label-caps mb-3">Campaign</p>
+            {playerCampaign ? (
+              <div className="card-dark p-4 space-y-3">
+                <p className="font-garamond text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                  {playerCampaign.name}
+                </p>
+                {playerCampaign.campaign_code && (
+                  <p className="font-mono text-sm" style={{ color: 'var(--text2)' }}>
+                    {playerCampaign.campaign_code}
+                  </p>
+                )}
+                <button className="btn-danger text-xs" onClick={leaveCampaign}>
+                  Leave campaign
+                </button>
+              </div>
+            ) : (
+              <div className="card-dark p-4 space-y-3">
+                <p className="font-garamond text-sm" style={{ color: 'var(--text2)' }}>
+                  Enter a campaign code from your DM to join their campaign.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={campaignCodeInput}
+                    onChange={e => { setCampaignCodeInput(e.target.value); setCampaignJoinResult(null) }}
+                    placeholder="CAMP-XXXX-XXXX"
+                    className="flex-1 px-3 py-2 font-mono text-sm"
+                  />
+                  <button
+                    className="btn-primary text-xs px-4"
+                    onClick={joinCampaign}
+                    disabled={campaignJoining || !campaignCodeInput.trim()}
+                  >
+                    {campaignJoining ? '...' : 'Join'}
+                  </button>
+                </div>
+                {campaignJoinResult?.error && (
+                  <p className="font-garamond text-sm" style={{ color: 'var(--danger)' }}>{campaignJoinResult.error}</p>
+                )}
+                {campaignJoinResult?.success && (
+                  <p className="font-garamond text-sm" style={{ color: 'var(--accent-text)' }}>✓ {campaignJoinResult.success}</p>
+                )}
+              </div>
+            )}
           </section>
         )}
 

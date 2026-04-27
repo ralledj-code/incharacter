@@ -13,16 +13,14 @@ export default async function SettingsPage() {
   const { data: profile } = await db('profiles').select('*').eq('id', user.id).single()
   const role = (profile as { role?: string } | null)?.role || 'player'
 
-  // Fetch character (players) or campaign (DMs)
   let character = null
   let campaign = null
+  let playerCampaign: { id: string; name: string; campaign_code?: string } | null = null
 
   if (role === 'dm') {
-    // DM settings: fetch their most recent campaign + API key presence on profiles
     const { data: campaignRaw } = await db('campaigns')
       .select('id, name, campaign_code, dm_api_key_encrypted')
-      .eq('dm_id', user.id)
-      .eq('archived', false)
+      .eq('dm_id', user.id).eq('archived', false)
       .order('created_at', { ascending: false }).limit(1).single()
     if (campaignRaw) {
       campaign = {
@@ -34,7 +32,7 @@ export default async function SettingsPage() {
     }
   } else {
     const { data: characterRaw } = await db('characters')
-      .select('id, player_id, name, dossier_text, color_scheme, tracker_config, api_key_encrypted')
+      .select('id, player_id, name, dossier_text, color_scheme, tracker_config, api_key_encrypted, campaign_id')
       .eq('player_id', user.id)
       .order('created_at', { ascending: false }).limit(1).single()
 
@@ -45,8 +43,17 @@ export default async function SettingsPage() {
           dossier_text: (characterRaw as { dossier_text?: string }).dossier_text,
           color_scheme: (characterRaw as { color_scheme?: unknown }).color_scheme,
           hasApiKey: !!(characterRaw as { api_key_encrypted?: string }).api_key_encrypted,
+          campaign_id: (characterRaw as { campaign_id?: string }).campaign_id,
         }
       : null
+
+    // Fetch player's current campaign if they're in one
+    const campaignId = (character as { campaign_id?: string } | null)?.campaign_id
+    if (campaignId) {
+      const { data: campRaw } = await db('campaigns')
+        .select('id, name, campaign_code').eq('id', campaignId).single()
+      if (campRaw) playerCampaign = campRaw as { id: string; name: string; campaign_code?: string }
+    }
   }
 
   return (
@@ -54,6 +61,7 @@ export default async function SettingsPage() {
       profile={profile}
       character={character}
       campaign={campaign}
+      playerCampaign={playerCampaign}
       email={user.email || ''}
     />
   )
