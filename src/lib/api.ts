@@ -457,7 +457,7 @@ INTERVIEW ANSWERS:
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2500,
+      max_tokens: 3000,
       system: 'You analyze tabletop RPG character dossiers to extract psychological profile data. Respond ONLY in valid JSON. Never invent plot. Base everything on what is in the dossier.',
       messages: [{
         role: 'user',
@@ -504,27 +504,27 @@ Extract character data. Return ONLY this JSON:
   "clue_board_name": "name for the mystery tracking board",
   "clue_board_subject": "name of the antagonist or mystery being tracked",
   "emotion_palette": [
-    {"id": "state_1", "name": "short evocative name", "description": "8-word behavioral descriptor", "base_value": 40},
-    {"id": "state_2", "name": "short evocative name", "description": "8-word behavioral descriptor", "base_value": 30},
-    {"id": "state_3", "name": "short evocative name", "description": "8-word behavioral descriptor", "base_value": 50},
-    {"id": "state_4", "name": "short evocative name", "description": "8-word behavioral descriptor", "base_value": 20},
-    {"id": "state_5", "name": "short evocative name", "description": "8-word behavioral descriptor", "base_value": 35},
-    {"id": "state_6", "name": "short evocative name", "description": "8-word behavioral descriptor", "base_value": 45}
+    {"id": "state_1", "name": "short state name", "description": "one sentence", "base_value": 40},
+    {"id": "state_2", "name": "short state name", "description": "one sentence", "base_value": 35},
+    {"id": "state_3", "name": "short state name", "description": "one sentence", "base_value": 30},
+    {"id": "state_4", "name": "short state name", "description": "one sentence", "base_value": 25},
+    {"id": "state_5", "name": "short state name", "description": "one sentence", "base_value": 20},
+    {"id": "state_6", "name": "short state name", "description": "one sentence", "base_value": 15}
   ],
   "event_weights": {
-    "violence":     {"state_id": 8, "state_id2": -3},
-    "performance":  {"state_id": -5, "state_id2": 6},
-    "avoided":      {"state_id": 7, "state_id2": -4},
-    "indulged":     {"state_id": 8, "state_id2": 5},
-    "opened_up":    {"state_id": 10, "state_id2": -6},
-    "crossed_line": {"state_id": 9, "state_id2": 6},
-    "antagonist":   {"state_id": 8, "state_id2": 5},
-    "special":      {"state_id": -4, "state_id2": 10}
+    "violence":     {"state_1": 8,  "state_2": -4},
+    "performance":  {"state_1": -5, "state_3": 7 },
+    "avoided":      {"state_4": 6,  "state_2": -3},
+    "indulged":     {"state_5": 9,  "state_1": -5},
+    "opened_up":    {"state_6": 10, "state_4": -6},
+    "crossed_line": {"state_2": 8,  "state_5": 5 },
+    "antagonist":   {"state_3": 7,  "state_2": 4 },
+    "special":      {"state_1": -4, "state_2": 10}
   }
 }
 
-Rules for emotion_palette: six states, names derived from this character's specific psychology (not generic). base_value between 20-60.
-Rules for event_weights: replace state_id/state_id2 with actual IDs from your emotion_palette (e.g. "state_1", "state_3"). Values between -10 and +10. Each category must have exactly 2 state effects.`
+emotion_palette: six states derived from this character's specific psychology. IDs must be exactly state_1 through state_6. base_value between 15-50.
+event_weights: use the actual state IDs from your emotion_palette above. Values -10 to +10. Each category must have exactly 2 state IDs with non-zero weights. No other fields. No markdown.`
       }]
     })
     const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : '{}'
