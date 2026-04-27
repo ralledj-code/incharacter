@@ -1,8 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import PlayerDesktop from '@/components/PlayerDesktop'
 import NowScreen from '@/components/NowScreen'
-import type { Character, TrackerState, Session, Event, Clue, Relationship } from '@/types/database'
+import type { Character, TrackerState, Session } from '@/types/database'
 
 export default async function NowPage() {
   const supabase = await createClient()
@@ -18,57 +17,22 @@ export default async function NowPage() {
   if (!character) redirect('/onboarding?role=player')
   const charId = (character as Character).id
 
-  const [
-    { data: tracker },
-    { data: session },
-    { data: recentEvents },
-    { data: sessionEvents },
-    { data: clues },
-    { data: relationships },
-    { data: allSessions },
-  ] = await Promise.all([
+  const [{ data: tracker }, { data: session }, { data: recentEvents }] = await Promise.all([
     supabase.from('tracker_states').select('*').eq('character_id', charId)
       .order('updated_at', { ascending: false }).limit(1).single(),
     supabase.from('sessions').select('*').eq('character_id', charId)
       .is('ended_at', null).order('started_at', { ascending: false }).limit(1).single(),
     supabase.from('events').select('narrative, category, reaction').eq('character_id', charId)
       .order('created_at', { ascending: false }).limit(5),
-    supabase.from('events').select('*').eq('character_id', charId)
-      .order('created_at', { ascending: true }),
-    supabase.from('clues').select('*').eq('character_id', charId)
-      .order('created_at', { ascending: false }),
-    supabase.from('relationships').select('*').eq('character_id', charId)
-      .order('created_at', { ascending: false }),
-    supabase.from('sessions').select('id, session_number, started_at, waking_text').eq('character_id', charId)
-      .order('session_number', { ascending: false }).limit(10),
   ])
 
-  const props = {
-    character: character as Character,
-    tracker: tracker as TrackerState | null,
-    session: session as Session | null,
-    recentEvents: (recentEvents || []) as Array<{ narrative: string | null; category: string; reaction: string }>,
-    sessionEvents: (sessionEvents || []) as Event[],
-    clues: (clues || []) as Clue[],
-    relationships: (relationships || []) as Relationship[],
-    allSessions: (allSessions || []) as Array<{ id: string; session_number: number; started_at: string; waking_text: string | null }>,
-  }
-
+  // FIX 1: single centred column on ALL viewports — no two-panel desktop layout
   return (
-    <>
-      {/* Desktop: two-panel layout (hidden on mobile) */}
-      <div className="hidden md:block">
-        <PlayerDesktop {...props} />
-      </div>
-      {/* Mobile: single Now screen (hidden on desktop) */}
-      <div className="block md:hidden">
-        <NowScreen
-          character={props.character}
-          tracker={props.tracker}
-          session={props.session}
-          recentEvents={props.recentEvents}
-        />
-      </div>
-    </>
+    <NowScreen
+      character={character as Character}
+      tracker={tracker as TrackerState | null}
+      session={session as Session | null}
+      recentEvents={(recentEvents || []) as Array<{ narrative: string | null; category: string; reaction: string }>}
+    />
   )
 }
