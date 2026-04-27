@@ -154,10 +154,18 @@ function CharacterCard({
   )
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyRecord = Record<string, any>
+
 export default function DMDashboard({ campaigns, members, characters, trackers, recentEvents }: DMDashboardProps) {
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(campaigns[0]?.id || null)
   const [briefText, setBriefText] = useState('')
   const [briefLoading, setBriefLoading] = useState(false)
+  // FIX 6: inline invite modal state
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [inviteInput, setInviteInput] = useState('')
+  const [inviteLoading, setInviteLoading] = useState(false)
+  const [inviteResult, setInviteResult] = useState<{ success?: string; error?: string } | null>(null)
 
   const campaign = campaigns.find(c => c.id === selectedCampaign)
   const campaignMembers = members.filter(m => m.campaign_id === selectedCampaign)
@@ -193,6 +201,60 @@ export default function DMDashboard({ campaigns, members, characters, trackers, 
       setBriefText(data.brief || '')
     } catch {}
     setBriefLoading(false)
+  }
+
+  // FIX 6: invite player by player code or email
+  async function handleInvite() {
+    if (!campaign || !inviteInput.trim()) return
+    setInviteLoading(true)
+    setInviteResult(null)
+    try {
+      const input = inviteInput.trim()
+      const isCode = /^IC-[A-Z0-9]{4}-[A-Z0-9]{4}$/i.test(input)
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+      const db = (t: string) => (supabase.from(t) as AnyRecord)
+
+      let playerId: string | null = null
+      let playerName: string | null = null
+
+      if (isCode) {
+        const { data: prof } = await db('profiles')
+          .select('id, username')
+          .eq('player_code', input.toUpperCase())
+          .single()
+        if (prof) { playerId = prof.id; playerName = prof.username }
+      } else {
+        // Try email lookup via auth — use service route
+        const res = await fetch('/api/dm/find-player', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: input }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          playerId = data.id; playerName = data.username
+        }
+      }
+
+      if (!playerId) {
+        setInviteResult({ error: 'Player not found. Check the player code or email.' })
+        setInviteLoading(false)
+        return
+      }
+
+      const { error: memberErr } = await db('campaign_members').upsert(
+        { campaign_id: campaign.id, player_id: playerId, accepted: true, invited_at: new Date().toISOString() },
+        { onConflict: 'campaign_id,player_id' }
+      )
+      if (memberErr) throw memberErr
+
+      setInviteResult({ success: `${playerName || 'Player'} added to campaign.` })
+      setInviteInput('')
+    } catch (e) {
+      setInviteResult({ error: e instanceof Error ? e.message : 'Something went wrong.' })
+    }
+    setInviteLoading(false)
   }
 
   const [sessionNotes, setSessionNotes] = useState('')
@@ -269,12 +331,13 @@ export default function DMDashboard({ campaigns, members, characters, trackers, 
                     </p>
                   </div>
                   <div className="flex gap-3">
-                    <a
-                      href={`/dm/invite?campaign=${campaign.id}`}
+                    {/* FIX 6: button opens inline modal, no page navigation */}
+                    <button
                       className="btn-gold px-4 py-2 text-xs"
+                      onClick={() => { setShowInviteModal(true); setInviteResult(null); setInviteInput('') }}
                     >
                       Invite Players
-                    </a>
+                    </button>
                     <button
                       className="btn-gold-solid px-4 py-2 text-xs"
                       onClick={generateBrief}
@@ -350,6 +413,60 @@ export default function DMDashboard({ campaigns, members, characters, trackers, 
           </>
         )}
       </div>
+
+      {/* FIX 6: Inline invite modal */}
+      {showInviteModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 60,
+          background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+        }}>
+          <div style={{
+            background: 'var(--surface)', border: '0.5px solid var(--border2)',
+            borderRadius: 12, padding: 28, maxWidth: 400, width: '100%',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Add player</p>
+              <button onClick={() => setShowInviteModal(false)}
+                style={{ fontSize: 13, color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer', minHeight: 'auto' }}>
+                Cancel
+              </button>
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16, lineHeight: 1.5 }}>
+              Enter the player&rsquo;s IC code (IC-XXXX-XXXX) or email address.
+            </p>
+            <input
+              type="text"
+              value={inviteInput}
+              onChange={e => { setInviteInput(e.target.value); setInviteResult(null) }}
+              placeholder="IC-XXXX-XXXX or email"
+              style={{
+                display: 'block', width: '100%', marginBottom: 12,
+                background: 'var(--surface2)', border: '0.5px solid var(--border2)',
+                color: 'var(--text)', fontSize: 14, borderRadius: 7, padding: '9px 12px',
+                fontFamily: 'monospace', outline: 'none',
+              }}
+              autoFocus
+            />
+            {inviteResult?.error && (
+              <p style={{ fontSize: 13, color: 'var(--danger)', marginBottom: 12 }}>{inviteResult.error}</p>
+            )}
+            {inviteResult?.success && (
+              <p style={{ fontSize: 13, color: 'var(--accent-text)', marginBottom: 12, fontWeight: 500 }}>
+                ✓ {inviteResult.success}
+              </p>
+            )}
+            <button
+              className="btn-primary"
+              style={{ width: '100%', fontSize: 13 }}
+              onClick={handleInvite}
+              disabled={inviteLoading || !inviteInput.trim()}
+            >
+              {inviteLoading ? 'Adding...' : 'Add player'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
