@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       characterId: body.characterId,
     })
 
-    console.log('[directive] result:', JSON.stringify({ directive: result.directive, stateChanges: result.stateChanges }))
+    console.log('[directive] claude result — directive:', result.directive?.slice(0, 60), '| dmRead:', result.dmRead?.slice(0, 60), '| stateChanges:', JSON.stringify(result.stateChanges))
 
     // Apply state_changes to glyph_states
     const newGlyphStates = { ...currentGlyphStates }
@@ -81,17 +81,21 @@ export async function POST(req: NextRequest) {
     }
 
     if (body.characterId) {
+      console.log('[directive] writing to DB for character:', body.characterId)
+
       // Save play_directive + glyph_states to tracker_states
       const { error: tsErr } = await (admin.from('tracker_states') as AnyRec)
         .update({ play_directive: result.directive, glyph_states: newGlyphStates, updated_at: new Date().toISOString() })
         .eq('character_id', body.characterId)
-      if (tsErr) console.log('[directive] tracker_states write error:', tsErr.message)
+      if (tsErr) console.log('[directive] tracker_states write ERROR:', tsErr.message)
+      else console.log('[directive] tracker_states write ok')
 
       // Save play_directive + dm_read to characters (triggers DM realtime)
       const { error: charErr } = await (admin.from('characters') as AnyRec)
         .update({ play_directive: result.directive, dm_read: result.dmRead, updated_at: new Date().toISOString() })
         .eq('id', body.characterId)
-      if (charErr) console.log('[directive] characters write error:', charErr.message)
+      if (charErr) console.log('[directive] characters write ERROR:', charErr.message)
+      else console.log('dm_read written:', result.dmRead, 'for:', body.characterId)
     }
 
     return NextResponse.json({

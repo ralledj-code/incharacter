@@ -112,14 +112,15 @@ ${currEventLine}
 ${dominantNote}
 ${paletteNote}
 
-Return a JSON object with exactly three fields:
+Respond with ONLY a valid JSON object. No markdown, no code fences, no explanation. All three fields are required.
 {
   "play_directive": "one sentence, max 12 words, starts with Play them or Play ${params.characterName}, present tense, reflects both events if both present",
-  "dm_read": "one sentence, DM perspective, what is this character about to do next",
-  "state_changes": { "state_id": delta }
+  "dm_read": "one sentence, DM-only, what this character is about to do or what to watch, psychological not narrative",
+  "state_changes": {}
 }
 
-state_changes: use actual state IDs from the palette. Values -10 to +10. Negative when events conflict with a state. Include 2-4 states affected. Respond with only the JSON object.`
+dm_read is REQUIRED. Never omit it. Never set it to null.
+state_changes: if emotion palette IDs provided, use them. Values -10 to +10. Include 2-4 states. If no palette, use {}.`
       }]
     })
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''

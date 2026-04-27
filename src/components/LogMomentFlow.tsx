@@ -105,7 +105,10 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
     }
 
     try {
-      // Generate narrative via API
+      console.log('[log-moment] start:', selectedCategory, selectedSubcategory, reaction)
+
+      // Generate narrative
+      console.log('[log-moment] fetching narrative')
       const res = await fetch('/api/claude/event-narrative', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -117,16 +120,17 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
           category: selectedCategory,
           subcategory: selectedSubcategory,
           reaction,
-          // apiKey fetched server-side
         }),
       })
       const narrativeData = await res.json()
       const narrative = narrativeData.narrative || `${selectedSubcategory}. ${reaction}.`
+      console.log('[log-moment] narrative ok:', narrative.slice(0, 60))
 
       const supabase = createClient()
 
       // Save event to DB
-      await (supabase.from('events') as AnyRecord).insert({
+      console.log('[log-moment] saving event to DB')
+      const { error: eventErr } = await (supabase.from('events') as AnyRecord).insert({
         session_id: session.id,
         character_id: character.id,
         category: selectedCategory,
@@ -135,60 +139,70 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
         narrative,
         tracker_delta: delta,
       })
+      if (eventErr) console.log('[log-moment] event insert error:', eventErr.message)
+      else console.log('[log-moment] event saved')
 
-      // Update tracker state
-      const { data: newState } = await (supabase.from('tracker_states') as AnyRecord)
+      // Update tracker state (raw mask/dagger/bottle/wound)
+      console.log('[log-moment] updating tracker_states')
+      const { data: newState, error: trackerErr } = await (supabase.from('tracker_states') as AnyRecord)
         .update({ ...newTrackers, updated_at: new Date().toISOString() })
         .eq('character_id', character.id)
         .select()
         .single()
+      if (trackerErr) console.log('[log-moment] tracker update error:', trackerErr.message)
+      else console.log('[log-moment] tracker updated')
 
-      // Always regenerate directive after every moment — pass category/subcategory/reaction
+      // Call directive API — always, every moment
       const config = character.tracker_config as ConfigRecord | null
       const emotionPalette = config?.emotion_palette as Array<{ id: string; name: string; description: string; base_value: number }> | undefined
 
       let newDirective: string | undefined
       let updatedGlyphStates: Record<string, number> | undefined
-      const directiveRes = await fetch('/api/claude/directive', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          characterId: character.id,
-          characterName: character.name,
-          dossierSummary: character.dossier_text?.slice(0, 2000) || '',
-          trackers: newTrackers,
-          currentEvent: { category: selectedCategory, subcategory: selectedSubcategory, reaction },
-          emotionPalette,
-          // apiKey fetched server-side
-        }),
-      })
-      if (directiveRes.ok) {
-        const dData = await directiveRes.json()
-        newDirective = dData.directive
-        if (dData.glyphStates) updatedGlyphStates = dData.glyphStates
+      console.log('[log-moment] calling directive API')
+      try {
+        const directiveRes = await fetch('/api/claude/directive', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            characterId: character.id,
+            characterName: character.name,
+            dossierSummary: character.dossier_text?.slice(0, 2000) || '',
+            trackers: newTrackers,
+            currentEvent: { category: selectedCategory, subcategory: selectedSubcategory, reaction },
+            emotionPalette,
+          }),
+        })
+        console.log('[log-moment] directive response status:', directiveRes.status)
+        if (directiveRes.ok) {
+          const dData = await directiveRes.json()
+          newDirective = dData.directive
+          if (dData.glyphStates) updatedGlyphStates = dData.glyphStates
+          console.log('[log-moment] directive ok:', newDirective?.slice(0, 60))
+        } else {
+          const errText = await directiveRes.text()
+          console.log('[log-moment] directive error response:', errText.slice(0, 200))
+        }
+      } catch (dirErr) {
+        console.log('[log-moment] directive fetch threw:', String(dirErr))
       }
 
-      // Log replay
-      await (supabase.from('session_replays') as AnyRecord).insert({
-        session_id: session.id,
-        event_type: 'moment_logged',
-        event_data: {
-          category: selectedCategory,
-          subcategory: selectedSubcategory,
-          reaction,
-          narrative,
-          delta,
-          trackers: newTrackers,
-        },
-      })
+      // Log replay — wrapped separately so it never blocks onComplete
+      try {
+        await (supabase.from('session_replays') as AnyRecord).insert({
+          session_id: session.id,
+          event_type: 'moment_logged',
+          event_data: { category: selectedCategory, subcategory: selectedSubcategory, reaction, narrative, delta, trackers: newTrackers },
+        })
+      } catch { /* non-critical */ }
 
       const finalTracker = {
         ...((newState as TrackerState) || { ...tracker!, ...newTrackers }),
         ...(updatedGlyphStates ? { glyph_states: updatedGlyphStates } : {}),
       }
+      console.log('[log-moment] calling onComplete, directive present:', !!newDirective)
       onComplete(finalTracker as TrackerState, newDirective)
     } catch (error) {
-      // Log error silently
+      console.log('[log-moment] outer catch:', String(error))
       try {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
@@ -200,7 +214,6 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
           error_message: String(error),
         })
       } catch {}
-      // Still complete with updated trackers even if API failed
       const supabase = createClient()
       const { data: newState } = await (supabase.from('tracker_states') as AnyRecord)
         .update({ ...newTrackers, updated_at: new Date().toISOString() })

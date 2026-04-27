@@ -14,14 +14,20 @@ interface DMDashboardProps {
   recentEvents: Array<{ character_id: string; category: string; reaction: string; created_at: string }>
 }
 
-// FIX 2: Clean character card — name, directive, dm_read, dominant state only
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyCharRec = Record<string, any>
+
 function CharacterCard({
   character,
   tracker,
+  onUpdate,
 }: {
   character: Character & { dm_read?: string }
   tracker?: TrackerState
+  onUpdate?: (characterId: string, updates: { dm_read?: string; play_directive?: string }) => void
 }) {
+  const [generatingRead, setGeneratingRead] = useState(false)
+
   const emotionPalette = (character.emotion_palette as Array<{ key: string; label: string; desc: string }> | null) || GLYPH_STATES.map(s => ({ ...s }))
   const mask   = tracker?.mask   ?? 50
   const dagger = tracker?.dagger ?? 30
@@ -31,7 +37,29 @@ function CharacterCard({
   const domEntry = Object.entries(glyphValues).reduce((a, b) => a[1] > b[1] ? a : b)
   const domState = emotionPalette.find(s => s.key === domEntry[0])
   const dmRead = character.dm_read || ''
-  const directive = tracker?.play_directive || ''
+  // Prefer characters.play_directive (updated via realtime) over tracker (server-loaded only)
+  const directive = (character as AnyCharRec).play_directive as string || tracker?.play_directive || ''
+
+  async function generateDmRead() {
+    setGeneratingRead(true)
+    try {
+      const res = await fetch('/api/claude/directive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          characterId: character.id,
+          characterName: character.name,
+          dossierSummary: (character as AnyCharRec).dossier_text?.slice(0, 2000) || '',
+          trackers: { mask, dagger, bottle, wound },
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        onUpdate?.(character.id, { dm_read: data.dmRead, play_directive: data.directive })
+      }
+    } catch {}
+    setGeneratingRead(false)
+  }
 
   return (
     <div style={{
@@ -43,21 +71,32 @@ function CharacterCard({
         {character.name}
       </p>
 
-      {/* Play as directive */}
+      {/* Play as directive — italic, var(--text2) */}
       {directive && (
         <p style={{ fontSize: 14, color: 'var(--text2)', fontStyle: 'italic', marginBottom: 6, lineHeight: 1.45 }}>
           {directive}
         </p>
       )}
 
-      {/* DM read */}
-      {dmRead && (
+      {/* dm_read — var(--text), not italic */}
+      {dmRead ? (
         <p style={{ fontSize: 14, color: 'var(--text)', marginBottom: 8, lineHeight: 1.5 }}>
           {dmRead}
         </p>
+      ) : (
+        <button
+          onClick={generateDmRead}
+          disabled={generatingRead}
+          style={{
+            fontSize: 12, color: 'var(--text3)', background: 'none', border: 'none',
+            cursor: 'pointer', padding: 0, marginBottom: 8, opacity: generatingRead ? 0.5 : 1,
+          }}
+        >
+          {generatingRead ? 'Generating...' : '+ Generate DM read'}
+        </button>
       )}
 
-      {/* Dominant state */}
+      {/* Dominant state — var(--accent-text) */}
       {domState && (
         <p style={{ fontSize: 12, color: 'var(--accent-text)', fontWeight: 500, letterSpacing: '0.02em' }}>
           {domState.label}
@@ -78,6 +117,10 @@ export default function DMDashboard({ campaigns, members, characters: initialCha
   const [inviteResult, setInviteResult] = useState<{ success?: string; error?: string } | null>(null)
   // FIX 4: live characters state for realtime updates
   const [characters, setCharacters] = useState<(Character & { dm_read?: string })[]>(initialCharacters)
+
+  function handleCharacterUpdate(characterId: string, updates: { dm_read?: string; play_directive?: string }) {
+    setCharacters(prev => prev.map(c => c.id === characterId ? { ...c, ...updates } : c))
+  }
 
   const campaign = campaigns.find(c => c.id === selectedCampaign)
   const campaignMembers = members.filter(m => m.campaign_id === selectedCampaign)
@@ -303,6 +346,7 @@ export default function DMDashboard({ campaigns, members, characters: initialCha
                         key={character.id}
                         character={character}
                         tracker={trackers.find(t => t.character_id === character.id)}
+                        onUpdate={handleCharacterUpdate}
                       />
                     ))
                   )}
