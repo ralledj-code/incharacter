@@ -90,12 +90,12 @@ export async function POST(req: NextRequest) {
       if (tsErr) console.log('[directive] tracker_states write ERROR:', tsErr.message)
       else console.log('[directive] tracker_states write ok')
 
-      // Save play_directive + dm_read to characters (triggers DM realtime)
+      // Save dm_read to characters (triggers DM realtime) — play_directive lives in tracker_states only
       const { error: charErr } = await (admin.from('characters') as AnyRec)
-        .update({ play_directive: result.directive, dm_read: result.dmRead, updated_at: new Date().toISOString() })
+        .update({ dm_read: result.dmRead, updated_at: new Date().toISOString() })
         .eq('id', body.characterId)
-      if (charErr) console.log('[directive] characters write ERROR:', charErr.message)
-      else console.log('dm_read written:', result.dmRead, 'for:', body.characterId)
+      console.log('characters update error:', charErr ?? null)
+      if (!charErr) console.log('dm_read written:', result.dmRead, 'for:', body.characterId)
     }
 
     return NextResponse.json({

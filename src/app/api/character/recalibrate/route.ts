@@ -10,10 +10,13 @@ const admin = rawClient(
 )
 
 export async function POST() {
+  console.log('RECALIBRATE HIT')
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    console.log('RECALIBRATE HIT for user:', user.id)
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: character, error } = await (admin.from('characters') as any)
