@@ -1,140 +1,145 @@
-# In Character — Project Progress
+# In Character — Progress
 
-Last updated: 2026-04-27 (session 7)
+Last updated: 2026-04-28 (session 8 — full redesign)
+
+---
+
+## Design System
+
+### CSS Variables (globals.css)
+- **5 themes**: Warm (default light), Dark, Slate, Forest, Ink
+- All colors through CSS variables — zero hardcoded hex in player app
+- Variable names: --bg, --bg2, --surface, --surface2, --border, --border2,
+  --accent, --accent-dim, --accent-faint, --accent-text, --text, --text2,
+  --text3, --danger, --danger-faint
+- ThemeApplier component reads profiles.color_scheme and applies theme class on every page
+- Landing page uses data-theme="landing" with its own warm parchment values
+
+### Typography
+- System font stack: -apple-system, BlinkMacSystemFont, SF Pro, Segoe UI
+- No Cinzel/EB Garamond in player app (landing page keeps them)
+- Sizes: 26px directive (300-weight), 15px body, 11px labels, 13px secondary
+
+### Component classes
+- .btn-primary, .btn-secondary, .btn-ghost, .btn-danger
+- .card, .page-header, .tab-bar, .tab-item, .label-caps, .directive-text
+- .loading-shimmer, .animate-fade-in
 
 ---
 
 ## What's working
 
 ### Auth
-- Email/password sign in and sign up
-- Password reset flow → /auth/reset-password
-- Session persists via Supabase cookies
-- DM role saved on signIn (handleSignIn upserts role='dm')
+- Email/password sign in + sign up
+- Role from URL param stored via signUp data.role (read by trigger)
+- DM role upserted in profiles on signIn
 - Auth callback upserts role from URL param on email confirmation
+- No localStorage role storage (removed — was causing role bleeding)
+- No PKCE/finalize page (removed)
 
 ### Landing page
-- Light theme (#f5f0e8 parchment) — CSS noise grain, gold decorative line
-- 5 content sections with warm card shadows
+- Warm parchment light theme, data-theme="landing"
+- Gold decorative elements, 5 content sections
 
 ### Onboarding
-- 14-screen flow with 5-question interview (motivation, antagonist, ally, danger, stress)
-- Claude analyzes dossier + interview in one call
-- Character-specific categories (dangerous element, antagonist) from tracker_config
-- Color scheme auto-suggested; 6 presets
+- 14-screen flow with 5-question interview
+- Campaign join: looks up by campaign_code column (CAMP-XXXX), logs errors
+- Color scheme now maps to: warm/dark/slate/forest/ink themes
 
-### CSS Variables system
-- All 6 schemes fully defined: --accent, --accent-dim, --glyph-fill, --glyph-stroke, --text-primary, --text-secondary, --surface-raised
-- Landing page isolated under [data-theme="light"]
-- Player app uses only CSS variables — no hardcoded hex
+### Player app — Now screen
+- State bars (sorted by value, dominant in accent color)
+- 26px 300-weight directive text
+- Log moment + Long rest buttons
+- Bars animate 0→value on load
 
-### Player app — Desktop (new)
-- Two-panel layout at ≥768px:
-  - Left panel (340px): character name, PLAY AS directive (20px), glyph (290px), dominant state card, LOG MOMENT pinned to bottom
-  - Right panel: This Session events, The Arc (Claude paragraph), Last Rest waking text, Clue board (3 clues), Relationships, Long Rest + Prep Me buttons
-- Mobile: unchanged bottom-nav tabs, max-width 480px
-- The Arc: Claude-generated 2-3 sentence psychological trajectory per session block
+### Player app — Desktop
+- Two-panel layout: left 340px (directive + state bars + dominant state + LOG MOMENT)
+- Right panel: session events, The Arc, last rest, clues, relationships, prep+rest buttons
+- State bars same pattern as Now screen
 
-### ArcaneGlyph (rebuilt)
-- Uses CSS variables: var(--glyph-fill), var(--glyph-stroke)
-- Dramatic fill: 0.82 opacity dark crimson/scheme-appropriate fill
-- Zero-clamp: values < 0.05 render as zero, no floating dots
-- Expanded viewBox with padding — labels never clip
-- State labels: Cinzel 10px + EB Garamond 8px desc, non-italic
-- mini prop for thumbnail rendering
+### Player app — Session
+- Clean event rows: category label + narrative + timestamp
+- Empty state: "Nothing logged yet."
+- Long rest button
 
-### Document parsing
-- unpdf for PDF, mammoth for docx, plain text for txt/md
-- 50k char limit, min 100 chars
+### Player app — Journey
+- Tab bar: Sessions / Clues / Relationships
+- Prep me for next session pinned to bottom
 
 ### DM app
-- Dashboard: party overview with character cards, pre-session brief
-- Campaign page (/dm/campaign): campaign code display, email invites, player management
-- DM invite sends Resend email with signup link (no magic link)
-- DM API key stored encrypted on campaigns.dm_api_key_encrypted
+- Dashboard: character cards, pre-session brief
+- Campaign page: campaign code, invite by email, player list
+- DM API key stored encrypted
 
 ### Settings
-- Player: player code, API key, color scheme, dossier append, restart character
-- DM: campaign code (not player code), campaign name, DM API key
+- Theme switching: writes to profiles.color_scheme, applies class immediately
+- Player: player code, API key, dossier update, danger zone
+- DM: campaign code, DM API key
 
 ---
 
-## What's broken or untested
+## Still broken / untested
 
 ### Email confirmation
-- Supabase default email sender rate limited
-- To fix: Run docs/fix-trigger-role.sql, configure Resend SMTP
+- Supabase rate limit — disable email confirmation in Supabase dashboard for now
+- Run docs/fix-trigger-role.sql to make trigger read role from metadata
 
-### Cascade deletes
-- Not yet applied. Run docs/cascade-delete-migration.sql in Supabase SQL editor
-- Also run: docs/fix-rls-circular.sql to fix campaign/campaign_members recursion
+### Cascade deletes + RLS
+- Run docs/fix-rls-circular.sql (campaign↔campaign_members RLS recursion)
+- Run docs/cascade-delete-migration.sql
+- Run supabase-migrations.sql (player_code, campaign_code triggers)
+- ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS dm_api_key_encrypted text;
+- ALTER TABLE profiles ADD COLUMN IF NOT EXISTS color_scheme text;
 
-### Schema migrations
-- Run supabase-migrations.sql for player_code, campaign_code columns + triggers
-- Run: ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS dm_api_key_encrypted text;
+### Campaign join
+- Code logic is correct (looks up by campaign_code column)
+- May still be blocked by RLS if fix-rls-circular.sql hasn't been run
+- Errors now logged to console for debugging
 
-### Portrait upload
-- UI exists but upload to Supabase Storage not wired
+### PDF export
+- Null safety added, but font loading may still fail in Vercel edge
 
-### PDF export font
-- Google Fonts URL may fail in Vercel serverless — falls back to system font
+### DM invite
+- Sends Resend email, but RESEND_API_KEY is placeholder
 
-### Arc view (new)
+### Arc view
 - Generates on demand via /api/claude/arc
-- Requires API key; gracefully falls back if none
-
-### DM tension analysis
-- Party tension "read" not yet implemented in DM dashboard
+- Not yet cached in DB (regenerated each visit)
 
 ---
 
-## Auth setup status
+## Supabase SQL steps (run in order)
 
-| Feature | Status |
-|---------|--------|
-| Email/password sign in | ✅ Working |
-| Email/password sign up | ✅ Working |
-| Email confirmation | ❌ Rate limit (disable in Supabase for now) |
-| DM role assignment on signIn | ✅ Working |
-| DM role from trigger | ❌ Needs docs/fix-trigger-role.sql |
-| Resend SMTP | ❌ Placeholder key |
-| Session persistence | ✅ Working |
-
----
-
-## Supabase manual steps (in order)
-
-1. `docs/fix-trigger-role.sql` — trigger reads role from user metadata
-2. `docs/fix-rls-circular.sql` — breaks campaign↔campaign_members recursion
-3. `docs/cascade-delete-migration.sql` — FK cascades
-4. `supabase-migrations.sql` — player_code, campaign_code triggers
+1. `docs/fix-trigger-role.sql`
+2. `docs/fix-rls-circular.sql`
+3. `docs/cascade-delete-migration.sql`
+4. `supabase-migrations.sql`
 5. `ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS dm_api_key_encrypted text;`
-6. Site URL → `https://incharacter.cloud`, Redirect URLs → `https://incharacter.cloud/**`
+6. `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS color_scheme text;`
+7. Site URL → https://incharacter.cloud, Redirect URLs → https://incharacter.cloud/**
 
 ---
 
-## Environment variables in Vercel
+## Environment
 
 | Variable | Status |
 |----------|--------|
-| NEXT_PUBLIC_SUPABASE_URL | ✅ Set |
-| NEXT_PUBLIC_SUPABASE_ANON_KEY | ✅ Set |
-| SUPABASE_SERVICE_ROLE_KEY | ✅ Set |
-| NEXT_PUBLIC_APP_URL | ✅ Set |
-| NEXT_PUBLIC_SITE_URL | ✅ Set |
-| API_KEY_ENCRYPTION_SECRET | ✅ Set |
+| NEXT_PUBLIC_SUPABASE_URL | ✅ |
+| NEXT_PUBLIC_SUPABASE_ANON_KEY | ✅ |
+| SUPABASE_SERVICE_ROLE_KEY | ✅ |
+| NEXT_PUBLIC_APP_URL | ✅ |
+| NEXT_PUBLIC_SITE_URL | ✅ |
+| API_KEY_ENCRYPTION_SECRET | ✅ |
 | RESEND_API_KEY | ⚠️ Placeholder |
 | NEXT_PUBLIC_POSTHOG_KEY | ⚠️ Placeholder |
-| NEXT_PUBLIC_POSTHOG_HOST | ✅ Set |
 
 ---
 
 ## Next priorities
 
-1. Run all Supabase SQL migrations (see above)
-2. Configure Resend SMTP for email confirmation
-3. Test end-to-end: sign up → onboard → play session → long rest → journey → desktop layout
-4. DM dashboard party tension analysis
-5. Portrait upload to Supabase Storage
-6. Arc view caching (store generated arc text in DB, not regenerate each visit)
-7. Multi-tab relationship board per NPC from key_relationships
+1. Run all Supabase SQL migrations
+2. Test campaign join end-to-end with CAMP-84RX-LHVR
+3. Configure Resend SMTP
+4. Arc view — cache generated text in DB (tracker_states.arc_text column)
+5. DM dashboard party tension analysis
+6. PDF export font fix

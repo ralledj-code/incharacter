@@ -14,11 +14,11 @@ interface SettingsClientProps {
 }
 
 const COLOR_SCHEMES = [
-  { id: 'grimoire', label: 'The Grimoire', desc: 'Gold · Amber to Crimson' },
-  { id: 'sanctum',  label: 'The Sanctum',  desc: 'Silver · Ice Blue to Navy' },
-  { id: 'wilds',    label: 'The Wilds',    desc: 'Amber · Amber to Forest' },
-  { id: 'shadow',   label: 'The Shadow',   desc: 'Purple · Purple to Black' },
-  { id: 'forge',    label: 'The Forge',    desc: 'Copper · Copper to Crimson' },
+  { id: 'warm',   label: 'Warm',   desc: 'Default — warm white, tan accent' },
+  { id: 'dark',   label: 'Dark',   desc: 'Near-black, warm gold accent' },
+  { id: 'slate',  label: 'Slate',  desc: 'Cool grey, blue accent' },
+  { id: 'forest', label: 'Forest', desc: 'Soft green, earthy accent' },
+  { id: 'ink',    label: 'Ink',    desc: 'Warm white, deep purple accent' },
 ]
 
 export default function SettingsClient({ profile, character, campaign }: SettingsClientProps) {
@@ -70,15 +70,22 @@ export default function SettingsClient({ profile, character, campaign }: Setting
     setTimeout(() => setApiKeySaved(false), 2000)
   }
 
-  function applyScheme(id: string) {
+  async function applyScheme(id: string) {
     setScheme(id)
-    document.documentElement.setAttribute('data-scheme', id)
-    if (character) {
-      const supabase = createClient()
+    // Apply theme class immediately
+    const THEME_MAP: Record<string, string> = { dark:'theme-dark', slate:'theme-slate', forest:'theme-forest', ink:'theme-ink' }
+    const html = document.documentElement
+    Object.values(THEME_MAP).forEach(cls => html.classList.remove(cls))
+    if (THEME_MAP[id]) html.classList.add(THEME_MAP[id])
+
+    // Save to profiles.color_scheme (string, read by ThemeApplier)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ;(supabase.from('characters') as any)
-        .update({ color_scheme: { scheme: id } })
-        .eq('id', character.id)
+      await (supabase.from('profiles') as any)
+        .update({ color_scheme: id })
+        .eq('id', user.id)
     }
   }
 
