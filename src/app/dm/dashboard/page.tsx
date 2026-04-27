@@ -37,17 +37,40 @@ export default async function DMDashboardPage() {
     : { data: [] }
 
   const typedMembers = (members || []) as Array<{ campaign_id: string; player_id: string; accepted: boolean }>
-  const playerIds = [...new Set(typedMembers.map(m => m.player_id))]
+  const memberPlayerIds = [...new Set(typedMembers.map(m => m.player_id))]
+
+  // Also fetch characters that have campaign_id set (player joined via Settings)
+  // This is a fallback in case campaign_members RLS blocks the DM from reading rows
+  const { data: charactersByCampaign } = campaignIds.length > 0
+    ? await supabase
+        .from('characters')
+        .select('id, player_id, campaign_id, name, portrait_url, color_scheme, emotion_palette, tracker_config, created_at, updated_at')
+        .in('campaign_id', campaignIds)
+    : { data: [] }
+
+  // Merge: union of characters from campaign_members rows + characters with campaign_id set
+  const charsByCampaignMap = new Map(
+    ((charactersByCampaign || []) as Character[]).map(c => [c.id, c])
+  )
+  const campaignCharPlayerIds = ((charactersByCampaign || []) as Character[]).map(c => c.player_id)
+  const allPlayerIds = [...new Set([...memberPlayerIds, ...campaignCharPlayerIds])]
+  const playerIds = allPlayerIds
 
   // Fix 10: DMs get summary fields only — no API keys, no raw dossier text
-  const { data: characters } = playerIds.length > 0
+  const { data: charactersByPlayer } = playerIds.length > 0
     ? await supabase
         .from('characters')
         .select('id, player_id, campaign_id, name, portrait_url, color_scheme, emotion_palette, tracker_config, created_at, updated_at')
         .in('player_id', playerIds)
     : { data: [] }
 
-  const typedCharacters = (characters || []) as Character[]
+  // Merge both queries
+  const allCharsMap = new Map<string, Character>()
+  ;((charactersByPlayer || []) as Character[]).forEach(c => allCharsMap.set(c.id, c))
+  charsByCampaignMap.forEach((c, id) => { if (!allCharsMap.has(id)) allCharsMap.set(id, c) })
+  const characters = [...allCharsMap.values()]
+
+  const typedCharacters = characters as Character[]
   const characterIds = typedCharacters.map(c => c.id)
 
   const { data: trackers } = characterIds.length > 0
