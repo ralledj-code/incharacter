@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Character, TrackerState, Session } from '@/types/database'
 import LogMomentFlow from './LogMomentFlow'
 import LongRestModal from './LongRestModal'
-import { glyphValuesFromTrackers, GLYPH_STATES, getRandomLoadingPhrase } from '@/lib/constants'
+import { getRandomLoadingPhrase } from '@/lib/constants'
 import { useRouter } from 'next/navigation'
 
 interface NowScreenProps {
@@ -38,23 +38,13 @@ export default function NowScreen({ character, tracker: initialTracker, session,
 
   const glyphStates = tracker?.glyph_states as Record<string, number> | null
 
-  // Always use tracker_config.emotion_palette when available; fall back to base_value if no glyph_states yet
-  const stateList = configPalette?.length
-    ? configPalette.map(s => ({
-        key: s.id,
-        label: s.name.toUpperCase(),
-        desc: s.description,
-        value: Math.round(glyphStates?.[s.id] ?? s.base_value),
-      })).sort((a, b) => b.value - a.value)
-    : (() => {
-        const emotionPalette = (character.emotion_palette as Array<{ key: string; label: string; desc: string }> | null)
-          || GLYPH_STATES.map(s => ({ ...s }))
-        const glyphValues = glyphValuesFromTrackers(mask, dagger, bottle, wound)
-        return emotionPalette.map(s => ({
-          ...s,
-          value: Math.round((glyphValues[s.key as keyof typeof glyphValues] ?? 0) * 100),
-        })).sort((a, b) => b.value - a.value)
-      })()
+  // Bars always read from tracker_config.emotion_palette + glyph_states
+  const stateList = (configPalette || []).map(s => ({
+    key: s.id,
+    label: s.name.toUpperCase(),
+    desc: s.description,
+    value: Math.round(glyphStates?.[s.id] ?? s.base_value),
+  })).sort((a, b) => b.value - a.value)
 
   const dominant = stateList[0]
 
