@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyRec = Record<string, any>
+type R = Record<string, any>
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,96 +11,52 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { code } = await req.json()
-    if (!code) return NextResponse.json({ error: 'Campaign code required' }, { status: 400 })
+    if (!code?.trim()) return NextResponse.json({ error: 'Campaign code required' }, { status: 400 })
 
-    // FIX 2 Path A: use service role to bypass campaigns RLS
-    // Use UPPER(TRIM()) on both sides to handle case/whitespace
     const service = await createServiceClient()
-    const db = (t: string) => (service.from(t) as AnyRec)
-
+    const db = (t: string) => (service.from(t) as R)
     const normalizedCode = code.trim().toUpperCase()
-    console.log('[campaign/join] looking up code:', normalizedCode)
 
-    // Path A: look up campaign using service role (bypasses RLS)
-    const { data: campaigns, error: campErr } = await db('campaigns')
-      .select('id, name, campaign_code')
-      .eq('campaign_code', normalizedCode)
+    // Step 1: find the campaign
+    console.log('[join] step1 lookup code:', normalizedCode)
+    const { data: found, error: e1 } = await db('campaigns')
+      .select('id, name')
+      .filter('campaign_code', 'ilike', normalizedCode)
       .limit(1)
+    console.log('[join] step1 result:', { found, e1 })
 
-    console.log('[campaign/join] campaign lookup:', { campaigns, campErr })
+    if (e1) return NextResponse.json({ error: `Step 1 error: ${e1.message}` }, { status: 500 })
+    if (!found?.length) return NextResponse.json({ error: 'Campaign not found. Check the code and try again.' }, { status: 404 })
 
-    if (campErr) {
-      console.error('[campaign/join] campaign lookup error:', campErr)
-      return NextResponse.json({ error: `Database error: ${campErr.message}` }, { status: 500 })
-    }
+    const campaignId: string = found[0].id
+    const campaignName: string = found[0].name
 
-    const campaign = campaigns?.[0]
-    if (!campaign) {
-      return NextResponse.json({ error: 'Campaign not found. Check the code and try again.' }, { status: 404 })
-    }
-    const campaignId = (campaign as AnyRec).id
-    const campaignName = (campaign as AnyRec).name
-
-    // Check already a member
-    const { data: existing } = await db('campaign_members')
-      .select('player_id')
-      .eq('campaign_id', campaignId)
-      .eq('player_id', user.id)
-      .limit(1)
-
-    if (existing?.[0]) {
-      return NextResponse.json({ error: `Already a member of ${campaignName}.` }, { status: 409 })
-    }
-
-    // FIX 2 Path C: find character using service role + limit(1) not single()
-    const { data: characters, error: charLookupErr } = await db('characters')
-      .select('id')
-      .eq('player_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-
-    console.log('[campaign/join] character lookup:', { characters, charLookupErr })
-
-    const character = characters?.[0]
-    if (!character) {
-      return NextResponse.json({ error: 'No character found. Please complete onboarding first.' }, { status: 404 })
-    }
-    const characterId = (character as AnyRec).id
-
-    // Insert campaign_members with ON CONFLICT DO NOTHING
-    const { error: memberErr } = await db('campaign_members').upsert(
-      {
-        campaign_id: campaignId,
-        player_id: user.id,
-        accepted: true,
-        invited_at: new Date().toISOString(),
-      },
-      { onConflict: 'campaign_id,player_id' }
-    )
-    if (memberErr) {
-      console.error('[campaign/join] member insert error:', memberErr)
-      return NextResponse.json({ error: `Failed to join: ${memberErr.message}` }, { status: 500 })
-    }
-
-    // Update character.campaign_id
-    const { error: charUpdateErr } = await db('characters')
-      .update({ campaign_id: campaignId })
-      .eq('id', characterId)
-      .eq('player_id', user.id)
-
-    if (charUpdateErr) {
-      console.error('[campaign/join] character update error:', charUpdateErr)
-      // Non-fatal — campaign_members row is what matters for DM dashboard
-    }
-
-    console.log('[campaign/join] success:', { userId: user.id, campaignId, campaignName })
-    return NextResponse.json({
-      success: true,
-      campaignName,
-      message: `Joined ${campaignName}!`,
+    // Step 2: insert member row
+    console.log('[join] step2 insert member:', { campaignId, userId: user.id })
+    const { error: e2 } = await db('campaign_members').insert({
+      campaign_id: campaignId,
+      player_id: user.id,
+      accepted: true,
+      invited_at: new Date().toISOString(),
     })
-  } catch (error) {
-    console.error('[campaign/join] exception:', error)
-    return NextResponse.json({ error: String(error) }, { status: 500 })
+    console.log('[join] step2 result:', { e2 })
+
+    if (e2) {
+      if (e2.code === '23505') return NextResponse.json({ error: 'Already in campaign.' }, { status: 409 })
+      return NextResponse.json({ error: `Step 2 error: ${e2.message}` }, { status: 500 })
+    }
+
+    // Step 3: update character
+    console.log('[join] step3 update character for player:', user.id)
+    const { error: e3 } = await db('characters')
+      .update({ campaign_id: campaignId })
+      .eq('player_id', user.id)
+    console.log('[join] step3 result:', { e3 })
+    if (e3) console.error('[join] step3 non-fatal error:', e3.message)
+
+    return NextResponse.json({ success: true, campaignName, message: `Joined ${campaignName}!` })
+  } catch (err) {
+    console.error('[join] exception:', err)
+    return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }
