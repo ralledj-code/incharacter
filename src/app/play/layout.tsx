@@ -1,40 +1,39 @@
 import { createClient } from '@/lib/supabase/server'
 import PlayerNav from '@/components/PlayerNav'
-import BurgerMenu from '@/components/BurgerMenu'
 
 export default async function PlayLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  let role: 'player' | 'dm' | 'admin' = 'player'
-  if (user) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: profile } = await (supabase.from('profiles') as any)
-      .select('role').eq('id', user.id).single()
-    if (profile?.role === 'admin') role = 'admin'
-    else if (profile?.role === 'dm') role = 'dm'
-  }
-
+  // Top bar always shows — settings icon links to settings
   return (
-    // Max-width 480px on mobile, full-width on desktop (desktop uses its own layout)
-    <div className="min-h-screen safe-bottom" style={{ background: 'var(--bg)' }}>
-      {/* Burger menu — shown on mobile only (desktop layout has no burger) */}
-      <div className="block md:hidden">
-        <BurgerMenu loggedIn={true} role={role} />
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      {/* Top bar */}
+      <div style={{
+        height: 44, background: 'var(--surface)', borderBottom: '0.5px solid var(--border)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 16px', position: 'sticky', top: 0, zIndex: 50,
+      }}>
+        <span style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--text)' }}>
+          In Character
+        </span>
+        {user && (
+          <a href="/settings" style={{ fontSize: 13, color: 'var(--text3)', textDecoration: 'none', minHeight: 'auto', minWidth: 'auto', padding: '4px 8px' }}>
+            Settings
+          </a>
+        )}
       </div>
 
-      {/* On mobile: constrained width + bottom nav */}
+      {/* Mobile: tab nav + constrained content */}
       <div className="md:hidden">
-        <div className="mx-auto flex flex-col min-h-screen" style={{ maxWidth: 480, background: 'var(--bg)' }}>
-          <main className="flex-1 overflow-auto pb-20">
-            {children}
-          </main>
-          <PlayerNav />
+        <div style={{ maxWidth: 520, margin: '0 auto', paddingBottom: 80 }}>
+          {children}
         </div>
+        <PlayerNav />
       </div>
 
-      {/* On desktop: full width, no bottom nav, desktop layout handles itself */}
-      <div className="hidden md:block">
+      {/* Desktop: full width (PlayerDesktop handles its own layout) */}
+      <div className="hidden md:block" style={{ height: 'calc(100vh - 44px)' }}>
         {children}
       </div>
     </div>

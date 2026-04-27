@@ -14,51 +14,28 @@ interface SessionScreenProps {
   tracker: TrackerState | null
 }
 
-function EventCard({ event }: { event: Event }) {
-  const [expanded, setExpanded] = useState(false)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyRec = Record<string, any>
+
+function EventRow({ event }: { event: Event }) {
   const cat = EVENT_CATEGORIES.find(c => c.id === event.category)
   const time = new Date(event.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <div
-      className="animate-fade-in cursor-pointer"
-      style={{
-        borderBottom: '1px solid var(--border)',
-        padding: '1rem 1.25rem',
-      }}
-      onClick={() => setExpanded(e => !e)}
-    >
-      {/* Fix 6: proper flex layout, no overlap */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: 18, flexShrink: 0 }}>{cat?.icon || '◆'}</span>
-          <div style={{ minWidth: 0 }}>
-            {/* Fix 5: 14px category label, gold */}
-            <p className="font-cinzel tracking-wider mb-1"
-               style={{ fontSize: 14, color: 'var(--accent)' }}>
-              {cat?.label || event.category}
-            </p>
-            <p className="font-garamond leading-relaxed"
-               style={{ fontSize: 16, color: 'var(--text-primary)' }}>
-              {event.narrative || event.subcategory}
-            </p>
-          </div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
-          {/* Fix 5: 12px timestamp */}
-          <span className="font-garamond" style={{ fontSize: 12, color: 'var(--text-faint)' }}>{time}</span>
-          <span className="font-garamond" style={{ fontSize: 12, color: 'var(--text-faint)' }}>{expanded ? '▲' : '▼'}</span>
-        </div>
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: 10,
+      padding: '10px 20px', borderBottom: '0.5px solid var(--border)',
+    }}>
+      <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>{cat?.icon || '◆'}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 3 }}>
+          {cat?.label || event.category}
+        </p>
+        <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.55 }}>
+          {event.narrative || event.subcategory}
+        </p>
       </div>
-
-      {expanded && (
-        <div className="mt-3 pl-7 animate-fade-in">
-          <p className="label-caps mb-1">Subcategory</p>
-          <p className="font-garamond text-ink-dim text-sm mb-2">{event.subcategory}</p>
-          <p className="label-caps mb-1">Reaction</p>
-          <p className="font-garamond text-ink-dim text-sm italic">{event.reaction?.replace(/_/g, ' ')}</p>
-        </div>
-      )}
+      <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0, marginTop: 2 }}>{time}</span>
     </div>
   )
 }
@@ -73,101 +50,67 @@ export default function SessionScreen({ character, session, events, tracker }: S
     setNewSessionLoading(true)
     try {
       const supabase = createClient()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const db = (t: string) => (supabase.from(t) as any)
+      const db = (t: string) => (supabase.from(t) as AnyRec)
       const { data: lastSession } = await db('sessions')
-        .select('session_number')
-        .eq('character_id', character.id)
-        .order('session_number', { ascending: false })
-        .limit(1)
-        .single()
-
-      // End current session
-      await db('sessions')
-        .update({ ended_at: new Date().toISOString() })
-        .eq('id', session.id)
-
-      // Create new session
+        .select('session_number').eq('character_id', character.id)
+        .order('session_number', { ascending: false }).limit(1).single()
+      await db('sessions').update({ ended_at: new Date().toISOString() }).eq('id', session.id)
       await db('sessions').insert({
         character_id: character.id,
-        session_number: ((lastSession as { session_number: number } | null)?.session_number || 1) + 1,
+        session_number: ((lastSession as AnyRec)?.session_number || 1) + 1,
       })
-
       router.refresh()
     } catch {}
     setNewSessionLoading(false)
   }
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-80px)]">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 80px)', background: 'var(--bg)' }}>
       {/* Header */}
-      <div
-        className="flex items-center justify-between px-5 py-4 sticky top-0 z-10"
-        style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}
-      >
-        <span className="label-caps">Session {session?.session_number || 1}</span>
-        <button
-          className="btn-gold px-4 py-1.5 text-xs"
-          onClick={startNewSession}
-          disabled={newSessionLoading}
-        >
-          {newSessionLoading ? '...' : 'New Session'}
+      <div className="page-header" style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+        <h1 className="page-title">Session {session?.session_number || 1}</h1>
+        <button className="btn-ghost" style={{ fontSize: 12, padding: '6px 12px', minHeight: 'auto' }}
+          onClick={startNewSession} disabled={newSessionLoading}>
+          {newSessionLoading ? '...' : 'New session'}
         </button>
       </div>
 
-      {/* Waking text (if long rest occurred) */}
+      {/* Waking text */}
       {session?.waking_text && (
-        <div
-          className="mx-5 mt-5 p-5 card-gold-border animate-fade-in"
-          style={{ background: 'var(--surface)', borderRadius: 2 }}
-        >
-          <p className="label-caps mb-3">Waking Into This Day</p>
-          <p className="narrative-text">{session.waking_text}</p>
+        <div style={{ margin: '16px 20px', padding: '12px 16px', background: 'var(--surface)', border: '0.5px solid var(--border)', borderLeft: '2px solid var(--accent)', borderRadius: '0 8px 8px 0' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 6 }}>
+            Waking into this day
+          </p>
+          <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.6, fontStyle: 'italic' }}>
+            {session.waking_text}
+          </p>
         </div>
       )}
 
-      {/* Events list */}
-      <div className="flex-1" style={{ borderTop: session?.waking_text ? '1px solid var(--border)' : undefined, marginTop: session?.waking_text ? 20 : 0 }}>
+      {/* Events */}
+      <div style={{ flex: 1 }}>
         {events.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-            <p className="font-cinzel tracking-wider mb-2" style={{ color: 'var(--text-faint)', fontSize: 14 }}>
-              Nothing logged yet.
-            </p>
-            <p className="font-garamond" style={{ color: 'var(--text-faint)', fontSize: 15 }}>
-              The session begins when you do.
-            </p>
+          <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+            <p style={{ fontSize: 15, color: 'var(--text3)' }}>Nothing logged yet.</p>
+            <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>The session begins when you do.</p>
           </div>
         ) : (
-          events.map(event => <EventCard key={event.id} event={event} />)
+          events.map(ev => <EventRow key={ev.id} event={ev} />)
         )}
       </div>
 
-      {/* Long Rest button */}
-      <div
-        className="sticky bottom-0 px-5 pb-4 pt-3"
-        style={{
-          background: 'var(--bg)',
-          borderTop: '1px solid var(--border)',
-        }}
-      >
-        {/* Fix 5: 16px long rest button, full width */}
-        <button
-          className="btn-gold w-full"
-          style={{ fontSize: 16, padding: '0.875rem' }}
-          onClick={() => setShowLongRest(true)}
-        >
-          Long Rest
+      {/* Long rest */}
+      <div style={{ position: 'sticky', bottom: 0, padding: '12px 20px 20px', background: 'var(--bg)', borderTop: '0.5px solid var(--border)' }}>
+        <button className="btn-secondary" style={{ width: '100%', fontSize: 14 }}
+          onClick={() => setShowLongRest(true)}>
+          Long rest
         </button>
       </div>
 
       {showLongRest && session && (
-        <LongRestModal
-          character={character}
-          session={session}
-          tracker={tracker}
+        <LongRestModal character={character} session={session} tracker={tracker}
           onComplete={() => { setShowLongRest(false); router.refresh() }}
-          onDismiss={() => setShowLongRest(false)}
-        />
+          onDismiss={() => setShowLongRest(false)} />
       )}
     </div>
   )

@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Character, TrackerState, Session, Event, Clue, Relationship } from '@/types/database'
-import ArcaneGlyph from './ArcaneGlyph'
 import LogMomentFlow from './LogMomentFlow'
 import LongRestModal from './LongRestModal'
 import { glyphValuesFromTrackers, GLYPH_STATES, getRandomLoadingPhrase, EVENT_CATEGORIES } from '@/lib/constants'
@@ -24,14 +23,8 @@ interface PlayerDesktopProps {
 type AnyRec = Record<string, any>
 
 export default function PlayerDesktop({
-  character,
-  tracker: initialTracker,
-  session,
-  recentEvents,
-  sessionEvents,
-  clues,
-  relationships,
-  allSessions,
+  character, tracker: initialTracker, session, recentEvents,
+  sessionEvents, clues, relationships, allSessions,
 }: PlayerDesktopProps) {
   const router = useRouter()
   const [tracker, setTracker] = useState(initialTracker)
@@ -40,10 +33,10 @@ export default function PlayerDesktop({
   const [loadingPhrase] = useState(getRandomLoadingPhrase())
   const [showLogFlow, setShowLogFlow] = useState(false)
   const [showLongRest, setShowLongRest] = useState(false)
-  const [showPrepModal, setShowPrepModal] = useState(false)
+  const [showPrep, setShowPrep] = useState(false)
   const [arcText, setArcText] = useState<string | null>(null)
-  const [arcLoading, setArcLoading] = useState(false)
   const [lastRestExpanded, setLastRestExpanded] = useState(false)
+  const [barsVisible, setBarsVisible] = useState(false)
 
   const palette = (character.emotion_palette as Array<{ key: string; label: string; desc: string }> | null)
     || GLYPH_STATES.map(s => ({ ...s }))
@@ -55,21 +48,20 @@ export default function PlayerDesktop({
   const wound  = tracker?.wound  ?? 60
   const glyphValues = glyphValuesFromTrackers(mask, dagger, bottle, wound)
 
-  const dominantEntry = Object.entries(glyphValues).reduce((a, b) => a[1] > b[1] ? a : b)
-  const dominantState = palette.find(s => s.key === dominantEntry[0])
+  const stateList = palette.map(s => ({
+    ...s,
+    value: Math.round((glyphValues[s.key as keyof typeof glyphValues] ?? 0) * 100),
+  })).sort((a, b) => b.value - a.value)
 
+  const dominant = stateList[0]
   const clueBoardName    = (config?.clue_board_name as string)    || 'Clues'
   const clueBoardSubject = (config?.clue_board_subject as string) || 'the mystery'
   const lastRest = allSessions.find(s => s.waking_text)
 
+  useEffect(() => { const t = setTimeout(() => setBarsVisible(true), 100); return () => clearTimeout(t) }, [])
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (!directive && character.dossier_text) generateDirective() }, [])
-
-  // Load arc text when sessions exist
-  useEffect(() => {
-    if (allSessions.length >= 2 && !arcText) loadArc()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allSessions.length])
+  useEffect(() => { if (allSessions.length >= 2 && !arcText) loadArc() }, [allSessions.length]) // eslint-disable-line
 
   async function generateDirective() {
     setDirectiveLoading(true)
@@ -93,23 +85,17 @@ export default function PlayerDesktop({
   }
 
   async function loadArc() {
-    if (arcLoading) return
-    setArcLoading(true)
     try {
       const res = await fetch('/api/claude/arc', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          characterId: character.id, characterName: character.name,
+        body: JSON.stringify({ characterId: character.id, characterName: character.name,
           dossierSummary: character.dossier_text?.slice(0, 1000) || '',
-          trackers: { mask, dagger, bottle, wound },
-          sessionCount: allSessions.length,
-          recentEvents: recentEvents.map(e => e.narrative || e.category),
-        }),
+          trackers: { mask, dagger, bottle, wound }, sessionCount: allSessions.length,
+          recentEvents: recentEvents.map(e => e.narrative || e.category) }),
       })
       const data = await res.json()
       if (data.arc) setArcText(data.arc)
     } catch {}
-    setArcLoading(false)
   }
 
   function handleEventLogged(newTracker: TrackerState, newDirective?: string) {
@@ -119,140 +105,124 @@ export default function PlayerDesktop({
     router.refresh()
   }
 
-  const handleStateClick = useCallback((key: string) => {
-    // No-op on desktop — labels are always visible
-    void key
-  }, [])
+  const p = { fontFamily: 'inherit' } // inherits system-ui from body
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
+    <div style={{ display: 'flex', height: 'calc(100vh - 44px)', overflow: 'hidden', background: 'var(--bg)', ...p }}>
 
-      {/* ── LEFT PANEL ─────────────────────────────────────────── */}
+      {/* ── LEFT PANEL ─────────────────────────── */}
       <div style={{
-        width: 340, flexShrink: 0, height: '100vh', overflowY: 'auto',
+        width: 340, flexShrink: 0, height: '100%', overflowY: 'auto',
         display: 'flex', flexDirection: 'column',
-        borderRight: '1px solid var(--accent-dim)',
-        background: 'var(--bg)',
+        borderRight: '0.5px solid var(--border)', background: 'var(--bg)',
       }}>
         {/* Character name */}
-        <div style={{ padding: '1rem 1.5rem 0.5rem', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {character.portrait_url && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={character.portrait_url} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--accent-dim)' }} />
-            )}
-            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>
-              {character.name}
-            </span>
-          </div>
+        <div style={{ padding: '20px 24px 12px' }}>
+          <p style={{ fontSize: 12, color: 'var(--text3)', letterSpacing: '0.02em' }}>{character.name}</p>
         </div>
 
-        {/* Directive — most important element */}
-        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-          <p style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: '0.15em', color: 'var(--text-faint)', textTransform: 'uppercase', marginBottom: 8 }}>
+        <div style={{ borderBottom: '0.5px solid var(--border)', margin: '0 0 0' }} />
+
+        {/* Directive */}
+        <div style={{ padding: '20px 24px 16px' }}>
+          <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--accent)', opacity: 0.8, marginBottom: 10 }}>
             Play as
           </p>
           {directiveLoading ? (
-            <div style={{ height: 24, borderRadius: 2, background: 'var(--surface2)', animation: 'shimmer 1.5s infinite' }} />
+            <div>
+              <div className="loading-shimmer" style={{ height: 22, marginBottom: 6, width: '90%' }} />
+              <div className="loading-shimmer" style={{ height: 22, width: '70%' }} />
+              <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 8 }}>{loadingPhrase}</p>
+            </div>
           ) : (
-            <p style={{ fontFamily: 'Cinzel, serif', fontSize: 17, fontWeight: 600, color: 'var(--accent)', lineHeight: 1.45, letterSpacing: '0.02em' }}>
-              {directive || loadingPhrase}
+            <p style={{ fontSize: 22, fontWeight: 300, letterSpacing: '-0.02em', lineHeight: 1.45, color: 'var(--text)' }}>
+              {directive || 'Play them true to who they are.'}
             </p>
           )}
         </div>
 
-        {/* Glyph — fills panel width */}
-        <div style={{ padding: '1.5rem 1rem', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-          <ArcaneGlyph
-            values={glyphValues}
-            states={palette}
-            size={290}
-            onStateClick={handleStateClick}
-          />
+        <div style={{ borderBottom: '0.5px solid var(--border)' }} />
+
+        {/* State bars */}
+        <div style={{ padding: '16px 24px' }}>
+          {stateList.map((s, idx) => {
+            const isDominant = idx === 0
+            return (
+              <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                <span style={{ fontSize: 11, width: 76, textAlign: 'right', flexShrink: 0, letterSpacing: '-0.01em',
+                  color: isDominant ? 'var(--accent-text)' : 'var(--text2)', fontWeight: isDominant ? 600 : 400 }}>
+                  {s.label}
+                </span>
+                <div style={{ flex: 1, height: 3, background: 'var(--surface2)', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', borderRadius: 2,
+                    background: isDominant ? 'var(--accent)' : 'var(--border2)',
+                    width: barsVisible ? `${s.value}%` : '0%',
+                    transition: 'width 0.8s ease' }} />
+                </div>
+                <span style={{ fontSize: 10, color: 'var(--text3)', width: 22, textAlign: 'right', flexShrink: 0 }}>
+                  {s.value}
+                </span>
+              </div>
+            )
+          })}
         </div>
 
-        {/* Dominant state card */}
-        {dominantState && (
-          <div style={{
-            margin: '0 1.25rem 1rem',
-            padding: '0.75rem 1rem',
-            background: 'var(--surface)',
-            borderLeft: '2px solid var(--accent)',
-            borderRadius: 2,
-            flexShrink: 0,
-          }}>
-            <p style={{ fontFamily: 'Cinzel, serif', fontSize: 12, letterSpacing: '0.12em', color: 'var(--accent)', marginBottom: 4 }}>
-              {dominantState.label}
-            </p>
-            <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.5 }}>
-              {dominantState.desc}
-            </p>
+        {/* Dominant state */}
+        {dominant && (
+          <div style={{ margin: '0 20px 16px', padding: '10px 14px', background: 'var(--surface)', border: '0.5px solid var(--border)', borderLeft: '2px solid var(--accent)', borderRadius: '0 8px 8px 0' }}>
+            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-text)', marginBottom: 3 }}>{dominant.label}</p>
+            <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5 }}>{dominant.desc}</p>
           </div>
         )}
 
-        {/* Spacer pushes LOG MOMENT to bottom */}
         <div style={{ flex: 1 }} />
 
-        {/* LOG MOMENT — pinned to bottom of left panel */}
-        <div style={{ padding: '1rem 1.25rem 1.5rem', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
-          <button
-            onClick={() => setShowLogFlow(true)}
-            style={{
-              width: '100%', fontFamily: 'Cinzel, serif', fontSize: 14,
-              letterSpacing: '0.12em', padding: '0.9rem',
-              background: 'var(--accent)', border: 'none', color: '#0f0f0f',
-              cursor: 'pointer', borderRadius: 2, fontWeight: 600,
-            }}
-          >
-            LOG MOMENT
+        {/* LOG MOMENT */}
+        <div style={{ padding: '12px 20px 20px', borderTop: '0.5px solid var(--border)' }}>
+          <button className="btn-primary" style={{ width: '100%', fontSize: 13 }}
+            onClick={() => setShowLogFlow(true)}>
+            Log moment
           </button>
         </div>
       </div>
 
-      {/* ── RIGHT PANEL ────────────────────────────────────────── */}
-      <div style={{ flex: 1, height: '100vh', overflowY: 'auto', padding: '0 0 6rem' }}>
+      {/* ── RIGHT PANEL ────────────────────────── */}
+      <div style={{ flex: 1, height: '100%', overflowY: 'auto' }}>
 
-        {/* This Session */}
-        <section style={{ borderBottom: '1px solid var(--border)', padding: '1.5rem 2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h2 style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: '0.18em', color: 'var(--text-faint)', textTransform: 'uppercase' }}>
+        {/* This session */}
+        <section style={{ borderBottom: '0.5px solid var(--border)', padding: '20px 28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text3)' }}>
               Session {session?.session_number || 1}
-            </h2>
-            <button onClick={async () => {
-              if (!session) return
-              const supabase = createClient()
-              const db = (t: string) => (supabase.from(t) as AnyRec)
-              const { data: last } = await db('sessions').select('session_number').eq('character_id', character.id)
-                .order('session_number', { ascending: false }).limit(1).single()
-              await db('sessions').update({ ended_at: new Date().toISOString() }).eq('id', session.id)
-              await db('sessions').insert({ character_id: character.id, session_number: ((last as AnyRec)?.session_number || 1) + 1 })
-              router.refresh()
-            }} style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: '0.1em', color: 'var(--text-faint)', background: 'transparent', border: '1px solid var(--border)', padding: '0.35rem 0.75rem', cursor: 'pointer', borderRadius: 2 }}>
-              New Session
+            </p>
+            <button className="btn-ghost" style={{ fontSize: 11, padding: '4px 10px', minHeight: 'auto' }}
+              onClick={async () => {
+                if (!session) return
+                const supabase = createClient()
+                const db = (t: string) => (supabase.from(t) as AnyRec)
+                const { data: last } = await db('sessions').select('session_number').eq('character_id', character.id).order('session_number', { ascending: false }).limit(1).single()
+                await db('sessions').update({ ended_at: new Date().toISOString() }).eq('id', session.id)
+                await db('sessions').insert({ character_id: character.id, session_number: ((last as AnyRec)?.session_number || 1) + 1 })
+                router.refresh()
+              }}>
+              New session
             </button>
           </div>
-
           {sessionEvents.length === 0 ? (
-            <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 15, color: 'var(--text-faint)', fontStyle: 'italic' }}>
-              Nothing logged yet. The session begins when you do.
-            </p>
+            <p style={{ fontSize: 14, color: 'var(--text3)', fontStyle: 'italic' }}>Nothing logged yet.</p>
           ) : (
             <div>
               {sessionEvents.slice(-8).map(ev => {
                 const cat = EVENT_CATEGORIES.find(c => c.id === ev.category)
                 const time = new Date(ev.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 return (
-                  <div key={ev.id} style={{ display: 'flex', gap: 10, padding: '0.6rem 0', borderBottom: '1px solid var(--border)' }}>
-                    <span style={{ fontSize: 15, flexShrink: 0 }}>{cat?.icon || '◆'}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontFamily: 'Cinzel, serif', fontSize: 11, color: 'var(--accent)', marginBottom: 2, letterSpacing: '0.08em' }}>
-                        {cat?.label || ev.category}
-                      </p>
-                      <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.5 }}>
-                        {ev.narrative || ev.subcategory}
-                      </p>
+                  <div key={ev.id} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: '0.5px solid var(--border)' }}>
+                    <span style={{ fontSize: 14, flexShrink: 0 }}>{cat?.icon || '◆'}</span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 2 }}>{cat?.label || ev.category}</p>
+                      <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.5 }}>{ev.narrative || ev.subcategory}</p>
                     </div>
-                    <span style={{ fontFamily: 'EB Garamond, serif', fontSize: 11, color: 'var(--text-faint)', flexShrink: 0, marginTop: 2 }}>{time}</span>
+                    <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}>{time}</span>
                   </div>
                 )
               })}
@@ -260,99 +230,64 @@ export default function PlayerDesktop({
           )}
         </section>
 
-        {/* The Arc */}
+        {/* The arc */}
         {allSessions.length >= 1 && (
-          <section style={{ borderBottom: '1px solid var(--border)', padding: '1.5rem 2rem' }}>
-            <h2 style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: '0.18em', color: 'var(--text-faint)', textTransform: 'uppercase', marginBottom: '1rem' }}>
-              The Arc
-            </h2>
-            {arcLoading ? (
-              <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 14, color: 'var(--text-faint)', fontStyle: 'italic' }}>
-                Reading the signs...
-              </p>
-            ) : arcText ? (
-              <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.7 }}>
-                {arcText}
-              </p>
+          <section style={{ borderBottom: '0.5px solid var(--border)', padding: '20px 28px' }}>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 10 }}>The arc</p>
+            {arcText ? (
+              <p style={{ fontSize: 15, color: 'var(--text2)', lineHeight: 1.75 }}>{arcText}</p>
             ) : (
-              <button onClick={loadArc}
-                style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: '0.1em', color: 'var(--accent)', background: 'transparent', border: '1px solid var(--accent-dim)', padding: '0.4rem 0.9rem', cursor: 'pointer', borderRadius: 2 }}>
-                Generate Arc
-              </button>
+              <button className="btn-ghost" style={{ fontSize: 12, padding: '6px 12px', minHeight: 'auto' }}
+                onClick={loadArc}>Generate arc</button>
             )}
           </section>
         )}
 
-        {/* Last time — waking monologue */}
+        {/* Last rest */}
         {lastRest?.waking_text && (
-          <section style={{ borderBottom: '1px solid var(--border)', padding: '1.5rem 2rem' }}>
-            <h2 style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: '0.18em', color: 'var(--text-faint)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-              Last Time
-            </h2>
-            <p style={{
-              fontFamily: 'EB Garamond, serif', fontSize: 15, color: 'var(--text-secondary)',
-              lineHeight: 1.7, fontStyle: 'italic',
-              overflow: lastRestExpanded ? undefined : 'hidden',
-              display: lastRestExpanded ? undefined : '-webkit-box',
-              WebkitLineClamp: lastRestExpanded ? undefined : 2,
-              WebkitBoxOrient: lastRestExpanded ? undefined : 'vertical',
-            } as React.CSSProperties}>
+          <section style={{ borderBottom: '0.5px solid var(--border)', padding: '20px 28px' }}>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 10 }}>Last time</p>
+            <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.65, fontStyle: 'italic',
+              ...(lastRestExpanded ? {} : { overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties) }}>
               {lastRest.waking_text}
             </p>
             {!lastRestExpanded && (
               <button onClick={() => setLastRestExpanded(true)}
-                style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: '0.1em', color: 'var(--text-faint)', background: 'transparent', border: 'none', padding: '0.25rem 0', cursor: 'pointer', marginTop: 4 }}>
+                style={{ fontSize: 12, color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', minHeight: 'auto' }}>
                 Show more
               </button>
             )}
           </section>
         )}
 
-        {/* Clue board */}
-        <section style={{ borderBottom: '1px solid var(--border)', padding: '1.5rem 2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-            <h2 style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: '0.18em', color: 'var(--text-faint)', textTransform: 'uppercase' }}>
-              {clueBoardName}
-            </h2>
-            <a href="/play/journey" style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: '0.1em', color: 'var(--accent)', textDecoration: 'none' }}>View all</a>
+        {/* Clues */}
+        <section style={{ borderBottom: '0.5px solid var(--border)', padding: '20px 28px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text3)' }}>{clueBoardName}</p>
+            <a href="/play/journey" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', minHeight: 'auto', minWidth: 'auto' }}>View all</a>
           </div>
           {clues.length === 0 ? (
-            <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 14, color: 'var(--text-faint)', fontStyle: 'italic' }}>
-              No clues about {clueBoardSubject} yet.
-            </p>
+            <p style={{ fontSize: 14, color: 'var(--text3)', fontStyle: 'italic' }}>No clues about {clueBoardSubject} yet.</p>
           ) : (
             clues.slice(0, 3).map(c => (
-              <div key={c.id} style={{ marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border)' }}>
-                <p style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: '0.1em', color: 'var(--text-faint)', textTransform: 'uppercase', marginBottom: 3 }}>
-                  {c.source_type}
-                </p>
-                <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  {c.narrative || c.raw_text}
-                </p>
+              <div key={c.id} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: '0.5px solid var(--border)' }}>
+                <p style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 3 }}>{c.source_type}</p>
+                <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5 }}>{c.narrative || c.raw_text}</p>
               </div>
             ))
           )}
-          <a href="/play/journey" style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: '0.1em', color: 'var(--accent)', textDecoration: 'none', border: '1px solid var(--accent-dim)', padding: '0.4rem 0.9rem', display: 'inline-block', borderRadius: 2, marginTop: 4 }}>
-            Add Clue
-          </a>
         </section>
 
         {/* Relationships */}
         {relationships.length > 0 && (
-          <section style={{ borderBottom: '1px solid var(--border)', padding: '1.5rem 2rem' }}>
-            <h2 style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: '0.18em', color: 'var(--text-faint)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-              Relationships
-            </h2>
+          <section style={{ borderBottom: '0.5px solid var(--border)', padding: '20px 28px' }}>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 12 }}>Relationships</p>
             {Array.from(new Set(relationships.map(r => r.npc_name))).slice(0, 3).map(npc => {
               const latest = relationships.find(r => r.npc_name === npc)
               return (
-                <div key={npc} style={{ marginBottom: '0.75rem' }}>
-                  <p style={{ fontFamily: 'Cinzel, serif', fontSize: 12, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: 3 }}>{npc}</p>
-                  {latest?.narrative && (
-                    <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                      {latest.narrative}
-                    </p>
-                  )}
+                <div key={npc} style={{ marginBottom: 10 }}>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--accent-text)', marginBottom: 3 }}>{npc}</p>
+                  {latest?.narrative && <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5 }}>{latest.narrative}</p>}
                 </div>
               )
             })}
@@ -360,19 +295,12 @@ export default function PlayerDesktop({
         )}
 
         {/* Bottom actions */}
-        <div style={{ position: 'sticky', bottom: 0, padding: '1rem 2rem', background: 'var(--bg)', borderTop: '1px solid var(--border)', display: 'flex', gap: 12 }}>
-          <button onClick={() => setShowLongRest(true)}
-            style={{ flex: 1, fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: '0.1em', padding: '0.75rem', background: 'transparent', border: '1px solid var(--accent-dim)', color: 'var(--accent)', cursor: 'pointer', borderRadius: 2 }}>
-            Long Rest
-          </button>
-          <button onClick={() => setShowPrepModal(true)}
-            style={{ flex: 2, fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: '0.1em', padding: '0.75rem', background: 'var(--accent)', border: 'none', color: '#0f0f0f', cursor: 'pointer', borderRadius: 2, fontWeight: 600 }}>
-            Prep Me For Next Session
-          </button>
+        <div style={{ position: 'sticky', bottom: 0, padding: '12px 28px 20px', background: 'var(--bg)', borderTop: '0.5px solid var(--border)', display: 'flex', gap: 10 }}>
+          <button className="btn-secondary" style={{ flex: 1, fontSize: 13 }} onClick={() => setShowLongRest(true)}>Long rest</button>
+          <button className="btn-primary" style={{ flex: 2, fontSize: 13 }} onClick={() => setShowPrep(true)}>Prep me for next session</button>
         </div>
       </div>
 
-      {/* Modals */}
       {showLogFlow && session && (
         <LogMomentFlow character={character} tracker={tracker} session={session}
           onComplete={handleEventLogged} onDismiss={() => setShowLogFlow(false)} />
@@ -382,16 +310,12 @@ export default function PlayerDesktop({
           onComplete={() => { setShowLongRest(false); router.refresh() }}
           onDismiss={() => setShowLongRest(false)} />
       )}
-      {showPrepModal && (
-        <PrepOverlay character={character} tracker={tracker} clues={clues} relationships={relationships}
-          onDismiss={() => setShowPrepModal(false)} />
-      )}
+      {showPrep && <PrepInline character={character} tracker={tracker} clues={clues} relationships={relationships} onDismiss={() => setShowPrep(false)} />}
     </div>
   )
 }
 
-// Inline prep overlay to avoid import cycle
-function PrepOverlay({ character, tracker, clues, relationships, onDismiss }: {
+function PrepInline({ character, tracker, clues, relationships, onDismiss }: {
   character: Character; tracker: TrackerState | null; clues: Clue[]; relationships: Relationship[];
   onDismiss: () => void
 }) {
@@ -408,13 +332,11 @@ function PrepOverlay({ character, tracker, clues, relationships, onDismiss }: {
         relationships.forEach(r => { if (!seen.has(r.npc_name) && r.current_state) { relStates.push(`${r.npc_name}: ${r.current_state}`); seen.add(r.npc_name) } })
         const res = await fetch('/api/claude/prep', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            characterId: character.id, characterName: character.name,
+          body: JSON.stringify({ characterId: character.id, characterName: character.name,
             dossierSummary: character.dossier_text?.slice(0, 1500) || '',
             trackers: { mask: tracker?.mask ?? 50, dagger: tracker?.dagger ?? 30, bottle: tracker?.bottle ?? 40, wound: tracker?.wound ?? 60 },
             cluesSummary: latestBelief || '', relationshipSummaries: relStates,
-            boardSubject: (config?.clue_board_subject as string) || 'the antagonist',
-          }),
+            boardSubject: (config?.clue_board_subject as string) || 'the antagonist' }),
         })
         const data = await res.json()
         setText(data.prep || '')
@@ -425,16 +347,16 @@ function PrepOverlay({ character, tracker, clues, relationships, onDismiss }: {
   }, [])
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-      <div style={{ background: 'var(--surface)', borderRadius: 4, padding: '2rem', maxWidth: 560, width: '100%', maxHeight: '80vh', overflowY: 'auto', border: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <h2 style={{ fontFamily: 'Cinzel, serif', fontSize: 14, letterSpacing: '0.12em', color: 'var(--accent)' }}>Prep For Next Session</h2>
-          <button onClick={onDismiss} style={{ fontFamily: 'Cinzel, serif', fontSize: 12, color: 'var(--text-faint)', background: 'transparent', border: 'none', cursor: 'pointer' }}>Done</button>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: 12, padding: 28, maxWidth: 520, width: '100%', maxHeight: '75vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>Prep for next session</p>
+          <button onClick={onDismiss} className="btn-ghost" style={{ fontSize: 12, padding: '4px 10px', minHeight: 'auto' }}>Done</button>
         </div>
         {loading ? (
-          <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 15, color: 'var(--text-faint)', fontStyle: 'italic' }}>Reading the signs...</p>
+          <p style={{ fontSize: 14, color: 'var(--text3)', fontStyle: 'italic' }}>Reading the signs...</p>
         ) : (
-          <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 16, color: 'var(--text-primary)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{text}</p>
+          <p style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{text}</p>
         )}
       </div>
     </div>
