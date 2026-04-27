@@ -122,15 +122,20 @@ async function checkDatabase() {
     }
   }
 
-  // Check specific columns via profile rows
+  // Check specific columns exist by doing a SELECT that explicitly names them
+  // Even with 0 rows, a successful response means the columns exist
   try {
     const r = await httpGet(`${SUPABASE_URL}/rest/v1/profiles?limit=5&select=id,role,player_code,color_scheme`, headers)
     if (r.status === 200) {
       const rows = JSON.parse(r.body)
       pass(`profiles table exists (${rows.length} rows)`)
-      const sample = rows[0] || {}
-      'player_code' in sample ? pass('player_code column on profiles') : fail('player_code column on profiles', 'column missing or no rows')
-      'color_scheme' in sample ? pass('color_scheme column on profiles') : fail('color_scheme column on profiles', 'column missing or no rows')
+      // A 200 response means the columns are valid — if columns were missing, Supabase returns 400
+      pass('player_code column on profiles')
+      pass('color_scheme column on profiles')
+    } else if (r.status === 400 && r.body.includes('player_code')) {
+      fail('player_code column on profiles', 'column does not exist — run: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS player_code text unique')
+    } else if (r.status === 400 && r.body.includes('color_scheme')) {
+      fail('color_scheme column on profiles', 'column does not exist — run: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS color_scheme text')
     } else {
       fail('profiles column check', `status ${r.status}: ${r.body.slice(0, 100)}`)
     }

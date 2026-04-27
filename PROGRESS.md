@@ -1,6 +1,6 @@
 # In Character — Progress
 
-Last updated: 2026-04-28 (session 8 — full redesign)
+Last updated: 2026-04-28 (session 9 — targeted fixes)
 
 ---
 
@@ -34,8 +34,9 @@ Last updated: 2026-04-28 (session 8 — full redesign)
 - Role from URL param stored via signUp data.role (read by trigger)
 - DM role upserted in profiles on signIn
 - Auth callback upserts role from URL param on email confirmation
-- No localStorage role storage (removed — was causing role bleeding)
+- No localStorage role storage (removed)
 - No PKCE/finalize page (removed)
+- **Supabase browser client uses flowType: 'implicit' to prevent PKCE errors on email confirmation**
 
 ### Landing page
 - Warm parchment light theme, data-theme="landing"
@@ -44,23 +45,26 @@ Last updated: 2026-04-28 (session 8 — full redesign)
 ### Onboarding
 - 14-screen flow with 5-question interview
 - Campaign join: looks up by campaign_code column (CAMP-XXXX), logs errors
-- Color scheme now maps to: warm/dark/slate/forest/ink themes
+- Color scheme picker: 5 themes (warm/dark/slate/forest/ink) with visual previews
+- Theme saved to profiles.color_scheme on character creation
 
 ### Player app — Now screen
+- Single centred column on ALL viewports (no two-panel desktop)
 - State bars (sorted by value, dominant in accent color)
 - 26px 300-weight directive text
 - Log moment + Long rest buttons
 - Bars animate 0→value on load
-
-### Player app — Desktop
-- Two-panel layout: left 340px (directive + state bars + dominant state + LOG MOMENT)
-- Right panel: session events, The Arc, last rest, clues, relationships, prep+rest buttons
-- State bars same pattern as Now screen
+- Tab bar sticky at top:44px, always visible
 
 ### Player app — Session
+- Dynamic event categories from tracker_config (dangerous_element + antagonist)
 - Clean event rows: category label + narrative + timestamp
 - Empty state: "Nothing logged yet."
 - Long rest button
+
+### Player app — Log Moment
+- Dynamic categories from tracker_config (buildCategories function)
+- 6 standard + 2 character-specific (dangerous element, antagonist)
 
 ### Player app — Journey
 - Tab bar: Sessions / Clues / Relationships
@@ -68,39 +72,37 @@ Last updated: 2026-04-28 (session 8 — full redesign)
 
 ### DM app
 - Dashboard: character cards, pre-session brief
-- Campaign page: campaign code, invite by email, player list
+- **Dual query for players: via campaign_members AND via characters.campaign_id**
+- Campaign page: campaign code, invite modal (no 404), player management
 - DM API key stored encrypted
 
 ### Settings
 - Theme switching: writes to profiles.color_scheme, applies class immediately
-- Player: player code, API key, dossier update, danger zone
+- Player: player code, API key, dossier update, campaign join/leave
 - DM: campaign code, DM API key
+
+### API Routes
+- /api/health — public, returns {status:'ok', timestamp}
+- /api/character — authenticated, returns character + tracker state
+- /api/events — authenticated, returns recent events
+- /api/tracker — authenticated, returns tracker state
+- /api/claude/arc, /api/export-pdf — authenticated
 
 ---
 
 ## Still broken / untested
 
 ### Email confirmation
-- Supabase rate limit — disable email confirmation in Supabase dashboard for now
-- Run docs/fix-trigger-role.sql to make trigger read role from metadata
+- Supabase default email sender rate limited
+- fix-trigger-role.sql has been run (trigger reads role from metadata)
+- Resend SMTP not yet configured
 
-### Cascade deletes + RLS
-- Run docs/fix-rls-circular.sql (campaign↔campaign_members RLS recursion)
-- Run docs/cascade-delete-migration.sql
-- Run supabase-migrations.sql (player_code, campaign_code triggers)
-- ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS dm_api_key_encrypted text;
-- ALTER TABLE profiles ADD COLUMN IF NOT EXISTS color_scheme text;
-
-### Campaign join
-- Code logic is correct (looks up by campaign_code column)
-- May still be blocked by RLS if fix-rls-circular.sql hasn't been run
-- Errors now logged to console for debugging
+### Healthcheck auth checks
+- HEALTHCHECK_PASSWORD not set → auth/character/campaign checks skip
+- Set HEALTHCHECK_PASSWORD in .env.local and Vercel to run full check
 
 ### PDF export
 - Null safety added, but font loading may still fail in Vercel edge
-
-### DM invite
-- Sends Resend email, but RESEND_API_KEY is placeholder
 
 ### Arc view
 - Generates on demand via /api/claude/arc
@@ -108,15 +110,30 @@ Last updated: 2026-04-28 (session 8 — full redesign)
 
 ---
 
-## Supabase SQL steps (run in order)
+## SQL that has been run (confirmed by user)
+All Supabase SQL migrations have been run:
+- docs/fix-trigger-role.sql ✅
+- docs/fix-rls-circular.sql ✅
+- docs/cascade-delete-migration.sql ✅
+- supabase-migrations.sql (player_code, campaign_code) ✅
+- ALTER TABLE campaigns ADD COLUMN dm_api_key_encrypted ✅
+- ALTER TABLE profiles ADD COLUMN color_scheme ✅
+- Site URL and redirect URLs set ✅
 
-1. `docs/fix-trigger-role.sql`
-2. `docs/fix-rls-circular.sql`
-3. `docs/cascade-delete-migration.sql`
-4. `supabase-migrations.sql`
-5. `ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS dm_api_key_encrypted text;`
-6. `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS color_scheme text;`
-7. Site URL → https://incharacter.cloud, Redirect URLs → https://incharacter.cloud/**
+---
+
+## Health Checks
+
+Run after any deploy:
+```
+npx ts-node --project scripts/tsconfig.json scripts/healthcheck.ts
+```
+
+**Current status (last run 2026-04-28):**
+- 12/15 checks PASS
+- 3 failures — all require HEALTHCHECK_PASSWORD to be set
+
+To run full check: add `HEALTHCHECK_PASSWORD=<password>` to `.env.local`
 
 ---
 
@@ -132,35 +149,14 @@ Last updated: 2026-04-28 (session 8 — full redesign)
 | API_KEY_ENCRYPTION_SECRET | ✅ |
 | RESEND_API_KEY | ⚠️ Placeholder |
 | NEXT_PUBLIC_POSTHOG_KEY | ⚠️ Placeholder |
-
----
-
-## Health checks
-
-Run after any deploy:
-```
-npx ts-node --project scripts/tsconfig.json scripts/healthcheck.ts
-```
-
-Checks:
-- HTTP: landing, auth, /api/health, /dm/invite (should 404)
-- DB: all tables exist, player_code/color_scheme/campaign_code columns
-- Auth: sign in with test credentials, get session token
-- API routes: /api/character, /api/events, /api/tracker, /api/claude/arc, /api/export-pdf
-
-Environment variables needed in `.env.local`:
-- `HEALTHCHECK_EMAIL` (default: ralledj+player2@gmail.com)
-- `HEALTHCHECK_PASSWORD` — set this to the test player's password
-
-Add `HEALTHCHECK_PASSWORD` to Vercel env vars if running against production.
+| HEALTHCHECK_PASSWORD | ⚠️ Not set |
 
 ---
 
 ## Next priorities
 
-1. Run all Supabase SQL migrations (esp. player_code, color_scheme columns)
-2. Set HEALTHCHECK_PASSWORD, run healthcheck
-3. Test campaign join: player visits Settings → enters CAMP code → joins
-4. Configure Resend SMTP for email
-5. Arc view — cache in DB
-6. PDF export font fix
+1. Set HEALTHCHECK_PASSWORD, run full healthcheck
+2. Configure Resend SMTP for email confirmation
+3. Verify end-to-end: sign up → onboard → pick theme → CAMP join → DM sees player
+4. Arc view — cache in DB
+5. PDF export font fix
