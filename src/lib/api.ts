@@ -7,26 +7,37 @@ function buildClient(apiKey?: string) {
   return new Anthropic({ apiKey: apiKey || process.env.ANTHROPIC_API_KEY })
 }
 
+/**
+ * Build context block from live data only.
+ * NO hardcoded character names, tracker names, or story references.
+ * Tracker names come from tracker_config when available.
+ */
 function buildContextBlock(
   trackers: { mask: number; dagger: number; bottle: number; wound: number },
   characterName: string,
-  recentEvents?: string[]
+  recentEvents?: string[],
+  trackerNames?: { mask?: string; dagger?: string; bottle?: string; wound?: string }
 ): string {
-  const maskDesc = trackers.mask > 70 ? 'performance solid' : trackers.mask > 40 ? 'cracks showing' : 'barely holding'
-  const daggerDesc = trackers.dagger > 70 ? 'deafeningly loud' : trackers.dagger > 40 ? 'pressure building' : 'quiet but present'
-  const bottleDesc = trackers.bottle > 70 ? 'deep in it' : trackers.bottle > 40 ? 'familiar levels' : 'holding back'
-  const woundDesc = trackers.wound > 70 ? 'walls fully up' : trackers.wound > 40 ? 'bruised, wary' : 'unusually open'
+  const t1 = trackerNames?.mask || 'Tracker 1 (public persona)'
+  const t2 = trackerNames?.dagger || 'Tracker 2 (internal pressure)'
+  const t3 = trackerNames?.bottle || 'Tracker 3 (self-medication)'
+  const t4 = trackerNames?.wound || 'Tracker 4 (emotional openness)'
+
+  const desc1 = trackers.mask > 70 ? 'high' : trackers.mask > 40 ? 'moderate' : 'low'
+  const desc2 = trackers.dagger > 70 ? 'high' : trackers.dagger > 40 ? 'moderate' : 'low'
+  const desc3 = trackers.bottle > 70 ? 'high' : trackers.bottle > 40 ? 'moderate' : 'low'
+  const desc4 = trackers.wound > 70 ? 'high' : trackers.wound > 40 ? 'moderate' : 'low'
 
   let ctx = `CHARACTER: ${characterName}
 
-CURRENT INTERNAL STATE:
-The Mask (public persona integrity): ${trackers.mask}/100 — ${maskDesc}
-The Dagger (infernal pressure / whisper frequency): ${trackers.dagger}/100 — ${daggerDesc}
-The Bottle (appetite for oblivion): ${trackers.bottle}/100 — ${bottleDesc}
-The Wound (damage / capacity for connection): ${trackers.wound}/100 — ${woundDesc}`
+CURRENT PSYCHOLOGICAL STATE:
+${t1}: ${trackers.mask}/100 (${desc1})
+${t2}: ${trackers.dagger}/100 (${desc2})
+${t3}: ${trackers.bottle}/100 (${desc3})
+${t4}: ${trackers.wound}/100 (${desc4})`
 
   if (recentEvents && recentEvents.length > 0) {
-    ctx += '\n\nRECENT EVENTS (most recent last):\n'
+    ctx += '\n\nRECENT EVENTS:\n'
     recentEvents.slice(-5).forEach((e, i) => { ctx += `${i + 1}. ${e}\n` })
   }
 
@@ -39,7 +50,6 @@ async function logError(params: {
   screen?: string
   action?: string
   error: unknown
-  appState?: Record<string, unknown>
 }) {
   try {
     const supabase = await createServiceClient()
@@ -52,7 +62,6 @@ async function logError(params: {
       error_type: err.name,
       error_message: err.message,
       stack_trace: err.stack,
-      app_state: params.appState as never,
     })
   } catch {}
 }
@@ -62,32 +71,41 @@ export async function generatePlayDirective(params: {
   dossierSummary: string
   trackers: { mask: number; dagger: number; bottle: number; wound: number }
   recentEvents?: string[]
+  trackerNames?: { mask?: string; dagger?: string; bottle?: string; wound?: string }
+  dominantState?: { label: string; desc: string }
+  previousDirective?: string
   apiKey?: string
   userId?: string
   characterId?: string
 }): Promise<string> {
   try {
     const client = buildClient(params.apiKey)
-    const ctx = buildContextBlock(params.trackers, params.characterName, params.recentEvents)
+    const ctx = buildContextBlock(params.trackers, params.characterName, params.recentEvents, params.trackerNames)
+    const dominantNote = params.dominantState
+      ? `\nDOMINANT STATE: ${params.dominantState.label} — ${params.dominantState.desc}`
+      : ''
+    const prevNote = params.previousDirective
+      ? `\nPREVIOUS DIRECTIVE: "${params.previousDirective}" — evolve this subtly, don't replace entirely.`
+      : ''
+
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 100,
-      system: `You are a character performance director for tabletop RPG. You give precise, behavioral instructions to players.
-Character dossier: ${params.dossierSummary}`,
+      system: `You are a character performance director for tabletop RPG. You give precise, present-tense behavioral instructions.
+RULES: Never invent plot or story events. Only reference psychological patterns from the dossier and current state.
+Character dossier: ${params.dossierSummary || 'No dossier provided.'}`,
       messages: [{
         role: 'user',
-        content: `${ctx}
+        content: `${ctx}${dominantNote}${prevNote}
 
-Generate ONE behavioral play directive. Exactly one sentence. Maximum 12 words. Always starts with "Play him" or "Play her" or "Play them". Present tense. Behavioral, not descriptive. No explanation.
-
-Single sentence. Starts with "Play". Twelve words maximum.`
+Generate ONE behavioral play directive. Exactly one sentence. Maximum 12 words. Starts with "Play them" or "Play [character name]". Present tense. Behavioral — what to do at the table, not what the character is like. No story invention.`
       }]
     })
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
-    return text || 'Play him like the performance is the only thing holding him together.'
+    return text || `Play ${params.characterName} true to their current psychological state.`
   } catch (error) {
     await logError({ userId: params.userId, characterId: params.characterId, screen: 'now', action: 'generatePlayDirective', error })
-    return 'Play him like the performance is the only thing holding him together.'
+    return `Play ${params.characterName} true to their current psychological state.`
   }
 }
 
@@ -98,18 +116,20 @@ export async function generateEventNarrative(params: {
   category: string
   subcategory: string
   reaction: string
+  trackerNames?: { mask?: string; dagger?: string; bottle?: string; wound?: string }
   apiKey?: string
   userId?: string
   characterId?: string
 }): Promise<string> {
   try {
     const client = buildClient(params.apiKey)
-    const ctx = buildContextBlock(params.trackers, params.characterName)
+    const ctx = buildContextBlock(params.trackers, params.characterName, undefined, params.trackerNames)
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 150,
-      system: `You are writing internal narrative for a tabletop RPG character. Third person, past tense, specific and behavioral.
-Character dossier: ${params.dossierSummary}`,
+      system: `You write one-sentence psychological event narratives for tabletop RPG characters. Third person, past tense. Behavioral and specific — what the character did or felt, not interpretation.
+RULES: Never invent plot. Only describe the psychological moment from the dossier and state context.
+Character dossier: ${params.dossierSummary || 'No dossier provided.'}`,
       messages: [{
         role: 'user',
         content: `${ctx}
@@ -117,14 +137,14 @@ Character dossier: ${params.dossierSummary}`,
 EVENT: ${params.category} / ${params.subcategory}
 REACTION: ${params.reaction}
 
-Write ONE sentence of internal narrative for this moment. Third person. Past tense. Behavioral and specific — what he actually did or felt, not what it means. Maximum 25 words. No quotes around the sentence.`
+ONE sentence. Third person. Past tense. Behavioral — what they did or felt. Maximum 25 words. No quotes.`
       }]
     })
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
-    return text || `He moved through it the way he always did — with enough performance to cover the fact that something had shifted.`
+    return text || `${params.characterName} moved through it — performance holding, something shifting underneath.`
   } catch (error) {
     await logError({ userId: params.userId, characterId: params.characterId, screen: 'session', action: 'generateEventNarrative', error })
-    return `He moved through it the way he always did — with enough performance to cover the fact that something had shifted.`
+    return `${params.characterName} moved through it — something shifted underneath.`
   }
 }
 
@@ -135,33 +155,34 @@ export async function generateLongRestMonologue(params: {
   drank: boolean
   dreamed: boolean
   recentEvents?: string[]
+  trackerNames?: { mask?: string; dagger?: string; bottle?: string; wound?: string }
   apiKey?: string
   userId?: string
   characterId?: string
 }): Promise<string> {
   try {
     const client = buildClient(params.apiKey)
-    const ctx = buildContextBlock(params.trackers, params.characterName, params.recentEvents)
-    const restContext = `Did he drink tonight: ${params.drank ? 'Yes' : 'No'}. Did he dream: ${params.dreamed ? 'Yes' : 'No'}.`
+    const ctx = buildContextBlock(params.trackers, params.characterName, params.recentEvents, params.trackerNames)
+    const restContext = `Rest details: ${params.drank ? 'drank' : 'did not drink'}. ${params.dreamed ? 'Dreamed.' : 'No dreams.'}`
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 300,
-      system: `You are writing waking monologue for a tabletop RPG character. First person, present tense, internal and honest.
-Character dossier: ${params.dossierSummary}`,
+      system: `You write first-person waking monologues for tabletop RPG characters. Internal, honest, present tense.
+RULES: Never invent plot. Only reference psychological state from dossier and tracker values.
+Character dossier: ${params.dossierSummary || 'No dossier provided.'}`,
       messages: [{
         role: 'user',
         content: `${ctx}
-
 ${restContext}
 
-Write a "waking into this day" paragraph. First person. Present tense. 3-4 sentences. Internal — what he notices upon waking, what he carries into this day. Honest and specific. References recent events if relevant.`
+Write a "waking into this day" internal monologue. First person. Present tense. 3-4 sentences. What they notice, what they carry. Honest and specific to their psychological state. No story invention.`
       }]
     })
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
-    return text || `I wake with the familiar weight of yesterday still on my chest. Whatever happened, it stays with me.`
+    return text || `Another day. The weight from last session is still here. Something is different, but I haven't named it yet.`
   } catch (error) {
     await logError({ userId: params.userId, characterId: params.characterId, screen: 'session', action: 'generateLongRestMonologue', error })
-    return `I wake with the familiar weight of yesterday still on my chest. Whatever happened, it stays with me.`
+    return `Another day. The weight from last session is still here.`
   }
 }
 
@@ -171,6 +192,7 @@ export async function generateClueNarrative(params: {
   sourceType: string
   rawText: string
   existingBelief?: string
+  boardSubject?: string
   apiKey?: string
   userId?: string
   characterId?: string
@@ -180,21 +202,22 @@ export async function generateClueNarrative(params: {
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 400,
-      system: `You are writing clue responses for a tabletop RPG character. Third person. Internal and specific.
-Character dossier: ${params.dossierSummary}`,
+      system: `You write clue responses for tabletop RPG characters. Third person. Internal and specific.
+RULES: Never invent plot. Only describe how the character psychologically processes the clue they received.
+Character dossier: ${params.dossierSummary || 'No dossier provided.'}`,
       messages: [{
         role: 'user',
         content: `CHARACTER: ${params.characterName}
 CLUE SOURCE: ${params.sourceType}
 NEW CLUE: ${params.rawText}
-CURRENT BELIEF: ${params.existingBelief || 'Nothing established yet.'}
+CURRENT BELIEF ABOUT ${params.boardSubject || 'the mystery'}: ${params.existingBelief || 'Nothing established yet.'}
 
-Part 1 — NARRATIVE (1-2 sentences): How does he receive this clue? What does it do to him internally?
-Part 2 — UPDATED BELIEF (1 paragraph): Rewrite what he currently believes about the central mystery, incorporating this new clue. Write in third person, present tense, as a living synthesis.
+Part 1 — NARRATIVE (1-2 sentences): How does ${params.characterName} receive this clue psychologically? Behavioral, not interpretive.
+Part 2 — UPDATED BELIEF (1 paragraph): What does ${params.characterName} now believe about ${params.boardSubject || 'the mystery'}, incorporating this clue? Third person, present tense.
 
-Format exactly:
-NARRATIVE: [1-2 sentences]
-BELIEF: [1 paragraph]`
+Format:
+NARRATIVE: [sentences]
+BELIEF: [paragraph]`
       }]
     })
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
@@ -226,8 +249,9 @@ export async function generateRelationshipNarrative(params: {
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 400,
-      system: `You are writing relationship moments for a tabletop RPG character. Third person. Honest and specific.
-Character dossier: ${params.dossierSummary}`,
+      system: `You write relationship moment narratives for tabletop RPG characters. Third person. Honest and specific.
+RULES: Never invent plot. Describe the psychological impact of the moment based only on what happened.
+Character dossier: ${params.dossierSummary || 'No dossier provided.'}`,
       messages: [{
         role: 'user',
         content: `CHARACTER: ${params.characterName}
@@ -236,14 +260,14 @@ MOMENT TYPE: ${params.momentType}
 WHAT HAPPENED: ${params.rawText}
 CURRENT RELATIONSHIP STATE: ${params.currentState || 'Not yet established.'}
 
-Part 1 — NARRATIVE (1-2 sentences): What happened between them, from his internal perspective?
-Part 2 — TRUST DIRECTION: Is this "Closer", "Further", or "Complicated"? One word only.
-Part 3 — UPDATED STATE (1 paragraph): Where do things stand now between them? Third person, present tense.
+Part 1 — NARRATIVE (1-2 sentences): What happened psychologically for ${params.characterName} in this moment with ${params.npcName}?
+Part 2 — TRUST DIRECTION: "Closer", "Further", or "Complicated"? One word only.
+Part 3 — UPDATED STATE (1 paragraph): Where do things stand now? Third person, present tense.
 
-Format exactly:
-NARRATIVE: [1-2 sentences]
-TRUST: [Closer/Further/Complicated]
-STATE: [1 paragraph]`
+Format:
+NARRATIVE: [sentences]
+TRUST: [word]
+STATE: [paragraph]`
       }]
     })
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
@@ -269,33 +293,36 @@ export async function generatePrepText(params: {
   recentEvents?: string[]
   cluesSummary?: string
   relationshipSummaries?: string[]
+  trackerNames?: { mask?: string; dagger?: string; bottle?: string; wound?: string }
+  boardSubject?: string
   apiKey?: string
   userId?: string
   characterId?: string
 }): Promise<string> {
   try {
     const client = buildClient(params.apiKey)
-    const ctx = buildContextBlock(params.trackers, params.characterName, params.recentEvents)
+    const ctx = buildContextBlock(params.trackers, params.characterName, params.recentEvents, params.trackerNames)
     let extraCtx = ''
-    if (params.cluesSummary) extraCtx += `\nCURRENT MYSTERY BELIEF:\n${params.cluesSummary}`
+    if (params.cluesSummary) extraCtx += `\nCURRENT BELIEF ABOUT ${params.boardSubject || 'the mystery'}:\n${params.cluesSummary}`
     if (params.relationshipSummaries?.length) extraCtx += `\nRELATIONSHIPS:\n${params.relationshipSummaries.join('\n')}`
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 600,
-      system: `You are writing pre-session character prep for a tabletop RPG player. First person, present tense, honest and specific. This is how the character feels walking into the next scene.
-Character dossier: ${params.dossierSummary}`,
+      system: `You write pre-session character prep for tabletop RPG players. First person, present tense. Honest and specific.
+RULES: Never invent plot. Only reference psychological patterns from dossier and logged state.
+Character dossier: ${params.dossierSummary || 'No dossier provided.'}`,
       messages: [{
         role: 'user',
         content: `${ctx}${extraCtx}
 
-Write 150-200 words of prep text. First person. Present tense. How he's walking into the next session — what he's carrying, what he wants, what he's afraid of, what he's performing. Reference specific events and relationships. End with one behavioral anchor sentence.`
+Write 150-200 words of prep text as ${params.characterName}. First person. Present tense. What they carry into the next session — psychological state, what they want, what they're guarding, what they're performing. Specific to this character's dossier. End with one behavioral anchor sentence about how to play them.`
       }]
     })
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
-    return text || 'I carry yesterday with me. Whatever comes next, I\'ll handle it the way I always do.'
+    return text || `I carry what happened into today. Whatever comes next, I'll meet it as myself.`
   } catch (error) {
     await logError({ userId: params.userId, characterId: params.characterId, screen: 'journey', action: 'generatePrepText', error })
-    return 'I carry yesterday with me. Whatever comes next, I\'ll handle it the way I always do.'
+    return `I carry what happened into today. Whatever comes next, I'll meet it as myself.`
   }
 }
 
@@ -313,7 +340,6 @@ export interface CharacterConfig {
   primary_ally: { name: string; role: string } | null
   dangerous_element: { name: string; exists: boolean } | null
   stress_responses: string[]
-  // Dynamic category names derived from character
   dangerous_element_category: {
     id: string; icon: string; name: string; description: string
     tracker_weights: Record<string, number>
@@ -326,7 +352,6 @@ export interface CharacterConfig {
   clue_board_name: string
   clue_board_subject: string
   color_scheme_suggestion: string
-  // Legacy tracker names kept for backward compat
   trackerNames: { mask: string; dagger: string; bottle: string; wound: string }
 }
 
@@ -351,11 +376,11 @@ export async function analyzeDossier(params: {
     dangerous_element: params.interview?.dangerous_element ? { name: params.interview.dangerous_element.name, exists: true } : null,
     stress_responses: params.interview?.stress_responses || [],
     dangerous_element_category: { id: 'special', icon: '✝', name: 'The Unknown', description: 'a surge, whisper, or moment of uncontrolled power', tracker_weights: { dagger: 10, mask: -4 } },
-    antagonist_category: { id: 'antagonist', icon: '🔍', name: 'The Mystery', description: 'clue, sighting, someone connected to it', tracker_weights: { dagger: 5, wound: 8 } },
+    antagonist_category: { id: 'antagonist', icon: '🔍', name: 'The Mystery', description: 'clue, sighting, connection to the antagonist', tracker_weights: { dagger: 5, wound: 8 } },
     key_relationships: [],
     clue_board_name: 'The Mystery',
     clue_board_subject: 'the antagonist',
-    color_scheme_suggestion: 'grimoire',
+    color_scheme_suggestion: 'warm',
     trackerNames: { mask: 'The Mask', dagger: 'The Dagger', bottle: 'The Bottle', wound: 'The Wound' },
   }
 
@@ -373,51 +398,51 @@ INTERVIEW ANSWERS:
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 2000,
-      system: 'You are analyzing a tabletop RPG character to extract psychological profile data. Respond ONLY in valid JSON.',
+      system: 'You analyze tabletop RPG character dossiers to extract psychological profile data. Respond ONLY in valid JSON. Never invent plot. Base everything on what is in the dossier.',
       messages: [{
         role: 'user',
         content: `DOSSIER:\n${params.dossierText}\n${interviewBlock}
 
-Extract character data and return ONLY this JSON structure:
+Extract character data. Return ONLY this JSON:
 {
-  "characterName": "character's name",
-  "voiceSummary": "2-3 sentences, third person, who they are and how they operate",
+  "characterName": "character's name from dossier",
+  "voiceSummary": "2-3 sentences, third person, psychological patterns only",
   "trackerNames": {
-    "mask": "2-3 words for public persona tracker",
-    "dagger": "2-3 words for internal pressure/darkness",
-    "bottle": "2-3 words for self-medication/escapism",
-    "wound": "2-3 words for emotional damage/walls"
+    "mask": "2-3 words for this character's public persona tracker",
+    "dagger": "2-3 words for this character's internal pressure tracker",
+    "bottle": "2-3 words for this character's self-medication tracker",
+    "wound": "2-3 words for this character's emotional damage tracker"
   },
   "emotionPalette": [
-    {"key": "charming", "label": "ALL_CAPS_LABEL", "desc": "8-word behavioral descriptor specific to this character"},
+    {"key": "charming", "label": "ALL_CAPS_LABEL", "desc": "8-word behavioral descriptor"},
     {"key": "volatile", "label": "ALL_CAPS_LABEL", "desc": "8-word behavioral descriptor"},
     {"key": "reckless", "label": "ALL_CAPS_LABEL", "desc": "8-word behavioral descriptor"},
     {"key": "withdrawn", "label": "ALL_CAPS_LABEL", "desc": "8-word behavioral descriptor"},
     {"key": "guarded", "label": "ALL_CAPS_LABEL", "desc": "8-word behavioral descriptor"},
     {"key": "present", "label": "ALL_CAPS_LABEL", "desc": "8-word behavioral descriptor"}
   ],
-  "colorSchemeSuggestion": "grimoire|sanctum|wilds|shadow|forge",
-  "openingLine": "first-person sentence in character's voice, welcoming them to the app",
-  "antagonistName": "antagonist's name or 'the mystery'",
+  "colorSchemeSuggestion": "warm|dark|slate|forest|ink",
+  "openingLine": "first-person sentence in this specific character's voice",
+  "antagonistName": "antagonist name or 'the mystery'",
   "dangerous_element_category": {
     "id": "special",
     "icon": "✝",
-    "name": "The Dagger (or character-specific name)",
-    "description": "short description of what this category tracks",
+    "name": "name for this character's dangerous element category",
+    "description": "what this category tracks for this character",
     "tracker_weights": {"dagger": 10, "mask": -4}
   },
   "antagonist_category": {
     "id": "antagonist",
     "icon": "🔍",
-    "name": "antagonist name or 'The Mystery'",
-    "description": "what this category tracks about the antagonist",
+    "name": "name for the antagonist/mystery category",
+    "description": "what this tracks for this character",
     "tracker_weights": {"dagger": 5, "wound": 8}
   },
   "key_relationships": [
-    {"name": "NPC name", "role": "their role", "description": "one sentence about the relationship"}
+    {"name": "NPC name", "role": "role in character's life", "description": "one sentence"}
   ],
-  "clue_board_name": "e.g. 'The Severin Board'",
-  "clue_board_subject": "e.g. 'Severin Draik'"
+  "clue_board_name": "name for the mystery tracking board",
+  "clue_board_subject": "name of the antagonist or mystery being tracked"
 }`
       }]
     })
@@ -437,7 +462,7 @@ Extract character data and return ONLY this JSON structure:
       key_relationships: parsed.key_relationships || [],
       clue_board_name: parsed.clue_board_name || 'The Mystery',
       clue_board_subject: parsed.clue_board_subject || parsed.antagonistName || 'the antagonist',
-      color_scheme_suggestion: parsed.colorSchemeSuggestion || 'grimoire',
+      color_scheme_suggestion: parsed.colorSchemeSuggestion || 'warm',
       trackerNames: parsed.trackerNames || fallbackConfig.trackerNames,
     }
 
@@ -446,7 +471,7 @@ Extract character data and return ONLY this JSON structure:
       voiceSummary: parsed.voiceSummary || '',
       trackerNames: parsed.trackerNames || fallbackConfig.trackerNames,
       emotionPalette: parsed.emotionPalette || [],
-      colorScheme: { primary: '#c9a84c', secondary: '#8a6e2e', accent: '#f0e6d3' },
+      colorScheme: { primary: '#9b7e4e', secondary: '#7a6038', accent: '#f0e6d3' },
       openingLine: parsed.openingLine || 'The work begins.',
       antagonistName: parsed.antagonistName || 'the mystery',
       characterConfig: config,
@@ -462,9 +487,9 @@ Extract character data and return ONLY this JSON structure:
         { key: 'reckless', label: 'RECKLESS', desc: 'The bottle is speaking' },
         { key: 'withdrawn', label: 'WITHDRAWN', desc: 'The mask is slipping' },
         { key: 'guarded', label: 'GUARDED', desc: 'The wound is talking' },
-        { key: 'present', label: 'PRESENT', desc: 'He is here, right now' },
+        { key: 'present', label: 'PRESENT', desc: 'Present, here, right now' },
       ],
-      colorScheme: { primary: '#c9a84c', secondary: '#8b6a30', accent: '#f0e6d3' },
+      colorScheme: { primary: '#9b7e4e', secondary: '#7a6038', accent: '#f0e6d3' },
       openingLine: "The work begins. Let's see who you become.",
       antagonistName: 'the mystery',
       characterConfig: fallbackConfig,
@@ -479,20 +504,21 @@ export async function generateDMPartyBrief(params: {
     playDirective: string
     trackers: { mask: number; dagger: number; bottle: number; wound: number }
     recentEvents?: string[]
+    trackerNames?: { mask?: string; dagger?: string; bottle?: string; wound?: string }
   }>
   apiKey?: string
 }): Promise<string> {
   try {
     const client = buildClient(params.apiKey)
     const charSummaries = params.characters.map(c => {
-      const ctx = buildContextBlock(c.trackers, c.name, c.recentEvents)
+      const ctx = buildContextBlock(c.trackers, c.name, c.recentEvents, c.trackerNames)
       return `${ctx}\nCURRENT DIRECTIVE: ${c.playDirective}`
     }).join('\n\n---\n\n')
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 800,
-      system: 'You are a DM tool that generates pre-session party briefs. Specific, actionable, based on current character states.',
+      system: 'You generate pre-session party briefs for DMs. Specific, actionable, based only on character states provided. Never invent plot.',
       messages: [{
         role: 'user',
         content: `CAMPAIGN: ${params.campaignName}
@@ -500,7 +526,7 @@ export async function generateDMPartyBrief(params: {
 CHARACTER STATES:
 ${charSummaries}
 
-Generate a pre-session party brief. For each character: their current emotional state in one sentence. Then: tensions between characters based on their states. Then: 2-3 narrative hooks that would naturally engage the party's current states. 300 words maximum.`
+Generate a pre-session party brief. For each character: their current psychological state in one sentence. Then: psychological tensions between characters. Then: 2-3 narrative hooks suggested by the current states. 300 words maximum.`
       }]
     })
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''

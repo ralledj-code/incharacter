@@ -563,7 +563,7 @@ export default function OnboardingPlayer() {
               <div className="animate-fade-in">
                 <p className="label-caps mb-2">Name it in a few words</p>
                 <input value={q4DangerousName} onChange={e => setQ4DangerousName(e.target.value)}
-                  className="w-full px-4 py-3" placeholder="The infernal pact, the drinking, wild magic..." autoFocus />
+                  className="w-full px-4 py-3" placeholder="Their dangerous element — a power, curse, addiction, or secret..." autoFocus />
               </div>
             )}
             <div className="flex gap-3">

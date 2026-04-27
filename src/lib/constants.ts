@@ -17,12 +17,12 @@ export const COLORS = {
 } as const
 
 export const GLYPH_STATES = [
-  { key: 'charming', label: 'CHARMING', desc: 'The performance is intact' },
-  { key: 'volatile', label: 'VOLATILE', desc: 'The noise is getting loud' },
-  { key: 'reckless', label: 'RECKLESS', desc: 'The bottle is speaking' },
-  { key: 'withdrawn', label: 'WITHDRAWN', desc: 'The mask is slipping' },
-  { key: 'guarded', label: 'GUARDED', desc: 'The wound is talking' },
-  { key: 'present', label: 'PRESENT', desc: 'He is here, right now' },
+  { key: 'charming',  label: 'CHARMING',  desc: 'The performance is holding' },
+  { key: 'volatile',  label: 'VOLATILE',  desc: 'Internal pressure is high' },
+  { key: 'reckless',  label: 'RECKLESS',  desc: 'Appetite is driving decisions' },
+  { key: 'withdrawn', label: 'WITHDRAWN', desc: 'Going quiet, pulling back' },
+  { key: 'guarded',   label: 'GUARDED',   desc: 'Walls are up' },
+  { key: 'present',   label: 'PRESENT',   desc: 'Genuinely here, right now' },
 ] as const
 
 export type GlyphStateKey = typeof GLYPH_STATES[number]['key']

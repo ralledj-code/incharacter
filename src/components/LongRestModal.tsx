@@ -70,7 +70,7 @@ export default function LongRestModal({ character, session, tracker, onComplete,
         const data = await res.json()
         waking = data.monologue || ''
       } catch {
-        waking = `${drank ? 'The night was long and the bottle was honest.' : "I stayed clear last night."} ${dreamed ? 'The dreams came.' : "Sleep was mercifully dark."}`
+        waking = `${drank ? 'The night passed with the usual indulgence.' : 'Stayed clear through the night.'} ${dreamed ? 'The dreams came.' : 'Sleep was dark and quiet.'}`
       }
 
       // Update session
