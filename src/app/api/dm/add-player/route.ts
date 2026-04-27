@@ -1,23 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient as createAnonClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type R = Record<string, any>
 
+// True service role client — bypasses RLS entirely, no session inheritance
+const admin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    // Auth check only — anon client reads the user's JWT from cookies
+    const anonClient = await createAnonClient()
+    const { data: { user } } = await anonClient.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { campaignId, input } = await req.json()
     if (!campaignId || !input?.trim()) return NextResponse.json({ error: 'campaignId and input required' }, { status: 400 })
 
-    const service = await createServiceClient()
-    const db = (t: string) => (service.from(t) as R)
-
-    // Verify DM owns this campaign
-    const { data: camp } = await db('campaigns').select('id, name').eq('id', campaignId).eq('dm_id', user.id).limit(1)
+    // Verify DM owns this campaign — admin client
+    const { data: camp } = await (admin.from('campaigns') as R)
+      .select('id, name').eq('id', campaignId).eq('dm_id', user.id).limit(1)
     if (!camp?.length) return NextResponse.json({ error: 'Campaign not found or access denied' }, { status: 403 })
     const campaignName: string = camp[0].name
 
@@ -29,9 +35,9 @@ export async function POST(req: NextRequest) {
     let playerName: string | null = null
 
     if (isCode) {
-      // Step 1: find the player by IC code
+      // Step 1: find the player by IC code — admin client
       console.log('[add-player] step1 IC code lookup:', inputUpper)
-      const { data: profiles, error: e1 } = await db('profiles')
+      const { data: profiles, error: e1 } = await (admin.from('profiles') as R)
         .select('id, username')
         .filter('player_code', 'ilike', inputUpper)
         .limit(1)
@@ -43,9 +49,9 @@ export async function POST(req: NextRequest) {
       playerId = profiles[0].id
       playerName = profiles[0].username
     } else {
-      // Step 1: find the player by email via auth admin
+      // Step 1: find the player by email — admin auth client
       console.log('[add-player] step1 email lookup:', normalizedInput)
-      const { data: { users }, error: listErr } = await service.auth.admin.listUsers()
+      const { data: { users }, error: listErr } = await admin.auth.admin.listUsers()
       console.log('[add-player] step1 listUsers error:', listErr)
 
       if (listErr) return NextResponse.json({ error: 'Failed to look up by email.' }, { status: 500 })
@@ -54,16 +60,17 @@ export async function POST(req: NextRequest) {
       console.log('[add-player] step1 auth user:', authUser?.id)
       if (!authUser) return NextResponse.json({ error: `No account found with email ${normalizedInput}.` }, { status: 404 })
 
-      const { data: profiles } = await db('profiles').select('id, username').eq('id', authUser.id).limit(1)
+      const { data: profiles } = await (admin.from('profiles') as R)
+        .select('id, username').eq('id', authUser.id).limit(1)
       if (!profiles?.length) return NextResponse.json({ error: 'Player has not completed onboarding.' }, { status: 404 })
 
       playerId = profiles[0].id
       playerName = profiles[0].username
     }
 
-    // Step 2: insert member row
+    // Step 2: insert member row — admin client
     console.log('[add-player] step2 insert member:', { campaignId, playerId })
-    const { error: e2 } = await db('campaign_members').insert({
+    const { error: e2 } = await (admin.from('campaign_members') as R).insert({
       campaign_id: campaignId,
       player_id: playerId,
       accepted: true,
@@ -76,9 +83,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Step 2 error: ${e2.message}` }, { status: 500 })
     }
 
-    // Step 3: update character
+    // Step 3: update character — admin client
     console.log('[add-player] step3 update character for player:', playerId)
-    const { error: e3 } = await db('characters')
+    const { error: e3 } = await (admin.from('characters') as R)
       .update({ campaign_id: campaignId })
       .eq('player_id', playerId)
     console.log('[add-player] step3 result:', { e3 })

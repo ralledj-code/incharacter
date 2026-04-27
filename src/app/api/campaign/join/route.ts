@@ -1,25 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient as createAnonClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type R = Record<string, any>
 
+// True service role client — bypasses RLS entirely, no session inheritance
+const admin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    // Auth check only — anon client reads the user's JWT from cookies
+    const anonClient = await createAnonClient()
+    const { data: { user } } = await anonClient.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { code } = await req.json()
     if (!code?.trim()) return NextResponse.json({ error: 'Campaign code required' }, { status: 400 })
 
-    const service = await createServiceClient()
-    const db = (t: string) => (service.from(t) as R)
     const normalizedCode = code.trim().toUpperCase()
 
-    // Step 1: find the campaign
+    // Step 1: find the campaign — admin client, no RLS
     console.log('[join] step1 lookup code:', normalizedCode)
-    const { data: found, error: e1 } = await db('campaigns')
+    const { data: found, error: e1 } = await (admin.from('campaigns') as R)
       .select('id, name')
       .filter('campaign_code', 'ilike', normalizedCode)
       .limit(1)
@@ -31,9 +37,9 @@ export async function POST(req: NextRequest) {
     const campaignId: string = found[0].id
     const campaignName: string = found[0].name
 
-    // Step 2: insert member row
+    // Step 2: insert member row — admin client
     console.log('[join] step2 insert member:', { campaignId, userId: user.id })
-    const { error: e2 } = await db('campaign_members').insert({
+    const { error: e2 } = await (admin.from('campaign_members') as R).insert({
       campaign_id: campaignId,
       player_id: user.id,
       accepted: true,
@@ -46,9 +52,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Step 2 error: ${e2.message}` }, { status: 500 })
     }
 
-    // Step 3: update character
+    // Step 3: update character — admin client
     console.log('[join] step3 update character for player:', user.id)
-    const { error: e3 } = await db('characters')
+    const { error: e3 } = await (admin.from('characters') as R)
       .update({ campaign_id: campaignId })
       .eq('player_id', user.id)
     console.log('[join] step3 result:', { e3 })
