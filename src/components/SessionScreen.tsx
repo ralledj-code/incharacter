@@ -35,12 +35,11 @@ function EventCard({ event }: { event: Event }) {
           <div style={{ minWidth: 0 }}>
             {/* Fix 5: 14px category label, gold */}
             <p className="font-cinzel tracking-wider mb-1"
-               style={{ fontSize: 14, color: '#c9a84c' }}>
+               style={{ fontSize: 14, color: 'var(--accent)' }}>
               {cat?.label || event.category}
             </p>
-            {/* Fix 5: 16px narrative, warm white */}
             <p className="font-garamond leading-relaxed"
-               style={{ fontSize: 16, color: '#f0e6d3' }}>
+               style={{ fontSize: 16, color: 'var(--text-primary)' }}>
               {event.narrative || event.subcategory}
             </p>
           </div>
@@ -131,10 +130,11 @@ export default function SessionScreen({ character, session, events, tracker }: S
       <div className="flex-1" style={{ borderTop: session?.waking_text ? '1px solid var(--border)' : undefined, marginTop: session?.waking_text ? 20 : 0 }}>
         {events.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-            <div className="text-gold-faint text-4xl mb-4">◈</div>
-            <p className="font-cinzel text-ink-faint text-sm tracking-wider mb-2">The session is quiet</p>
-            <p className="font-garamond text-ink-faint text-sm italic">
-              Log a moment from the Now screen when something worth remembering happens.
+            <p className="font-cinzel tracking-wider mb-2" style={{ color: 'var(--text-faint)', fontSize: 14 }}>
+              Nothing logged yet.
+            </p>
+            <p className="font-garamond" style={{ color: 'var(--text-faint)', fontSize: 15 }}>
+              The session begins when you do.
             </p>
           </div>
         ) : (

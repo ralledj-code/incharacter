@@ -16,17 +16,26 @@ export default async function PlayLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    // Fix 11: max-width 480px, centered, dark background outside
-    <div className="min-h-screen safe-bottom" style={{ background: 'var(--surface)' }}>
-      <div
-        className="mx-auto flex flex-col min-h-screen safe-bottom"
-        style={{ maxWidth: 480, background: 'var(--bg)', position: 'relative' }}
-      >
+    // Max-width 480px on mobile, full-width on desktop (desktop uses its own layout)
+    <div className="min-h-screen safe-bottom" style={{ background: 'var(--bg)' }}>
+      {/* Burger menu — shown on mobile only (desktop layout has no burger) */}
+      <div className="block md:hidden">
         <BurgerMenu loggedIn={true} role={role} />
-        <main className="flex-1 overflow-auto pb-20">
-          {children}
-        </main>
-        <PlayerNav />
+      </div>
+
+      {/* On mobile: constrained width + bottom nav */}
+      <div className="md:hidden">
+        <div className="mx-auto flex flex-col min-h-screen" style={{ maxWidth: 480, background: 'var(--bg)' }}>
+          <main className="flex-1 overflow-auto pb-20">
+            {children}
+          </main>
+          <PlayerNav />
+        </div>
+      </div>
+
+      {/* On desktop: full width, no bottom nav, desktop layout handles itself */}
+      <div className="hidden md:block">
+        {children}
       </div>
     </div>
   )

@@ -1,98 +1,90 @@
 # In Character — Project Progress
 
-Last updated: 2026-04-27 (session 6)
+Last updated: 2026-04-27 (session 7)
 
 ---
 
 ## What's working
 
 ### Auth
-- Email/password sign in and sign up (magic link removed)
-- Password reset flow via email link → /auth/reset-password
+- Email/password sign in and sign up
+- Password reset flow → /auth/reset-password
 - Session persists via Supabase cookies
-- Middleware protects all app routes
+- DM role saved on signIn (handleSignIn upserts role='dm')
+- Auth callback upserts role from URL param on email confirmation
 
 ### Landing page
 - Light theme (#f5f0e8 parchment) — CSS noise grain, gold decorative line
 - 5 content sections with warm card shadows
-- LandingTheme component sets data-theme="light" on html element
 
-### Onboarding (major update this session)
-- **New 14-screen flow** with 5-question interview between upload and analysis
-  - Q1: Core motivation (text)
-  - Q2: Antagonist (yes/no + name + relationship)
-  - Q3: Primary ally (name + role, or "no one yet")
-  - Q4: Dangerous element (yes/no + name)
-  - Q5: Stress responses (pick up to 2 of 6)
-- Claude analyzes BOTH dossier AND interview answers in one call
-- Generates character-specific category names (dangerous element, antagonist)
-- Character config stored in tracker_config with full dynamic structure
-- Color scheme auto-suggested from dossier themes
+### Onboarding
+- 14-screen flow with 5-question interview (motivation, antagonist, ally, danger, stress)
+- Claude analyzes dossier + interview in one call
+- Character-specific categories (dangerous element, antagonist) from tracker_config
+- Color scheme auto-suggested; 6 presets
+
+### CSS Variables system
+- All 6 schemes fully defined: --accent, --accent-dim, --glyph-fill, --glyph-stroke, --text-primary, --text-secondary, --surface-raised
+- Landing page isolated under [data-theme="light"]
+- Player app uses only CSS variables — no hardcoded hex
+
+### Player app — Desktop (new)
+- Two-panel layout at ≥768px:
+  - Left panel (340px): character name, PLAY AS directive (20px), glyph (290px), dominant state card, LOG MOMENT pinned to bottom
+  - Right panel: This Session events, The Arc (Claude paragraph), Last Rest waking text, Clue board (3 clues), Relationships, Long Rest + Prep Me buttons
+- Mobile: unchanged bottom-nav tabs, max-width 480px
+- The Arc: Claude-generated 2-3 sentence psychological trajectory per session block
+
+### ArcaneGlyph (rebuilt)
+- Uses CSS variables: var(--glyph-fill), var(--glyph-stroke)
+- Dramatic fill: 0.82 opacity dark crimson/scheme-appropriate fill
+- Zero-clamp: values < 0.05 render as zero, no floating dots
+- Expanded viewBox with padding — labels never clip
+- State labels: Cinzel 10px + EB Garamond 8px desc, non-italic
+- mini prop for thumbnail rendering
 
 ### Document parsing
-- **unpdf** for PDF extraction (replaces pdf-parse which failed in Vercel serverless)
-- mammoth for .docx/.doc
-- Plain text for .txt, .md
-- All file types route through /api/extract-pdf
-- 50k char limit, min 100 chars, clean error message
+- unpdf for PDF, mammoth for docx, plain text for txt/md
+- 50k char limit, min 100 chars
 
-### Player app
-- Now screen: PLAY HIM AS directive, animated arcane glyph, LOG MOMENT
-- Log Moment flow: 3-tap with horizontal slide animation
-- Session screen: chronological event log, Long Rest modal
-- Journey screen: dynamic tab names from tracker_config
-  - Clue board tab: reads tracker_config.clue_board_name
-  - "What [character] believes about [subject]" uses clue_board_subject
-  - Relationship tab: reads first key relationship name from tracker_config
-- Settings: player code, API key, color scheme, Update Dossier, Restart Character, PDF export, Danger Zone
+### DM app
+- Dashboard: party overview with character cards, pre-session brief
+- Campaign page (/dm/campaign): campaign code display, email invites, player management
+- DM invite sends Resend email with signup link (no magic link)
+- DM API key stored encrypted on campaigns.dm_api_key_encrypted
 
-### Settings (new this session)
-- **Restart Character** button — wipes all character data, redirects to onboarding
-  - Two-step: warning modal + hold 2s to confirm
-  - Keeps account and email, deletes character + all sessions/events/clues/relationships
-- Update Dossier: append-only with timestamp separator
-
-### Admin panel
-- Error log with expandable stack traces
-- User management with role buttons (player/dm/admin) per row
-- /api/admin/grant-role POST route
-
-### Content pages
-- /about, /faq, /privacy, /contact all working with light theme
-- Contact form via Resend (or console fallback)
-
-### SEO
-- sitemap.xml, robots.txt, llms.txt, OG image via /og edge route, JSON-LD
+### Settings
+- Player: player code, API key, color scheme, dossier append, restart character
+- DM: campaign code (not player code), campaign name, DM API key
 
 ---
 
 ## What's broken or untested
 
 ### Email confirmation
-- Supabase default email sender hit rate limits
-- **To fix**: Configure Resend SMTP (see docs/setup-resend-smtp.md)
-- Until fixed: disable email confirmations in Supabase Auth settings
+- Supabase default email sender rate limited
+- To fix: Run docs/fix-trigger-role.sql, configure Resend SMTP
 
 ### Cascade deletes
-- FK constraints do NOT cascade yet
-- Deleting user from Supabase Auth UI leaves orphaned rows
-- **To fix**: Run docs/cascade-delete-migration.sql in Supabase SQL editor
+- Not yet applied. Run docs/cascade-delete-migration.sql in Supabase SQL editor
+- Also run: docs/fix-rls-circular.sql to fix campaign/campaign_members recursion
 
-### PDF export
-- /api/export-pdf — font loading may fail in Vercel edge environment
+### Schema migrations
+- Run supabase-migrations.sql for player_code, campaign_code columns + triggers
+- Run: ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS dm_api_key_encrypted text;
 
 ### Portrait upload
-- Onboarding has portrait step UI but upload to Storage is a stub
+- UI exists but upload to Supabase Storage not wired
 
-### Character-specific LOG MOMENT categories
-- LogMomentFlow still uses hardcoded EVENT_CATEGORIES from constants.ts
-- Should read dangerous_element_category and antagonist_category from tracker_config
-- This is the next major feature to implement
+### PDF export font
+- Google Fonts URL may fail in Vercel serverless — falls back to system font
 
-### Journey screen relationship tabs
-- Currently shows first key relationship as tab name
-- Should show multiple tabs per NPC (up to 3) from tracker_config.key_relationships
-- Placeholder groundwork done, full multi-tab not yet implemented
+### Arc view (new)
+- Generates on demand via /api/claude/arc
+- Requires API key; gracefully falls back if none
+
+### DM tension analysis
+- Party tension "read" not yet implemented in DM dashboard
 
 ---
 
@@ -102,40 +94,22 @@ Last updated: 2026-04-27 (session 6)
 |---------|--------|
 | Email/password sign in | ✅ Working |
 | Email/password sign up | ✅ Working |
-| Email confirmation | ❌ Not arriving (rate limit) |
-| Password reset | ❓ Untested |
-| Resend SMTP | ❌ Not configured |
-| Magic link | ❌ Removed |
+| Email confirmation | ❌ Rate limit (disable in Supabase for now) |
+| DM role assignment on signIn | ✅ Working |
+| DM role from trigger | ❌ Needs docs/fix-trigger-role.sql |
+| Resend SMTP | ❌ Placeholder key |
 | Session persistence | ✅ Working |
 
 ---
 
-## Supabase manual steps required
+## Supabase manual steps (in order)
 
-1. **Run cascade-delete-migration.sql** → `docs/cascade-delete-migration.sql`
-2. **Run supabase-migrations.sql** → player_code, campaign_code triggers
-3. **Configure Resend SMTP** → `docs/setup-resend-smtp.md`
-4. **Site URL**: `https://incharacter.cloud`
-5. **Redirect URLs**: `https://incharacter.cloud/**`
-
----
-
-## Known issues
-
-- `@supabase/auth-helpers-nextjs@0.9` still installed but no longer used in callback
-- PostHog and Resend keys are placeholders in Vercel — replace with real keys
-- LogMomentFlow uses hardcoded categories — not reading from character's tracker_config yet
-
----
-
-## Next priorities
-
-1. Run cascade delete migration and initial schema in Supabase
-2. Configure Resend SMTP so email confirmation works
-3. Update LogMomentFlow to read dynamic categories from tracker_config
-4. Implement multi-tab relationship board (one tab per NPC from key_relationships)
-5. Wire portrait upload to Supabase Storage
-6. End-to-end test: sign up → onboard → play session → long rest → journey
+1. `docs/fix-trigger-role.sql` — trigger reads role from user metadata
+2. `docs/fix-rls-circular.sql` — breaks campaign↔campaign_members recursion
+3. `docs/cascade-delete-migration.sql` — FK cascades
+4. `supabase-migrations.sql` — player_code, campaign_code triggers
+5. `ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS dm_api_key_encrypted text;`
+6. Site URL → `https://incharacter.cloud`, Redirect URLs → `https://incharacter.cloud/**`
 
 ---
 
@@ -148,6 +122,19 @@ Last updated: 2026-04-27 (session 6)
 | SUPABASE_SERVICE_ROLE_KEY | ✅ Set |
 | NEXT_PUBLIC_APP_URL | ✅ Set |
 | NEXT_PUBLIC_SITE_URL | ✅ Set |
+| API_KEY_ENCRYPTION_SECRET | ✅ Set |
 | RESEND_API_KEY | ⚠️ Placeholder |
 | NEXT_PUBLIC_POSTHOG_KEY | ⚠️ Placeholder |
 | NEXT_PUBLIC_POSTHOG_HOST | ✅ Set |
+
+---
+
+## Next priorities
+
+1. Run all Supabase SQL migrations (see above)
+2. Configure Resend SMTP for email confirmation
+3. Test end-to-end: sign up → onboard → play session → long rest → journey → desktop layout
+4. DM dashboard party tension analysis
+5. Portrait upload to Supabase Storage
+6. Arc view caching (store generated arc text in DB, not regenerate each visit)
+7. Multi-tab relationship board per NPC from key_relationships

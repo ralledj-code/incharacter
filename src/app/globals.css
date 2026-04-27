@@ -6,23 +6,29 @@
 
 /* ── App tokens (dark — in-character world) ────────────── */
 :root {
-  --bg:           #0f0f0f;
-  --surface:      #1a1a1a;
-  --surface2:     #222222;
-  --surface3:     #2a2a2a;
-  --gold:         #c9a84c;
-  --gold-dim:     #8a6e2e;
-  --gold-faint:   #3a2f14;
-  --text:         #e8e8e8;
-  --text-dim:     #a0a0a0;
-  --text-faint:   #606060;
-  --border:       #2e2e2e;
-  --red:          #8b2e2e;
-  --red-dim:      #5a1e1e;
-  --accent:       #c9a84c;
-  --accent-dim:   #8a6e2e;
-  --glyph-hi:     rgba(201,168,76,0.45);
-  --glyph-lo:     rgba(136,40,32,0.45);
+  --bg:              #0f0f0f;
+  --surface:         #1a1a1a;
+  --surface2:        #222222;
+  --surface3:        #2a2a2a;
+  --surface-raised:  #282828;
+  --gold:            #c9a84c;
+  --gold-dim:        #8a6e2e;
+  --gold-faint:      #3a2f14;
+  --text:            #e8e8e8;
+  --text-primary:    #e8e8e8;
+  --text-secondary:  #a0a0a0;
+  --text-dim:        #a0a0a0;
+  --text-faint:      #606060;
+  --border:          #2e2e2e;
+  --red:             #8b2e2e;
+  --red-dim:         #5a1e1e;
+  --accent:          #c9a84c;
+  --accent-dim:      #8a6e2e;
+  /* Glyph tokens — used in ArcaneGlyph SVG via CSS custom properties */
+  --glyph-fill:      rgba(136,40,32,0.72);
+  --glyph-stroke:    #c9a84c;
+  --glyph-hi:        rgba(201,168,76,0.45);
+  --glyph-lo:        rgba(136,40,32,0.45);
 }
 
 /* ── Landing page — light "real world" theme ───────────── */
@@ -67,12 +73,32 @@
   border: none;
 }
 
-/* ── Color scheme presets (dark app only) ──────────────── */
-[data-scheme="grimoire"] { --accent:#c9a84c; --accent-dim:#8a6e2e; --glyph-hi:rgba(201,168,76,0.45); --glyph-lo:rgba(136,40,32,0.47); }
-[data-scheme="sanctum"]  { --accent:#c0c8d8; --accent-dim:#7a8898; --glyph-hi:rgba(140,175,220,0.45); --glyph-lo:rgba(20,40,100,0.47); }
-[data-scheme="wilds"]    { --accent:#c8a45a; --accent-dim:#887230; --glyph-hi:rgba(200,164,90,0.45); --glyph-lo:rgba(30,80,30,0.47); }
-[data-scheme="shadow"]   { --accent:#9b7fc8; --accent-dim:#604a90; --glyph-hi:rgba(155,127,200,0.45); --glyph-lo:rgba(10,5,20,0.60); }
-[data-scheme="forge"]    { --accent:#c87840; --accent-dim:#884820; --glyph-hi:rgba(200,120,64,0.45); --glyph-lo:rgba(100,20,20,0.47); }
+/* ── Color scheme presets — all vars per scheme ─────────── */
+[data-scheme="grimoire"] {
+  --accent:#c9a84c; --accent-dim:#8a6e2e;
+  --glyph-fill:rgba(100,28,20,0.82); --glyph-stroke:#c9a84c;
+  --glyph-hi:rgba(201,168,76,0.45); --glyph-lo:rgba(136,40,32,0.47);
+}
+[data-scheme="sanctum"] {
+  --accent:#c0c8d8; --accent-dim:#7a8898;
+  --glyph-fill:rgba(18,35,90,0.82); --glyph-stroke:#c0c8d8;
+  --glyph-hi:rgba(140,175,220,0.45); --glyph-lo:rgba(20,40,100,0.47);
+}
+[data-scheme="wilds"] {
+  --accent:#c8a45a; --accent-dim:#887230;
+  --glyph-fill:rgba(20,60,20,0.82); --glyph-stroke:#c8a45a;
+  --glyph-hi:rgba(200,164,90,0.45); --glyph-lo:rgba(30,80,30,0.47);
+}
+[data-scheme="shadow"] {
+  --accent:#9b7fc8; --accent-dim:#604a90;
+  --glyph-fill:rgba(8,4,16,0.88); --glyph-stroke:#9b7fc8;
+  --glyph-hi:rgba(155,127,200,0.45); --glyph-lo:rgba(10,5,20,0.60);
+}
+[data-scheme="forge"] {
+  --accent:#c87840; --accent-dim:#884820;
+  --glyph-fill:rgba(80,18,10,0.82); --glyph-stroke:#c87840;
+  --glyph-hi:rgba(200,120,64,0.45); --glyph-lo:rgba(100,20,20,0.47);
+}
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
