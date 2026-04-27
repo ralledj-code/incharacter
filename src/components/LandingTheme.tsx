@@ -2,10 +2,9 @@
 
 import { useEffect } from 'react'
 
-// Sets data-theme="light" on <html> for landing page, clears on unmount
 export default function LandingTheme() {
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', 'light')
+    document.documentElement.setAttribute('data-theme', 'landing')
     return () => {
       document.documentElement.removeAttribute('data-theme')
     }

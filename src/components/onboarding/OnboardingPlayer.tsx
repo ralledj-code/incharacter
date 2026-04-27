@@ -265,10 +265,27 @@ export default function OnboardingPlayer() {
 
       if (campaignCode.trim()) {
         const code = campaignCode.trim().toUpperCase()
-        const { data: camp } = await db('campaigns').select('id').eq('campaign_code', code).single()
-        if (camp) {
-          await db('campaign_members').upsert({ campaign_id: camp.id, player_id: user.id, accepted: true })
-          await db('characters').update({ campaign_id: camp.id }).eq('id', character.id)
+        // Fix 1: look up by campaign_code (human-readable), not by id
+        const { data: camp, error: campErr } = await db('campaigns')
+          .select('id, name')
+          .eq('campaign_code', code)
+          .limit(1)
+          .single()
+        if (campErr) {
+          console.error('[campaign-join] lookup error:', campErr.message, 'code:', code)
+        } else if (camp) {
+          const { error: memberErr } = await db('campaign_members').upsert(
+            { campaign_id: camp.id, player_id: user.id, accepted: true, invited_at: new Date().toISOString() },
+            { onConflict: 'campaign_id,player_id' }
+          )
+          if (memberErr) console.error('[campaign-join] member insert error:', memberErr.message)
+          const { error: charUpdateErr } = await db('characters')
+            .update({ campaign_id: camp.id })
+            .eq('id', character.id)
+            .eq('player_id', user.id)
+          if (charUpdateErr) console.error('[campaign-join] character update error:', charUpdateErr.message)
+        } else {
+          console.warn('[campaign-join] no campaign found for code:', code)
         }
       }
 

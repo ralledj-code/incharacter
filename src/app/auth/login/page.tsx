@@ -7,15 +7,12 @@ import { createClient } from '@/lib/supabase/client'
 
 type Tab = 'signin' | 'signup'
 
-const ROLE_KEY = 'ic_signup_role'
-
 function AuthForm() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const role = searchParams.get('role') || 'player'
   const next = searchParams.get('next') || '/dashboard'
   const confirmed = searchParams.get('confirmed') === 'true'
-
   const isDM = role === 'dm'
 
   const [tab, setTab] = useState<Tab>('signin')
@@ -31,13 +28,11 @@ function AuthForm() {
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     try {
       const supabase = createClient()
       const { error: err } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
+        email: email.trim().toLowerCase(), password,
       })
       if (err) {
         if (err.message.toLowerCase().includes('email not confirmed')) {
@@ -48,43 +43,27 @@ function AuthForm() {
           setError(err.message)
         }
       } else {
-        // After sign-in, save role from URL param if DM — trigger always inserts 'player'
+        // Fix 2: Role exclusively from DB — no localStorage
         if (isDM) {
-          const { data: { user: signedInUser } } = await supabase.auth.getUser()
-          if (signedInUser) {
+          const { data: { user: u } } = await supabase.auth.getUser()
+          if (u) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await (supabase.from('profiles') as any).upsert(
-              { id: signedInUser.id, role: 'dm' },
-              { onConflict: 'id' }
-            )
+            await (supabase.from('profiles') as any).upsert({ id: u.id, role: 'dm' }, { onConflict: 'id' })
           }
         }
         router.push(next)
       }
-    } catch {
-      setError('Something went wrong. Try again.')
-    }
+    } catch { setError('Something went wrong. Try again.') }
     setLoading(false)
   }
 
   async function handleSignUp(e: React.FormEvent) {
-    e.preventDefault()
-    setError('')
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.')
-      return
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.')
-      return
-    }
+    e.preventDefault(); setError('')
+    if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
+    if (password !== confirmPassword) { setError('Passwords do not match.'); return }
     setLoading(true)
     try {
-      // Persist role in localStorage so it survives the email confirmation redirect
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(ROLE_KEY, role)
-      }
-
+      // Fix 2: No localStorage — role goes in signUp metadata only
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
       const supabase = createClient()
       const { error: err } = await supabase.auth.signUp({
@@ -92,211 +71,143 @@ function AuthForm() {
         password,
         options: {
           emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(next)}&role=${encodeURIComponent(role)}`,
-          data: { role }, // read by handle_new_user trigger
+          data: { role },
         },
       })
-      if (err) {
-        setError(err.message)
-      } else {
-        setSignupDone(true)
-      }
-    } catch {
-      setError('Something went wrong. Try again.')
-    }
+      if (err) { setError(err.message) } else { setSignupDone(true) }
+    } catch { setError('Something went wrong. Try again.') }
     setLoading(false)
   }
 
   async function handleForgot(e: React.FormEvent) {
     e.preventDefault()
     if (!forgotEmail.trim()) return
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     try {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
       const supabase = createClient()
       const { error: err } = await supabase.auth.resetPasswordForEmail(
-        forgotEmail.trim().toLowerCase(),
-        { redirectTo: `${siteUrl}/auth/reset-password` }
+        forgotEmail.trim().toLowerCase(), { redirectTo: `${siteUrl}/auth/reset-password` }
       )
-      if (err) {
-        setError(err.message)
-      } else {
-        setForgotSent(true)
-      }
-    } catch {
-      setError('Something went wrong. Try again.')
-    }
+      if (err) { setError(err.message) } else { setForgotSent(true) }
+    } catch { setError('Something went wrong. Try again.') }
     setLoading(false)
   }
 
-  // ── Forgot password overlay ───────────────────────────
-  if (showForgot) {
-    return (
-      <div className="animate-fade-in">
-        <button
-          onClick={() => { setShowForgot(false); setForgotSent(false); setError('') }}
-          className="label-caps mb-6 block"
-          style={{ color: 'var(--text-faint)', minHeight: 'auto', minWidth: 'auto' }}
-        >
-          ← Back to sign in
-        </button>
-
-        {forgotSent ? (
-          <div className="text-center space-y-3">
-            <div className="text-2xl" style={{ color: 'var(--accent)' }}>✦</div>
-            <p className="font-garamond" style={{ color: 'var(--text)' }}>
-              Password reset email sent. Check your inbox.
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleForgot} className="space-y-4">
-            <div>
-              <label className="label-caps block mb-2">Your Email</label>
-              <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
-                placeholder="you@somewhere.com" className="w-full px-4 py-3" autoFocus required />
-            </div>
-            {error && <p className="font-garamond text-sm" style={{ color: 'var(--red)' }}>{error}</p>}
-            <button type="submit" disabled={loading || !forgotEmail.trim()}
-              className="btn-gold-solid w-full py-3 disabled:opacity-40">
-              {loading ? 'Sending...' : 'Send Reset Link'}
-            </button>
-          </form>
-        )}
-      </div>
-    )
+  const inputStyle: React.CSSProperties = {
+    display: 'block', width: '100%',
+    background: 'var(--surface)', border: '0.5px solid var(--border2)',
+    color: 'var(--text)', fontSize: 15, borderRadius: 7,
+    padding: '9px 12px', outline: 'none', minHeight: 42,
+    fontFamily: 'inherit',
   }
 
-  // ── Sign up done ───────────────────────────────────────
-  if (signupDone) {
-    return (
-      <div className="text-center space-y-4 animate-fade-in">
-        <div className="text-2xl" style={{ color: 'var(--accent)' }}>✦</div>
-        <h2 className="font-cinzel text-base tracking-wider" style={{ color: 'var(--text)' }}>
-          Check your email
-        </h2>
-        <p className="font-garamond leading-relaxed" style={{ color: 'var(--text-dim)' }}>
-          We sent a confirmation link to <span style={{ color: 'var(--text)' }}>{email}</span>.
-          Click it to activate your {isDM ? 'DM' : 'player'} account, then come back and sign in.
-        </p>
-        <button
-          onClick={() => { setSignupDone(false); setTab('signin'); setPassword(''); setConfirmPassword('') }}
-          className="label-caps"
-          style={{ color: 'var(--text-faint)', minHeight: 'auto', minWidth: 'auto' }}
-        >
-          Back to sign in
-        </button>
-      </div>
-    )
-  }
+  const s = { label: { fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text3)', display: 'block', marginBottom: 6 } as React.CSSProperties }
+
+  if (showForgot) return (
+    <div>
+      <button onClick={() => { setShowForgot(false); setForgotSent(false); setError('') }}
+        style={{ fontSize: 13, color: 'var(--text2)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 20px', minHeight: 'auto' }}>
+        ← Back
+      </button>
+      {forgotSent ? (
+        <p style={{ fontSize: 15, color: 'var(--text2)', lineHeight: 1.6 }}>Reset link sent. Check your inbox.</p>
+      ) : (
+        <form onSubmit={handleForgot} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div><label style={s.label}>Email</label>
+            <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
+              placeholder="you@somewhere.com" style={inputStyle} autoFocus required /></div>
+          {error && <p style={{ fontSize: 13, color: 'var(--danger)' }}>{error}</p>}
+          <button type="submit" disabled={loading || !forgotEmail.trim()} className="btn-primary" style={{ width: '100%' }}>
+            {loading ? 'Sending...' : 'Send reset link'}
+          </button>
+        </form>
+      )}
+    </div>
+  )
+
+  if (signupDone) return (
+    <div style={{ textAlign: 'center' }}>
+      <p style={{ fontSize: 15, color: 'var(--text)', marginBottom: 8, fontWeight: 500 }}>Check your email</p>
+      <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 20 }}>
+        We sent a confirmation link to <strong>{email}</strong>.
+        Click it to activate your {isDM ? 'DM' : 'player'} account, then sign in.
+      </p>
+      <button onClick={() => { setSignupDone(false); setTab('signin'); setPassword(''); setConfirmPassword('') }}
+        style={{ fontSize: 13, color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer', minHeight: 'auto' }}>
+        Back to sign in
+      </button>
+    </div>
+  )
 
   return (
     <div>
-      {/* Role indicator — makes it clear which path the user is on */}
-      <div className="mb-5 p-3 animate-fade-in"
-           style={{ background: isDM ? 'var(--gold-faint)' : 'var(--surface2)', borderLeft: '2px solid var(--accent)', borderRadius: 2 }}>
-        <p className="font-cinzel text-xs tracking-widest" style={{ color: 'var(--accent)' }}>
-          {isDM ? 'Creating a DM account' : 'Creating a player account'}
-        </p>
-      </div>
-
-      {/* Confirmation banner */}
+      {isDM && (
+        <div style={{ marginBottom: 20, padding: '8px 12px', background: 'var(--accent-faint)', borderLeft: '2px solid var(--accent)', borderRadius: '0 6px 6px 0', fontSize: 12, color: 'var(--accent-text)', fontWeight: 500 }}>
+          DM account
+        </div>
+      )}
       {confirmed && (
-        <div className="mb-5 p-4 animate-fade-in"
-             style={{ background: 'var(--gold-faint)', borderLeft: '2px solid var(--accent)', borderRadius: 2 }}>
-          <p className="font-garamond text-sm" style={{ color: 'var(--accent)' }}>
-            Email confirmed. Sign in below.
-          </p>
+        <div style={{ marginBottom: 20, padding: '8px 12px', background: 'var(--accent-faint)', borderRadius: 6, fontSize: 13, color: 'var(--accent-text)' }}>
+          Email confirmed. Sign in below.
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex mb-6" style={{ borderBottom: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', borderBottom: '0.5px solid var(--border)', marginBottom: 24 }}>
         {(['signin', 'signup'] as Tab[]).map(t => (
           <button key={t} onClick={() => { setTab(t); setError('') }}
-            className="flex-1 pb-3 font-cinzel text-xs tracking-widest transition-colors"
             style={{
-              color: tab === t ? 'var(--accent)' : 'var(--text-faint)',
-              borderBottom: tab === t ? '1px solid var(--accent)' : '1px solid transparent',
-              marginBottom: -1, minHeight: 'auto',
+              flex: 1, paddingBottom: 10, fontSize: 13, fontWeight: tab === t ? 500 : 400,
+              color: tab === t ? 'var(--accent-text)' : 'var(--text2)',
+              borderBottom: `1.5px solid ${tab === t ? 'var(--accent)' : 'transparent'}`,
+              marginBottom: -0.5, background: 'none', border: 'none', borderRadius: 0,
+              cursor: 'pointer', minHeight: 'auto',
             }}>
-            {t === 'signin' ? 'Sign In' : 'Sign Up'}
+            {t === 'signin' ? 'Sign in' : 'Sign up'}
           </button>
         ))}
       </div>
 
-      {/* Sign In */}
       {tab === 'signin' && (
-        <form onSubmit={handleSignIn} className="space-y-4 animate-fade-in">
-          <div>
-            <label className="label-caps block mb-2">Email</label>
+        <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div><label style={s.label}>Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="you@somewhere.com" className="w-full px-4 py-3" autoFocus required />
-          </div>
-          <div>
-            <label className="label-caps block mb-2">Password</label>
+              placeholder="you@somewhere.com" style={inputStyle} autoFocus required /></div>
+          <div><label style={s.label}>Password</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••" className="w-full px-4 py-3" required />
-          </div>
-
-          {error && (
-            <div className="p-3" style={{ background: 'var(--red-dim)', borderRadius: 2 }}>
-              <p className="font-garamond text-sm" style={{ color: '#f0b0b0' }}>{error}</p>
-            </div>
-          )}
-
-          <button type="submit" disabled={loading || !email.trim() || !password}
-            className="btn-gold-solid w-full py-3 disabled:opacity-40">
-            {loading ? 'Signing in...' : 'Sign In'}
+              placeholder="••••••••" style={inputStyle} required /></div>
+          {error && <p style={{ fontSize: 13, color: 'var(--danger)', background: 'var(--danger-faint)', padding: '8px 12px', borderRadius: 6 }}>{error}</p>}
+          <button type="submit" disabled={loading || !email.trim() || !password} className="btn-primary" style={{ width: '100%' }}>
+            {loading ? 'Signing in...' : 'Sign in'}
           </button>
-
           <button type="button" onClick={() => { setShowForgot(true); setForgotEmail(email); setError('') }}
-            className="w-full text-center font-garamond text-sm"
-            style={{ color: 'var(--text-faint)', minHeight: 'auto' }}>
+            style={{ fontSize: 13, color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer', minHeight: 'auto', padding: '4px 0' }}>
             Forgot password?
           </button>
         </form>
       )}
 
-      {/* Sign Up */}
       {tab === 'signup' && (
-        <form onSubmit={handleSignUp} className="space-y-4 animate-fade-in">
-          <div>
-            <label className="label-caps block mb-2">Email</label>
+        <form onSubmit={handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div><label style={s.label}>Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="you@somewhere.com" className="w-full px-4 py-3" autoFocus required />
-          </div>
-          <div>
-            <label className="label-caps block mb-2">Password</label>
+              placeholder="you@somewhere.com" style={inputStyle} autoFocus required /></div>
+          <div><label style={s.label}>Password</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="At least 8 characters" className="w-full px-4 py-3" minLength={8} required />
-          </div>
-          <div>
-            <label className="label-caps block mb-2">Confirm Password</label>
+              placeholder="At least 8 characters" style={inputStyle} minLength={8} required /></div>
+          <div><label style={s.label}>Confirm password</label>
             <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
-              placeholder="••••••••" className="w-full px-4 py-3" required />
-          </div>
-
-          {error && (
-            <div className="p-3" style={{ background: 'var(--red-dim)', borderRadius: 2 }}>
-              <p className="font-garamond text-sm" style={{ color: '#f0b0b0' }}>{error}</p>
-            </div>
-          )}
-
+              placeholder="••••••••" style={inputStyle} required /></div>
+          {error && <p style={{ fontSize: 13, color: 'var(--danger)', background: 'var(--danger-faint)', padding: '8px 12px', borderRadius: 6 }}>{error}</p>}
           <button type="submit" disabled={loading || !email.trim() || !password || !confirmPassword}
-            className="btn-gold-solid w-full py-3 disabled:opacity-40">
-            {loading ? 'Creating account...' : isDM ? 'Create DM Account' : 'Create Account'}
+            className="btn-primary" style={{ width: '100%' }}>
+            {loading ? 'Creating account...' : isDM ? 'Create DM account' : 'Create account'}
           </button>
-
-          {/* Role switcher */}
-          <div className="text-center pt-1">
-            <Link
-              href={`/auth/login?role=${isDM ? 'player' : 'dm'}`}
-              className="font-garamond text-sm"
-              style={{ color: 'var(--text-faint)', minHeight: 'auto', minWidth: 'auto' }}
-            >
-              {isDM
-                ? 'Not a DM? Sign up as a player instead →'
-                : 'Running a campaign? Sign up as a DM instead →'}
+          <div style={{ textAlign: 'center' }}>
+            <Link href={`/auth/login?role=${isDM ? 'player' : 'dm'}`}
+              style={{ fontSize: 12, color: 'var(--text3)', minHeight: 'auto', minWidth: 'auto' }}>
+              {isDM ? 'Sign up as player instead' : 'Running a campaign? Sign up as DM →'}
             </Link>
           </div>
         </form>
@@ -307,20 +218,14 @@ function AuthForm() {
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-6 py-12 animate-page"
-          style={{ background: 'var(--bg)' }}>
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-10">
-          <h1 className="font-cinzel text-3xl tracking-wider mb-2" style={{ color: 'var(--accent)' }}>
-            In Character
-          </h1>
-          <p className="font-garamond" style={{ color: 'var(--text-dim)', fontStyle: 'italic' }}>
-            Your character, in character.
-          </p>
+    <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'var(--bg)' }}>
+      <div style={{ width: '100%', maxWidth: 380 }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text)', marginBottom: 4 }}>In Character</h1>
+          <p style={{ fontSize: 14, color: 'var(--text3)' }}>Your character, in character.</p>
         </div>
-
-        <div className="card-dark p-8">
-          <Suspense fallback={<div className="h-40 loading-shimmer rounded" />}>
+        <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 12, padding: 28 }}>
+          <Suspense fallback={<div style={{ height: 160 }} />}>
             <AuthForm />
           </Suspense>
         </div>

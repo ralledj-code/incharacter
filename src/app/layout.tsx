@@ -3,6 +3,7 @@ import './globals.css'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import PostHogProvider from '@/components/PostHogProvider'
+import ThemeApplier from '@/components/ThemeApplier'
 
 export const metadata: Metadata = {
   title: 'In Character — Your character, in character.',
@@ -17,33 +18,22 @@ export const metadata: Metadata = {
     type: 'website',
     images: [{ url: 'https://incharacter.cloud/og', width: 1200, height: 630 }],
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'In Character',
-    description: 'Your character, in character.',
-    images: ['https://incharacter.cloud/og'],
-  },
+  twitter: { card: 'summary_large_image', title: 'In Character', description: 'Your character, in character.', images: ['https://incharacter.cloud/og'] },
   alternates: { canonical: 'https://incharacter.cloud' },
   manifest: '/manifest.json',
   icons: { icon: '/favicon.ico' },
 }
 
 export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  width: 'device-width', initialScale: 1, maximumScale: 1, userScalable: false,
   themeColor: '#faf9f7',
 }
 
 const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: 'In Character',
-  url: 'https://incharacter.cloud',
+  '@context': 'https://schema.org', '@type': 'WebApplication',
+  name: 'In Character', url: 'https://incharacter.cloud',
   description: 'A psychological companion for tabletop RPG players',
-  applicationCategory: 'GameApplication',
-  operatingSystem: 'Any',
+  applicationCategory: 'GameApplication', operatingSystem: 'Any',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
   author: { '@type': 'Person', name: 'Rasmus' },
 }
@@ -52,14 +42,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </head>
-      <body className="min-h-screen" style={{ background: 'transparent' }}>
+      <body className="min-h-screen">
+        <ThemeApplier />
         <PostHogProvider>
           {children}
         </PostHogProvider>
