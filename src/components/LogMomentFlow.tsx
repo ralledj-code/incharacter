@@ -8,6 +8,32 @@ import { EVENT_CATEGORIES, REACTIONS, applyTrackerDeltas, getRandomLoadingPhrase
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ConfigRecord = Record<string, any>
 
+// Display multipliers for reaction impact preview (user-facing only, not used in actual computation)
+const REACTION_DISPLAY_MULTIPLIERS: Record<string, number> = {
+  owned_it:             1.0,
+  enjoyed_too_much:     1.5,
+  hated_himself:       -1.0,
+  didnt_feel_it:        0.3,
+  scared_himself:       1.2,
+  doesnt_want_to_think: 0.5,
+}
+
+type PaletteEntry = { id: string; name: string }
+
+// event_weights keys differ from category IDs for the two dynamic categories
+function lookupWeights(catId: string, ew: Record<string, Record<string, number>>): Record<string, number> {
+  return ew[catId]
+    || (catId === 'dagger' ? ew['special'] : catId === 'mystery' ? ew['antagonist'] : undefined)
+    || {}
+}
+
+function stateImpacts(weights: Record<string, number>, palette: PaletteEntry[]) {
+  return Object.entries(weights)
+    .filter(([, w]) => w !== 0)
+    .map(([id, w]) => ({ name: palette.find(s => s.id === id)?.name ?? id, weight: w }))
+    .sort((a, b) => Math.abs(b.weight) - Math.abs(a.weight))
+}
+
 /** Build event categories from tracker_config, overriding label/desc/icon/subcategories for dynamic categories */
 function buildCategories(character: { tracker_config?: unknown }): typeof EVENT_CATEGORIES {
   const config = character.tracker_config as ConfigRecord | null
@@ -83,6 +109,10 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
   // Fix 12: dynamic categories from tracker_config
   const categories = buildCategories(character)
   const category = categories.find(c => c.id === selectedCategory)
+
+  const config = character.tracker_config as ConfigRecord | null
+  const emotionPalette = (config?.emotion_palette as PaletteEntry[] | null) ?? []
+  const eventWeights = (config?.event_weights as Record<string, Record<string, number>> | null) ?? {}
 
   async function handleReactionSelect(reaction: string) {
     if (!selectedCategory || !selectedSubcategory || !session) return
@@ -273,17 +303,29 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
               className="absolute inset-0 overflow-y-auto px-5 py-6"
             >
               <div className="grid grid-cols-2 gap-3">
-                {categories.map(cat => (
-                  <button key={cat.id}
-                    onClick={() => { setSelectedCategory(cat.id); setStep('subcategory') }}
-                    className="p-4 text-left transition-all active:scale-95 card-hover"
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}
-                  >
-                    <div className="text-xl mb-2">{cat.icon}</div>
-                    <p className="font-cinzel text-xs tracking-wider mb-1" style={{ color: 'var(--accent)' }}>{cat.label}</p>
-                    <p className="font-garamond text-xs leading-relaxed" style={{ color: 'var(--text-faint)' }}>{cat.desc}</p>
-                  </button>
-                ))}
+                {categories.map(cat => {
+                  const impacts = stateImpacts(lookupWeights((cat as ConfigRecord).id, eventWeights), emotionPalette)
+                  return (
+                    <button key={(cat as ConfigRecord).id}
+                      onClick={() => { setSelectedCategory((cat as ConfigRecord).id); setStep('subcategory') }}
+                      className="p-4 text-left transition-all active:scale-95 card-hover"
+                      style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}
+                    >
+                      <div className="text-xl mb-2">{cat.icon}</div>
+                      <p className="font-cinzel text-xs tracking-wider mb-1" style={{ color: 'var(--accent)' }}>{cat.label}</p>
+                      <p className="font-garamond text-xs leading-relaxed" style={{ color: 'var(--text-faint)' }}>{cat.desc}</p>
+                      {impacts.length > 0 && (
+                        <p style={{ fontSize: 10, color: 'var(--text3)', marginTop: 6, lineHeight: 1.6 }}>
+                          {impacts.map((s, i) => (
+                            <span key={i} style={{ marginRight: 6 }}>
+                              {s.weight > 0 ? '↑' : '↓'} {s.name}
+                            </span>
+                          ))}
+                        </p>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             </motion.div>
           )}
@@ -321,16 +363,40 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
             >
               <p className="font-cinzel text-xs tracking-widest mb-4" style={{ color: 'var(--accent)' }}>How did they take it?</p>
               <div className="space-y-2">
-                {REACTIONS.map(r => (
-                  <button key={r.id}
-                    onClick={() => handleReactionSelect(r.id)}
-                    className="w-full p-4 text-left transition-all"
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}
-                  >
-                    <p className="font-cinzel text-sm tracking-wider mb-1" style={{ color: 'var(--text)' }}>{r.label}</p>
-                    <p className="font-garamond text-sm" style={{ color: 'var(--text-faint)' }}>{r.desc}</p>
-                  </button>
-                ))}
+                {REACTIONS.map(r => {
+                  const multiplier = REACTION_DISPLAY_MULTIPLIERS[r.id] ?? 1.0
+                  const baseWeights = selectedCategory ? lookupWeights(selectedCategory, eventWeights) : {}
+                  const impacts = Object.entries(baseWeights)
+                    .map(([id, w]) => ({
+                      name: emotionPalette.find(s => s.id === id)?.name ?? id,
+                      delta: Math.round(w * multiplier),
+                    }))
+                    .filter(({ delta }) => delta !== 0)
+                    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+
+                  return (
+                    <button key={r.id}
+                      onClick={() => handleReactionSelect(r.id)}
+                      className="w-full p-4 text-left transition-all"
+                      style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}
+                    >
+                      <p className="font-cinzel text-sm tracking-wider mb-1" style={{ color: 'var(--text)' }}>{r.label}</p>
+                      <p className="font-garamond text-sm" style={{ color: 'var(--text-faint)' }}>{r.desc}</p>
+                      {impacts.length > 0 && (
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end', marginTop: 6 }}>
+                          {impacts.map(({ name, delta }, i) => (
+                            <span key={i} style={{
+                              fontSize: 11,
+                              color: delta > 0 ? 'var(--accent-text)' : 'var(--danger)',
+                            }}>
+                              {delta > 0 ? '+' : ''}{delta} {name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             </motion.div>
           )}
