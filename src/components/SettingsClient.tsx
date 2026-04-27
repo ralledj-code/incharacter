@@ -38,11 +38,6 @@ export default function SettingsClient({ profile, character, campaign, playerCam
   const [deleteHolding, setDeleteHolding] = useState(false)
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // FIX 7: campaign join state (player only)
-  const [campaignCodeInput, setCampaignCodeInput] = useState('')
-  const [campaignJoining, setCampaignJoining] = useState(false)
-  const [campaignJoinResult, setCampaignJoinResult] = useState<{ success?: string; error?: string } | null>(null)
-
   const playerCode = profile?.player_code || 'IC-????-????'
   const campaignCode = campaign?.campaign_code || 'CAMP-????-????'
   const displayCode = isDM ? campaignCode : playerCode
@@ -51,34 +46,6 @@ export default function SettingsClient({ profile, character, campaign, playerCam
     navigator.clipboard.writeText(displayCode)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-  }
-
-  // FIX 7: join campaign from settings
-  async function joinCampaign() {
-    if (!campaignCodeInput.trim() || !character) return
-    setCampaignJoining(true)
-    setCampaignJoinResult(null)
-    try {
-      // FIX 2: Use server-side API route with service role key to bypass campaigns RLS
-      const res = await fetch('/api/campaign/join', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: campaignCodeInput.trim() }),
-      })
-      const data = await res.json()
-
-      if (res.ok && data.success) {
-        setCampaignJoinResult({ success: data.message || `Joined ${data.campaignName}!` })
-        setCampaignCodeInput('')
-        router.refresh()
-      } else {
-        setCampaignJoinResult({ error: data.error || 'Something went wrong.' })
-      }
-    } catch (e) {
-      console.error('[campaign-join] exception:', e)
-      setCampaignJoinResult({ error: e instanceof Error ? e.message : 'Something went wrong.' })
-    }
-    setCampaignJoining(false)
   }
 
   async function leaveCampaign() {
@@ -310,53 +277,18 @@ export default function SettingsClient({ profile, character, campaign, playerCam
           </section>
         )}
 
-        {/* FIX 7: Campaign section for players */}
-        {!isDM && (
+        {/* FIX 1: Campaign section — show current campaign if in one, no join UI */}
+        {!isDM && playerCampaign && (
           <section className="mb-10">
             <p className="label-caps mb-3">Campaign</p>
-            {playerCampaign ? (
-              <div className="card-dark p-4 space-y-3">
-                <p className="font-garamond text-sm font-semibold" style={{ color: 'var(--text)' }}>
-                  {playerCampaign.name}
-                </p>
-                {playerCampaign.campaign_code && (
-                  <p className="font-mono text-sm" style={{ color: 'var(--text2)' }}>
-                    {playerCampaign.campaign_code}
-                  </p>
-                )}
-                <button className="btn-danger text-xs" onClick={leaveCampaign}>
-                  Leave campaign
-                </button>
-              </div>
-            ) : (
-              <div className="card-dark p-4 space-y-3">
-                <p className="font-garamond text-sm" style={{ color: 'var(--text2)' }}>
-                  Enter a campaign code from your DM to join their campaign.
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={campaignCodeInput}
-                    onChange={e => { setCampaignCodeInput(e.target.value); setCampaignJoinResult(null) }}
-                    placeholder="CAMP-XXXX-XXXX"
-                    className="flex-1 px-3 py-2 font-mono text-sm"
-                  />
-                  <button
-                    className="btn-primary text-xs px-4"
-                    onClick={joinCampaign}
-                    disabled={campaignJoining || !campaignCodeInput.trim()}
-                  >
-                    {campaignJoining ? '...' : 'Join'}
-                  </button>
-                </div>
-                {campaignJoinResult?.error && (
-                  <p className="font-garamond text-sm" style={{ color: 'var(--danger)' }}>{campaignJoinResult.error}</p>
-                )}
-                {campaignJoinResult?.success && (
-                  <p className="font-garamond text-sm" style={{ color: 'var(--accent-text)' }}>✓ {campaignJoinResult.success}</p>
-                )}
-              </div>
-            )}
+            <div className="card-dark p-4 space-y-3">
+              <p className="font-garamond text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                {playerCampaign.name}
+              </p>
+              <button className="btn-danger text-xs" onClick={leaveCampaign}>
+                Leave campaign
+              </button>
+            </div>
           </section>
         )}
 

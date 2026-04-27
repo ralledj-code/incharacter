@@ -403,14 +403,15 @@ export default function DMDashboard({ campaigns, members, characters, trackers, 
                 Cancel
               </button>
             </div>
+            {/* FIX 1: IC code only — no email */}
             <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16, lineHeight: 1.5 }}>
-              Enter the player&rsquo;s IC code (IC-XXXX-XXXX) or email address.
+              Enter the player&rsquo;s IC code. They can find it in their Settings.
             </p>
             <input
               type="text"
               value={inviteInput}
-              onChange={e => { setInviteInput(e.target.value); setInviteResult(null) }}
-              placeholder="IC-XXXX-XXXX or email"
+              onChange={e => { setInviteInput(e.target.value.toUpperCase()); setInviteResult(null) }}
+              placeholder="IC-XXXX-XXXX"
               style={{
                 display: 'block', width: '100%', marginBottom: 12,
                 background: 'var(--surface2)', border: '0.5px solid var(--border2)',
