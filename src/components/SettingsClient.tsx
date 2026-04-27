@@ -59,53 +59,21 @@ export default function SettingsClient({ profile, character, campaign, playerCam
     setCampaignJoining(true)
     setCampaignJoinResult(null)
     try {
-      const code = campaignCodeInput.trim().toUpperCase()
-      console.log('[campaign-join] attempting join with code:', code)
+      // FIX 2: Use server-side API route with service role key to bypass campaigns RLS
+      const res = await fetch('/api/campaign/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: campaignCodeInput.trim() }),
+      })
+      const data = await res.json()
 
-      const supabase = createClient()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const db = (t: string) => (supabase.from(t) as any)
-
-      // FIX 5: Use maybeSingle() instead of single() to avoid error when not found
-      const { data: camp, error: campErr } = await db('campaigns')
-        .select('id, name').eq('campaign_code', code).maybeSingle()
-
-      console.log('[campaign-join] lookup result:', { camp, campErr })
-
-      if (campErr) {
-        console.error('[campaign-join] DB error:', campErr)
-        setCampaignJoinResult({ error: `Database error: ${campErr.message}` })
-        setCampaignJoining(false)
-        return
+      if (res.ok && data.success) {
+        setCampaignJoinResult({ success: data.message || `Joined ${data.campaignName}!` })
+        setCampaignCodeInput('')
+        router.refresh()
+      } else {
+        setCampaignJoinResult({ error: data.error || 'Something went wrong.' })
       }
-      if (!camp) {
-        setCampaignJoinResult({ error: 'Campaign not found. Check the code and try again.' })
-        setCampaignJoining(false)
-        return
-      }
-
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
-
-      const { error: memberErr } = await db('campaign_members').upsert(
-        { campaign_id: (camp as { id: string; name: string }).id, player_id: user.id, accepted: true, invited_at: new Date().toISOString() },
-        { onConflict: 'campaign_id,player_id' }
-      )
-      if (memberErr) {
-        console.error('[campaign-join] member insert error:', memberErr)
-        throw new Error(memberErr.message)
-      }
-
-      const { error: charErr } = await db('characters')
-        .update({ campaign_id: (camp as { id: string; name: string }).id })
-        .eq('id', character.id)
-        .eq('player_id', user.id)
-      if (charErr) console.error('[campaign-join] character update error:', charErr)
-
-      console.log('[campaign-join] success, joined:', (camp as { id: string; name: string }).name)
-      setCampaignJoinResult({ success: `Joined ${(camp as { id: string; name: string }).name}!` })
-      setCampaignCodeInput('')
-      router.refresh()
     } catch (e) {
       console.error('[campaign-join] exception:', e)
       setCampaignJoinResult({ error: e instanceof Error ? e.message : 'Something went wrong.' })

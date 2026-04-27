@@ -154,8 +154,6 @@ function CharacterCard({
   )
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyRecord = Record<string, any>
 
 export default function DMDashboard({ campaigns, members, characters, trackers, recentEvents }: DMDashboardProps) {
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(campaigns[0]?.id || null)
@@ -203,84 +201,33 @@ export default function DMDashboard({ campaigns, members, characters, trackers, 
     setBriefLoading(false)
   }
 
-  // FIX 6: invite player by player code or email
+  // FIX 2: invite player via service-side route (bypasses RLS)
   async function handleInvite() {
     if (!campaign || !inviteInput.trim()) return
     setInviteLoading(true)
     setInviteResult(null)
     try {
-      // FIX 6: trim and uppercase before lookup; detailed error logging
-      const input = inviteInput.trim()
-      const inputUpper = input.toUpperCase()
-      const isCode = /^IC-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(inputUpper)
-      console.log('[dm-invite] input:', input, 'isCode:', isCode, 'upper:', inputUpper)
+      const res = await fetch('/api/dm/add-player', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaignId: campaign.id, input: inviteInput.trim() }),
+      })
+      const data = await res.json()
 
-      const { createClient } = await import('@/lib/supabase/client')
-      const supabase = createClient()
-      const db = (t: string) => (supabase.from(t) as AnyRecord)
-
-      let playerId: string | null = null
-      let playerName: string | null = null
-
-      if (isCode) {
-        // FIX 6: use maybeSingle() to avoid error when not found, explicit uppercase
-        const { data: prof, error: profErr } = await db('profiles')
-          .select('id, username, player_code')
-          .eq('player_code', inputUpper)
-          .maybeSingle()
-        console.log('[dm-invite] IC code lookup:', { prof, profErr, inputUpper })
-        if (profErr) throw new Error(`Lookup error: ${profErr.message}`)
-        if (prof) { playerId = (prof as AnyRecord).id; playerName = (prof as AnyRecord).username }
-        else {
-          setInviteResult({ error: `No player found with code ${inputUpper}. Make sure they have completed onboarding.` })
-          setInviteLoading(false)
-          return
-        }
+      if (res.ok && data.success) {
+        setInviteResult({ success: data.message || `${data.playerName} added to campaign.` })
+        setInviteInput('')
+      } else if (res.status === 409) {
+        setInviteResult({ error: data.error }) // Already in campaign
       } else {
-        // Email lookup via service route
-        console.log('[dm-invite] email lookup:', input)
-        const res = await fetch('/api/dm/find-player', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: input }),
-        })
-        console.log('[dm-invite] email lookup response status:', res.status)
-        if (res.ok) {
-          const data = await res.json()
-          playerId = data.id; playerName = data.username
-        } else {
-          const errData = await res.json().catch(() => ({}))
-          setInviteResult({ error: errData.error || `No player found with email ${input}` })
-          setInviteLoading(false)
-          return
-        }
+        setInviteResult({ error: data.error || 'Something went wrong.' })
       }
-
-      if (!playerId) {
-        setInviteResult({ error: 'Player not found. Check the player code or email.' })
-        setInviteLoading(false)
-        return
-      }
-
-      const { error: memberErr } = await db('campaign_members').upsert(
-        { campaign_id: campaign.id, player_id: playerId, accepted: true, invited_at: new Date().toISOString() },
-        { onConflict: 'campaign_id,player_id' }
-      )
-      if (memberErr) {
-        console.error('[dm-invite] member insert error:', memberErr)
-        throw new Error(memberErr.message)
-      }
-
-      console.log('[dm-invite] success, added player:', playerName, playerId)
-      setInviteResult({ success: `${playerName || 'Player'} added to ${campaign.name}.` })
-      setInviteInput('')
     } catch (e) {
       console.error('[dm-invite] exception:', e)
       setInviteResult({ error: e instanceof Error ? e.message : 'Something went wrong.' })
     }
     setInviteLoading(false)
   }
-
   const [sessionNotes, setSessionNotes] = useState('')
   const [notesSaving, setNotesSaving] = useState(false)
   const [notesSaved, setNotesSaved] = useState(false)
