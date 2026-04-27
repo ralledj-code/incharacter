@@ -10,7 +10,6 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    // Key is fetched server-side — never accepted from client body
     const apiKey = body.characterId
       ? await getDecryptedApiKey(user.id, body.characterId)
       : undefined
@@ -20,6 +19,9 @@ export async function POST(req: NextRequest) {
       dossierSummary: body.dossierSummary || '',
       trackers: body.trackers,
       recentEvents: body.recentEvents,
+      trackerNames: body.trackerNames,
+      dominantState: body.dominantState,
+      previousDirective: body.previousDirective,
       apiKey: apiKey ?? undefined,
       userId: user.id,
       characterId: body.characterId,
