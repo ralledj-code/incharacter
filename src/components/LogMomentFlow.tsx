@@ -5,24 +5,57 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Character, TrackerState, Session } from '@/types/database'
 import { EVENT_CATEGORIES, REACTIONS, applyTrackerDeltas, getRandomLoadingPhrase } from '@/lib/constants'
 
-// Build event categories from tracker_config if available, else use defaults
-// Build dynamic categories from tracker_config (Fix 12)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ConfigRecord = Record<string, any>
+
+/** Build event categories from tracker_config, overriding label/desc/icon/subcategories for dynamic categories */
 function buildCategories(character: { tracker_config?: unknown }): typeof EVENT_CATEGORIES {
   const config = character.tracker_config as ConfigRecord | null
   if (!config) return EVENT_CATEGORIES
-  const base = EVENT_CATEGORIES.map(c => ({ ...c })) as unknown as Array<typeof EVENT_CATEGORIES[number]>
+  const base = EVENT_CATEGORIES.map(c => ({ ...c, subcategories: [...c.subcategories] })) as unknown as Array<typeof EVENT_CATEGORIES[number]>
+
   const el = config.dangerous_element_category as ConfigRecord | undefined
-  if (el?.name && el.name !== 'The Unknown') {
+  if (el?.name) {
     const idx = base.findIndex(c => (c as ConfigRecord).id === 'dagger' || (c as ConfigRecord).id === 'special')
-    if (idx !== -1) (base as ConfigRecord[])[idx] = { ...base[idx], label: el.name, desc: el.description || base[idx].desc, icon: el.icon || base[idx].icon }
+    if (idx !== -1) {
+      (base as ConfigRecord[])[idx] = {
+        ...base[idx],
+        label: el.name,
+        desc: el.description || base[idx].desc,
+        icon: el.icon || base[idx].icon,
+        // Generic subcategories — no character-specific text
+        subcategories: [
+          'It happened — not fully in control',
+          'Heard or sensed something others didn\'t',
+          'Used it deliberately',
+          'It surfaced unexpectedly',
+          'A surge or slip',
+        ],
+      }
+    }
   }
+
   const ant = config.antagonist_category as ConfigRecord | undefined
-  if (ant?.name && ant.name !== 'The Mystery') {
+  const antSubject = config.clue_board_subject as string || 'them'
+  if (ant?.name) {
     const idx = base.findIndex(c => (c as ConfigRecord).id === 'mystery' || (c as ConfigRecord).id === 'antagonist')
-    if (idx !== -1) (base as ConfigRecord[])[idx] = { ...base[idx], label: ant.name, desc: ant.description || base[idx].desc, icon: ant.icon || base[idx].icon }
+    if (idx !== -1) {
+      (base as ConfigRecord[])[idx] = {
+        ...base[idx],
+        label: ant.name,
+        desc: ant.description || base[idx].desc,
+        icon: ant.icon || base[idx].icon,
+        subcategories: [
+          `Found a clue about ${antSubject}`,
+          `Saw something connected to ${antSubject}`,
+          `Met someone who knows ${antSubject}`,
+          'A piece of the picture clicked into place',
+          'Something contradicted what they thought they knew',
+        ],
+      }
+    }
   }
+
   return base as unknown as typeof EVENT_CATEGORIES
 }
 import { createClient } from '@/lib/supabase/client'

@@ -52,7 +52,7 @@ export const EVENT_CATEGORIES = [
       'Charmed someone who should know better',
       'Told a convincing lie',
       'Performed for a crowd',
-      'Talked his way out of something',
+      'Talked their way out of something',
       'Played a role he didn\'t believe in',
     ],
   },
@@ -62,8 +62,8 @@ export const EVENT_CATEGORIES = [
     icon: '👁',
     desc: 'Fled, stayed quiet, let something happen',
     subcategories: [
-      'Ran when he should have stood',
-      'Stayed silent when he had something to say',
+      'Ran when they should have stood',
+      'Stayed silent when they had something to say',
       'Let someone else take the fall',
       'Walked away from a fight',
       'Pretended not to see something',
@@ -73,7 +73,7 @@ export const EVENT_CATEGORIES = [
     id: 'indulged',
     label: 'Indulged',
     icon: '🍷',
-    desc: 'Drank, used, lost himself deliberately',
+    desc: 'Drank, used, lost themselves deliberately',
     subcategories: [
       'Had more than was wise',
       'Used something he promised himself he wouldn\'t',
@@ -86,12 +86,12 @@ export const EVENT_CATEGORIES = [
     id: 'dagger',
     label: 'The Dagger',
     icon: '✝',
-    desc: 'Surge, whisper, magic slipped, infernal',
+    desc: 'A surge, whisper, or moment of uncontrolled power',
     subcategories: [
-      'The magic slipped sideways',
-      'Heard something nobody else heard',
-      'Used power he doesn\'t fully control',
-      'The dagger whispered something true',
+      'It slipped — not fully in control',
+      'Heard or sensed something others didn\'t',
+      'Used it deliberately',
+      'It spoke, whispered, or warned',
       'A surge — unpredictable, unasked for',
     ],
   },
@@ -112,7 +112,7 @@ export const EVENT_CATEGORIES = [
     id: 'crossed_line',
     label: 'Crossed a Line',
     icon: '⚖',
-    desc: 'Got someone hurt, compromised himself',
+    desc: 'Got someone hurt, compromised themselves',
     subcategories: [
       'Got someone hurt who didn\'t deserve it',
       'Betrayed someone\'s trust',
@@ -125,13 +125,13 @@ export const EVENT_CATEGORIES = [
     id: 'mystery',
     label: 'The Mystery',
     icon: '🔍',
-    desc: 'Clue, sighting, someone who knew her',
+    desc: 'Clue, sighting, or connection to the antagonist',
     subcategories: [
       'Found a clue that changes things',
-      'Saw something he can\'t explain',
-      'Met someone who knew the antagonist',
-      'A piece of the puzzle clicked into place',
-      'Something contradicted what he thought he knew',
+      'Saw something that doesn\'t fit',
+      'Met someone connected to it',
+      'A piece clicked into place',
+      'Something contradicted what they thought they knew',
     ],
   },
 ] as const
@@ -177,7 +177,7 @@ export const CLUE_SOURCE_TYPES = [
   { id: 'confirmed',   label: 'Confirmed',              color: '#c9a84c' },
   { id: 'experienced', label: 'Experienced',            color: '#b09050' },
   { id: 'told',        label: 'Was Told',               color: '#9e8a6a' },
-  { id: 'contradicts', label: 'Contradicts What He Knew', color: '#8b2e2e' },
+  { id: 'contradicts', label: 'Contradicts What They Knew', color: '#8b2e2e' },
   { id: 'unknown',     label: 'Unknown Origin',         color: '#5a4a30' },
 ] as const
 
@@ -199,12 +199,12 @@ export const TRUST_DIRECTIONS = {
 } as const
 
 export const LOADING_PHRASES = [
-  'The dagger considers...',
-  'Consulting the wound...',
+  'Considering...',
+  'Consulting the arc...',
   'Reading the signs...',
-  'The mask settles...',
+  'Processing...',
   'Listening to the silence...',
-  'The bottle is honest...',
+  'Reading the moment...',
 ]
 
 export function glyphValuesFromTrackers(mask: number, dagger: number, bottle: number, wound: number) {
