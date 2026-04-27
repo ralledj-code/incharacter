@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Campaign, Character, TrackerState } from '@/types/database'
 import BurgerMenu from './BurgerMenu'
 import { glyphValuesFromTrackers, GLYPH_STATES } from '@/lib/constants'
+import { createClient } from '@/lib/supabase/client'
 
 interface DMDashboardProps {
   campaigns: Campaign[]
@@ -66,7 +67,7 @@ function CharacterCard({
   )
 }
 
-export default function DMDashboard({ campaigns, members, characters, trackers, recentEvents }: DMDashboardProps) {
+export default function DMDashboard({ campaigns, members, characters: initialCharacters, trackers, recentEvents }: DMDashboardProps) {
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(campaigns[0]?.id || null)
   const [briefText, setBriefText] = useState('')
   const [briefLoading, setBriefLoading] = useState(false)
@@ -75,11 +76,41 @@ export default function DMDashboard({ campaigns, members, characters, trackers, 
   const [inviteInput, setInviteInput] = useState('')
   const [inviteLoading, setInviteLoading] = useState(false)
   const [inviteResult, setInviteResult] = useState<{ success?: string; error?: string } | null>(null)
+  // FIX 4: live characters state for realtime updates
+  const [characters, setCharacters] = useState<(Character & { dm_read?: string })[]>(initialCharacters)
 
   const campaign = campaigns.find(c => c.id === selectedCampaign)
   const campaignMembers = members.filter(m => m.campaign_id === selectedCampaign)
   const campaignPlayerIds = campaignMembers.map(m => m.player_id)
   const campaignCharacters = characters.filter(c => campaignPlayerIds.includes(c.player_id))
+
+  // FIX 4: Supabase realtime subscription — updates character cards without page reload
+  useEffect(() => {
+    const campaignId = selectedCampaign
+    if (!campaignId) return
+
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`dm-dashboard-${campaignId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'characters',
+          filter: `campaign_id=eq.${campaignId}`,
+        },
+        (payload) => {
+          // Update just the changed card — no page reload
+          setCharacters(prev =>
+            prev.map(c => c.id === payload.new.id ? { ...c, ...payload.new } : c)
+          )
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [selectedCampaign])
 
   async function generateBrief() {
     if (!campaign) return
