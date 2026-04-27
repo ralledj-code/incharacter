@@ -17,8 +17,26 @@ interface SessionScreenProps {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyRec = Record<string, any>
 
-function EventRow({ event }: { event: Event }) {
-  const cat = EVENT_CATEGORIES.find(c => c.id === event.category)
+// Build a category lookup that merges static defaults with character-specific overrides
+function buildCategoryMap(character: Character): Map<string, { label: string; icon: string }> {
+  const map = new Map<string, { label: string; icon: string }>()
+  EVENT_CATEGORIES.forEach(c => map.set(c.id, { label: c.label, icon: c.icon }))
+  const config = character.tracker_config as AnyRec | null
+  if (config?.dangerous_element_category?.name && config.dangerous_element_category.name !== 'The Unknown') {
+    const el = config.dangerous_element_category as AnyRec
+    map.set('dagger', { label: el.name, icon: el.icon || '✝' })
+    map.set('special', { label: el.name, icon: el.icon || '✝' })
+  }
+  if (config?.antagonist_category?.name && config.antagonist_category.name !== 'The Mystery') {
+    const ant = config.antagonist_category as AnyRec
+    map.set('mystery', { label: ant.name, icon: ant.icon || '🔍' })
+    map.set('antagonist', { label: ant.name, icon: ant.icon || '🔍' })
+  }
+  return map
+}
+
+function EventRow({ event, categoryMap }: { event: Event; categoryMap: Map<string, { label: string; icon: string }> }) {
+  const cat = categoryMap.get(event.category) || EVENT_CATEGORIES.find(c => c.id === event.category)
   const time = new Date(event.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
   return (
@@ -44,6 +62,7 @@ export default function SessionScreen({ character, session, events, tracker }: S
   const router = useRouter()
   const [showLongRest, setShowLongRest] = useState(false)
   const [newSessionLoading, setNewSessionLoading] = useState(false)
+  const categoryMap = buildCategoryMap(character)
 
   async function startNewSession() {
     if (!session) return
@@ -95,7 +114,7 @@ export default function SessionScreen({ character, session, events, tracker }: S
             <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>The session begins when you do.</p>
           </div>
         ) : (
-          events.map(ev => <EventRow key={ev.id} event={ev} />)
+          events.map(ev => <EventRow key={ev.id} event={ev} categoryMap={categoryMap} />)
         )}
       </div>
 
