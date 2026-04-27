@@ -191,9 +191,15 @@ export default function RelationshipsBoard({ character, relationships, keyRelati
         ))
       )}
 
-      {/* Log Moment button */}
+      {/* Log Moment button — opens modal asking for NPC name if multiple NPCs, or uses first */}
       <div className="px-5 py-4">
-        <button className="btn-gold w-full py-3 text-sm" onClick={() => { setShowAdd(true); setAddStep('npc') }}>
+        <button className="btn-gold w-full py-3 text-sm" onClick={() => {
+          setShowAdd(true)
+          // FIX 3: Skip NPC name step — go directly to moment type
+          // If only one NPC, pre-select it
+          if (npcNames.length === 1) { setNpcName(npcNames[0]); setAddStep('moment') }
+          else { setNpcName(''); setAddStep('npc') }
+        }}>
           Log a Moment
         </button>
       </div>
@@ -209,9 +215,9 @@ export default function RelationshipsBoard({ character, relationships, keyRelati
             style={{ borderBottom: '1px solid var(--border)' }}
           >
             <span className="label-caps">
-              {addStep === 'npc' ? 'Who?' :
-               addStep === 'moment' ? 'What happened?' :
-               addStep === 'text' ? 'In one sentence...' :
+              {addStep === 'npc' ? 'Which relationship?' :
+               addStep === 'moment' ? `${npcName || 'Moment'} — what kind?` :
+               addStep === 'text' ? 'What happened?' :
                'Writing the moment...'}
             </span>
             {addStep !== 'generating' && (
@@ -220,32 +226,42 @@ export default function RelationshipsBoard({ character, relationships, keyRelati
           </div>
 
           <div className="flex-1 overflow-y-auto px-5 py-6">
+            {/* FIX 3: NPC selection only when multiple NPCs exist */}
             {addStep === 'npc' && (
-              <div className="animate-fade-in space-y-4">
-                <div>
-                  <p className="label-caps mb-2">NPC Name</p>
-                  <input
-                    value={npcName}
-                    onChange={e => setNpcName(e.target.value)}
-                    className="w-full px-4 py-3"
-                    placeholder="Name..."
-                    autoFocus
-                    list="npc-names"
-                  />
-                  <datalist id="npc-names">
-                    {npcNames.map(n => <option key={n} value={n} />)}
-                  </datalist>
+              <div className="animate-fade-in space-y-2">
+                <p className="font-garamond text-sm mb-4" style={{ color: 'var(--text-dim)' }}>
+                  Select who this moment is with, or enter a new name.
+                </p>
+                {npcNames.map(n => (
+                  <button key={n}
+                    onClick={() => { setNpcName(n); setAddStep('moment') }}
+                    className="w-full p-4 text-left transition-all"
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}>
+                    <p className="font-garamond text-ink">{n}</p>
+                  </button>
+                ))}
+                <div style={{ marginTop: 12 }}>
+                  <p className="label-caps mb-2">New relationship</p>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      value={npcName}
+                      onChange={e => setNpcName(e.target.value)}
+                      className="flex-1 px-4 py-3"
+                      placeholder="Their name..."
+                    />
+                    <button
+                      className="btn-gold-solid px-4 disabled:opacity-40"
+                      onClick={() => { if (npcName.trim()) setAddStep('moment') }}
+                      disabled={!npcName.trim()}
+                    >
+                      →
+                    </button>
+                  </div>
                 </div>
-                <button
-                  className="btn-gold-solid w-full py-3 disabled:opacity-40"
-                  onClick={() => setAddStep('moment')}
-                  disabled={!npcName.trim()}
-                >
-                  Continue →
-                </button>
               </div>
             )}
 
+            {/* FIX 3: Moment type selection */}
             {addStep === 'moment' && (
               <div className="animate-fade-in space-y-2">
                 <p className="font-cinzel text-gold text-xs tracking-widest mb-4">{npcName}</p>
@@ -254,29 +270,28 @@ export default function RelationshipsBoard({ character, relationships, keyRelati
                     key={type}
                     onClick={() => { setMomentType(type); setAddStep('text') }}
                     className="w-full p-4 text-left transition-all"
-                    style={{
-                      background: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 2,
-                    }}
-                  >
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}>
                     <p className="font-garamond text-ink">{type}</p>
                   </button>
                 ))}
               </div>
             )}
 
+            {/* FIX 3: "What happened?" text field — NPC name already known */}
             {addStep === 'text' && (
               <div className="animate-fade-in space-y-4">
                 <p className="font-cinzel text-gold text-xs tracking-widest">{npcName} · {momentType}</p>
-                <textarea
-                  value={rawText}
-                  onChange={e => setRawText(e.target.value)}
-                  className="w-full p-4 min-h-[120px] text-sm leading-relaxed"
-                  placeholder="One sentence. What actually happened?"
-                  autoFocus
-                  maxLength={300}
-                />
+                <div>
+                  <p className="label-caps mb-2">What happened?</p>
+                  <textarea
+                    value={rawText}
+                    onChange={e => setRawText(e.target.value)}
+                    className="w-full p-4 min-h-[120px] text-sm leading-relaxed"
+                    placeholder="Describe the moment — one sentence or a few."
+                    autoFocus
+                    maxLength={300}
+                  />
+                </div>
                 {error && <p className="font-garamond text-sm italic" style={{ color: 'var(--red)' }}>{error}</p>}
                 <div className="flex gap-3">
                   <button className="btn-gold flex-1 py-3" onClick={() => setAddStep('moment')}>Back</button>
