@@ -90,6 +90,7 @@ export default function DMDashboard({ campaigns, members, characters: initialCha
     if (!campaignId) return
 
     const supabase = createClient()
+    console.log('[dm-realtime] subscribing for campaign', campaignId)
     const channel = supabase
       .channel(`dm-dashboard-${campaignId}`)
       .on(
@@ -101,13 +102,15 @@ export default function DMDashboard({ campaigns, members, characters: initialCha
           filter: `campaign_id=eq.${campaignId}`,
         },
         (payload) => {
-          // Update just the changed card — no page reload
+          console.log('[dm-realtime] character update received', payload.new.id, 'dm_read:', (payload.new as Record<string, unknown>).dm_read)
           setCharacters(prev =>
             prev.map(c => c.id === payload.new.id ? { ...c, ...payload.new } : c)
           )
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        console.log('[dm-realtime] subscription status:', status)
+      })
 
     return () => { supabase.removeChannel(channel) }
   }, [selectedCampaign])
@@ -173,6 +176,7 @@ export default function DMDashboard({ campaigns, members, characters: initialCha
   const [sessionNotes, setSessionNotes] = useState('')
   const [notesSaving, setNotesSaving] = useState(false)
   const [notesSaved, setNotesSaved] = useState(false)
+  const [notesOpen, setNotesOpen] = useState(false)
 
   async function saveSessionNotes() {
     if (!campaign || !sessionNotes.trim()) return
@@ -284,23 +288,6 @@ export default function DMDashboard({ campaigns, members, characters: initialCha
                   </div>
                 )}
 
-                {/* Fix 9: DM session notes — private, never shown to players */}
-                <div className="mb-6">
-                  <p className="label-caps mb-2">Session Notes (DM Only)</p>
-                  <textarea
-                    value={sessionNotes}
-                    onChange={e => setSessionNotes(e.target.value)}
-                    placeholder="Private notes for this session. Never visible to players."
-                    className="w-full px-4 py-3 min-h-[100px] text-sm"
-                  />
-                  <div className="flex justify-end mt-2">
-                    <button onClick={saveSessionNotes} disabled={notesSaving || !sessionNotes.trim()}
-                            className="btn-gold px-4 py-2 text-xs disabled:opacity-40">
-                      {notesSaved ? 'Saved!' : notesSaving ? 'Saving...' : 'Save Notes'}
-                    </button>
-                  </div>
-                </div>
-
                 {/* Character cards grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {campaignCharacters.length === 0 ? (
@@ -318,6 +305,33 @@ export default function DMDashboard({ campaigns, members, characters: initialCha
                         tracker={trackers.find(t => t.character_id === character.id)}
                       />
                     ))
+                  )}
+                </div>
+
+                {/* Session notes — collapsible, DM only */}
+                <div className="mt-8">
+                  <button
+                    className="label-caps"
+                    style={{ color: 'var(--text-faint)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, minHeight: 'auto' }}
+                    onClick={() => setNotesOpen(o => !o)}
+                  >
+                    {notesOpen ? '− Session Notes' : '+ Session Notes'}
+                  </button>
+                  {notesOpen && (
+                    <div className="mt-3">
+                      <textarea
+                        value={sessionNotes}
+                        onChange={e => setSessionNotes(e.target.value)}
+                        placeholder="Private notes for this session. Never visible to players."
+                        className="w-full px-4 py-3 min-h-[100px] text-sm"
+                      />
+                      <div className="flex justify-end mt-2">
+                        <button onClick={saveSessionNotes} disabled={notesSaving || !sessionNotes.trim()}
+                                className="btn-gold px-4 py-2 text-xs disabled:opacity-40">
+                          {notesSaved ? 'Saved!' : notesSaving ? 'Saving...' : 'Save Notes'}
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               </>

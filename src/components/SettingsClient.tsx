@@ -37,6 +37,8 @@ export default function SettingsClient({ profile, character, campaign, playerCam
   const [showRestartChar, setShowRestartChar] = useState(false)
   const [deleteHolding, setDeleteHolding] = useState(false)
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [recalibrating, setRecalibrating] = useState(false)
+  const [recalibrateResult, setRecalibrateResult] = useState<{ success?: boolean; error?: string } | null>(null)
 
   const playerCode = profile?.player_code || 'IC-????-????'
   const campaignCode = campaign?.campaign_code || 'CAMP-????-????'
@@ -143,6 +145,23 @@ export default function SettingsClient({ profile, character, campaign, playerCam
       // FIX 1: redirect to /play/now — character data kept, only gameplay history cleared
       router.push('/play/now')
     }
+  }
+
+  async function recalibrateCharacter() {
+    setRecalibrating(true)
+    setRecalibrateResult(null)
+    try {
+      const res = await fetch('/api/claude/recalibrate', { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        setRecalibrateResult({ success: true })
+      } else {
+        setRecalibrateResult({ error: data.error || 'Recalibration failed.' })
+      }
+    } catch {
+      setRecalibrateResult({ error: 'Something went wrong.' })
+    }
+    setRecalibrating(false)
   }
 
   function startHoldDelete(action: () => void) {
@@ -270,9 +289,26 @@ export default function SettingsClient({ profile, character, campaign, playerCam
                   ? character.dossier_text.slice(0, 200) + (character.dossier_text.length > 200 ? '...' : '')
                   : 'No dossier uploaded.'}
               </p>
-              <button onClick={() => setShowDossierModal(true)} className="btn-gold px-4 py-2 text-xs">
-                Update Dossier
-              </button>
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={() => setShowDossierModal(true)} className="btn-gold px-4 py-2 text-xs">
+                  Update Dossier
+                </button>
+                {character.dossier_text && (
+                  <button
+                    onClick={recalibrateCharacter}
+                    disabled={recalibrating}
+                    className="btn-gold px-4 py-2 text-xs disabled:opacity-40"
+                  >
+                    {recalibrating ? 'Recalibrating...' : 'Recalibrate character'}
+                  </button>
+                )}
+              </div>
+              {recalibrateResult?.success && (
+                <p className="text-xs mt-2" style={{ color: 'var(--accent-text)' }}>Character recalibrated.</p>
+              )}
+              {recalibrateResult?.error && (
+                <p className="text-xs mt-2" style={{ color: 'var(--danger)' }}>{recalibrateResult.error}</p>
+              )}
             </div>
           </section>
         )}

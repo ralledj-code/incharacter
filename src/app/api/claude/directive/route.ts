@@ -35,13 +35,25 @@ export async function POST(req: NextRequest) {
       characterId: body.characterId,
     })
 
-    // Store dm_read on characters table so DM dashboard can read it without API calls
-    if (body.characterId && result.dmRead) {
+    console.log('[directive] result:', JSON.stringify(result))
+
+    if (body.characterId) {
+      // Save play_directive to tracker_states
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (admin.from('characters') as any)
-        .update({ dm_read: result.dmRead })
-        .eq('id', body.characterId)
-        .eq('player_id', user.id)
+      const { error: tsErr } = await (admin.from('tracker_states') as any)
+        .update({ play_directive: result.directive })
+        .eq('character_id', body.characterId)
+      console.log('[directive] play_directive write:', tsErr ? `ERROR ${tsErr.message}` : 'ok')
+
+      // Save dm_read to characters
+      if (result.dmRead) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: dmErr } = await (admin.from('characters') as any)
+          .update({ dm_read: result.dmRead })
+          .eq('id', body.characterId)
+          .eq('player_id', user.id)
+        console.log('[directive] dm_read write:', dmErr ? `ERROR ${dmErr.message}` : 'ok')
+      }
     }
 
     return NextResponse.json({ directive: result.directive, dmRead: result.dmRead })

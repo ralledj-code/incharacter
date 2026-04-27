@@ -93,26 +93,33 @@ PREVIOUS DIRECTIVE: "${params.previousDirective}" — evolve this subtly.`
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 200,
-      system: `You are a character performance director for tabletop RPG. Two outputs required.
+      system: `You are a character performance director for tabletop RPG.
 RULES: Never invent plot. Only reference psychological patterns from dossier and current state.
 Character dossier: ${params.dossierSummary || 'No dossier provided.'}`,
       messages: [{
         role: 'user',
         content: `${ctx}${dominantNote}${prevNote}
 
-Generate two outputs in this exact format:
+Return a JSON object with exactly two fields:
+{
+  "play_directive": "one sentence, max 12 words, starts with Play them or Play ${params.characterName}, present tense, behavioral",
+  "dm_read": "one or two sentences, DM perspective only, psychological read of what to watch for, no story invention"
+}
 
-DIRECTIVE: [one sentence, max 12 words, starts with "Play them" or "Play ${params.characterName}", present tense, behavioral]
-DM_READ: [one or two sentences, DM perspective only, what this character is about to do or what to watch for, pure psychological read, no story invention]`
+Respond with only the JSON object, no other text.`
       }]
     })
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
-    const directiveLine = text.split('\n').find(l => l.startsWith('DIRECTIVE:'))
-    const dmReadLine = text.split('\n').find(l => l.startsWith('DM_READ:'))
-    const directive = directiveLine?.replace(/^DIRECTIVE:\s*/i, '').trim()
-      || `Play ${params.characterName} true to their current state.`
-    const dmRead = dmReadLine?.replace(/^DM_READ:\s*/i, '').trim()
-      || `${params.characterName} is in a heightened state. Watch the patterns.`
+    let directive = `Play ${params.characterName} true to their current state.`
+    let dmRead = `${params.characterName} is in a heightened state. Watch the patterns.`
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0])
+        if (parsed.play_directive) directive = parsed.play_directive
+        if (parsed.dm_read) dmRead = parsed.dm_read
+      }
+    } catch {}
     return { directive, dmRead }
   } catch (error) {
     await logError({ userId: params.userId, characterId: params.characterId, screen: 'now', action: 'generatePlayDirective', error })
@@ -367,6 +374,8 @@ export interface CharacterConfig {
   clue_board_subject: string
   color_scheme_suggestion: string
   trackerNames: { mask: string; dagger: string; bottle: string; wound: string }
+  emotion_palette: Array<{ id: string; name: string; description: string; base_value: number }>
+  event_weights: Record<string, Record<string, number>>
 }
 
 export async function analyzeDossier(params: {
@@ -396,6 +405,24 @@ export async function analyzeDossier(params: {
     clue_board_subject: 'the antagonist',
     color_scheme_suggestion: 'warm',
     trackerNames: { mask: 'The Mask', dagger: 'The Dagger', bottle: 'The Bottle', wound: 'The Wound' },
+    emotion_palette: [
+      { id: 'state_1', name: 'Controlled', description: 'Measured, careful, holding everything together', base_value: 40 },
+      { id: 'state_2', name: 'Volatile', description: 'Pressure rising, edges starting to show', base_value: 30 },
+      { id: 'state_3', name: 'Reckless', description: 'Past caution, acting without thinking ahead', base_value: 35 },
+      { id: 'state_4', name: 'Withdrawn', description: 'Closed off, minimizing contact and exposure', base_value: 25 },
+      { id: 'state_5', name: 'Guarded', description: 'Watching, trusting no one fully right now', base_value: 45 },
+      { id: 'state_6', name: 'Present', description: 'Grounded, clear, fully here in this moment', base_value: 50 },
+    ],
+    event_weights: {
+      violence:     { state_2: 8,  state_1: -3 },
+      performance:  { state_1: -5, state_6: 6  },
+      avoided:      { state_4: 7,  state_5: -4 },
+      indulged:     { state_3: 8,  state_2: 5  },
+      opened_up:    { state_6: 10, state_4: -6 },
+      crossed_line: { state_2: 9,  state_3: 6  },
+      antagonist:   { state_5: 8,  state_2: 5  },
+      special:      { state_4: -4, state_6: 10 },
+    },
   }
 
   try {
@@ -411,7 +438,7 @@ INTERVIEW ANSWERS:
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
+      max_tokens: 2500,
       system: 'You analyze tabletop RPG character dossiers to extract psychological profile data. Respond ONLY in valid JSON. Never invent plot. Base everything on what is in the dossier.',
       messages: [{
         role: 'user',
@@ -456,8 +483,29 @@ Extract character data. Return ONLY this JSON:
     {"name": "NPC name", "role": "role in character's life", "description": "one sentence"}
   ],
   "clue_board_name": "name for the mystery tracking board",
-  "clue_board_subject": "name of the antagonist or mystery being tracked"
-}`
+  "clue_board_subject": "name of the antagonist or mystery being tracked",
+  "emotion_palette": [
+    {"id": "state_1", "name": "short evocative name", "description": "8-word behavioral descriptor", "base_value": 40},
+    {"id": "state_2", "name": "short evocative name", "description": "8-word behavioral descriptor", "base_value": 30},
+    {"id": "state_3", "name": "short evocative name", "description": "8-word behavioral descriptor", "base_value": 50},
+    {"id": "state_4", "name": "short evocative name", "description": "8-word behavioral descriptor", "base_value": 20},
+    {"id": "state_5", "name": "short evocative name", "description": "8-word behavioral descriptor", "base_value": 35},
+    {"id": "state_6", "name": "short evocative name", "description": "8-word behavioral descriptor", "base_value": 45}
+  ],
+  "event_weights": {
+    "violence":     {"state_id": 8, "state_id2": -3},
+    "performance":  {"state_id": -5, "state_id2": 6},
+    "avoided":      {"state_id": 7, "state_id2": -4},
+    "indulged":     {"state_id": 8, "state_id2": 5},
+    "opened_up":    {"state_id": 10, "state_id2": -6},
+    "crossed_line": {"state_id": 9, "state_id2": 6},
+    "antagonist":   {"state_id": 8, "state_id2": 5},
+    "special":      {"state_id": -4, "state_id2": 10}
+  }
+}
+
+Rules for emotion_palette: six states, names derived from this character's specific psychology (not generic). base_value between 20-60.
+Rules for event_weights: replace state_id/state_id2 with actual IDs from your emotion_palette (e.g. "state_1", "state_3"). Values between -10 and +10. Each category must have exactly 2 state effects.`
       }]
     })
     const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : '{}'
@@ -478,6 +526,8 @@ Extract character data. Return ONLY this JSON:
       clue_board_subject: parsed.clue_board_subject || parsed.antagonistName || 'the antagonist',
       color_scheme_suggestion: parsed.colorSchemeSuggestion || 'warm',
       trackerNames: parsed.trackerNames || fallbackConfig.trackerNames,
+      emotion_palette: parsed.emotion_palette || fallbackConfig.emotion_palette,
+      event_weights: parsed.event_weights || fallbackConfig.event_weights,
     }
 
     return {
