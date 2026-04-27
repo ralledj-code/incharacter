@@ -26,12 +26,16 @@ const SCREEN_ORDER: Screen[] = [
 const DOT_SCREENS: Screen[] = SCREEN_ORDER.filter(s => s !== 'analyzing')
 
 const COLOR_PRESETS = [
-  { id: 'grimoire', label: 'The Grimoire', desc: 'Gold · Amber to Crimson',    primary: '#c9a84c', secondary: '#8a6e2e', accent: '#f0e6d3' },
-  { id: 'sanctum',  label: 'The Sanctum',  desc: 'Silver · Ice Blue to Navy',  primary: '#c0c8d8', secondary: '#7a8898', accent: '#e8e8f0' },
-  { id: 'wilds',    label: 'The Wilds',    desc: 'Amber · Amber to Forest',    primary: '#c8a45a', secondary: '#887230', accent: '#f0e8d0' },
-  { id: 'shadow',   label: 'The Shadow',   desc: 'Purple · Purple to Black',   primary: '#9b7fc8', secondary: '#604a90', accent: '#e0d8f0' },
-  { id: 'forge',    label: 'The Forge',    desc: 'Copper · Copper to Crimson', primary: '#c87840', secondary: '#884820', accent: '#f0dcc8' },
-  { id: 'custom',   label: 'Custom',       desc: 'Your own accent color',      primary: '#c9a84c', secondary: '#8a6e2e', accent: '#f0e6d3' },
+  { id: 'warm',   label: 'Warm',   desc: 'Default — warm white, tan accent',
+    bg: '#faf9f7', surface: '#ffffff', accent: '#9b7e4e', text: '#1a1814', text2: '#6b6355', themeClass: '' },
+  { id: 'dark',   label: 'Dark',   desc: 'Near-black, warm gold accent',
+    bg: '#0f0e0c', surface: '#1c1a17', accent: '#c8a96e', text: '#f0ebe3', text2: '#7a7060', themeClass: 'theme-dark' },
+  { id: 'slate',  label: 'Slate',  desc: 'Cool grey, blue accent',
+    bg: '#f8f9fa', surface: '#ffffff', accent: '#4a6fa5', text: '#1a1c20', text2: '#5a6170', themeClass: 'theme-slate' },
+  { id: 'forest', label: 'Forest', desc: 'Soft green, earthy accent',
+    bg: '#f7f9f6', surface: '#ffffff', accent: '#4a7c59', text: '#161a15', text2: '#576355', themeClass: 'theme-forest' },
+  { id: 'ink',    label: 'Ink',    desc: 'Warm white, deep purple accent',
+    bg: '#f9f8f8', surface: '#ffffff', accent: '#5c5c7a', text: '#18181e', text2: '#5e5e72', themeClass: 'theme-ink' },
 ]
 
 const STRESS_OPTIONS = [
@@ -174,7 +178,7 @@ export default function OnboardingPlayer() {
       setTrackerNames(data.trackerNames || trackerNames)
       if (data.emotionPalette?.length) setEmotionPalette(data.emotionPalette)
       // Apply suggested color scheme
-      const suggestedId = data.characterConfig?.color_scheme_suggestion || 'grimoire'
+      const suggestedId = data.characterConfig?.color_scheme_suggestion || 'warm'
       const match = COLOR_PRESETS.find(p => p.id === suggestedId)
       if (match) { setColorScheme(match); document.documentElement.setAttribute('data-scheme', match.id) }
       go('review')
@@ -241,6 +245,8 @@ export default function OnboardingPlayer() {
       }).select().single()
 
       if (charErr) throw new Error(`Character insert failed: ${charErr.message}`)
+      // Save theme preference to profiles.color_scheme
+      await db('profiles').update({ color_scheme: colorScheme.id }).eq('id', user.id)
 
       // Encrypt and store API key server-side — plaintext never written to DB directly
       if (apiKey.trim()) {
@@ -682,23 +688,50 @@ export default function OnboardingPlayer() {
 
         {/* ── Color scheme ───────────────────────────────── */}
         {screen === 'color' && (
-          <div className="animate-fade-in space-y-6">
-            <h2 className="font-cinzel text-lg tracking-wider" style={{ color: 'var(--text)' }}>Choose your color scheme</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {COLOR_PRESETS.map(preset => (
-                <button key={preset.id}
-                  onClick={() => { setColorScheme(preset); document.documentElement.setAttribute('data-scheme', preset.id) }}
-                  className="p-4 text-left transition-all"
-                  style={{ background: 'var(--surface)', border: `1px solid ${colorScheme.id === preset.id ? preset.primary : 'var(--border)'}`, borderRadius: 2 }}>
-                  <div className="flex gap-2 mb-2">
-                    {[preset.primary, preset.secondary, preset.accent].map((c, i) => (
-                      <div key={i} className="w-4 h-4 rounded-full" style={{ background: c }} />
-                    ))}
-                  </div>
-                  <p className="font-cinzel text-xs tracking-wider mb-0.5" style={{ color: preset.primary }}>{preset.label}</p>
-                  <p className="font-garamond text-xs" style={{ color: 'var(--text-faint)' }}>{preset.desc}</p>
-                </button>
-              ))}
+          <div className="animate-fade-in space-y-5">
+            <h2 style={{ fontSize: 17, fontWeight: 500, color: 'var(--text)', marginBottom: 4 }}>Choose your theme</h2>
+            <p style={{ fontSize: 13, color: 'var(--text2)' }}>
+              Pick the look that suits you. You can change it anytime in Settings.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {COLOR_PRESETS.map(preset => {
+                const selected = colorScheme.id === preset.id
+                return (
+                  <button key={preset.id}
+                    onClick={() => {
+                      setColorScheme(preset)
+                      // Apply theme class immediately
+                      const html = document.documentElement
+                      COLOR_PRESETS.forEach(p => { if (p.themeClass) html.classList.remove(p.themeClass) })
+                      if (preset.themeClass) html.classList.add(preset.themeClass)
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 16,
+                      padding: '12px 14px', textAlign: 'left',
+                      background: preset.bg, border: selected ? `1.5px solid ${preset.accent}` : '0.5px solid rgba(0,0,0,0.12)',
+                      borderRadius: 8, cursor: 'pointer',
+                    }}>
+                    {/* Mini theme preview */}
+                    <div style={{ width: 72, flexShrink: 0, background: preset.surface, borderRadius: 6, padding: '8px 8px', border: '0.5px solid rgba(0,0,0,0.08)' }}>
+                      <div style={{ fontSize: 8, fontWeight: 700, color: preset.accent, marginBottom: 4, letterSpacing: '0.04em' }}>IN CHARACTER</div>
+                      <div style={{ fontSize: 7, color: preset.text, marginBottom: 5, lineHeight: 1.3 }}>Play him with<br/>the mask up.</div>
+                      {[70, 50, 35].map((w, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 2 }}>
+                          <div style={{ width: 24, fontSize: 6, color: preset.text2, textAlign: 'right', flexShrink: 0 }}>{['State', 'State', 'State'][i]}</div>
+                          <div style={{ flex: 1, height: 2, background: 'rgba(0,0,0,0.08)', borderRadius: 1 }}>
+                            <div style={{ width: w + '%', height: '100%', background: i === 0 ? preset.accent : 'rgba(0,0,0,0.15)', borderRadius: 1 }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: selected ? 600 : 400, color: preset.text, marginBottom: 2 }}>{preset.label}</p>
+                      <p style={{ fontSize: 12, color: preset.text2 }}>{preset.desc}</p>
+                    </div>
+                    {selected && <div style={{ marginLeft: 'auto', width: 18, height: 18, borderRadius: '50%', background: preset.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#fff', flexShrink: 0 }}>✓</div>}
+                  </button>
+                )
+              })}
             </div>
             <div className="flex gap-3">
               <button className="btn-gold flex-1 py-3" onClick={() => go('review')}>Back</button>
@@ -707,7 +740,7 @@ export default function OnboardingPlayer() {
           </div>
         )}
 
-        {/* ── Emotion palette ────────────────────────────── */}
+                {/* ── Emotion palette ────────────────────────────── */}
         {screen === 'palette' && (
           <div className="animate-fade-in space-y-5">
             <h2 className="font-cinzel text-lg tracking-wider" style={{ color: 'var(--text)' }}>Your emotion palette</h2>
