@@ -80,12 +80,14 @@ export default function NowScreen({ character, tracker: initialTracker, session,
         }),
       })
       const data = await res.json()
+      // FIX 3: API now returns { directive, dmRead }
       if (data.directive) {
         setDirective(data.directive)
         const supabase = createClient()
         await (supabase.from('tracker_states') as AnyRec)
           .update({ play_directive: data.directive })
           .eq('character_id', character.id)
+        // dm_read is stored in the directive route directly on characters table
       }
     } catch {}
     setDirectiveLoading(false)

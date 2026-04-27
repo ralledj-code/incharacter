@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Campaign, Character, TrackerState } from '@/types/database'
-import ArcaneGlyph from './ArcaneGlyph'
 import BurgerMenu from './BurgerMenu'
 import { glyphValuesFromTrackers, GLYPH_STATES } from '@/lib/constants'
 
@@ -14,146 +13,58 @@ interface DMDashboardProps {
   recentEvents: Array<{ character_id: string; category: string; reaction: string; created_at: string }>
 }
 
-const EVENT_COLORS: Record<string, string> = {
-  violence:     '#8b2e2e',
-  performance:  '#c9a84c',
-  avoided:      '#5a4a30',
-  indulged:     '#7a4028',
-  dagger:       '#6b2e8b',
-  opened_up:    '#2e6b5a',
-  crossed_line: '#8b4a2e',
-  mystery:      '#4a5a8b',
-}
-
+// FIX 2: Clean character card — name, directive, dm_read, dominant state only
 function CharacterCard({
   character,
   tracker,
-  events,
 }: {
-  character: Character
+  character: Character & { dm_read?: string }
   tracker?: TrackerState
-  events: Array<{ category: string; reaction: string; created_at: string }>
 }) {
-  const [expanded, setExpanded] = useState(false)
   const emotionPalette = (character.emotion_palette as Array<{ key: string; label: string; desc: string }> | null) || GLYPH_STATES.map(s => ({ ...s }))
-
   const mask   = tracker?.mask   ?? 50
   const dagger = tracker?.dagger ?? 30
   const bottle = tracker?.bottle ?? 40
   const wound  = tracker?.wound  ?? 60
-
   const glyphValues = glyphValuesFromTrackers(mask, dagger, bottle, wound)
-  const woundTrend = wound > 65 ? '↑' : wound < 35 ? '↓' : '→'
-  const woundColor = wound > 65 ? 'var(--red)' : wound < 35 ? 'var(--gold)' : 'var(--text-dim)'
-
-  const recentThree = events.slice(0, 3)
+  const domEntry = Object.entries(glyphValues).reduce((a, b) => a[1] > b[1] ? a : b)
+  const domState = emotionPalette.find(s => s.key === domEntry[0])
+  const dmRead = character.dm_read || ''
+  const directive = tracker?.play_directive || ''
 
   return (
-    <div
-      className="card-dark overflow-hidden cursor-pointer transition-all"
-      onClick={() => setExpanded(e => !e)}
-    >
-      <div className="p-5">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            {character.portrait_url && (
-              <img
-                src={character.portrait_url}
-                alt={character.name}
-                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                style={{ border: '1px solid var(--gold-dim)' }}
-              />
-            )}
-            <div>
-              <h3 className="font-cinzel text-ink text-sm tracking-wider">{character.name}</h3>
-              <p className="font-garamond text-ink-faint text-xs">
-                Wound {wound}/100{' '}
-                <span style={{ color: woundColor }}>{woundTrend}</span>
-              </p>
-            </div>
-          </div>
-          <ArcaneGlyph values={glyphValues} states={emotionPalette} size={80} />
-        </div>
+    <div style={{
+      background: 'var(--surface)', border: '0.5px solid var(--border)',
+      borderRadius: 8, padding: '16px 18px',
+    }}>
+      {/* Character name */}
+      <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 8, letterSpacing: '-0.01em' }}>
+        {character.name}
+      </p>
 
-        {tracker?.play_directive && (
-          <p className="play-directive text-sm mb-3">{tracker.play_directive}</p>
-        )}
+      {/* Play as directive */}
+      {directive && (
+        <p style={{ fontSize: 14, color: 'var(--text2)', fontStyle: 'italic', marginBottom: 6, lineHeight: 1.45 }}>
+          {directive}
+        </p>
+      )}
 
-        {/* Recent events dots */}
-        <div className="flex items-center gap-1.5">
-          {recentThree.map((event, i) => (
-            <div
-              key={i}
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ background: EVENT_COLORS[event.category] || 'var(--gold-dim)' }}
-              title={event.category}
-            />
-          ))}
-          {events.length > 3 && (
-            <span className="font-garamond text-ink-faint text-xs">+{events.length - 3}</span>
-          )}
-        </div>
-      </div>
+      {/* DM read */}
+      {dmRead && (
+        <p style={{ fontSize: 14, color: 'var(--text)', marginBottom: 8, lineHeight: 1.5 }}>
+          {dmRead}
+        </p>
+      )}
 
-      {/* Expanded view */}
-      {expanded && (
-        <div
-          className="animate-fade-in px-5 pb-5 pt-0"
-          style={{ borderTop: '1px solid var(--border)' }}
-        >
-          <div className="flex justify-center my-4">
-            <ArcaneGlyph values={glyphValues} states={emotionPalette} size={220} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            {[
-              { label: 'Mask', value: mask },
-              { label: 'Dagger', value: dagger },
-              { label: 'Bottle', value: bottle },
-              { label: 'Wound', value: wound },
-            ].map(t => (
-              <div key={t.label} className="p-3" style={{ background: 'var(--surface2)', borderRadius: 2 }}>
-                <p className="label-caps mb-1">{t.label}</p>
-                <div className="flex items-center gap-2">
-                  <div
-                    className="flex-1 h-1.5 rounded-full"
-                    style={{ background: 'var(--gold-faint)' }}
-                  >
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${t.value}%`, background: 'var(--gold)', transition: 'width 600ms ease' }}
-                    />
-                  </div>
-                  <span className="font-cinzel text-xs text-ink-dim">{t.value}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {events.length > 0 && (
-            <div>
-              <p className="label-caps mb-2">Recent Moments</p>
-              <div className="space-y-1">
-                {events.slice(0, 5).map((event, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <div
-                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                      style={{ background: EVENT_COLORS[event.category] || 'var(--gold-dim)' }}
-                    />
-                    <span className="font-garamond text-ink-dim text-xs capitalize">
-                      {event.category?.replace(/_/g, ' ')} · {event.reaction?.replace(/_/g, ' ')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+      {/* Dominant state */}
+      {domState && (
+        <p style={{ fontSize: 12, color: 'var(--accent-text)', fontWeight: 500, letterSpacing: '0.02em' }}>
+          {domState.label}
+        </p>
       )}
     </div>
   )
 }
-
 
 export default function DMDashboard({ campaigns, members, characters, trackers, recentEvents }: DMDashboardProps) {
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(campaigns[0]?.id || null)
@@ -374,7 +285,6 @@ export default function DMDashboard({ campaigns, members, characters, trackers, 
                         key={character.id}
                         character={character}
                         tracker={trackers.find(t => t.character_id === character.id)}
-                        events={recentEvents.filter(e => e.character_id === character.id)}
                       />
                     ))
                   )}

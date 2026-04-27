@@ -77,35 +77,49 @@ export async function generatePlayDirective(params: {
   apiKey?: string
   userId?: string
   characterId?: string
-}): Promise<string> {
+}): Promise<{ directive: string; dmRead: string }> {
   try {
     const client = buildClient(params.apiKey)
     const ctx = buildContextBlock(params.trackers, params.characterName, params.recentEvents, params.trackerNames)
     const dominantNote = params.dominantState
-      ? `\nDOMINANT STATE: ${params.dominantState.label} — ${params.dominantState.desc}`
+      ? `
+DOMINANT STATE: ${params.dominantState.label} — ${params.dominantState.desc}`
       : ''
     const prevNote = params.previousDirective
-      ? `\nPREVIOUS DIRECTIVE: "${params.previousDirective}" — evolve this subtly, don't replace entirely.`
+      ? `
+PREVIOUS DIRECTIVE: "${params.previousDirective}" — evolve this subtly.`
       : ''
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 100,
-      system: `You are a character performance director for tabletop RPG. You give precise, present-tense behavioral instructions.
-RULES: Never invent plot or story events. Only reference psychological patterns from the dossier and current state.
+      max_tokens: 200,
+      system: `You are a character performance director for tabletop RPG. Two outputs required.
+RULES: Never invent plot. Only reference psychological patterns from dossier and current state.
 Character dossier: ${params.dossierSummary || 'No dossier provided.'}`,
       messages: [{
         role: 'user',
         content: `${ctx}${dominantNote}${prevNote}
 
-Generate ONE behavioral play directive. Exactly one sentence. Maximum 12 words. Starts with "Play them" or "Play [character name]". Present tense. Behavioral — what to do at the table, not what the character is like. No story invention.`
+Generate two outputs in this exact format:
+
+DIRECTIVE: [one sentence, max 12 words, starts with "Play them" or "Play ${params.characterName}", present tense, behavioral]
+DM_READ: [one or two sentences, DM perspective only, what this character is about to do or what to watch for, pure psychological read, no story invention]`
       }]
     })
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
-    return text || `Play ${params.characterName} true to their current psychological state.`
+    const directiveLine = text.split('\n').find(l => l.startsWith('DIRECTIVE:'))
+    const dmReadLine = text.split('\n').find(l => l.startsWith('DM_READ:'))
+    const directive = directiveLine?.replace(/^DIRECTIVE:\s*/i, '').trim()
+      || `Play ${params.characterName} true to their current state.`
+    const dmRead = dmReadLine?.replace(/^DM_READ:\s*/i, '').trim()
+      || `${params.characterName} is in a heightened state. Watch the patterns.`
+    return { directive, dmRead }
   } catch (error) {
     await logError({ userId: params.userId, characterId: params.characterId, screen: 'now', action: 'generatePlayDirective', error })
-    return `Play ${params.characterName} true to their current psychological state.`
+    return {
+      directive: `Play ${params.characterName} true to their current state.`,
+      dmRead: `${params.characterName} is in a heightened state. Watch the patterns.`,
+    }
   }
 }
 
