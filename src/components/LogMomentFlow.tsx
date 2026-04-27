@@ -143,23 +143,29 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
         .select()
         .single()
 
-      // Check for threshold crossing
+      // Always regenerate directive after every moment — pass category/subcategory/reaction
+      const config = character.tracker_config as ConfigRecord | null
+      const emotionPalette = config?.emotion_palette as Array<{ id: string; name: string; description: string; base_value: number }> | undefined
+
       let newDirective: string | undefined
-      const maxDelta = Math.max(...Object.values(delta).map(Math.abs))
-      if (maxDelta >= 15) {
-        const directiveRes = await fetch('/api/claude/directive', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            characterId: character.id,
-            characterName: character.name,
-            dossierSummary: character.dossier_text?.slice(0, 2000) || '',
-            trackers: newTrackers,
-            // apiKey fetched server-side
-          }),
-        })
+      let updatedGlyphStates: Record<string, number> | undefined
+      const directiveRes = await fetch('/api/claude/directive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          characterId: character.id,
+          characterName: character.name,
+          dossierSummary: character.dossier_text?.slice(0, 2000) || '',
+          trackers: newTrackers,
+          currentEvent: { category: selectedCategory, subcategory: selectedSubcategory, reaction },
+          emotionPalette,
+          // apiKey fetched server-side
+        }),
+      })
+      if (directiveRes.ok) {
         const dData = await directiveRes.json()
         newDirective = dData.directive
+        if (dData.glyphStates) updatedGlyphStates = dData.glyphStates
       }
 
       // Log replay
@@ -176,7 +182,11 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
         },
       })
 
-      onComplete((newState as TrackerState) || { ...tracker!, ...newTrackers }, newDirective)
+      const finalTracker = {
+        ...((newState as TrackerState) || { ...tracker!, ...newTrackers }),
+        ...(updatedGlyphStates ? { glyph_states: updatedGlyphStates } : {}),
+      }
+      onComplete(finalTracker as TrackerState, newDirective)
     } catch (error) {
       // Log error silently
       try {

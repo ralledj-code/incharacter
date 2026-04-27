@@ -25,6 +25,9 @@ export default function LongRestModal({ character, session, tracker, onComplete,
   const [wakingText, setWakingText] = useState('')
   const [loadingPhrase] = useState(getRandomLoadingPhrase())
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type ConfigRec = Record<string, any>
+
   async function handleRest() {
     if (drank === null || dreamed === null) return
     setStep('generating')
@@ -46,6 +49,21 @@ export default function LongRestModal({ character, session, tracker, onComplete,
       dagger: clamp(currentTrackers.dagger + delta.dagger),
       bottle: clamp(currentTrackers.bottle + delta.bottle),
       wound:  clamp(currentTrackers.wound  + delta.wound),
+    }
+
+    // Reset glyph_states to base_value + 20% echo of session delta
+    const config = character.tracker_config as ConfigRec | null
+    const emotionPalette = config?.emotion_palette as Array<{ id: string; name: string; description: string; base_value: number }> | null
+    const currentGlyphStates = tracker?.glyph_states as Record<string, number> | null
+    let resetGlyphStates: Record<string, number> | null = null
+    if (emotionPalette?.length) {
+      resetGlyphStates = {}
+      for (const s of emotionPalette) {
+        const base = s.base_value ?? 40
+        const current = currentGlyphStates?.[s.id] ?? base
+        // Echo: base + 20% of session delta carries over
+        resetGlyphStates[s.id] = Math.round(clamp(base + (current - base) * 0.2))
+      }
     }
 
     try {
@@ -83,9 +101,13 @@ export default function LongRestModal({ character, session, tracker, onComplete,
         })
         .eq('id', session.id)
 
-      // Update tracker
+      // Update tracker — reset glyph_states with echo, apply LONG_REST_DELTAS to raw trackers
       await (supabase.from('tracker_states') as AnyRecord)
-        .update({ ...newTrackers, updated_at: new Date().toISOString() })
+        .update({
+          ...newTrackers,
+          ...(resetGlyphStates ? { glyph_states: resetGlyphStates } : {}),
+          updated_at: new Date().toISOString(),
+        })
         .eq('character_id', character.id)
 
       // Get last session number

@@ -74,58 +74,76 @@ export async function generatePlayDirective(params: {
   trackerNames?: { mask?: string; dagger?: string; bottle?: string; wound?: string }
   dominantState?: { label: string; desc: string }
   previousDirective?: string
+  currentEvent?: { category: string; subcategory: string; reaction: string }
+  previousEvent?: { category: string; subcategory: string; reaction: string }
+  emotionPalette?: Array<{ id: string; name: string; description: string; base_value: number }>
   apiKey?: string
   userId?: string
   characterId?: string
-}): Promise<{ directive: string; dmRead: string }> {
+}): Promise<{ directive: string; dmRead: string; stateChanges: Record<string, number> }> {
   try {
     const client = buildClient(params.apiKey)
-    const ctx = buildContextBlock(params.trackers, params.characterName, params.recentEvents, params.trackerNames)
-    const dominantNote = params.dominantState
-      ? `
-DOMINANT STATE: ${params.dominantState.label} — ${params.dominantState.desc}`
+
+    const prevEventLine = params.previousEvent
+      ? `Previous event: ${params.previousEvent.category} — ${params.previousEvent.subcategory} — ${params.previousEvent.reaction}`
       : ''
-    const prevNote = params.previousDirective
-      ? `
-PREVIOUS DIRECTIVE: "${params.previousDirective}" — evolve this subtly.`
+    const currEventLine = params.currentEvent
+      ? `Current event: ${params.currentEvent.category} — ${params.currentEvent.subcategory} — ${params.currentEvent.reaction}`
+      : ''
+    const dominantNote = params.dominantState
+      ? `Current dominant state: ${params.dominantState.label} — ${params.dominantState.desc}`
+      : ''
+
+    const paletteIds = params.emotionPalette?.map(s => `"${s.id}" (${s.name})`).join(', ') || ''
+    const paletteNote = paletteIds
+      ? `Emotion state IDs for state_changes (use these exact IDs): ${paletteIds}`
       : ''
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 200,
+      max_tokens: 300,
       system: `You are a character performance director for tabletop RPG.
 RULES: Never invent plot. Only reference psychological patterns from dossier and current state.
 Character dossier: ${params.dossierSummary || 'No dossier provided.'}`,
       messages: [{
         role: 'user',
-        content: `${ctx}${dominantNote}${prevNote}
+        content: `${prevEventLine}
+${currEventLine}
+${dominantNote}
+${paletteNote}
 
-Return a JSON object with exactly two fields:
+Return a JSON object with exactly three fields:
 {
-  "play_directive": "one sentence, max 12 words, starts with Play them or Play ${params.characterName}, present tense, behavioral",
-  "dm_read": "one or two sentences, DM perspective only, psychological read of what to watch for, no story invention"
+  "play_directive": "one sentence, max 12 words, starts with Play them or Play ${params.characterName}, present tense, reflects both events if both present",
+  "dm_read": "one sentence, DM perspective, what is this character about to do next",
+  "state_changes": { "state_id": delta }
 }
 
-Respond with only the JSON object, no other text.`
+state_changes: use actual state IDs from the palette. Values -10 to +10. Negative when events conflict with a state. Include 2-4 states affected. Respond with only the JSON object.`
       }]
     })
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
     let directive = `Play ${params.characterName} true to their current state.`
     let dmRead = `${params.characterName} is in a heightened state. Watch the patterns.`
+    let stateChanges: Record<string, number> = {}
     try {
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0])
         if (parsed.play_directive) directive = parsed.play_directive
         if (parsed.dm_read) dmRead = parsed.dm_read
+        if (parsed.state_changes && typeof parsed.state_changes === 'object') {
+          stateChanges = parsed.state_changes
+        }
       }
     } catch {}
-    return { directive, dmRead }
+    return { directive, dmRead, stateChanges }
   } catch (error) {
     await logError({ userId: params.userId, characterId: params.characterId, screen: 'now', action: 'generatePlayDirective', error })
     return {
       directive: `Play ${params.characterName} true to their current state.`,
       dmRead: `${params.characterName} is in a heightened state. Watch the patterns.`,
+      stateChanges: {},
     }
   }
 }

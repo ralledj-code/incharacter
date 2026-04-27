@@ -27,20 +27,35 @@ export default function NowScreen({ character, tracker: initialTracker, session,
   const [showLongRest, setShowLongRest] = useState(false)
   const [barsVisible, setBarsVisible] = useState(false)
 
-  const emotionPalette = (character.emotion_palette as Array<{ key: string; label: string; desc: string }> | null)
-    || GLYPH_STATES.map(s => ({ ...s }))
+  const config = character.tracker_config as AnyRec | null
+  const trackerNames = config?.trackerNames as { mask?: string; dagger?: string; bottle?: string; wound?: string } | undefined
+  const configPalette = config?.emotion_palette as Array<{ id: string; name: string; description: string; base_value: number }> | null
 
   const mask   = tracker?.mask   ?? 50
   const dagger = tracker?.dagger ?? 30
   const bottle = tracker?.bottle ?? 40
   const wound  = tracker?.wound  ?? 60
 
-  const glyphValues = glyphValuesFromTrackers(mask, dagger, bottle, wound)
+  // Prefer tracker_config.emotion_palette + glyph_states (new system) over derived values
+  const glyphStates = tracker?.glyph_states as Record<string, number> | null
+  const useNewSystem = !!(configPalette?.length && glyphStates && Object.keys(glyphStates).length > 0)
 
-  const stateList = emotionPalette.map(s => ({
-    ...s,
-    value: Math.round((glyphValues[s.key as keyof typeof glyphValues] ?? 0) * 100),
-  })).sort((a, b) => b.value - a.value)
+  const stateList = useNewSystem
+    ? (configPalette!.map(s => ({
+        key: s.id,
+        label: s.name.toUpperCase(),
+        desc: s.description,
+        value: Math.round(glyphStates![s.id] ?? s.base_value),
+      })).sort((a, b) => b.value - a.value))
+    : (() => {
+        const emotionPalette = (character.emotion_palette as Array<{ key: string; label: string; desc: string }> | null)
+          || GLYPH_STATES.map(s => ({ ...s }))
+        const glyphValues = glyphValuesFromTrackers(mask, dagger, bottle, wound)
+        return emotionPalette.map(s => ({
+          ...s,
+          value: Math.round((glyphValues[s.key as keyof typeof glyphValues] ?? 0) * 100),
+        })).sort((a, b) => b.value - a.value)
+      })()
 
   const dominant = stateList[0]
 
@@ -52,18 +67,14 @@ export default function NowScreen({ character, tracker: initialTracker, session,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (!directive && character.dossier_text) generateDirective() }, [])
 
-  const config = character.tracker_config as AnyRec | null
-  const trackerNames = config?.trackerNames as { mask?: string; dagger?: string; bottle?: string; wound?: string } | undefined
-
   async function generateDirective(opts?: { newTracker?: TrackerState; previousDirective?: string }) {
     isUpdatingDirective.current = true
     setDirectiveLoading(true)
     const t = opts?.newTracker || tracker
     const m = t?.mask ?? 50, d = t?.dagger ?? 30, b = t?.bottle ?? 40, w = t?.wound ?? 60
     try {
-      const glVals = glyphValuesFromTrackers(m, d, b, w)
-      const domEntry = Object.entries(glVals).reduce((a, x) => a[1] > x[1] ? a : x)
-      const domState = emotionPalette.find(s => s.key === domEntry[0])
+      // Dominant state from whichever system is active
+      const domEntry = dominant ? { label: dominant.label, desc: dominant.desc } : undefined
 
       const res = await fetch('/api/claude/directive', {
         method: 'POST',
@@ -74,49 +85,40 @@ export default function NowScreen({ character, tracker: initialTracker, session,
           dossierSummary: character.dossier_text?.slice(0, 2000) || '',
           trackers: { mask: m, dagger: d, bottle: b, wound: w },
           trackerNames,
-          dominantState: domState ? { label: domState.label, desc: domState.desc } : undefined,
+          dominantState: domEntry,
           previousDirective: opts?.previousDirective || undefined,
+          emotionPalette: configPalette || undefined,
           recentEvents: recentEvents.map(e => e.narrative || e.category),
         }),
       })
       const data = await res.json()
-      // Route already wrote play_directive (tracker_states) and dm_read (characters) server-side
       if (data.directive) {
         setDirective(data.directive)
+        // Update local glyph_states from server response so bars re-render
+        if (data.glyphStates) {
+          setTracker(prev => prev ? { ...prev, glyph_states: data.glyphStates } : prev)
+        }
       }
     } catch {}
     isUpdatingDirective.current = false
     setDirectiveLoading(false)
   }
 
-  // FIX 2: update directive after moments — fade transition via opacity animation
   const [directiveFading, setDirectiveFading] = useState(false)
-  const [momentCount, setMomentCount] = useState(0)
   const isUpdatingDirective = useRef(false)
 
+  // Every moment now triggers directive from LogMomentFlow — just apply the result
   async function handleEventLogged(newTracker: TrackerState, newDirective?: string) {
+    // Update tracker state (includes glyph_states from directive response)
     setTracker(newTracker)
-    const newCount = momentCount + 1
-    setMomentCount(newCount)
 
     if (newDirective) {
-      // Directive already generated by LogMomentFlow (threshold crossed)
       setDirectiveFading(true)
       setTimeout(() => { setDirective(newDirective); setDirectiveFading(false) }, 300)
-      // Don't refresh — the directive is already saved by the LogMomentFlow path
-      setShowLogFlow(false)
-      return
-    }
-
-    if (newCount % 3 === 0) {
-      // Every 3 moments, regenerate directive based on updated state
-      setDirectiveFading(true)
-      await generateDirective({ newTracker, previousDirective: directive })
-      setDirectiveFading(false)
     }
 
     setShowLogFlow(false)
-    // Skip refresh while directive write is in flight to prevent stale value overwrite
+    // Only refresh if directive write has finished to avoid stale value overwrite
     if (!isUpdatingDirective.current) {
       router.refresh()
     }
