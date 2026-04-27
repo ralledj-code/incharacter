@@ -1,73 +1,70 @@
 # In Character — Progress
 
-Last updated: 2026-04-28 (session 11 — hardcoding audit + motivations tab + directive updates)
-
----
-
-## Hardcoding Audit Results
-
-### What was found and fixed
-
-| Location | Hardcoded reference | Fixed to |
-|---|---|---|
-| src/lib/api.ts:23-26 | "The Mask (infernal pressure...)" in Claude prompts | Dynamic trackerNames param |
-| src/lib/api.ts:87,90 | "Play him like the performance..." | `Play ${characterName} true to their state` |
-| src/lib/api.ts:124,127 | "He moved through it the way he always did..." | `${characterName} moved through it...` |
-| src/lib/api.ts:399 | colorSchemeSuggestion: "grimoire\|sanctum..." | "warm\|dark\|slate\|forest\|ink" |
-| src/lib/api.ts:419-420 | "Severin Board", "Severin Draik" (examples) | Generic placeholder text |
-| src/lib/constants.ts | "The bottle is speaking", "He is here" in GLYPH_STATES | Generic state descriptions |
-| src/components/LongRestModal.tsx | "The night was long and the bottle was honest" | Generic fallback |
-| src/components/onboarding/OnboardingPlayer.tsx | "The infernal pact, the drinking, wild magic..." placeholder | Generic placeholder |
-| src/app/about/page.tsx | "half-elf Wild Magic Sorcerer" (intentional app story origin, left) | — |
-
-### Rules enforced in all Claude prompts
-- No character names, place names, or story references as hardcoded strings
-- All tracker names come from `trackerNames` param (from `tracker_config`)
-- Fallbacks use character name from context, not Lucien-specific text
-- `generatePlayDirective`: passes `trackerNames`, `dominantState`, `previousDirective` for evolution
-- All prompts have explicit RULES comment: never invent plot, only use dossier + state
+Last updated: 2026-04-28 (session 12 — restart fix, campaign join overhaul)
 
 ---
 
 ## What's working
 
 ### Auth
-- Email/password sign in + sign up → immediate redirect to onboarding (no email confirmation screen)
-- No localStorage role storage
-- Supabase browser client: flowType: 'implicit'
+- Email/password sign in + sign up → immediate redirect to onboarding
+- No localStorage role storage, flowType: 'implicit'
 
 ### Onboarding
 - Player: 14-screen flow with 5-question interview
-- DM: 2-step (create → CAMP code shown, never UUID)
-- No email invite step anywhere
+- DM: 2-step (create → CAMP code shown, never UUID, no email invite step)
+
+### Character restart (fixed)
+- Keeps: dossier_text, tracker_config, api_key_encrypted, campaign_id, color_scheme, name
+- Clears: events, sessions, clues, relationships, session_replays
+- Resets tracker_states to initial values (from tracker_config.initial_trackers or 50/30/40/60)
+- Creates fresh session 1, clears play_directive (regenerated on next Now screen visit)
+- Redirects to /play/now, not /onboarding
+- Confirmation modal: "Reset Gameplay" — explains dossier/config kept
+
+### Campaign join (fixed — all three paths use service role)
+
+**Path A — CAMP code (player Settings):**
+- /api/campaign/join POST uses service role → bypasses campaigns RLS
+- Input normalized: .trim().toUpperCase() on both sides
+- Specific errors: 'Campaign not found', 'Already a member'
+- Updates characters.campaign_id
+
+**Path B — Email (DM invite modal):**
+- /api/dm/add-player POST uses service.auth.admin.listUsers()
+- Case-insensitive email search
+- Error if not found: 'No account found with email...'
+
+**Path C — IC code (DM invite modal):**
+- /api/dm/add-player uses service role + .limit(1) not .single()
+- Error: 'No player found with code IC-...'
+- 409 if 'Already in campaign'
+
+### DM dashboard
+- All queries use service role client (bypasses campaign_members RLS)
+- Dual-path: characters WHERE campaign_id IN campaigns + via campaign_members
+- console.log at each step → visible in Vercel logs
 
 ### Player app
-- **Now screen**: state bars, 26px directive, tab bar sticky, single column all viewports
-- **Directive updates after moments**: every 3 moments triggers subtle evolution via Claude
-- **Session tab**: chronological event log, Long Rest button
-- **Motivations tab** (was Journey): antagonist board + relationship tabs from tracker_config
-  - Sessions tab removed from Motivations (sessions are in Session tab)
-  - Tab names from tracker_config.clue_board_name and key_relationships
-- **Log Moment**: 8 categories, all names from tracker_config, generic subcategories
-- **Relationship board**: "What happened?" field, category tap first
+- Now screen: state bars, 26px directive, directive updates every 3 moments (fade 300ms)
+- Session tab: chronological event log
+- Motivations tab: antagonist board + relationship tabs from tracker_config
+- Log Moment: 8 categories from tracker_config, generic subcategories
+- Relationship board: category tap → "What happened?" field
 
-### Campaign flow
-- Player Settings: join by CAMP code (maybeSingle, detailed logs), leave campaign
-- DM invite modal: IC code and email lookup (maybeSingle, uppercase trim, detailed logs)
-- DM dashboard: dual query via campaign_members + characters.campaign_id
-
-### API routes
-- /api/health — public
-- /api/character, /api/events, /api/tracker — authenticated
+### Claude prompts
+- No hardcoded character names or story references anywhere
+- All tracker names from trackerNames param
+- Fallbacks use characterName from context
 
 ---
 
-## Still needs testing
+## Known issues / untested
 
-- Campaign join end-to-end (player → DM dashboard sees card)
-- DM invite with IC code
-- Directive evolution after 3 logged moments
-- All board names showing from tracker_config (not hardcoded)
+- Portrait upload to Supabase Storage: UI exists, not wired
+- PDF export: font loading may fail in Vercel edge
+- Arc view: not cached in DB, regenerated each visit
+- Email confirmation via Resend: RESEND_API_KEY is placeholder
 
 ---
 
@@ -78,16 +75,6 @@ Last updated: 2026-04-28 (session 11 — hardcoding audit + motivations tab + di
 - supabase-migrations.sql ✅
 - campaigns.dm_api_key_encrypted ✅
 - profiles.color_scheme ✅
-
----
-
-## Health check
-
-```
-npx ts-node --project scripts/tsconfig.json scripts/healthcheck.ts
-```
-
-Set `HEALTHCHECK_PASSWORD` in .env.local to run auth + API checks.
 
 ---
 
