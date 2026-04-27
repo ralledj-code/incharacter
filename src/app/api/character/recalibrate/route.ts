@@ -29,10 +29,10 @@ export async function POST() {
     if (error || !character) return NextResponse.json({ error: 'Character not found' }, { status: 404 })
     if (!character.dossier_text) return NextResponse.json({ error: 'No dossier to analyze' }, { status: 400 })
 
+    console.log('[recalibrate] calling Claude for character:', character.id)
+
     const apiKey = await getDecryptedApiKey(user.id, character.id)
     const anthropic = new Anthropic({ apiKey: apiKey || process.env.ANTHROPIC_API_KEY })
-
-    console.log('[recalibrate] calling Claude for character:', character.id)
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
@@ -118,7 +118,7 @@ Use IDs exactly as shown (state_1 through state_6). Values between -10 and +10. 
     console.log('[recalibrate] done — tracker_config written for:', character.id)
     return NextResponse.json({ success: true })
   } catch (err) {
-    console.log('[recalibrate] caught error:', String(err))
+    console.error('RECALIBRATE CRASH:', err)
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }

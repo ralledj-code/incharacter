@@ -22,6 +22,11 @@ function isPublic(pathname: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // API routes handle their own auth — skip middleware entirely
+  if (pathname.startsWith('/api/')) return NextResponse.next()
+
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -42,7 +47,6 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-  const { pathname } = request.nextUrl
 
   // Unauthenticated → redirect to login for protected routes
   if (!user && !isPublic(pathname)) {
