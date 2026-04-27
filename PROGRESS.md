@@ -135,11 +135,32 @@ Last updated: 2026-04-28 (session 8 — full redesign)
 
 ---
 
+## Health checks
+
+Run after any deploy:
+```
+npx ts-node --project scripts/tsconfig.json scripts/healthcheck.ts
+```
+
+Checks:
+- HTTP: landing, auth, /api/health, /dm/invite (should 404)
+- DB: all tables exist, player_code/color_scheme/campaign_code columns
+- Auth: sign in with test credentials, get session token
+- API routes: /api/character, /api/events, /api/tracker, /api/claude/arc, /api/export-pdf
+
+Environment variables needed in `.env.local`:
+- `HEALTHCHECK_EMAIL` (default: ralledj+player2@gmail.com)
+- `HEALTHCHECK_PASSWORD` — set this to the test player's password
+
+Add `HEALTHCHECK_PASSWORD` to Vercel env vars if running against production.
+
+---
+
 ## Next priorities
 
-1. Run all Supabase SQL migrations
-2. Test campaign join end-to-end with CAMP-84RX-LHVR
-3. Configure Resend SMTP
-4. Arc view — cache generated text in DB (tracker_states.arc_text column)
-5. DM dashboard party tension analysis
+1. Run all Supabase SQL migrations (esp. player_code, color_scheme columns)
+2. Set HEALTHCHECK_PASSWORD, run healthcheck
+3. Test campaign join: player visits Settings → enters CAMP code → joins
+4. Configure Resend SMTP for email
+5. Arc view — cache in DB
 6. PDF export font fix
