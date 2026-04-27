@@ -340,17 +340,32 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
               <p className="font-cinzel text-xs tracking-widest mb-4" style={{ color: 'var(--accent)' }}>
                 {category.icon} {category.label}
               </p>
-              <div className="space-y-2">
-                {category.subcategories.map(sub => (
-                  <button key={sub}
-                    onClick={() => { setSelectedSubcategory(sub); setStep('reaction') }}
-                    className="w-full p-4 text-left transition-all"
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}
-                  >
-                    <p className="font-garamond" style={{ color: 'var(--text)' }}>{sub}</p>
-                  </button>
-                ))}
-              </div>
+              {/* Subcategories inherit parent category weights — compute once */}
+              {(() => {
+                const catImpacts = stateImpacts(lookupWeights((category as ConfigRecord).id, eventWeights), emotionPalette)
+                return (
+                  <div className="space-y-2">
+                    {category.subcategories.map(sub => (
+                      <button key={sub}
+                        onClick={() => { setSelectedSubcategory(sub); setStep('reaction') }}
+                        className="w-full p-4 text-left transition-all"
+                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}
+                      >
+                        <p className="font-garamond" style={{ color: 'var(--text)' }}>{sub}</p>
+                        {catImpacts.length > 0 && (
+                          <p style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4, lineHeight: 1.6 }}>
+                            {catImpacts.map((s, i) => (
+                              <span key={i} style={{ marginRight: 6 }}>
+                                {s.weight > 0 ? '↑' : '↓'} {s.name}
+                              </span>
+                            ))}
+                          </p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )
+              })()}
             </motion.div>
           )}
 

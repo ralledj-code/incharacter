@@ -36,17 +36,16 @@ export default function NowScreen({ character, tracker: initialTracker, session,
   const bottle = tracker?.bottle ?? 40
   const wound  = tracker?.wound  ?? 60
 
-  // Prefer tracker_config.emotion_palette + glyph_states (new system) over derived values
   const glyphStates = tracker?.glyph_states as Record<string, number> | null
-  const useNewSystem = !!(configPalette?.length && glyphStates && Object.keys(glyphStates).length > 0)
 
-  const stateList = useNewSystem
-    ? (configPalette!.map(s => ({
+  // Always use tracker_config.emotion_palette when available; fall back to base_value if no glyph_states yet
+  const stateList = configPalette?.length
+    ? configPalette.map(s => ({
         key: s.id,
         label: s.name.toUpperCase(),
         desc: s.description,
-        value: Math.round(glyphStates![s.id] ?? s.base_value),
-      })).sort((a, b) => b.value - a.value))
+        value: Math.round(glyphStates?.[s.id] ?? s.base_value),
+      })).sort((a, b) => b.value - a.value)
     : (() => {
         const emotionPalette = (character.emotion_palette as Array<{ key: string; label: string; desc: string }> | null)
           || GLYPH_STATES.map(s => ({ ...s }))
