@@ -1,83 +1,73 @@
 # In Character — Progress
 
-Last updated: 2026-04-28 (session 10 — targeted fixes)
+Last updated: 2026-04-28 (session 11 — hardcoding audit + motivations tab + directive updates)
+
+---
+
+## Hardcoding Audit Results
+
+### What was found and fixed
+
+| Location | Hardcoded reference | Fixed to |
+|---|---|---|
+| src/lib/api.ts:23-26 | "The Mask (infernal pressure...)" in Claude prompts | Dynamic trackerNames param |
+| src/lib/api.ts:87,90 | "Play him like the performance..." | `Play ${characterName} true to their state` |
+| src/lib/api.ts:124,127 | "He moved through it the way he always did..." | `${characterName} moved through it...` |
+| src/lib/api.ts:399 | colorSchemeSuggestion: "grimoire\|sanctum..." | "warm\|dark\|slate\|forest\|ink" |
+| src/lib/api.ts:419-420 | "Severin Board", "Severin Draik" (examples) | Generic placeholder text |
+| src/lib/constants.ts | "The bottle is speaking", "He is here" in GLYPH_STATES | Generic state descriptions |
+| src/components/LongRestModal.tsx | "The night was long and the bottle was honest" | Generic fallback |
+| src/components/onboarding/OnboardingPlayer.tsx | "The infernal pact, the drinking, wild magic..." placeholder | Generic placeholder |
+| src/app/about/page.tsx | "half-elf Wild Magic Sorcerer" (intentional app story origin, left) | — |
+
+### Rules enforced in all Claude prompts
+- No character names, place names, or story references as hardcoded strings
+- All tracker names come from `trackerNames` param (from `tracker_config`)
+- Fallbacks use character name from context, not Lucien-specific text
+- `generatePlayDirective`: passes `trackerNames`, `dominantState`, `previousDirective` for evolution
+- All prompts have explicit RULES comment: never invent plot, only use dossier + state
 
 ---
 
 ## What's working
 
 ### Auth
-- Email/password sign in + sign up
-- **No email confirmation screen** — signup redirects immediately to onboarding (email confirmation disabled in Supabase)
-- Role from signUp data.role (read by trigger)
-- DM role upserted on signIn
+- Email/password sign in + sign up → immediate redirect to onboarding (no email confirmation screen)
 - No localStorage role storage
-- Supabase browser client uses flowType: 'implicit'
+- Supabase browser client: flowType: 'implicit'
 
-### Onboarding — DM
-- **2-step flow**: Create campaign → Done (show CAMP code)
-- **No email invite step** (removed entirely)
-- Shows CAMP-XXXX-XXXX code, never UUID
-- Tap to copy
+### Onboarding
+- Player: 14-screen flow with 5-question interview
+- DM: 2-step (create → CAMP code shown, never UUID)
+- No email invite step anywhere
 
-### Onboarding — Player
-- 14-screen flow with 5-question interview
-- Campaign join looks up by campaign_code, uses maybeSingle()
-- Color scheme picker: 5 themes with visual previews
-- Theme saved to profiles.color_scheme
+### Player app
+- **Now screen**: state bars, 26px directive, tab bar sticky, single column all viewports
+- **Directive updates after moments**: every 3 moments triggers subtle evolution via Claude
+- **Session tab**: chronological event log, Long Rest button
+- **Motivations tab** (was Journey): antagonist board + relationship tabs from tracker_config
+  - Sessions tab removed from Motivations (sessions are in Session tab)
+  - Tab names from tracker_config.clue_board_name and key_relationships
+- **Log Moment**: 8 categories, all names from tracker_config, generic subcategories
+- **Relationship board**: "What happened?" field, category tap first
 
-### Player app — Now screen
-- Single centred column on ALL viewports (max 520px)
-- State bars sorted by value, dominant in accent color
-- 26px 300-weight directive
-- Tab bar sticky at top: 44px
+### Campaign flow
+- Player Settings: join by CAMP code (maybeSingle, detailed logs), leave campaign
+- DM invite modal: IC code and email lookup (maybeSingle, uppercase trim, detailed logs)
+- DM dashboard: dual query via campaign_members + characters.campaign_id
 
-### Player app — Log Moment
-- 8 categories: 6 universal + dangerous element + antagonist from tracker_config
-- **All subcategories generic** — no Lucien/Severin/dagger hardcoding
-- Dynamic subcategories use tracker_config.clue_board_subject for antagonist
-
-### Player app — Session
-- Dynamic category labels from tracker_config
-- Clean event rows
-
-### Player app — Relationship board
-- **Flow: category tap first, then "What happened?" text field**
-- Skips NPC name when only one NPC exists
-- Field labeled "What happened?" with generic placeholder
-
-### DM app
-- Dashboard: character cards, pre-session brief
-- Invite modal: IC code or email, maybeSingle() lookup, detailed errors
-- **No /dm/invite page** (correctly 404s)
-
-### Settings
-- Campaign join: maybeSingle() lookup, console logging, clear error messages
-- Campaign leave
-- Theme switching
-
-### API
+### API routes
 - /api/health — public
 - /api/character, /api/events, /api/tracker — authenticated
 
 ---
 
-## Still broken / may need attention
+## Still needs testing
 
-### Campaign join
-- RLS on campaign_members may still block players reading their own rows
-- maybeSingle() now in use — should surface DB errors clearly in console
-- If still failing: check browser console for [campaign-join] logs
-
-### DM invite
-- IC code lookup: check console for [dm-invite] logs if failing
-- player_code column must exist on profiles (confirmed via healthcheck)
-
-### PDF export
-- Font loading may fail in Vercel edge
-
-### Arc view
-- Not cached in DB — regenerated each visit
+- Campaign join end-to-end (player → DM dashboard sees card)
+- DM invite with IC code
+- Directive evolution after 3 logged moments
+- All board names showing from tracker_config (not hardcoded)
 
 ---
 
@@ -85,27 +75,26 @@ Last updated: 2026-04-28 (session 10 — targeted fixes)
 - fix-trigger-role.sql ✅
 - fix-rls-circular.sql ✅
 - cascade-delete-migration.sql ✅
-- supabase-migrations.sql (player_code, campaign_code) ✅
+- supabase-migrations.sql ✅
 - campaigns.dm_api_key_encrypted ✅
 - profiles.color_scheme ✅
 
 ---
 
-## Health checks
+## Health check
 
 ```
 npx ts-node --project scripts/tsconfig.json scripts/healthcheck.ts
 ```
 
-Last run: 12/15 pass (3 require HEALTHCHECK_PASSWORD).
-Set `HEALTHCHECK_PASSWORD` in .env.local to run auth checks.
+Set `HEALTHCHECK_PASSWORD` in .env.local to run auth + API checks.
 
 ---
 
 ## Environment
 
 | Variable | Status |
-|----------|--------|
+|---|---|
 | NEXT_PUBLIC_SUPABASE_URL | ✅ |
 | NEXT_PUBLIC_SUPABASE_ANON_KEY | ✅ |
 | SUPABASE_SERVICE_ROLE_KEY | ✅ |
