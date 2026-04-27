@@ -21,7 +21,6 @@ function AuthForm() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [signupDone, setSignupDone] = useState(false)
   const [forgotSent, setForgotSent] = useState(false)
   const [showForgot, setShowForgot] = useState(false)
   const [forgotEmail, setForgotEmail] = useState('')
@@ -43,7 +42,6 @@ function AuthForm() {
           setError(err.message)
         }
       } else {
-        // Fix 2: Role exclusively from DB — no localStorage
         if (isDM) {
           const { data: { user: u } } = await supabase.auth.getUser()
           if (u) {
@@ -63,18 +61,33 @@ function AuthForm() {
     if (password !== confirmPassword) { setError('Passwords do not match.'); return }
     setLoading(true)
     try {
-      // Fix 2: No localStorage — role goes in signUp metadata only
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
       const supabase = createClient()
-      const { error: err } = await supabase.auth.signUp({
+      // FIX 1: No emailRedirectTo — email confirmation is disabled in Supabase dashboard.
+      // Sign up creates account, then immediately signs them in and redirects to onboarding.
+      const { data, error: err } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
-        options: {
-          emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(next)}&role=${encodeURIComponent(role)}`,
-          data: { role },
-        },
+        options: { data: { role } },
       })
-      if (err) { setError(err.message) } else { setSignupDone(true) }
+      if (err) {
+        setError(err.message)
+      } else if (data.session) {
+        // Account confirmed immediately (email confirmation disabled) — redirect to onboarding
+        if (isDM) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase.from('profiles') as any).upsert(
+            { id: data.session.user.id, role: 'dm' },
+            { onConflict: 'id' }
+          )
+          router.push('/onboarding?role=dm')
+        } else {
+          router.push('/onboarding?role=player')
+        }
+      } else {
+        // Session not returned — email confirmation is on (shouldn't happen in our config)
+        // Still navigate forward; they'll be prompted to sign in
+        router.push(`/auth/login?role=${role}`)
+      }
     } catch { setError('Something went wrong. Try again.') }
     setLoading(false)
   }
@@ -123,20 +136,6 @@ function AuthForm() {
           </button>
         </form>
       )}
-    </div>
-  )
-
-  if (signupDone) return (
-    <div style={{ textAlign: 'center' }}>
-      <p style={{ fontSize: 15, color: 'var(--text)', marginBottom: 8, fontWeight: 500 }}>Check your email</p>
-      <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 20 }}>
-        We sent a confirmation link to <strong>{email}</strong>.
-        Click it to activate your {isDM ? 'DM' : 'player'} account, then sign in.
-      </p>
-      <button onClick={() => { setSignupDone(false); setTab('signin'); setPassword(''); setConfirmPassword('') }}
-        style={{ fontSize: 13, color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer', minHeight: 'auto' }}>
-        Back to sign in
-      </button>
     </div>
   )
 
