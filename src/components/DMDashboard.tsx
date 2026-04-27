@@ -209,8 +209,12 @@ export default function DMDashboard({ campaigns, members, characters, trackers, 
     setInviteLoading(true)
     setInviteResult(null)
     try {
+      // FIX 6: trim and uppercase before lookup; detailed error logging
       const input = inviteInput.trim()
-      const isCode = /^IC-[A-Z0-9]{4}-[A-Z0-9]{4}$/i.test(input)
+      const inputUpper = input.toUpperCase()
+      const isCode = /^IC-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(inputUpper)
+      console.log('[dm-invite] input:', input, 'isCode:', isCode, 'upper:', inputUpper)
+
       const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
       const db = (t: string) => (supabase.from(t) as AnyRecord)
@@ -219,21 +223,36 @@ export default function DMDashboard({ campaigns, members, characters, trackers, 
       let playerName: string | null = null
 
       if (isCode) {
-        const { data: prof } = await db('profiles')
-          .select('id, username')
-          .eq('player_code', input.toUpperCase())
-          .single()
-        if (prof) { playerId = prof.id; playerName = prof.username }
+        // FIX 6: use maybeSingle() to avoid error when not found, explicit uppercase
+        const { data: prof, error: profErr } = await db('profiles')
+          .select('id, username, player_code')
+          .eq('player_code', inputUpper)
+          .maybeSingle()
+        console.log('[dm-invite] IC code lookup:', { prof, profErr, inputUpper })
+        if (profErr) throw new Error(`Lookup error: ${profErr.message}`)
+        if (prof) { playerId = (prof as AnyRecord).id; playerName = (prof as AnyRecord).username }
+        else {
+          setInviteResult({ error: `No player found with code ${inputUpper}. Make sure they have completed onboarding.` })
+          setInviteLoading(false)
+          return
+        }
       } else {
-        // Try email lookup via auth — use service route
+        // Email lookup via service route
+        console.log('[dm-invite] email lookup:', input)
         const res = await fetch('/api/dm/find-player', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: input }),
         })
+        console.log('[dm-invite] email lookup response status:', res.status)
         if (res.ok) {
           const data = await res.json()
           playerId = data.id; playerName = data.username
+        } else {
+          const errData = await res.json().catch(() => ({}))
+          setInviteResult({ error: errData.error || `No player found with email ${input}` })
+          setInviteLoading(false)
+          return
         }
       }
 
@@ -247,11 +266,16 @@ export default function DMDashboard({ campaigns, members, characters, trackers, 
         { campaign_id: campaign.id, player_id: playerId, accepted: true, invited_at: new Date().toISOString() },
         { onConflict: 'campaign_id,player_id' }
       )
-      if (memberErr) throw memberErr
+      if (memberErr) {
+        console.error('[dm-invite] member insert error:', memberErr)
+        throw new Error(memberErr.message)
+      }
 
-      setInviteResult({ success: `${playerName || 'Player'} added to campaign.` })
+      console.log('[dm-invite] success, added player:', playerName, playerId)
+      setInviteResult({ success: `${playerName || 'Player'} added to ${campaign.name}.` })
       setInviteInput('')
     } catch (e) {
+      console.error('[dm-invite] exception:', e)
       setInviteResult({ error: e instanceof Error ? e.message : 'Something went wrong.' })
     }
     setInviteLoading(false)

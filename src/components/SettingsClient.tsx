@@ -60,13 +60,25 @@ export default function SettingsClient({ profile, character, campaign, playerCam
     setCampaignJoinResult(null)
     try {
       const code = campaignCodeInput.trim().toUpperCase()
+      console.log('[campaign-join] attempting join with code:', code)
+
       const supabase = createClient()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const db = (t: string) => (supabase.from(t) as any)
 
+      // FIX 5: Use maybeSingle() instead of single() to avoid error when not found
       const { data: camp, error: campErr } = await db('campaigns')
-        .select('id, name').eq('campaign_code', code).limit(1).single()
-      if (campErr || !camp) {
+        .select('id, name').eq('campaign_code', code).maybeSingle()
+
+      console.log('[campaign-join] lookup result:', { camp, campErr })
+
+      if (campErr) {
+        console.error('[campaign-join] DB error:', campErr)
+        setCampaignJoinResult({ error: `Database error: ${campErr.message}` })
+        setCampaignJoining(false)
+        return
+      }
+      if (!camp) {
         setCampaignJoinResult({ error: 'Campaign not found. Check the code and try again.' })
         setCampaignJoining(false)
         return
@@ -75,16 +87,27 @@ export default function SettingsClient({ profile, character, campaign, playerCam
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      await db('campaign_members').upsert(
-        { campaign_id: camp.id, player_id: user.id, accepted: true, invited_at: new Date().toISOString() },
+      const { error: memberErr } = await db('campaign_members').upsert(
+        { campaign_id: (camp as { id: string; name: string }).id, player_id: user.id, accepted: true, invited_at: new Date().toISOString() },
         { onConflict: 'campaign_id,player_id' }
       )
-      await db('characters').update({ campaign_id: camp.id }).eq('id', character.id).eq('player_id', user.id)
+      if (memberErr) {
+        console.error('[campaign-join] member insert error:', memberErr)
+        throw new Error(memberErr.message)
+      }
 
-      setCampaignJoinResult({ success: `Joined ${camp.name}.` })
+      const { error: charErr } = await db('characters')
+        .update({ campaign_id: (camp as { id: string; name: string }).id })
+        .eq('id', character.id)
+        .eq('player_id', user.id)
+      if (charErr) console.error('[campaign-join] character update error:', charErr)
+
+      console.log('[campaign-join] success, joined:', (camp as { id: string; name: string }).name)
+      setCampaignJoinResult({ success: `Joined ${(camp as { id: string; name: string }).name}!` })
       setCampaignCodeInput('')
       router.refresh()
     } catch (e) {
+      console.error('[campaign-join] exception:', e)
       setCampaignJoinResult({ error: e instanceof Error ? e.message : 'Something went wrong.' })
     }
     setCampaignJoining(false)
