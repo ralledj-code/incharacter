@@ -12,6 +12,7 @@ const PUBLIC_PATHS = [
   '/privacy',
   '/contact',
   '/api/contact',
+  '/api/health',
   '/og',
   '/sitemap.xml',
 ]
