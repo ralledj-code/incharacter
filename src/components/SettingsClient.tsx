@@ -204,7 +204,10 @@ export default function SettingsClient({ profile, character, campaign, playerCam
 
   async function restartCharacter() {
     const res = await fetch('/api/character/restart', { method: 'DELETE' })
-    if (res.ok) router.push('/onboarding?role=player')
+    if (res.ok) {
+      // FIX 1: redirect to /play/now — character data kept, only gameplay history cleared
+      router.push('/play/now')
+    }
   }
 
   function startHoldDelete(action: () => void) {
@@ -468,10 +471,10 @@ export default function SettingsClient({ profile, character, campaign, playerCam
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6"
              style={{ background: 'rgba(0,0,0,0.92)' }}>
           <div className="w-full max-w-sm card-dark p-6 animate-fade-in" style={{ borderColor: 'var(--red-dim)' }}>
-            <h2 className="font-cinzel text-sm tracking-wider mb-4" style={{ color: 'var(--red)' }}>Restart Character</h2>
+            <h2 className="font-cinzel text-sm tracking-wider mb-4" style={{ color: 'var(--red)' }}>Reset Gameplay</h2>
             <p className="font-garamond mb-6" style={{ color: 'var(--text-dim)' }}>
-              This will delete everything &mdash; every session, every event, every clue.
-              Your account stays but your character starts over. This cannot be undone.
+              This will clear all logged moments, sessions, clues and relationships.
+              Your character dossier and configuration will be kept. This cannot be undone.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowRestartChar(false)} className="btn-gold flex-1 py-3 text-xs">Cancel</button>
@@ -487,7 +490,7 @@ export default function SettingsClient({ profile, character, campaign, playerCam
                   borderRadius: 2, minHeight: 44,
                 }}
               >
-                {deleteHolding ? 'Hold...' : 'Hold to Restart'}
+                {deleteHolding ? 'Hold...' : 'Reset gameplay'}
               </button>
             </div>
           </div>
