@@ -35,10 +35,11 @@ export default function SettingsClient({ profile, character, campaign, playerCam
   const [showDeleteChar, setShowDeleteChar] = useState(false)
   const [showDeleteAccount, setShowDeleteAccount] = useState(false)
   const [showRestartChar, setShowRestartChar] = useState(false)
+  const [showRecalibrate, setShowRecalibrate] = useState(false)
+  const [recalibrateLoading, setRecalibrateLoading] = useState(false)
+  const [recalibrateError, setRecalibrateError] = useState<string | null>(null)
   const [deleteHolding, setDeleteHolding] = useState(false)
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [recalibrating, setRecalibrating] = useState(false)
-  const [recalibrateResult, setRecalibrateResult] = useState<{ success?: boolean; error?: string } | null>(null)
 
   const playerCode = profile?.player_code || 'IC-????-????'
   const campaignCode = campaign?.campaign_code || 'CAMP-????-????'
@@ -148,20 +149,20 @@ export default function SettingsClient({ profile, character, campaign, playerCam
   }
 
   async function recalibrateCharacter() {
-    setRecalibrating(true)
-    setRecalibrateResult(null)
+    setRecalibrateLoading(true)
+    setRecalibrateError(null)
     try {
-      const res = await fetch('/api/claude/recalibrate', { method: 'POST' })
+      const res = await fetch('/api/character/recalibrate', { method: 'POST' })
       const data = await res.json()
       if (res.ok) {
-        setRecalibrateResult({ success: true })
+        setShowRecalibrate(false)
       } else {
-        setRecalibrateResult({ error: data.error || 'Recalibration failed.' })
+        setRecalibrateError(data.error || 'Recalibration failed.')
       }
     } catch {
-      setRecalibrateResult({ error: 'Something went wrong.' })
+      setRecalibrateError('Something went wrong.')
     }
-    setRecalibrating(false)
+    setRecalibrateLoading(false)
   }
 
   function startHoldDelete(action: () => void) {
@@ -289,26 +290,9 @@ export default function SettingsClient({ profile, character, campaign, playerCam
                   ? character.dossier_text.slice(0, 200) + (character.dossier_text.length > 200 ? '...' : '')
                   : 'No dossier uploaded.'}
               </p>
-              <div className="flex gap-2 flex-wrap">
-                <button onClick={() => setShowDossierModal(true)} className="btn-gold px-4 py-2 text-xs">
-                  Update Dossier
-                </button>
-                {character.dossier_text && (
-                  <button
-                    onClick={recalibrateCharacter}
-                    disabled={recalibrating}
-                    className="btn-gold px-4 py-2 text-xs disabled:opacity-40"
-                  >
-                    {recalibrating ? 'Recalibrating...' : 'Recalibrate character'}
-                  </button>
-                )}
-              </div>
-              {recalibrateResult?.success && (
-                <p className="text-xs mt-2" style={{ color: 'var(--accent-text)' }}>Character recalibrated.</p>
-              )}
-              {recalibrateResult?.error && (
-                <p className="text-xs mt-2" style={{ color: 'var(--danger)' }}>{recalibrateResult.error}</p>
-              )}
+              <button onClick={() => setShowDossierModal(true)} className="btn-gold px-4 py-2 text-xs">
+                Update Dossier
+              </button>
             </div>
           </section>
         )}
@@ -354,6 +338,15 @@ export default function SettingsClient({ profile, character, campaign, playerCam
                 >
                   Restart Character
                 </button>
+                {character.dossier_text && (
+                  <button
+                    onClick={() => { setShowRecalibrate(true); setRecalibrateError(null) }}
+                    className="w-full card-dark p-4 text-left font-cinzel text-xs tracking-wider transition-colors"
+                    style={{ color: 'var(--text-faint)', borderColor: 'var(--border)', minHeight: 56 }}
+                  >
+                    Recalibrate Character
+                  </button>
+                )}
                 <button
                   onClick={() => setShowDeleteChar(true)}
                   className="w-full card-dark p-4 text-left font-cinzel text-xs tracking-wider transition-colors"
@@ -407,26 +400,45 @@ export default function SettingsClient({ profile, character, campaign, playerCam
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6"
              style={{ background: 'rgba(0,0,0,0.92)' }}>
           <div className="w-full max-w-sm card-dark p-6 animate-fade-in" style={{ borderColor: 'var(--red-dim)' }}>
-            <h2 className="font-cinzel text-sm tracking-wider mb-4" style={{ color: 'var(--red)' }}>Reset Gameplay</h2>
+            <h2 className="font-cinzel text-sm tracking-wider mb-4" style={{ color: 'var(--red)' }}>Restart Character</h2>
             <p className="font-garamond mb-6" style={{ color: 'var(--text-dim)' }}>
-              This will clear all logged moments, sessions, clues and relationships.
-              Your character dossier and configuration will be kept. This cannot be undone.
+              This will clear all sessions, events, clues and relationships.
+              Your dossier and character config will be kept.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowRestartChar(false)} className="btn-gold flex-1 py-3 text-xs">Cancel</button>
               <button
-                onPointerDown={() => startHoldDelete(restartCharacter)}
-                onPointerUp={cancelHoldDelete}
-                onPointerLeave={cancelHoldDelete}
-                className="flex-1 py-3 font-cinzel text-xs tracking-wider transition-all"
-                style={{
-                  background: deleteHolding ? 'var(--red)' : 'transparent',
-                  border: '1px solid var(--red)',
-                  color: deleteHolding ? '#fff' : 'var(--red)',
-                  borderRadius: 2, minHeight: 44,
-                }}
+                onClick={restartCharacter}
+                className="flex-1 py-3 font-cinzel text-xs tracking-wider"
+                style={{ background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 2, minHeight: 44 }}
               >
-                {deleteHolding ? 'Hold...' : 'Reset gameplay'}
+                Confirm Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recalibrate character confirmation */}
+      {showRecalibrate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6"
+             style={{ background: 'rgba(0,0,0,0.92)' }}>
+          <div className="w-full max-w-sm card-dark p-6 animate-fade-in">
+            <h2 className="font-cinzel text-sm tracking-wider mb-4" style={{ color: 'var(--text)' }}>Recalibrate Character</h2>
+            <p className="font-garamond mb-6" style={{ color: 'var(--text-dim)' }}>
+              This will regenerate your character&rsquo;s psychological profile from your dossier. Nothing else changes.
+            </p>
+            {recalibrateError && (
+              <p className="text-xs mb-4" style={{ color: 'var(--danger)' }}>{recalibrateError}</p>
+            )}
+            <div className="flex gap-3">
+              <button onClick={() => setShowRecalibrate(false)} className="btn-gold flex-1 py-3 text-xs">Cancel</button>
+              <button
+                onClick={recalibrateCharacter}
+                disabled={recalibrateLoading}
+                className="btn-gold-solid flex-1 py-3 text-xs disabled:opacity-40"
+              >
+                {recalibrateLoading ? 'Recalibrating...' : 'Confirm'}
               </button>
             </div>
           </div>
