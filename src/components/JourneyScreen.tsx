@@ -64,10 +64,14 @@ export default function JourneyScreen({ character, clues, relationships, tracker
 
   const activeTabDef = tabs.find(t => t.id === activeTab)
 
-  // Filter relationships by NPC name for the active tab
-  const filteredRelationships = activeTabDef?.npcName
+  // Filter relationships by NPC name for the active tab; exclude self and clue board subject
+  const filteredRelationships = (activeTabDef?.npcName
     ? relationships.filter(r => r.npc_name === activeTabDef.npcName)
     : relationships
+  ).filter(r =>
+    r.npc_name.trim().toLowerCase() !== character.name.trim().toLowerCase() &&
+    r.npc_name.trim().toLowerCase() !== clueBoardSubject.trim().toLowerCase()
+  )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 80px)', background: 'var(--bg)' }}>

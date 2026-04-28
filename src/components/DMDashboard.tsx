@@ -149,60 +149,24 @@ export default function DMDashboard({ campaigns, members, characters: initialCha
   const campaignPlayerIds = campaignMembers.map(m => m.player_id)
   const campaignCharacters = characters.filter(c => campaignPlayerIds.includes(c.player_id))
 
-  // Realtime subscription — dep array is campaignId ONLY.
-  // Any other state in deps causes constant teardown/rebuild, missing updates.
   useEffect(() => {
-    const campaignId = selectedCampaign
-    if (!campaignId) return
-
     const supabase = createClient()
-    console.log('[dm-realtime] subscribing for campaign', campaignId)
     const channel = supabase
-      .channel(`dm-dashboard-${campaignId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'tracker_states',
-        },
-        (payload) => {
-          console.log('[dm-realtime] tracker update for char:', payload.new.character_id)
-          // PATCH: Update the character's play_directive and state_values in one go
-          setCharacters(prev =>
-            prev.map(c => 
-              c.id === payload.new.character_id 
-                ? { 
-                    ...c, 
-                    play_directive: payload.new.play_directive, 
-                    state_values: payload.new.state_values 
-                  } 
-                : c
-            )
-          )
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'tracker_states',
-        },
-        (payload) => {
-          console.log('[dm-realtime] tracker_states update received', payload.new.character_id)
-          // Patch characters array with new play_directive and state_values
-          setCharacters(prev =>
-            prev.map(c => c.id === payload.new.character_id ? { ...c, play_directive: payload.new.play_directive, state_values: payload.new.state_values } : c)
-          )
-        }
-      )
-      .subscribe((status) => {
-        console.log('[dm-realtime] subscription status:', status)
+      .channel('dm-tracker-updates')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'tracker_states'
+      }, (payload) => {
+        setCharacters(prev => prev.map(c =>
+          c.id === payload.new.character_id
+            ? { ...c, tracker: { ...(c as Record<string, unknown>).tracker as object, ...payload.new } }
+            : c
+        ))
       })
-
+      .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [selectedCampaign]) // campaignId only — do not add characters or other state here
+  }, [])
 
   async function generateBrief() {
     if (!campaign) return

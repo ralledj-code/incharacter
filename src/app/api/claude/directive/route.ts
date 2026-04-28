@@ -15,6 +15,10 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     console.log('DIRECTIVE HIT', { characterId: body.characterId, previousEvent: body.previousEvent, currentEvent: body.currentEvent })
+    console.log('DIRECTIVE INPUT:', { hasDossier: !!body.dossierSummary, hasPalette: !!body.emotionPalette, events: body.recentEvents })
+    if (!body.dossierSummary || !body.emotionPalette) {
+      return NextResponse.json({ error: 'Missing dossier_text or emotion_palette' }, { status: 400 })
+    }
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -77,8 +81,9 @@ export async function POST(req: NextRequest) {
     // Apply stateChanges to state_values
     const newStateValues = { ...currentStateValues }
     for (const [stateId, delta] of Object.entries(result.stateChanges)) {
-      const current = newStateValues[stateId] ?? (body.emotionPalette?.find((s: { id: string; base_value: number }) => s.id === stateId)?.base_value ?? 50)
-      newStateValues[stateId] = clamp(current + delta)
+      const id = stateId.toLowerCase().trim()
+      const current = newStateValues[id] ?? (body.emotionPalette?.find((s: { id: string; base_value: number }) => s.id === id)?.base_value ?? 50)
+      newStateValues[id] = clamp(current + delta)
     }
 
     if (body.characterId) {
