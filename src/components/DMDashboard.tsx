@@ -118,6 +118,19 @@ export default function DMDashboard({ campaigns, members, characters: initialCha
   // FIX 4: live characters state for realtime updates
   const [characters, setCharacters] = useState<(Character & { dm_read?: string })[]>(initialCharacters)
 
+  // Sync server-side prop updates (router.refresh, navigation) using patch semantics.
+  // Fresh server data wins for structural fields; dm_read from local state is preserved
+  // if already set (realtime may have written it before the server refresh completed).
+  useEffect(() => {
+    setCharacters(prev =>
+      initialCharacters.map(fresh => {
+        const existing = prev.find(c => c.id === fresh.id)
+        if (!existing) return fresh
+        return { ...fresh, dm_read: existing.dm_read || (fresh as Record<string, unknown>).dm_read as string || undefined }
+      })
+    )
+  }, [initialCharacters])
+
   function handleCharacterUpdate(characterId: string, updates: { dm_read?: string; play_directive?: string }) {
     setCharacters(prev => prev.map(c => c.id === characterId ? { ...c, ...updates } : c))
   }
@@ -127,7 +140,8 @@ export default function DMDashboard({ campaigns, members, characters: initialCha
   const campaignPlayerIds = campaignMembers.map(m => m.player_id)
   const campaignCharacters = characters.filter(c => campaignPlayerIds.includes(c.player_id))
 
-  // FIX 4: Supabase realtime subscription — updates character cards without page reload
+  // Realtime subscription — dep array is campaignId ONLY.
+  // Any other state in deps causes constant teardown/rebuild, missing updates.
   useEffect(() => {
     const campaignId = selectedCampaign
     if (!campaignId) return
@@ -146,6 +160,7 @@ export default function DMDashboard({ campaigns, members, characters: initialCha
         },
         (payload) => {
           console.log('[dm-realtime] character update received', payload.new.id, 'dm_read:', (payload.new as Record<string, unknown>).dm_read)
+          // Patch — never replace the whole object
           setCharacters(prev =>
             prev.map(c => c.id === payload.new.id ? { ...c, ...payload.new } : c)
           )
@@ -156,7 +171,7 @@ export default function DMDashboard({ campaigns, members, characters: initialCha
       })
 
     return () => { supabase.removeChannel(channel) }
-  }, [selectedCampaign])
+  }, [selectedCampaign]) // campaignId only — do not add characters or other state here
 
   async function generateBrief() {
     if (!campaign) return
