@@ -160,7 +160,7 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
       // Call directive API — handles all state_values writes
       let newDirective: string | undefined
       let updatedStateValues: Record<string, number> | undefined
-      console.log('[log-moment] calling directive API')
+      console.log('CALLING DIRECTIVE after event save')
       try {
         const directiveRes = await fetch('/api/claude/directive', {
           method: 'POST',

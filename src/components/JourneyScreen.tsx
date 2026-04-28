@@ -24,17 +24,27 @@ export default function JourneyScreen({ character, clues, relationships, tracker
   const clueBoardSubject = (config?.clue_board_subject as string) || 'the antagonist'
   const keyRelationships = (config?.key_relationships as Array<{ name: string; role: string }>) || []
 
+  const cleanBoardName = clueBoardName.replace(/ Board$/i, '').trim()
+  const uniqueNames = new Set<string>([cleanBoardName])
+
+  const deduplicatedRelationships = keyRelationships.filter(r => {
+    const name = r.name.replace(/ Board$/i, '').trim()
+    if (uniqueNames.has(name)) return false
+    uniqueNames.add(name)
+    return true
+  })
+
   // Build tabs: antagonist board first, then one per key relationship
   const tabs: Array<{ id: Tab; label: string; type: 'antagonist' | 'relationship'; npcName?: string }> = [
-    { id: 'antagonist', label: clueBoardName, type: 'antagonist' },
-    ...keyRelationships.map(r => ({
+    { id: 'antagonist', label: cleanBoardName, type: 'antagonist' },
+    ...deduplicatedRelationships.map(r => ({
       id: `rel-${r.name}`,
-      label: r.name,
+      label: r.name.replace(/ Board$/i, '').trim(),
       type: 'relationship' as const,
       npcName: r.name,
     })),
     // If no key relationships defined but there are logged relationship moments, add a generic tab
-    ...(keyRelationships.length === 0 && relationships.length > 0
+    ...(deduplicatedRelationships.length === 0 && relationships.length > 0
       ? [{ id: 'rel-all', label: 'Bonds', type: 'relationship' as const, npcName: undefined }]
       : []),
   ]

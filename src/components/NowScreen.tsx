@@ -158,13 +158,9 @@ export default function NowScreen({ character, tracker: initialTracker, session,
           {stateList.map((s, idx) => {
             const isDominant = idx === 0
             return (
-              <div key={s.key} style={{
-                display: 'flex', alignItems: 'center', marginBottom: 8,
-              }}>
-                {/* FIX 2: 96px fixed, right-aligned, nowrap */}
-                <span style={{
-                  width: 96, flexShrink: 0, textAlign: 'right',
-                  fontSize: 12, whiteSpace: 'nowrap',
+              <div key={s.key} className="flex items-center mb-2">
+                {/* FIX 2: 96px fixed, right-aligned, wrap enabled */}
+                <span className="w-24 shrink-0 text-right text-xs break-words px-2" style={{
                   color: isDominant ? 'var(--accent-text)' : 'var(--text2)',
                   fontWeight: isDominant ? 600 : 400,
                   letterSpacing: '-0.01em',

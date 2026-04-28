@@ -124,6 +124,7 @@ state_changes: if emotion palette IDs provided, use them. Values -10 to +10. Inc
       }]
     })
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
+    console.log('CLAUDE RAW:', text)
     let directive = `Play ${params.characterName} true to their current state.`
     let dmRead = `${params.characterName} is in a heightened state. Watch the patterns.`
     let stateChanges: Record<string, number> = {}

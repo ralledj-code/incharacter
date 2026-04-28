@@ -14,6 +14,7 @@ function clamp(v: number) { return Math.max(0, Math.min(100, v)) }
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
+    console.log('DIRECTIVE HIT', { characterId: body.characterId, previousEvent: body.previousEvent, currentEvent: body.currentEvent })
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
       characterId: body.characterId,
     })
 
+    console.log('CLAUDE RAW:', result)
     console.log('[directive] claude result — directive:', result.directive?.slice(0, 60), '| dmRead:', result.dmRead?.slice(0, 60), '| stateChanges:', JSON.stringify(result.stateChanges))
 
     // Apply stateChanges to state_values

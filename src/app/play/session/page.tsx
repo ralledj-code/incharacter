@@ -33,7 +33,7 @@ export default async function SessionPage() {
     .from('events')
     .select('*')
     .eq('session_id', (session as Session | null)?.id || '')
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: false })
 
   const { data: tracker } = await supabase
     .from('tracker_states')
