@@ -78,11 +78,30 @@ export async function POST(req: NextRequest) {
     })
 
     console.log('CLAUDE RAW:', result)
-    console.log('[directive] claude result — directive:', result.directive?.slice(0, 60), '| dmRead:', result.dmRead?.slice(0, 60), '| stateChanges:', JSON.stringify(result.stateChanges))
+    console.log('[directive] claude result — directive:', result.directive?.slice(0, 60), '| dmRead:', result.dmRead?.slice(0, 60))
+
+    // Calculate state changes from event_weights in code — not from Claude
+    const currentEvent = body.currentEvent
+    const eventWeights: Record<string, Record<string, number>> = body.event_weights ?? {}
+    const weights = eventWeights[currentEvent?.category] ?? {}
+    const reactionMultipliers: Record<string, number> = {
+      'owned_it': 1.0,
+      'enjoyed_too_much': 1.5,
+      'hated_himself': -1.0,
+      'didnt_feel_it': 0.3,
+      'scared_himself': 1.2,
+      'doesnt_want_to_think': 0.5,
+    }
+    const multiplier = reactionMultipliers[currentEvent?.reaction?.toLowerCase().replace(/ /g, '_')] ?? 1.0
+    const stateChanges: Record<string, number> = {}
+    for (const [stateId, weight] of Object.entries(weights)) {
+      stateChanges[stateId] = Math.round((weight as number) * multiplier)
+    }
+    console.log('[directive] code-computed stateChanges:', JSON.stringify(stateChanges))
 
     // Apply stateChanges to state_values
     const newStateValues = { ...currentStateValues }
-    for (const [stateId, delta] of Object.entries(result.stateChanges)) {
+    for (const [stateId, delta] of Object.entries(stateChanges)) {
       const id = stateId.toLowerCase().trim()
       const current = newStateValues[id] ?? (emotionPalette?.find((s: { id: string; base_value: number }) => s.id === id)?.base_value ?? 50)
       newStateValues[id] = clamp(current + delta)
@@ -109,7 +128,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       directive: result.directive,
       dmRead: result.dmRead,
-      stateChanges: result.stateChanges,
+      stateChanges,
       stateValues: newStateValues,
     })
   } catch (error) {

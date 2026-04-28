@@ -56,26 +56,6 @@ export async function POST(req: NextRequest) {
       characterId: body.characterId,
     })
 
-    // Chain directive update after narrative succeeds
-    const lastTwoEvents = await (admin.from('events') as AnyRec)
-      .select('*')
-      .eq('character_id', body.characterId)
-      .order('created_at', { ascending: false })
-      .limit(2)
-
-    fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/claude/directive`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        characterId: body.characterId,
-        currentEvent: lastTwoEvents.data?.[0],
-        previousEvent: lastTwoEvents.data?.[1],
-        dossier_text: character?.dossier_text,
-        emotion_palette: palette,
-        event_weights: character?.tracker_config?.event_weights ?? {},
-      }),
-    }).catch(e => console.error('[event-narrative] directive chain error:', e))
-
     return NextResponse.json({ narrative })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
