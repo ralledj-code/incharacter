@@ -28,14 +28,28 @@ function CharacterCard({
 }) {
   const [generatingRead, setGeneratingRead] = useState(false)
 
-  const emotionPalette = (character.emotion_palette as Array<{ key: string; label: string; desc: string }> | null) || GLYPH_STATES.map(s => ({ ...s }))
-  const mask   = tracker?.mask   ?? 50
-  const dagger = tracker?.dagger ?? 30
-  const bottle = tracker?.bottle ?? 40
-  const wound  = tracker?.wound  ?? 60
-  const glyphValues = glyphValuesFromTrackers(mask, dagger, bottle, wound)
-  const domEntry = Object.entries(glyphValues).reduce((a, b) => a[1] > b[1] ? a : b)
-  const domState = emotionPalette.find(s => s.key === domEntry[0])
+  const configPalette = character.emotion_palette as Array<{ id: string; name: string; description: string; base_value: number }> | null
+  const stateValues = (character as AnyCharRec).state_values as Record<string, number> | null || tracker?.state_values as Record<string, number> | null
+
+  let domState: { label: string } | undefined
+  if (configPalette) {
+    const stateList = configPalette.map(s => ({
+      ...s,
+      value: Math.round(stateValues?.[s.id] ?? s.base_value),
+    })).sort((a, b) => b.value - a.value)
+    if (stateList[0]) domState = { label: stateList[0].name.toUpperCase() }
+  } else {
+    const emotionPalette = GLYPH_STATES.map(s => ({ ...s }))
+    const mask   = tracker?.mask   ?? 50
+    const dagger = tracker?.dagger ?? 30
+    const bottle = tracker?.bottle ?? 40
+    const wound  = tracker?.wound  ?? 60
+    const glyphValues = glyphValuesFromTrackers(mask, dagger, bottle, wound)
+    const domEntry = Object.entries(glyphValues).reduce((a, b) => a[1] > b[1] ? a : b)
+    const found = emotionPalette.find(s => s.key === domEntry[0])
+    if (found) domState = { label: found.label }
+  }
+
   const dmRead = character.dm_read || ''
   // Prefer characters.play_directive (updated via realtime) over tracker (server-loaded only)
   const directive = (character as AnyCharRec).play_directive as string || tracker?.play_directive || ''
@@ -163,6 +177,21 @@ export default function DMDashboard({ campaigns, members, characters: initialCha
           // Patch — never replace the whole object
           setCharacters(prev =>
             prev.map(c => c.id === payload.new.id ? { ...c, ...payload.new } : c)
+          )
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tracker_states',
+        },
+        (payload) => {
+          console.log('[dm-realtime] tracker_states update received', payload.new.character_id)
+          // Patch characters array with new play_directive and state_values
+          setCharacters(prev =>
+            prev.map(c => c.id === payload.new.character_id ? { ...c, play_directive: payload.new.play_directive, state_values: payload.new.state_values } : c)
           )
         }
       )
