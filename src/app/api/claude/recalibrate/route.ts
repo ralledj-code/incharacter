@@ -36,7 +36,6 @@ export async function POST() {
       ...existing,
       emotion_palette: result.characterConfig.emotion_palette,
       event_weights: result.characterConfig.event_weights,
-      trackerNames: result.characterConfig.trackerNames,
       dangerous_element_category: result.characterConfig.dangerous_element_category,
       antagonist_category: result.characterConfig.antagonist_category,
       key_relationships: result.characterConfig.key_relationships,
