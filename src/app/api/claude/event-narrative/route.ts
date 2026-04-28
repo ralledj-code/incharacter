@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       .single()
 
     const palette = character?.tracker_config?.emotion_palette ?? []
-    const _weights = character?.tracker_config?.event_weights ?? {}
+
     const stateValues = Array.isArray(character?.tracker_states)
       ? (character.tracker_states[0]?.state_values ?? {})
       : (character?.tracker_states?.state_values ?? {})
