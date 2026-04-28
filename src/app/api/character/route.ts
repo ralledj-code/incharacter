@@ -18,7 +18,7 @@ export async function GET() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: tracker } = await (supabase.from('tracker_states') as any)
-    .select('mask, dagger, bottle, wound, play_directive')
+    .select('state_values, play_directive')
     .eq('character_id', (character as { id: string }).id)
     .order('updated_at', { ascending: false })
     .limit(1)
@@ -27,11 +27,6 @@ export async function GET() {
   return NextResponse.json({
     ...(character as object),
     play_directive: (tracker as { play_directive?: string } | null)?.play_directive || null,
-    trackers: tracker ? {
-      mask:   (tracker as { mask: number }).mask,
-      dagger: (tracker as { dagger: number }).dagger,
-      bottle: (tracker as { bottle: number }).bottle,
-      wound:  (tracker as { wound: number }).wound,
-    } : null,
+    stateValues: tracker ? (tracker as { state_values: Record<string, number> }).state_values : null,
   })
 }

@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
     const narrative = await generateEventNarrative({
       characterName: body.characterName,
       dossierSummary: body.dossierSummary || '',
-      trackers: body.trackers,
+      stateValues: body.stateValues,
+      emotionPalette: body.emotionPalette,
       category: body.category,
       subcategory: body.subcategory,
       reaction: body.reaction,

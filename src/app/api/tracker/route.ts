@@ -15,7 +15,7 @@ export async function GET() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: tracker } = await (supabase.from('tracker_states') as any)
-    .select('mask, dagger, bottle, wound, play_directive, updated_at')
+    .select('state_values, play_directive, updated_at')
     .eq('character_id', (character as { id: string }).id)
     .order('updated_at', { ascending: false }).limit(1).single()
 

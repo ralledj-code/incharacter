@@ -145,17 +145,6 @@ export const REACTIONS = [
   { id: 'doesnt_want_to_think', label: "Doesn't Want to Think About It", desc: 'Filed under: later' },
 ] as const
 
-export const BASE_TRACKER_WEIGHTS: Record<string, { mask: number; dagger: number; bottle: number; wound: number }> = {
-  violence:     { mask: -5,  dagger: +8,  bottle: +5,  wound: +10 },
-  performance:  { mask: +8,  dagger: -3,  bottle: +3,  wound: -5  },
-  avoided:      { mask: -8,  dagger: +5,  bottle: +8,  wound: +5  },
-  indulged:     { mask: -5,  dagger: -8,  bottle: +15, wound: +5  },
-  dagger:       { mask: -3,  dagger: +15, bottle: +5,  wound: +8  },
-  opened_up:    { mask: -5,  dagger: -5,  bottle: -8,  wound: -10 },
-  crossed_line: { mask: -10, dagger: +5,  bottle: +8,  wound: +10 },
-  mystery:      { mask: 0,   dagger: +3,  bottle: +3,  wound: +5  },
-}
-
 export const REACTION_MODIFIERS: Record<string, number> = {
   owned_it:           1.0,
   enjoyed_too_much:   1.4,
@@ -163,13 +152,6 @@ export const REACTION_MODIFIERS: Record<string, number> = {
   didnt_feel_it:      0.6,
   scared_himself:     1.3,
   doesnt_want_to_think: 0.8,
-}
-
-export const LONG_REST_DELTAS = {
-  drank_dreamed:    { mask: +5,  dagger: -8,  bottle: -10, wound: -5  },
-  drank_no_dream:   { mask: 0,   dagger: -5,  bottle: -5,  wound: +5  },
-  no_drink_dreamed: { mask: +10, dagger: -12, bottle: +5,  wound: -10 },
-  no_drink_no_dream:{ mask: +5,  dagger: -5,  bottle: +8,  wound: 0   },
 }
 
 export const CLUE_SOURCE_TYPES = [
@@ -207,42 +189,8 @@ export const LOADING_PHRASES = [
   'Reading the moment...',
 ]
 
-export function glyphValuesFromTrackers(mask: number, dagger: number, bottle: number, wound: number) {
-  return {
-    charming:  mask / 100,
-    volatile:  dagger / 100,
-    reckless:  bottle / 100,
-    withdrawn: (100 - mask) / 100,
-    guarded:   (wound * 0.6 + dagger * 0.4) / 100,
-    present:   (100 - wound) / 100,
-  }
-}
-
-export function glyphFillColor(maxVal: number): string {
-  const r = Math.round(201 - maxVal * 65)
-  const g = Math.round(168 - maxVal * 128)
-  const b = Math.round(76  - maxVal * 44)
-  const a = (0.15 + maxVal * 0.32).toFixed(2)
-  return `rgba(${r},${g},${b},${a})`
-}
-
 export function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, value))
-}
-
-export function applyTrackerDeltas(
-  current: { mask: number; dagger: number; bottle: number; wound: number },
-  category: string,
-  reaction: string
-) {
-  const base = BASE_TRACKER_WEIGHTS[category] || { mask: 0, dagger: 0, bottle: 0, wound: 0 }
-  const multiplier = REACTION_MODIFIERS[reaction] || 1.0
-  return {
-    mask:   clamp(current.mask   + Math.round(base.mask   * multiplier)),
-    dagger: clamp(current.dagger + Math.round(base.dagger * multiplier)),
-    bottle: clamp(current.bottle + Math.round(base.bottle * multiplier)),
-    wound:  clamp(current.wound  + Math.round(base.wound  * multiplier)),
-  }
 }
 
 export function getRandomLoadingPhrase(): string {

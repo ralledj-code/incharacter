@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Character, TrackerState, Session, Event, Clue, Relationship } from '@/types/database'
 import LogMomentFlow from './LogMomentFlow'
 import LongRestModal from './LongRestModal'
-import { glyphValuesFromTrackers, GLYPH_STATES, getRandomLoadingPhrase, EVENT_CATEGORIES } from '@/lib/constants'
+import { getRandomLoadingPhrase, EVENT_CATEGORIES } from '@/lib/constants'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -38,19 +38,15 @@ export default function PlayerDesktop({
   const [lastRestExpanded, setLastRestExpanded] = useState(false)
   const [barsVisible, setBarsVisible] = useState(false)
 
-  const palette = (character.emotion_palette as Array<{ key: string; label: string; desc: string }> | null)
-    || GLYPH_STATES.map(s => ({ ...s }))
+  const emotionPalette = (character.emotion_palette as Array<{ id: string; name: string; description: string; base_value: number }>) || []
+  const stateValues = (tracker?.state_values as Record<string, number>) || {}
   const config = character.tracker_config as AnyRec | null
 
-  const mask   = tracker?.mask   ?? 50
-  const dagger = tracker?.dagger ?? 30
-  const bottle = tracker?.bottle ?? 40
-  const wound  = tracker?.wound  ?? 60
-  const glyphValues = glyphValuesFromTrackers(mask, dagger, bottle, wound)
-
-  const stateList = palette.map(s => ({
-    ...s,
-    value: Math.round((glyphValues[s.key as keyof typeof glyphValues] ?? 0) * 100),
+  const stateList = emotionPalette.map(s => ({
+    key: s.id,
+    label: s.name,
+    desc: s.description,
+    value: stateValues[s.id] ?? s.base_value ?? 50
   })).sort((a, b) => b.value - a.value)
 
   const dominant = stateList[0]
@@ -70,7 +66,7 @@ export default function PlayerDesktop({
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ characterId: character.id, characterName: character.name,
           dossierSummary: character.dossier_text?.slice(0, 2000) || '',
-          trackers: { mask, dagger, bottle, wound },
+          stateValues, emotionPalette,
           recentEvents: recentEvents.map(e => e.narrative || e.category) }),
       })
       const data = await res.json()
@@ -90,7 +86,7 @@ export default function PlayerDesktop({
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ characterId: character.id, characterName: character.name,
           dossierSummary: character.dossier_text?.slice(0, 1000) || '',
-          trackers: { mask, dagger, bottle, wound }, sessionCount: allSessions.length,
+          stateValues, emotionPalette, sessionCount: allSessions.length,
           recentEvents: recentEvents.map(e => e.narrative || e.category) }),
       })
       const data = await res.json()
@@ -330,11 +326,15 @@ function PrepInline({ character, tracker, clues, relationships, onDismiss }: {
         const relStates: string[] = []
         const seen = new Set<string>()
         relationships.forEach(r => { if (!seen.has(r.npc_name) && r.current_state) { relStates.push(`${r.npc_name}: ${r.current_state}`); seen.add(r.npc_name) } })
+        
+        const emotionPalette = (character.emotion_palette as Array<{ id: string; name: string; description: string; base_value: number }>) || []
+        const stateValues = (tracker?.state_values as Record<string, number>) || {}
+
         const res = await fetch('/api/claude/prep', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ characterId: character.id, characterName: character.name,
             dossierSummary: character.dossier_text?.slice(0, 1500) || '',
-            trackers: { mask: tracker?.mask ?? 50, dagger: tracker?.dagger ?? 30, bottle: tracker?.bottle ?? 40, wound: tracker?.wound ?? 60 },
+            stateValues, emotionPalette,
             cluesSummary: latestBelief || '', relationshipSummaries: relStates,
             boardSubject: (config?.clue_board_subject as string) || 'the antagonist' }),
         })

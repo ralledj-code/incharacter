@@ -29,25 +29,21 @@ function CharacterCard({
   const [generatingRead, setGeneratingRead] = useState(false)
 
   const configPalette = character.emotion_palette as Array<{ id: string; name: string; description: string; base_value: number }> | null
-  const stateValues = (character as AnyCharRec).state_values as Record<string, number> | null || tracker?.state_values as Record<string, number> | null
+  
+  // FIX: Use optional chaining and nullish coalescing to find values in either character OR tracker
+  const stateValues = (character as AnyCharRec).state_values || tracker?.state_values || {}
 
   let domState: { label: string } | undefined
-  if (configPalette) {
+  if (configPalette && Object.keys(stateValues).length > 0) {
     const stateList = configPalette.map(s => ({
       ...s,
-      value: Math.round(stateValues?.[s.id] ?? s.base_value),
+      value: Math.round(stateValues[s.id] ?? s.base_value),
     })).sort((a, b) => b.value - a.value)
-    if (stateList[0]) domState = { label: stateList[0].name.toUpperCase() }
-  } else {
-    const emotionPalette = GLYPH_STATES.map(s => ({ ...s }))
-    const mask   = tracker?.mask   ?? 50
-    const dagger = tracker?.dagger ?? 30
-    const bottle = tracker?.bottle ?? 40
-    const wound  = tracker?.wound  ?? 60
-    const glyphValues = glyphValuesFromTrackers(mask, dagger, bottle, wound)
-    const domEntry = Object.entries(glyphValues).reduce((a, b) => a[1] > b[1] ? a : b)
-    const found = emotionPalette.find(s => s.key === domEntry[0])
-    if (found) domState = { label: found.label }
+    
+    if (stateList[0]) {
+      // SAFE TOUPPERCASE: Added fallback to prevent the crash
+      domState = { label: (stateList[0].name || 'Unknown').toUpperCase() }
+    }
   }
 
   const dmRead = character.dm_read || ''
@@ -64,7 +60,7 @@ function CharacterCard({
           characterId: character.id,
           characterName: character.name,
           dossierSummary: (character as AnyCharRec).dossier_text?.slice(0, 2000) || '',
-          trackers: { mask: tracker?.mask ?? 50, dagger: tracker?.dagger ?? 30, bottle: tracker?.bottle ?? 40, wound: tracker?.wound ?? 60 },
+          emotionPalette: configPalette,
         }),
       })
       if (res.ok) {
@@ -209,15 +205,12 @@ export default function DMDashboard({ campaigns, members, characters: initialCha
       const charData = campaignCharacters.map(c => {
         const tracker = trackers.find(t => t.character_id === c.id)
         const events = recentEvents.filter(e => e.character_id === c.id)
+        
         return {
           name: c.name,
           playDirective: tracker?.play_directive || '',
-          trackers: {
-            mask:   tracker?.mask   ?? 50,
-            dagger: tracker?.dagger ?? 30,
-            bottle: tracker?.bottle ?? 40,
-            wound:  tracker?.wound  ?? 60,
-          },
+          // DYNAMIC FIX: Send all state values to Claude for the DM brief
+          trackers: tracker?.state_values || {}, 
           recentEvents: events.slice(0, 3).map(e => `${e.category}: ${e.reaction}`),
         }
       })

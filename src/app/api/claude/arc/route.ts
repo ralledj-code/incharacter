@@ -21,7 +21,10 @@ export async function POST(req: NextRequest) {
         role: 'user',
         content: `Character: ${body.characterName}
 Sessions played: ${body.sessionCount}
-Current trackers — Mask: ${body.trackers?.mask}/100, Dagger: ${body.trackers?.dagger}/100, Bottle: ${body.trackers?.bottle}/100, Wound: ${body.trackers?.wound}/100
+Current states: ${Object.entries(body.stateValues || {}).map(([k, v]) => {
+  const name = body.emotionPalette?.find((s: {id: string, name: string}) => s.id === k)?.name || k;
+  return `${name}: ${v}/100`;
+}).join(', ')}
 Recent events: ${(body.recentEvents || []).slice(0, 4).join('. ')}
 
 Write 2-3 sentences describing how this character has been changing psychologically across sessions. Third person, present tense. Reference specific tracker trends. Specific and honest. No generalities.`

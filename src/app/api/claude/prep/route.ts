@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
     const prep = await generatePrepText({
       characterName: body.characterName,
       dossierSummary: body.dossierSummary || '',
-      trackers: body.trackers,
+      stateValues: body.stateValues,
+      emotionPalette: body.emotionPalette,
       cluesSummary: body.cluesSummary,
       relationshipSummaries: body.relationshipSummaries,
       apiKey: apiKey ?? undefined,

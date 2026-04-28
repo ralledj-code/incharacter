@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
     const monologue = await generateLongRestMonologue({
       characterName: body.characterName,
       dossierSummary: body.dossierSummary || '',
-      trackers: body.trackers,
+      stateValues: body.stateValues,
+      emotionPalette: body.emotionPalette,
       drank: body.drank,
       dreamed: body.dreamed,
       apiKey: apiKey ?? undefined,

@@ -39,23 +39,22 @@ export async function DELETE() {
     await db('relationships').delete().eq('character_id', charId)
 
     // Reset tracker_states to onboarding initial values
-    // Read initial values from tracker_config if stored, else use standard defaults
+    // Read initial values from emotion_palette
     const config = (character as AnyRec).tracker_config as AnyRec | null
-    const initMask   = config?.initial_trackers?.mask   ?? 50
-    const initDagger = config?.initial_trackers?.dagger ?? 30
-    const initBottle = config?.initial_trackers?.bottle ?? 40
-    const initWound  = config?.initial_trackers?.wound  ?? 60
+    const emotionPalette = config?.emotion_palette || []
+    const initialStateValues: Record<string, number> = {}
+    if (Array.isArray(emotionPalette)) {
+      emotionPalette.forEach((state: AnyRec) => {
+        initialStateValues[state.id] = state.base_value || 50
+      })
+    }
 
     // Delete existing tracker states and create fresh one
     await db('tracker_states').delete().eq('character_id', charId)
     await db('tracker_states').insert({
       character_id: charId,
-      mask:   initMask,
-      dagger: initDagger,
-      bottle: initBottle,
-      wound:  initWound,
+      state_values: initialStateValues,
       play_directive: null, // will be regenerated on next visit to Now screen
-      glyph_states: config?.emotionPalette || null,
     })
 
     // Create fresh session 1

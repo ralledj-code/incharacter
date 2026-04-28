@@ -27,13 +27,22 @@ export default function JourneyScreen({ character, clues, relationships, tracker
   const uniqueNames = new Set<string>([clueBoardName])
 
   const deduplicatedRelationships = keyRelationships.filter(r => {
-    const relName = r.name.trim()
-    // Do not show a relationship tab if it exactly matches the character's own name
-    if (relName.toLowerCase() === character.name.trim().toLowerCase()) return false
-    if (uniqueNames.has(relName)) return false
-    uniqueNames.add(relName)
-    return true
-  })
+    const relName = r.name.trim();
+    const charName = character.name.trim().toLowerCase();
+    
+    // 1. Kill the tab if it matches the player's own character name
+    if (relName.toLowerCase() === charName) return false;
+    
+    // 2. Kill the tab if it matches the Board Name (e.g., "Thorvald Board")
+    if (relName.toLowerCase() === clueBoardName.toLowerCase()) return false;
+    
+    // 3. Kill the tab if it's just the character's name (redundant)
+    if (relName.toLowerCase() === character.name.toLowerCase()) return false;
+
+    if (uniqueNames.has(relName)) return false;
+    uniqueNames.add(relName);
+    return true;
+  });
 
   // Build tabs: antagonist board first, then one per key relationship
   const tabs: Array<{ id: Tab; label: string; type: 'antagonist' | 'relationship'; npcName?: string }> = [

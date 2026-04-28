@@ -36,7 +36,7 @@ export default function NowScreen({ character, tracker: initialTracker, session,
   // Bars read from tracker_config.emotion_palette + state_values JSONB
   const stateList = (configPalette || []).map(s => ({
     key: s.id,
-    label: s.name.toUpperCase(),
+    label: s.name?.toUpperCase() ?? 'UNKNOWN',
     desc: s.description,
     value: Math.round(stateValues?.[s.id] ?? s.base_value),
   })).sort((a, b) => b.value - a.value)
