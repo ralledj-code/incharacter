@@ -164,14 +164,21 @@ export default function DMDashboard({ campaigns, members, characters: initialCha
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'characters',
-          filter: `campaign_id=eq.${campaignId}`,
+          table: 'tracker_states',
         },
         (payload) => {
-          console.log('[dm-realtime] character update received', payload.new.id, 'dm_read:', (payload.new as Record<string, unknown>).dm_read)
-          // Patch — never replace the whole object
+          console.log('[dm-realtime] tracker update for char:', payload.new.character_id)
+          // PATCH: Update the character's play_directive and state_values in one go
           setCharacters(prev =>
-            prev.map(c => c.id === payload.new.id ? { ...c, ...payload.new } : c)
+            prev.map(c => 
+              c.id === payload.new.character_id 
+                ? { 
+                    ...c, 
+                    play_directive: payload.new.play_directive, 
+                    state_values: payload.new.state_values 
+                  } 
+                : c
+            )
           )
         }
       )
