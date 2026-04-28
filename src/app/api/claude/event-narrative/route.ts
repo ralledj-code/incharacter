@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       dossierSummary: character?.dossier_text || body.dossierSummary || '',
       stateValues,
       emotionPalette: palette,
-      eventWeights: weights,
+
       category: body.category,
       subcategory: body.subcategory,
       reaction: body.reaction,
