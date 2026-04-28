@@ -31,11 +31,6 @@ export default function NowScreen({ character, tracker: initialTracker, session,
   const trackerNames = config?.trackerNames as { mask?: string; dagger?: string; bottle?: string; wound?: string } | undefined
   const configPalette = config?.emotion_palette as Array<{ id: string; name: string; description: string; base_value: number }> | null
 
-  const mask   = tracker?.mask   ?? 50
-  const dagger = tracker?.dagger ?? 30
-  const bottle = tracker?.bottle ?? 40
-  const wound  = tracker?.wound  ?? 60
-
   const stateValues = tracker?.state_values as Record<string, number> | null
 
   // Bars read from tracker_config.emotion_palette + state_values JSONB
@@ -59,8 +54,6 @@ export default function NowScreen({ character, tracker: initialTracker, session,
   async function generateDirective(opts?: { newTracker?: TrackerState; previousDirective?: string }) {
     isUpdatingDirective.current = true
     setDirectiveLoading(true)
-    const t = opts?.newTracker || tracker
-    const m = t?.mask ?? 50, d = t?.dagger ?? 30, b = t?.bottle ?? 40, w = t?.wound ?? 60
     try {
       // Dominant state from whichever system is active
       const domEntry = dominant ? { label: dominant.label, desc: dominant.desc } : undefined
@@ -72,7 +65,6 @@ export default function NowScreen({ character, tracker: initialTracker, session,
           characterId: character.id,
           characterName: character.name,
           dossierSummary: character.dossier_text?.slice(0, 2000) || '',
-          trackers: { mask: m, dagger: d, bottle: b, wound: w },
           trackerNames,
           dominantState: domEntry,
           previousDirective: opts?.previousDirective || undefined,

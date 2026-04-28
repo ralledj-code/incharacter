@@ -1,0 +1,18 @@
+[33mcommit a48c57c294d5958548ad043d5b14817b2297ff56[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: ralledj-code <ralledj@gmail.com>
+Date:   Tue Apr 28 17:23:11 2026 +0200
+
+    Patch-only sync for DM dashboard characters; lock realtime dep array
+    
+    FIX 1: Added useEffect([initialCharacters]) that merges incoming server props into
+    existing characters state rather than replacing. Fresh server data wins for structural
+    fields; dm_read from existing state is preserved if already set (covers the race where
+    realtime wrote dm_read before the server refresh query completed). Prevents manual
+    refresh / router.refresh() from wiping realtime-updated character fields.
+    
+    FIX 2: Realtime subscription dep array was already [selectedCampaign] — confirmed
+    correct. Added explicit comment to lock it: 'campaignId only — do not add characters
+    or other state here'. Realtime handler already used patch semantics ({ ...c, ...payload.new });
+    added comment to make intent clear.
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
