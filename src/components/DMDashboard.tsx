@@ -64,7 +64,7 @@ function CharacterCard({
           characterId: character.id,
           characterName: character.name,
           dossierSummary: (character as AnyCharRec).dossier_text?.slice(0, 2000) || '',
-          trackers: { mask, dagger, bottle, wound },
+          trackers: { mask: tracker?.mask ?? 50, dagger: tracker?.dagger ?? 30, bottle: tracker?.bottle ?? 40, wound: tracker?.wound ?? 60 },
         }),
       })
       if (res.ok) {
