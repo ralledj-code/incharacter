@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Character, Session, TrackerState } from '@/types/database'
-import { LONG_REST_DELTAS, clamp, getRandomLoadingPhrase } from '@/lib/constants'
+import { clamp, getRandomLoadingPhrase } from '@/lib/constants'
 import { createClient } from '@/lib/supabase/client'
 
 interface LongRestModalProps {
@@ -32,38 +32,15 @@ export default function LongRestModal({ character, session, tracker, onComplete,
     if (drank === null || dreamed === null) return
     setStep('generating')
 
-    const drankKey = drank ? 'drank' : 'no_drink'
-    const dreamKey = dreamed ? 'dreamed' : 'no_dream'
-    const deltaKey = `${drankKey}_${dreamKey}` as keyof typeof LONG_REST_DELTAS
-    const delta = LONG_REST_DELTAS[deltaKey]
-
-    const currentTrackers = {
-      mask:   tracker?.mask   ?? 50,
-      dagger: tracker?.dagger ?? 30,
-      bottle: tracker?.bottle ?? 40,
-      wound:  tracker?.wound  ?? 60,
-    }
-
-    const newTrackers = {
-      mask:   clamp(currentTrackers.mask   + delta.mask),
-      dagger: clamp(currentTrackers.dagger + delta.dagger),
-      bottle: clamp(currentTrackers.bottle + delta.bottle),
-      wound:  clamp(currentTrackers.wound  + delta.wound),
-    }
-
-    // Reset glyph_states to base_value + 20% echo of session delta
+    // Reset state_values to base_value + 20% echo of session delta
     const config = character.tracker_config as ConfigRec | null
     const emotionPalette = config?.emotion_palette as Array<{ id: string; name: string; description: string; base_value: number }> | null
-    const currentGlyphStates = tracker?.glyph_states as Record<string, number> | null
-    let resetGlyphStates: Record<string, number> | null = null
-    if (emotionPalette?.length) {
-      resetGlyphStates = {}
-      for (const s of emotionPalette) {
-        const base = s.base_value ?? 40
-        const current = currentGlyphStates?.[s.id] ?? base
-        // Echo: base + 20% of session delta carries over
-        resetGlyphStates[s.id] = Math.round(clamp(base + (current - base) * 0.2))
-      }
+    const currentStateValues = tracker?.state_values as Record<string, number> | null
+    const resetStateValues: Record<string, number> = {}
+    for (const s of (emotionPalette || [])) {
+      const base = s.base_value ?? 50
+      const current = currentStateValues?.[s.id] ?? base
+      resetStateValues[s.id] = Math.round(clamp(base + (current - base) * 0.2))
     }
 
     try {
@@ -79,7 +56,7 @@ export default function LongRestModal({ character, session, tracker, onComplete,
             characterId: character.id,
             characterName: character.name,
             dossierSummary: character.dossier_text?.slice(0, 2000) || '',
-            trackers: newTrackers,
+            trackers: { mask: tracker?.mask ?? 50, dagger: tracker?.dagger ?? 30, bottle: tracker?.bottle ?? 40, wound: tracker?.wound ?? 60 },
             drank,
             dreamed,
             // apiKey fetched server-side
@@ -101,13 +78,9 @@ export default function LongRestModal({ character, session, tracker, onComplete,
         })
         .eq('id', session.id)
 
-      // Update tracker — reset glyph_states with echo, apply LONG_REST_DELTAS to raw trackers
+      // Reset state_values with 20% echo
       await (supabase.from('tracker_states') as AnyRecord)
-        .update({
-          ...newTrackers,
-          ...(resetGlyphStates ? { glyph_states: resetGlyphStates } : {}),
-          updated_at: new Date().toISOString(),
-        })
+        .update({ state_values: resetStateValues, updated_at: new Date().toISOString() })
         .eq('character_id', character.id)
 
       // Get last session number

@@ -258,11 +258,17 @@ export default function OnboardingPlayer() {
         if (!keyRes.ok) console.warn('[onboarding] API key storage failed — user can set it in Settings')
       }
 
+      // Initialize state_values from emotion_palette base values
+      const paletteStates = (tracker_config.emotion_palette as Array<{ id: string; base_value: number }> | null) || []
+      const initialStateValues: Record<string, number> = {}
+      for (const s of paletteStates) {
+        initialStateValues[s.id] = s.base_value ?? 50
+      }
+
       const { error: trackerErr } = await db('tracker_states').insert({
         character_id: character.id,
-        mask: 50, dagger: 30, bottle: 40, wound: 60,
         play_directive: null,
-        glyph_states: emotionPalette,
+        state_values: initialStateValues,
       })
       if (trackerErr) throw new Error(`Tracker insert failed: ${trackerErr.message}`)
 

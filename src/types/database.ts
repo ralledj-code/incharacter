@@ -123,6 +123,7 @@ export interface Database {
           wound: number
           play_directive: string | null
           glyph_states: Json | null
+          state_values: Json | null
           updated_at: string
         }
         Insert: {
@@ -134,6 +135,7 @@ export interface Database {
           wound?: number
           play_directive?: string | null
           glyph_states?: Json | null
+          state_values?: Json | null
           updated_at?: string
         }
         Update: {
@@ -145,6 +147,7 @@ export interface Database {
           wound?: number
           play_directive?: string | null
           glyph_states?: Json | null
+          state_values?: Json | null
           updated_at?: string
         }
       }

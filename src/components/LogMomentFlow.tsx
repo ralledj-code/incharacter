@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Character, TrackerState, Session } from '@/types/database'
-import { EVENT_CATEGORIES, REACTIONS, applyTrackerDeltas, getRandomLoadingPhrase } from '@/lib/constants'
+import { EVENT_CATEGORIES, REACTIONS, getRandomLoadingPhrase } from '@/lib/constants'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ConfigRecord = Record<string, any>
@@ -119,21 +119,6 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
     setSelectedReaction(reaction)
     setStep('generating')
 
-    const currentTrackers = {
-      mask:   tracker?.mask   ?? 50,
-      dagger: tracker?.dagger ?? 30,
-      bottle: tracker?.bottle ?? 40,
-      wound:  tracker?.wound  ?? 60,
-    }
-
-    const newTrackers = applyTrackerDeltas(currentTrackers, selectedCategory, reaction)
-    const delta = {
-      mask:   newTrackers.mask   - currentTrackers.mask,
-      dagger: newTrackers.dagger - currentTrackers.dagger,
-      bottle: newTrackers.bottle - currentTrackers.bottle,
-      wound:  newTrackers.wound  - currentTrackers.wound,
-    }
-
     try {
       console.log('[log-moment] start:', selectedCategory, selectedSubcategory, reaction)
 
@@ -146,7 +131,7 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
           characterId: character.id,
           characterName: character.name,
           dossierSummary: character.dossier_text?.slice(0, 2000) || '',
-          trackers: currentTrackers,
+          trackers: { mask: tracker?.mask ?? 50, dagger: tracker?.dagger ?? 30, bottle: tracker?.bottle ?? 40, wound: tracker?.wound ?? 60 },
           category: selectedCategory,
           subcategory: selectedSubcategory,
           reaction,
@@ -167,27 +152,14 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
         subcategory: selectedSubcategory,
         reaction,
         narrative,
-        tracker_delta: delta,
+        tracker_delta: {},
       })
       if (eventErr) console.log('[log-moment] event insert error:', eventErr.message)
       else console.log('[log-moment] event saved')
 
-      // Update tracker state (raw mask/dagger/bottle/wound)
-      console.log('[log-moment] updating tracker_states')
-      const { data: newState, error: trackerErr } = await (supabase.from('tracker_states') as AnyRecord)
-        .update({ ...newTrackers, updated_at: new Date().toISOString() })
-        .eq('character_id', character.id)
-        .select()
-        .single()
-      if (trackerErr) console.log('[log-moment] tracker update error:', trackerErr.message)
-      else console.log('[log-moment] tracker updated')
-
-      // Call directive API — always, every moment
-      const config = character.tracker_config as ConfigRecord | null
-      const emotionPalette = config?.emotion_palette as Array<{ id: string; name: string; description: string; base_value: number }> | undefined
-
+      // Call directive API — handles all state_values writes
       let newDirective: string | undefined
-      let updatedGlyphStates: Record<string, number> | undefined
+      let updatedStateValues: Record<string, number> | undefined
       console.log('[log-moment] calling directive API')
       try {
         const directiveRes = await fetch('/api/claude/directive', {
@@ -197,7 +169,7 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
             characterId: character.id,
             characterName: character.name,
             dossierSummary: character.dossier_text?.slice(0, 2000) || '',
-            trackers: newTrackers,
+            trackers: { mask: tracker?.mask ?? 50, dagger: tracker?.dagger ?? 30, bottle: tracker?.bottle ?? 40, wound: tracker?.wound ?? 60 },
             currentEvent: { category: selectedCategory, subcategory: selectedSubcategory, reaction },
             emotionPalette,
           }),
@@ -206,7 +178,7 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
         if (directiveRes.ok) {
           const dData = await directiveRes.json()
           newDirective = dData.directive
-          if (dData.glyphStates) updatedGlyphStates = dData.glyphStates
+          if (dData.stateValues) updatedStateValues = dData.stateValues
           console.log('[log-moment] directive ok:', newDirective?.slice(0, 60))
         } else {
           const errText = await directiveRes.text()
@@ -216,18 +188,18 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
         console.log('[log-moment] directive fetch threw:', String(dirErr))
       }
 
-      // Log replay — wrapped separately so it never blocks onComplete
+      // Log replay — non-critical
       try {
         await (supabase.from('session_replays') as AnyRecord).insert({
           session_id: session.id,
           event_type: 'moment_logged',
-          event_data: { category: selectedCategory, subcategory: selectedSubcategory, reaction, narrative, delta, trackers: newTrackers },
+          event_data: { category: selectedCategory, subcategory: selectedSubcategory, reaction, narrative },
         })
       } catch { /* non-critical */ }
 
       const finalTracker = {
-        ...((newState as TrackerState) || { ...tracker!, ...newTrackers }),
-        ...(updatedGlyphStates ? { glyph_states: updatedGlyphStates } : {}),
+        ...(tracker || {}),
+        ...(updatedStateValues ? { state_values: updatedStateValues } : {}),
       }
       console.log('[log-moment] calling onComplete, directive present:', !!newDirective)
       onComplete(finalTracker as TrackerState, newDirective)
@@ -244,13 +216,7 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
           error_message: String(error),
         })
       } catch {}
-      const supabase = createClient()
-      const { data: newState } = await (supabase.from('tracker_states') as AnyRecord)
-        .update({ ...newTrackers, updated_at: new Date().toISOString() })
-        .eq('character_id', character.id)
-        .select()
-        .single()
-      onComplete((newState as TrackerState) || { ...tracker!, ...newTrackers })
+      onComplete(tracker || {} as TrackerState)
     }
   }
 

@@ -36,14 +36,14 @@ export default function NowScreen({ character, tracker: initialTracker, session,
   const bottle = tracker?.bottle ?? 40
   const wound  = tracker?.wound  ?? 60
 
-  const glyphStates = tracker?.glyph_states as Record<string, number> | null
+  const stateValues = tracker?.state_values as Record<string, number> | null
 
-  // Bars always read from tracker_config.emotion_palette + glyph_states
+  // Bars read from tracker_config.emotion_palette + state_values JSONB
   const stateList = (configPalette || []).map(s => ({
     key: s.id,
     label: s.name.toUpperCase(),
     desc: s.description,
-    value: Math.round(glyphStates?.[s.id] ?? s.base_value),
+    value: Math.round(stateValues?.[s.id] ?? s.base_value),
   })).sort((a, b) => b.value - a.value)
 
   const dominant = stateList[0]
@@ -83,9 +83,9 @@ export default function NowScreen({ character, tracker: initialTracker, session,
       const data = await res.json()
       if (data.directive) {
         setDirective(data.directive)
-        // Update local glyph_states from server response so bars re-render
-        if (data.glyphStates) {
-          setTracker(prev => prev ? { ...prev, glyph_states: data.glyphStates } : prev)
+        // Update local state_values from server response so bars re-render
+        if (data.stateValues) {
+          setTracker(prev => prev ? { ...prev, state_values: data.stateValues } : prev)
         }
       }
     } catch {}
@@ -98,7 +98,7 @@ export default function NowScreen({ character, tracker: initialTracker, session,
 
   // Every moment now triggers directive from LogMomentFlow — just apply the result
   async function handleEventLogged(newTracker: TrackerState, newDirective?: string) {
-    // Update tracker state (includes glyph_states from directive response)
+    // Update tracker state (includes state_values from directive response)
     setTracker(newTracker)
 
     if (newDirective) {

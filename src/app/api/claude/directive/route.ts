@@ -38,19 +38,19 @@ export async function POST(req: NextRequest) {
       else if (events?.[0] && !body.currentEvent) previousEvent = events[0]
     }
 
-    // Fetch current glyph_states from tracker_states
-    let currentGlyphStates: Record<string, number> = {}
+    // Fetch current state_values from tracker_states
+    let currentStateValues: Record<string, number> = {}
     if (body.characterId) {
       const { data: ts } = await (admin.from('tracker_states') as AnyRec)
-        .select('glyph_states')
+        .select('state_values')
         .eq('character_id', body.characterId)
         .single()
-      if (ts?.glyph_states && typeof ts.glyph_states === 'object') {
-        currentGlyphStates = ts.glyph_states as Record<string, number>
+      if (ts?.state_values && typeof ts.state_values === 'object') {
+        currentStateValues = ts.state_values as Record<string, number>
       } else if (body.emotionPalette?.length) {
-        // Initialize from base values if no glyph_states yet
+        // Initialize from base values if no state_values yet
         for (const s of body.emotionPalette) {
-          currentGlyphStates[s.id] = s.base_value ?? 40
+          currentStateValues[s.id] = s.base_value ?? 50
         }
       }
     }
@@ -73,24 +73,24 @@ export async function POST(req: NextRequest) {
 
     console.log('[directive] claude result — directive:', result.directive?.slice(0, 60), '| dmRead:', result.dmRead?.slice(0, 60), '| stateChanges:', JSON.stringify(result.stateChanges))
 
-    // Apply state_changes to glyph_states
-    const newGlyphStates = { ...currentGlyphStates }
+    // Apply stateChanges to state_values
+    const newStateValues = { ...currentStateValues }
     for (const [stateId, delta] of Object.entries(result.stateChanges)) {
-      const current = newGlyphStates[stateId] ?? 40
-      newGlyphStates[stateId] = clamp(current + delta)
+      const current = newStateValues[stateId] ?? (body.emotionPalette?.find((s: { id: string; base_value: number }) => s.id === stateId)?.base_value ?? 50)
+      newStateValues[stateId] = clamp(current + delta)
     }
 
     if (body.characterId) {
       console.log('[directive] writing to DB for character:', body.characterId)
 
-      // Save play_directive + glyph_states to tracker_states
+      // Save play_directive + state_values to tracker_states
       const { error: tsErr } = await (admin.from('tracker_states') as AnyRec)
-        .update({ play_directive: result.directive, glyph_states: newGlyphStates, updated_at: new Date().toISOString() })
+        .update({ play_directive: result.directive, state_values: newStateValues, updated_at: new Date().toISOString() })
         .eq('character_id', body.characterId)
       if (tsErr) console.log('[directive] tracker_states write ERROR:', tsErr.message)
       else console.log('[directive] tracker_states write ok')
 
-      // Save dm_read to characters (triggers DM realtime) — play_directive lives in tracker_states only
+      // Save dm_read to characters (triggers DM realtime)
       const { error: charErr } = await (admin.from('characters') as AnyRec)
         .update({ dm_read: result.dmRead, updated_at: new Date().toISOString() })
         .eq('id', body.characterId)
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       directive: result.directive,
       dmRead: result.dmRead,
       stateChanges: result.stateChanges,
-      glyphStates: newGlyphStates,
+      stateValues: newStateValues,
     })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
