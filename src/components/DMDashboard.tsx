@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { Campaign, Character, TrackerState } from '@/types/database'
 import BurgerMenu from './BurgerMenu'
-import { glyphValuesFromTrackers, GLYPH_STATES } from '@/lib/constants'
 import { createClient } from '@/lib/supabase/client'
 
 interface DMDashboardProps {
