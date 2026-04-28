@@ -168,10 +168,10 @@ export default function LogMomentFlow({ character, tracker, session, onComplete,
           body: JSON.stringify({
             characterId: character.id,
             characterName: character.name,
-            dossierSummary: character.dossier_text?.slice(0, 2000) || '',
-            trackers: { mask: tracker?.mask ?? 50, dagger: tracker?.dagger ?? 30, bottle: tracker?.bottle ?? 40, wound: tracker?.wound ?? 60 },
+            dossier_text: character.dossier_text || '',
+            emotion_palette: (character.tracker_config as ConfigRecord)?.emotion_palette,
+            event_weights: (character.tracker_config as ConfigRecord)?.event_weights,
             currentEvent: { category: selectedCategory, subcategory: selectedSubcategory, reaction },
-            emotionPalette,
           }),
         })
         console.log('[log-moment] directive response status:', directiveRes.status)

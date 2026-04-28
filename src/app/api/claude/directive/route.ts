@@ -15,9 +15,11 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     console.log('DIRECTIVE HIT', { characterId: body.characterId, previousEvent: body.previousEvent, currentEvent: body.currentEvent })
-    console.log('DIRECTIVE INPUT:', { hasDossier: !!body.dossierSummary, hasPalette: !!body.emotionPalette, events: body.recentEvents })
-    if (!body.dossierSummary || !body.emotionPalette) {
-      return NextResponse.json({ error: 'Missing dossier_text or emotion_palette' }, { status: 400 })
+    const dossierSummary = body.dossier_text ?? body.dossierSummary ?? ''
+    const emotionPalette = body.emotion_palette ?? body.emotionPalette
+    console.log('DIRECTIVE INPUT:', { hasDossier: !!dossierSummary, hasPalette: !!emotionPalette, events: body.recentEvents })
+    if (emotionPalette == null) {
+      return NextResponse.json({ error: 'Missing emotion_palette' }, { status: 400 })
     }
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -52,9 +54,9 @@ export async function POST(req: NextRequest) {
         .single()
       if (ts?.state_values && typeof ts.state_values === 'object') {
         currentStateValues = ts.state_values as Record<string, number>
-      } else if (body.emotionPalette?.length) {
+      } else if (emotionPalette?.length) {
         // Initialize from base values if no state_values yet
-        for (const s of body.emotionPalette) {
+        for (const s of emotionPalette) {
           currentStateValues[s.id] = s.base_value ?? 50
         }
       }
@@ -62,9 +64,9 @@ export async function POST(req: NextRequest) {
 
     const result = await generatePlayDirective({
       characterName: body.characterName,
-      dossierSummary: body.dossierSummary || '',
+      dossierSummary,
       stateValues: body.stateValues,
-      emotionPalette: body.emotionPalette,
+      emotionPalette,
       recentEvents: body.recentEvents,
       dominantState: body.dominantState,
       previousDirective: body.previousDirective,
@@ -82,7 +84,7 @@ export async function POST(req: NextRequest) {
     const newStateValues = { ...currentStateValues }
     for (const [stateId, delta] of Object.entries(result.stateChanges)) {
       const id = stateId.toLowerCase().trim()
-      const current = newStateValues[id] ?? (body.emotionPalette?.find((s: { id: string; base_value: number }) => s.id === id)?.base_value ?? 50)
+      const current = newStateValues[id] ?? (emotionPalette?.find((s: { id: string; base_value: number }) => s.id === id)?.base_value ?? 50)
       newStateValues[id] = clamp(current + delta)
     }
 
