@@ -10,10 +10,8 @@ type Tab = 'signin' | 'signup'
 function AuthForm() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const role = searchParams.get('role') || 'player'
-  const next = searchParams.get('next') || '/dashboard'
+  const next = searchParams.get('next') || '/play'
   const confirmed = searchParams.get('confirmed') === 'true'
-  const isDM = role === 'dm'
 
   const [tab, setTab] = useState<Tab>('signin')
   const [email, setEmail] = useState('')
@@ -42,13 +40,6 @@ function AuthForm() {
           setError(err.message)
         }
       } else {
-        if (isDM) {
-          const { data: { user: u } } = await supabase.auth.getUser()
-          if (u) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await (supabase.from('profiles') as any).upsert({ id: u.id, role: 'dm' }, { onConflict: 'id' })
-          }
-        }
         router.push(next)
       }
     } catch { setError('Something went wrong. Try again.') }
@@ -67,26 +58,13 @@ function AuthForm() {
       const { data, error: err } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
-        options: { data: { role } },
       })
       if (err) {
         setError(err.message)
       } else if (data.session) {
-        // Account confirmed immediately (email confirmation disabled) — redirect to onboarding
-        if (isDM) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (supabase.from('profiles') as any).upsert(
-            { id: data.session.user.id, role: 'dm' },
-            { onConflict: 'id' }
-          )
-          router.push('/onboarding?role=dm')
-        } else {
-          router.push('/onboarding?role=player')
-        }
+        router.push('/setup')
       } else {
-        // Session not returned — email confirmation is on (shouldn't happen in our config)
-        // Still navigate forward; they'll be prompted to sign in
-        router.push(`/auth/login?role=${role}`)
+        router.push('/auth/login')
       }
     } catch { setError('Something went wrong. Try again.') }
     setLoading(false)
@@ -141,11 +119,6 @@ function AuthForm() {
 
   return (
     <div>
-      {isDM && (
-        <div style={{ marginBottom: 20, padding: '8px 12px', background: 'var(--accent-faint)', borderLeft: '2px solid var(--accent)', borderRadius: '0 6px 6px 0', fontSize: 12, color: 'var(--accent-text)', fontWeight: 500 }}>
-          DM account
-        </div>
-      )}
       {confirmed && (
         <div style={{ marginBottom: 20, padding: '8px 12px', background: 'var(--accent-faint)', borderRadius: 6, fontSize: 13, color: 'var(--accent-text)' }}>
           Email confirmed. Sign in below.
@@ -201,14 +174,8 @@ function AuthForm() {
           {error && <p style={{ fontSize: 13, color: 'var(--danger)', background: 'var(--danger-faint)', padding: '8px 12px', borderRadius: 6 }}>{error}</p>}
           <button type="submit" disabled={loading || !email.trim() || !password || !confirmPassword}
             className="btn-primary" style={{ width: '100%' }}>
-            {loading ? 'Creating account...' : isDM ? 'Create DM account' : 'Create account'}
+            {loading ? 'Creating account...' : 'Create account'}
           </button>
-          <div style={{ textAlign: 'center' }}>
-            <Link href={`/auth/login?role=${isDM ? 'player' : 'dm'}`}
-              style={{ fontSize: 12, color: 'var(--text3)', minHeight: 'auto', minWidth: 'auto' }}>
-              {isDM ? 'Sign up as player instead' : 'Running a campaign? Sign up as DM →'}
-            </Link>
-          </div>
         </form>
       )}
     </div>

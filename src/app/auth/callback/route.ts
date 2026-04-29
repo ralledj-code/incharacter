@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       role,
     })
     // Route to appropriate onboarding
-    return NextResponse.redirect(`${origin}/onboarding?role=${role}`)
+    return NextResponse.redirect(`${origin}/setup?role=${role}`)
   }
 
   // Profile already exists (created by trigger, likely with role='player').
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     const { data: campaign } = await db('campaigns')
       .select('id').eq('dm_id', user.id).limit(1).single()
     if (!campaign) {
-      return NextResponse.redirect(`${origin}/onboarding?role=dm`)
+      return NextResponse.redirect(`${origin}/setup?role=dm`)
     }
     return NextResponse.redirect(`${origin}/dm/dashboard`)
   }
