@@ -1,7 +1,6 @@
 'use client'
 
-import { RING_JITTER } from '@/lib/constants'
-
+const RING_JITTER = [0.97, 1.03, 0.98, 1.01, 0.96, 1.02]
 const ANGLES = [-90, -30, 30, 90, 150, 210].map(d => (d * Math.PI) / 180)
 // Organic demo values that look good as a static watermark
 const DEMO_VALUES = [0.72, 0.45, 0.58, 0.38, 0.65, 0.82]

@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation'
 
 interface BurgerMenuProps {
   loggedIn?: boolean
-  role?: 'player' | 'dm' | 'admin' | null
   theme?: 'light' | 'dark'
 }
 
@@ -22,21 +21,11 @@ const LOGGED_OUT_LINKS = [
 ]
 
 const PLAYER_LINKS = [
-  { href: '/play/now', label: 'My Character' },
-  { href: '/play/session', label: 'Session' },
-  { href: '/play/journey', label: 'Journey' },
+  { href: '/play', label: 'My Journal' },
   { href: '/settings', label: 'Settings' },
 ]
 
-const DM_LINKS = [
-  { href: '/dm/dashboard', label: 'Dashboard' },
-  { href: '/dm/campaign',  label: 'Campaign' },
-  { href: '/settings',     label: 'Settings' },
-]
-
-const ADMIN_EXTRA = [{ href: '/admin', label: 'Admin Panel' }]
-
-export default function BurgerMenu({ loggedIn = false, role, theme = 'dark' }: BurgerMenuProps) {
+export default function BurgerMenu({ loggedIn = false, theme = 'dark' }: BurgerMenuProps) {
   const [open, setOpen] = useState(false)
   const router = useRouter()
 
@@ -49,8 +38,7 @@ export default function BurgerMenu({ loggedIn = false, role, theme = 'dark' }: B
   const btnBorder = isLight ? '#e8e4df' : 'var(--border)'
   const lineColor = isLight ? '#4a4a4a' : 'var(--text-dim)'
 
-  let links = !loggedIn ? LOGGED_OUT_LINKS : role === 'dm' ? DM_LINKS : PLAYER_LINKS
-  if (role === 'admin') links = [...PLAYER_LINKS, ...ADMIN_EXTRA]
+  const links = loggedIn ? PLAYER_LINKS : LOGGED_OUT_LINKS
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -61,19 +49,12 @@ export default function BurgerMenu({ loggedIn = false, role, theme = 'dark' }: B
 
   return (
     <>
-      {/* Burger button */}
       <button
         onClick={() => setOpen(v => !v)}
         aria-label={open ? 'Close menu' : 'Open menu'}
         className="fixed top-4 right-4 z-50 flex flex-col justify-center items-center gap-1.5"
-        style={{
-          width: 44, height: 44,
-          background: btnBg,
-          border: `1px solid ${btnBorder}`,
-          borderRadius: 3,
-        }}
+        style={{ width: 44, height: 44, background: btnBg, border: `1px solid ${btnBorder}`, borderRadius: 3 }}
       >
-        {/* Three-line → X morph */}
         <motion.span
           animate={open ? { rotate: 45, y: 7 } : { rotate: 0, y: 0 }}
           transition={{ duration: 0.2 }}
@@ -94,46 +75,31 @@ export default function BurgerMenu({ loggedIn = false, role, theme = 'dark' }: B
       <AnimatePresence>
         {open && (
           <>
-            {/* Backdrop */}
             <motion.div
               key="backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               className="fixed inset-0 z-40"
               style={{ background: 'rgba(0,0,0,0.45)' }}
               onClick={() => setOpen(false)}
             />
-
-            {/* Drawer */}
             <motion.nav
               key="drawer"
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
               className="fixed top-0 right-0 bottom-0 z-50 flex flex-col"
               style={{ width: 280, background: drawerBg, borderLeft: `1px solid ${drawerBorder}` }}
             >
-              {/* Drawer header */}
-              <div className="flex items-center justify-between px-6 py-5"
-                   style={{ borderBottom: `1px solid ${drawerBorder}` }}>
-                <span className="font-cinzel text-sm tracking-wider" style={{ color: '#c9a84c' }}>
-                  In Character
-                </span>
+              <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: `1px solid ${drawerBorder}` }}>
+                <span className="font-cinzel text-sm tracking-wider" style={{ color: '#c9a84c' }}>In Character</span>
                 <button onClick={() => setOpen(false)}
-                        style={{ color: lineColor, fontSize: 22, minHeight: 44, minWidth: 44 }}
-                        className="flex items-center justify-center">
-                  ×
-                </button>
+                  style={{ color: lineColor, fontSize: 22, minHeight: 44, minWidth: 44 }}
+                  className="flex items-center justify-center">×</button>
               </div>
-
-              {/* Links */}
               <div className="flex-1 overflow-y-auto py-3">
                 {links.map(link => (
                   <Link
-                    key={`${link.href}-${link.label}`}
+                    key={link.href}
                     href={link.href}
                     onClick={() => setOpen(false)}
                     className="flex items-center px-6 py-3 font-garamond text-base transition-colors"
@@ -144,30 +110,21 @@ export default function BurgerMenu({ loggedIn = false, role, theme = 'dark' }: B
                     {link.label}
                   </Link>
                 ))}
-
                 {!loggedIn && (
                   <>
                     <div style={{ margin: '8px 24px', borderTop: `1px solid ${drawerBorder}` }} />
-                    <Link
-                      href="/auth/login"
-                      onClick={() => setOpen(false)}
-                      className="flex items-center px-6 py-3 font-cinzel text-xs tracking-widest transition-colors"
-                      style={{ color: '#c9a84c', minHeight: 50 }}
-                    >
+                    <Link href="/auth/login" onClick={() => setOpen(false)}
+                      className="flex items-center px-6 py-3 font-cinzel text-xs tracking-widest"
+                      style={{ color: '#c9a84c', minHeight: 50 }}>
                       Sign In
                     </Link>
                   </>
                 )}
               </div>
-
-              {/* Sign out */}
               {loggedIn && (
                 <div className="px-6 py-5" style={{ borderTop: `1px solid ${drawerBorder}` }}>
-                  <button
-                    onClick={handleSignOut}
-                    className="font-garamond text-sm w-full text-left"
-                    style={{ color: 'var(--text-faint, #8a8a8a)', minHeight: 44 }}
-                  >
+                  <button onClick={handleSignOut} className="font-garamond text-sm w-full text-left"
+                    style={{ color: 'var(--text-faint, #8a8a8a)', minHeight: 44 }}>
                     Sign Out
                   </button>
                 </div>

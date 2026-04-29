@@ -24,7 +24,6 @@ function isPublic(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // API routes handle their own auth — skip middleware entirely
   if (pathname.startsWith('/api/')) return NextResponse.next()
 
   let response = NextResponse.next({ request })
@@ -48,7 +47,6 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Unauthenticated → redirect to login for protected routes
   if (!user && !isPublic(pathname)) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/auth/login'
@@ -56,17 +54,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Authenticated + visiting /onboarding → verify they actually need it
-  if (user && pathname === '/onboarding') {
-    // Let them through — onboarding handles its own redirect after completion
-    return response
-  }
-
   return response
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }
