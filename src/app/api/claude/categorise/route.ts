@@ -42,15 +42,17 @@ No explanation, no markdown.`
     })
 
     const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+    console.log('[categorise] raw Claude response:', raw)
     let icon = '📝'
     let category = 'Note'
 
     try {
-      const parsed = JSON.parse(raw)
+      const clean = raw.replace(/```json|```/g, '').trim()
+      const parsed = JSON.parse(clean)
       if (parsed.icon) icon = parsed.icon
       if (parsed.category) category = parsed.category
     } catch {
-      // Fallback values already set
+      console.log('[categorise] JSON parse failed, using fallback. raw:', raw)
     }
 
     // Update entry in DB

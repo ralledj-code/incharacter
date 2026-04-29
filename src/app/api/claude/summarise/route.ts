@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { sessionId } = await req.json()
+    console.log('[summarise] called with sessionId:', sessionId)
     if (!sessionId) return NextResponse.json({ error: 'sessionId is required' }, { status: 400 })
 
     const apiKey = await getDecryptedApiKey(user.id)
@@ -65,6 +66,7 @@ Return only the summary paragraph. No labels, no markdown.`
     })
 
     const summary = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+    console.log('[summarise] Claude returned:', summary.slice(0, 120))
     return NextResponse.json({ summary })
   } catch (error) {
     return NextResponse.json({ summary: '', error: String(error) }, { status: 500 })

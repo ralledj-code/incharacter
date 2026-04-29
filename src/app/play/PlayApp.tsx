@@ -12,12 +12,16 @@ interface PlayAppProps {
   pastSessions: SessionWithEntries[]
 }
 
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+function formatTime(iso: string | null | undefined) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return isNaN(d.getTime()) ? 'Unknown' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+function formatDate(iso: string | null | undefined) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return isNaN(d.getTime()) ? 'Unknown' : d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 function EntryCard({
@@ -80,7 +84,7 @@ function EntryCard({
               </div>
             </div>
           ) : (
-            <p style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.55, wordBreak: 'break-word' }}>{entry.text}</p>
+            <p style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.55, wordBreak: 'break-word' }}>{entry.text ?? ''}</p>
           )}
         </div>
 
@@ -256,7 +260,7 @@ export default function PlayApp({ characterName, activeSession: initActive, past
 
   function startEdit(entry: Entry) {
     setEditingId(entry.id)
-    setEditText(entry.text)
+    setEditText(entry.text ?? '')
   }
 
   async function saveEdit(entry: Entry, sessionId: string, isPast: boolean) {
