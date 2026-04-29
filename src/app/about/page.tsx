@@ -20,37 +20,24 @@ export default function AboutPage() {
 
           <div className="space-y-8 font-garamond text-lg leading-relaxed" style={{ color: '#4a4a4a' }}>
             <p>
-              In Character was built by Rasmus, a digital strategist from Denmark who wanted
-              to stay in character during D&amp;D sessions and ended up building a tool for everyone.
-              It started as a personal app for one half-elf Wild Magic Sorcerer with an infernal
-              debt and a drinking problem. It became something bigger.
+              In Character was built by Rasmus, a digital strategist from Denmark
+              who kept forgetting what happened in last week&rsquo;s session.
             </p>
-
-            <div className="card-light p-7" style={{ borderLeft: '2px solid #c9a84c' }}>
-              <p style={{ color: '#1a1a1a' }}>
-                A psychological companion for your character. Not a character sheet. Not a dice roller.
-                The thing that tells you how to play them in the moment, based on what&rsquo;s actually
-                happened at the table.
-              </p>
-            </div>
 
             <p>
-              Not a replacement for imagination. The DM still runs the world. Your character still
-              surprises you. In Character just helps you stay true to who they are when things get
-              complicated.
+              A session journal for tabletop RPG players. Not a character sheet.
+              Not a dice roller. The thing that remembers what happened at the table
+              so you don&rsquo;t have to.
             </p>
 
-            <div style={{ borderTop: '1px solid #e8e4df', paddingTop: '2rem' }}>
-              <p className="font-cinzel text-xs tracking-widest mb-4" style={{ color: '#8a8a8a' }}>
-                BUILT WITH
-              </p>
-              <ul className="space-y-2">
-                <li>Claude AI by Anthropic &mdash; narrative and behavioral intelligence</li>
-                <li>Next.js &mdash; web framework</li>
-                <li>Supabase &mdash; database and authentication</li>
-                <li>Vercel &mdash; hosting and deployment</li>
-              </ul>
-            </div>
+            <p>
+              Log moments during play. End the session and get a summary written by
+              Claude. Come back next week and remember exactly where you left off.
+            </p>
+
+            <p>
+              Built for the player who cares about the story.
+            </p>
           </div>
         </main>
 
