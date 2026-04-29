@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'session_id and text are required' }, { status: 400 })
     }
 
+    console.log('Saving entry:', { text: text.trim(), session_id, player_id: user.id })
     const { data, error } = await (admin.from('entries') as AnyRec)
       .insert({ session_id, player_id: user.id, text: text.trim() })
       .select()

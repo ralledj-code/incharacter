@@ -35,6 +35,7 @@ function EntryCard({
   onEditSave,
   onEditCancel,
   highlight,
+  readOnly = false,
 }: {
   entry: Entry
   onPin: () => void
@@ -46,6 +47,7 @@ function EntryCard({
   onEditSave: () => void
   onEditCancel: () => void
   highlight?: boolean
+  readOnly?: boolean
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   useEffect(() => { if (isEditing) textareaRef.current?.focus() }, [isEditing])
@@ -97,10 +99,12 @@ function EntryCard({
                 style={{ fontSize: 15, background: 'none', border: 'none', cursor: 'pointer', minHeight: 'auto', padding: 2, color: entry.pinned ? 'var(--accent)' : 'var(--text3)', lineHeight: 1 }}>
                 {entry.pinned ? '★' : '☆'}
               </button>
-              <button onClick={onEdit}
-                style={{ fontSize: 11, background: 'none', border: 'none', cursor: 'pointer', minHeight: 'auto', padding: 2, color: 'var(--text3)' }}>
-                Edit
-              </button>
+              {!readOnly && (
+                <button onClick={onEdit}
+                  style={{ fontSize: 11, background: 'none', border: 'none', cursor: 'pointer', minHeight: 'auto', padding: 2, color: 'var(--text3)' }}>
+                  Edit
+                </button>
+              )}
               <button onClick={onDelete}
                 style={{ fontSize: 11, background: 'none', border: 'none', cursor: 'pointer', minHeight: 'auto', padding: 2, color: 'var(--danger)' }}>
                 Del
@@ -159,7 +163,7 @@ export default function PlayApp({ characterName, activeSession: initActive, past
     return pastSessions.filter(s =>
       s.title?.toLowerCase().includes(q) ||
       s.character_name?.toLowerCase().includes(q) ||
-      s.entries.some(e => e.text.toLowerCase().includes(q))
+      s.entries.some(e => (e.text ?? '').toLowerCase().includes(q))
     )
   }, [pastSessions, searchQuery])
 
@@ -283,11 +287,11 @@ export default function PlayApp({ characterName, activeSession: initActive, past
     await fetch(`/api/entries/${entry.id}`, { method: 'DELETE' })
   }
 
-  // Sort past session entries: pinned first, then original order
+  // Sort past session entries: pinned first, then newest
   function sortSessionEntries(entries: Entry[]) {
     return [...entries].sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
-      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
   }
 
@@ -444,15 +448,16 @@ export default function PlayApp({ characterName, activeSession: initActive, past
                               <EntryCard
                                 key={entry.id}
                                 entry={entry}
-                                isEditing={editingId === entry.id}
-                                editText={editText}
-                                onEditChange={setEditText}
+                                readOnly={true}
+                                isEditing={false}
+                                editText=""
+                                onEditChange={() => {}}
                                 onPin={() => handleTogglePin(entry, session.id, true)}
-                                onEdit={() => startEdit(entry)}
+                                onEdit={() => {}}
                                 onDelete={() => deleteEntry(entry, session.id, true)}
-                                onEditSave={() => saveEdit(entry, session.id, true)}
-                                onEditCancel={() => setEditingId(null)}
-                                highlight={!!q && entry.text.toLowerCase().includes(q)}
+                                onEditSave={() => {}}
+                                onEditCancel={() => {}}
+                                highlight={!!q && (entry.text ?? '').toLowerCase().includes(q)}
                               />
                             ))
                           )}
@@ -542,7 +547,7 @@ export default function PlayApp({ characterName, activeSession: initActive, past
           <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: 12, padding: 24, width: '100%', maxWidth: 380 }}>
             <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 8, color: 'var(--text)' }}>End this session?</p>
             <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 20, lineHeight: 1.5 }}>
-              Claude will write a short summary of everything that happened. This can&apos;t be undone.
+              This will lock the session and generate a summary to help you remember it next time. You won&apos;t be able to add more entries after this.
             </p>
             {endingSession && (
               <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 12 }}>Writing summary...</p>
