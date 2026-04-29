@@ -1,80 +1,98 @@
-# In Character — Progress
+# In Character — Rebuild Progress
 
-Last updated: 2026-04-28 (session 13)
+## Status: Complete ✓
 
----
-
-## What's working
-
-### Auth
-- Email/password sign in + sign up → immediate redirect to onboarding
-- No email confirmation, no localStorage role
-
-### Onboarding
-- Player: 14-screen flow with interview
-- DM: 2-step (create → CAMP code shown)
-
-### Campaign join
-- **DM adds players by IC code only** (IC-XXXX-XXXX) via invite modal
-- Player Settings shows current campaign + Leave button (no join UI)
-- Both routes use raw supabase-js admin client — bypasses RLS entirely
-- IC code lookup uses `ilike` for case-insensitive match
-
-### DM dashboard
-- **Character cards**: name, play directive (italic), DM read, dominant state only
-- **dm_read**: generated alongside directive in single Claude call, stored in characters.dm_read
-- **Realtime**: postgres_changes subscription on characters table, cards update live without reload
-- Note: requires realtime enabled on characters table in Supabase (Database → Replication)
-
-### Directive + DM read (FIX 3)
-- generatePlayDirective() returns { directive, dmRead }
-- Single Claude call, two outputs: DIRECTIVE: and DM_READ: format
-- DM read: 1-2 sentences, psychological read for DM, no story invention
-- Stored in characters.dm_read via admin client in directive route
-- No DM API key required to see dm_read
-
-### Character restart
-- Keeps dossier_text, tracker_config, api_key_encrypted, campaign_id
-- Clears events, sessions, clues, relationships
-- Resets trackers to initial values, creates session 1
-- Redirects to /play/now
-
-### Player app
-- Now screen: state bars, 26px directive, updates every 3 moments
-- Session tab: chronological event log
-- Motivations tab: antagonist board + relationship tabs from tracker_config
-- Log Moment: 8 categories from tracker_config, generic subcategories
+Full rebuild completed 2026-04-29.
 
 ---
 
-## SQL required
+## What was built
 
-Run in Supabase SQL editor:
+### Deleted
+- All tracker state logic (emotion_palette, event_weights, state_values, bars)
+- DM dashboard and all DM routes
+- Campaign system (campaign_members, CAMP codes, DM invite)
+- Log Moment modal and three-step flow
+- Now screen, Motivations tab, Relationship boards, Clue boards
+- Onboarding flow (all 14 steps)
+- Realtime subscriptions
+- Old Claude prompts (directive, event-narrative, arc, prep, etc.)
+
+### Kept
+- Design system, CSS variables, all five themes
+- Auth (email/password login/signup/reset)
+- Landing page (updated copy)
+- `lib/supabase/client.ts`, `lib/supabase/server.ts`, `lib/keyEncryption.ts`
+- `components/ThemeApplier.tsx`, `components/PostHogProvider.tsx`
+- `components/LandingNav.tsx`, `components/LandingTheme.tsx`, `components/LandingGlyph.tsx`
+- `components/BurgerMenu.tsx` (updated links)
+- Static pages: about, faq, privacy, contact
+- `api/account/delete`, `api/health`, `api/contact`
+
+---
+
+## Database (run in Supabase SQL editor before testing)
+
 ```sql
-ALTER TABLE characters ADD COLUMN IF NOT EXISTS dm_read text;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS character_name text;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS api_key_encrypted text;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS character_note text;
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  player_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  character_name text,
+  title text,
+  summary text,
+  created_at timestamptz DEFAULT now(),
+  ended_at timestamptz
+);
+
+CREATE TABLE IF NOT EXISTS entries (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  session_id uuid REFERENCES sessions(id) ON DELETE CASCADE,
+  player_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  text text NOT NULL,
+  icon text,
+  category text,
+  pinned boolean DEFAULT false,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
 ```
 
-Also enable realtime on characters table:
-Supabase Dashboard → Database → Replication → characters → enable
+---
+
+## New pages
+
+| Path | Description |
+|------|-------------|
+| `/setup` | First-login: character name + API key |
+| `/play` | Main two-tab app: Current Session + Past Sessions |
+| `/settings` | Character name, note, API key, theme, delete account |
+
+## New API routes
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/setup` | POST | Save profile fields + encrypt API key |
+| `/api/setup` | PUT | Test API key validity |
+| `/api/sessions` | POST | Create session |
+| `/api/sessions/[id]` | PATCH | End session (ended_at + summary) |
+| `/api/entries` | POST | Create entry |
+| `/api/entries/[id]` | PATCH | Update entry |
+| `/api/entries/[id]` | DELETE | Delete entry |
+| `/api/claude/categorise` | POST | Assign icon + category (Claude Haiku) |
+| `/api/claude/summarise` | POST | Write 3–4 sentence summary (Claude Haiku) |
 
 ---
 
-## SQL already run
-- fix-trigger-role.sql ✅
-- fix-rls-circular.sql ✅
-- cascade-delete-migration.sql ✅
-- supabase-migrations.sql ✅
-- campaigns.dm_api_key_encrypted ✅
-- profiles.color_scheme ✅
+## Commit log
 
----
-
-## Environment
-
-| Variable | Status |
-|---|---|
-| NEXT_PUBLIC_SUPABASE_URL | ✅ |
-| NEXT_PUBLIC_SUPABASE_ANON_KEY | ✅ |
-| SUPABASE_SERVICE_ROLE_KEY | ✅ |
-| API_KEY_ENCRYPTION_SECRET | ✅ |
-| RESEND_API_KEY | ⚠️ Placeholder |
+- `0d8e721` CLEANUP: Remove DM, tracker, onboarding, campaign code
+- `724804e` REBUILD: Update types, lib, middleware, nav for new schema
+- `c2a5e7e` REBUILD: New API routes — sessions, entries, categorise, summarise
+- `4427ff4` REBUILD: First-login setup page (character name + API key)
+- `866983c` REBUILD: Main app — two-tab journal (current/past sessions)
+- `b0d1a17` REBUILD: Settings page
+- `451506a` REBUILD: Update landing copy and auth redirects
