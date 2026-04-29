@@ -19,16 +19,11 @@ export default async function PlayPage() {
 
   // Check setup complete
   const { data: profile } = await (admin.from('profiles') as AnyRec)
-    .select('character_name, character_note, color_scheme')
+    .select('character_name, character_note, color_scheme, campaign_name, api_key_encrypted')
     .eq('id', user.id)
     .single()
 
-  const { data: keyRow } = await (admin.from('profiles') as AnyRec)
-    .select('api_key_encrypted')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.character_name || !keyRow?.api_key_encrypted) {
+  if (!profile?.character_name || !profile?.api_key_encrypted) {
     redirect('/setup')
   }
 
@@ -66,6 +61,7 @@ export default async function PlayPage() {
   return (
     <PlayApp
       characterName={profile.character_name}
+      campaignName={profile.campaign_name || null}
       activeSession={activeSession}
       pastSessions={pastSessions}
     />

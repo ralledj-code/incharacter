@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
     if (body.character_name !== undefined) updates.character_name = body.character_name
     if (body.character_note !== undefined) updates.character_note = body.character_note
     if (body.color_scheme !== undefined) updates.color_scheme = body.color_scheme
+    if (body.campaign_name !== undefined) updates.campaign_name = body.campaign_name
     if (body.api_key) updates.api_key_encrypted = encryptApiKey(body.api_key)
 
     const { error } = await (admin.from('profiles') as AnyRec)

@@ -13,8 +13,15 @@ const THEMES = [
   { id: 'ink',    label: 'Ink' },
 ]
 
-const THEME_MAP: Record<string, string> = {
-  dark: 'theme-dark', slate: 'theme-slate', forest: 'theme-forest', ink: 'theme-ink',
+function applyTheme(scheme: string) {
+  const html = document.documentElement
+  html.className = html.className
+    .split(' ')
+    .filter(c => !c.startsWith('theme-'))
+    .join(' ')
+  if (scheme && scheme !== 'warm') {
+    html.classList.add(`theme-${scheme}`)
+  }
 }
 
 export default function SettingsPage() {
@@ -30,6 +37,8 @@ export default function SettingsPage() {
   const [testResult, setTestResult] = useState<'ok' | 'fail' | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [resetting, setResetting] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -51,10 +60,9 @@ export default function SettingsPage() {
     load()
   }, [router])
 
-  function applyTheme(scheme: string) {
-    const html = document.documentElement
-    Object.values(THEME_MAP).forEach(cls => html.classList.remove(cls))
-    if (THEME_MAP[scheme]) html.classList.add(THEME_MAP[scheme])
+  function selectTheme(scheme: string) {
+    setColorScheme(scheme)
+    applyTheme(scheme)
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -109,6 +117,16 @@ export default function SettingsPage() {
       router.push('/')
     } catch {}
     setDeleting(false)
+  }
+
+  async function handleResetCharacter() {
+    setResetting(true)
+    try {
+      await fetch('/api/player/reset', { method: 'POST' })
+      setShowResetConfirm(false)
+      router.push('/play')
+    } catch {}
+    setResetting(false)
   }
 
   const labelStyle: React.CSSProperties = {
@@ -171,7 +189,7 @@ export default function SettingsPage() {
             <label style={labelStyle}>Theme</label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {THEMES.map(t => (
-                <button key={t.id} type="button" onClick={() => setColorScheme(t.id)}
+                <button key={t.id} type="button" onClick={() => selectTheme(t.id)}
                   style={{
                     padding: '6px 14px', fontSize: 13, borderRadius: 6, cursor: 'pointer',
                     border: `1.5px solid ${colorScheme === t.id ? 'var(--accent)' : 'var(--border2)'}`,
@@ -196,12 +214,36 @@ export default function SettingsPage() {
 
         <div style={{ marginTop: 48, paddingTop: 24, borderTop: '0.5px solid var(--border)' }}>
           <p className="label-caps" style={{ marginBottom: 16 }}>Danger zone</p>
-          <button className="btn-danger" onClick={() => setShowDeleteConfirm(true)}>
-            Delete account
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start' }}>
+            <button className="btn-danger" onClick={() => setShowResetConfirm(true)}>
+              Reset character
+            </button>
+            <button className="btn-danger" onClick={() => setShowDeleteConfirm(true)}>
+              Delete account
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* Reset character confirm */}
+      {showResetConfirm && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: 12, padding: 28, maxWidth: 380, width: '100%' }}>
+            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 10 }}>Reset character?</p>
+            <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 24, lineHeight: 1.5 }}>
+              This will delete all your sessions and entries. Your character name, note, and API key will be kept.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn-danger" onClick={handleResetCharacter} disabled={resetting} style={{ flex: 1 }}>
+                {resetting ? 'Resetting...' : 'Yes, reset'}
+              </button>
+              <button className="btn-ghost" onClick={() => setShowResetConfirm(false)} style={{ flex: 1 }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete account confirm */}
       {showDeleteConfirm && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: 12, padding: 28, maxWidth: 380, width: '100%' }}>

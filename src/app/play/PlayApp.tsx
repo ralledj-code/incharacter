@@ -8,6 +8,7 @@ type Tab = 'current' | 'past'
 
 interface PlayAppProps {
   characterName: string
+  campaignName: string | null
   activeSession: SessionWithEntries | null
   pastSessions: SessionWithEntries[]
 }
@@ -117,14 +118,15 @@ function EntryCard({
   )
 }
 
-export default function PlayApp({ characterName, activeSession: initActive, pastSessions: initPast }: PlayAppProps) {
+export default function PlayApp({ characterName, campaignName: initCampaignName, activeSession: initActive, pastSessions: initPast }: PlayAppProps) {
   const [tab, setTab] = useState<Tab>('current')
   const [activeSession, setActiveSession] = useState<SessionWithEntries | null>(initActive)
   const [pastSessions, setPastSessions] = useState<SessionWithEntries[]>(initPast)
+  const [campaignName, setCampaignName] = useState<string | null>(initCampaignName)
 
   // Start session
   const [showStartModal, setShowStartModal] = useState(false)
-  const [newTitle, setNewTitle] = useState('')
+  const [newCampaignName, setNewCampaignName] = useState('')
   const [startingSession, setStartingSession] = useState(false)
 
   // Add entry
@@ -172,15 +174,26 @@ export default function PlayApp({ characterName, activeSession: initActive, past
   async function handleStartSession() {
     setStartingSession(true)
     try {
+      let name = campaignName
+      // First time: save campaign name to profile, then use it for all future sessions
+      if (!name && newCampaignName.trim()) {
+        name = newCampaignName.trim()
+        await fetch('/api/setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ campaign_name: name }),
+        })
+        setCampaignName(name)
+      }
       const res = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newTitle.trim() || null, character_name: characterName }),
+        body: JSON.stringify({ title: name, character_name: characterName }),
       })
       const data = await res.json()
       setActiveSession({ ...data.session, entries: [] })
       setShowStartModal(false)
-      setNewTitle('')
+      setNewCampaignName('')
     } catch {}
     setStartingSession(false)
   }
@@ -327,8 +340,13 @@ export default function PlayApp({ characterName, activeSession: initActive, past
             {!activeSession ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 180px)', gap: 16 }}>
                 <p style={{ fontSize: 14, color: 'var(--text3)' }}>No active session</p>
-                <button className="btn-primary" onClick={() => setShowStartModal(true)} style={{ fontSize: 14, padding: '10px 28px' }}>
-                  Start Session
+                <button
+                  className="btn-primary"
+                  onClick={() => campaignName ? handleStartSession() : setShowStartModal(true)}
+                  disabled={startingSession}
+                  style={{ fontSize: 14, padding: '10px 28px' }}
+                >
+                  {startingSession ? 'Starting...' : 'Start Session'}
                 </button>
               </div>
             ) : (
@@ -337,7 +355,7 @@ export default function PlayApp({ characterName, activeSession: initActive, past
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0 10px' }}>
                   <div>
                     <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
-                      {activeSession.title || formatDate(activeSession.created_at)}
+                      {campaignName || activeSession.title || formatDate(activeSession.created_at)}
                     </p>
                     <p style={{ fontSize: 11, color: 'var(--text3)' }}>{activeSession.entries.length} {activeSession.entries.length === 1 ? 'entry' : 'entries'}</p>
                   </div>
@@ -488,17 +506,18 @@ export default function PlayApp({ characterName, activeSession: initActive, past
         </div>
       )}
 
-      {/* ── Start Session Modal ── */}
+      {/* ── Start Session Modal — only shown once to name the campaign ── */}
       {showStartModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: 12, padding: 24, width: '100%', maxWidth: 400 }}>
-            <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 16, color: 'var(--text)' }}>Start session</p>
+            <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 6, color: 'var(--text)' }}>What are you playing?</p>
+            <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 16 }}>You&apos;ll only be asked this once.</p>
             <input
               type="text"
-              value={newTitle}
-              onChange={e => setNewTitle(e.target.value)}
+              value={newCampaignName}
+              onChange={e => setNewCampaignName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleStartSession() }}
-              placeholder="Name this session — or leave blank"
+              placeholder="Campaign or adventure name"
               autoFocus
               style={{ marginBottom: 16 }}
             />
@@ -506,7 +525,7 @@ export default function PlayApp({ characterName, activeSession: initActive, past
               <button className="btn-primary" onClick={handleStartSession} disabled={startingSession} style={{ flex: 1 }}>
                 {startingSession ? 'Starting...' : 'Start'}
               </button>
-              <button className="btn-ghost" onClick={() => { setShowStartModal(false); setNewTitle('') }} style={{ flex: 1 }}>
+              <button className="btn-ghost" onClick={() => { setShowStartModal(false); setNewCampaignName('') }} style={{ flex: 1 }}>
                 Cancel
               </button>
             </div>
