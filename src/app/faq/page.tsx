@@ -3,15 +3,13 @@ import BurgerMenu from '@/components/BurgerMenu'
 import LandingTheme from '@/components/LandingTheme'
 
 const FAQS = [
-  { q: 'Is my data private?', a: "Yes. Your character data is stored securely and only visible to you and DMs of campaigns you've explicitly joined. We don't sell data or use it for advertising." },
-  { q: 'What does it cost?', a: 'In Character is free. You bring your own Anthropic API key for AI features. A full session typically costs less than $0.10.' },
-  { q: 'Do I need D&D experience?', a: 'No. In Character works for any tabletop RPG — new players welcome.' },
-  { q: 'What games does it work for?', a: 'Any tabletop RPG with characters — D&D, Pathfinder, Call of Cthulhu, Blades in the Dark, anything.' },
-  { q: 'Can my DM see everything?', a: "DMs see your character's current psychological state and recent session summaries — what's on your Now screen. They cannot see your raw event log, clue boards, relationship threads, or personal notes." },
-  { q: 'What happens to my character if I stop playing?', a: 'Your data stays until you delete it. Export your full character journey as a PDF at any time from your Settings page.' },
-  { q: "What's a dossier?", a: 'A description of your character — background, personality, flaws, relationships, motivations. A paragraph or ten pages. More detail means better guidance.' },
-  { q: 'Is this only for experienced roleplayers?', a: 'Especially not. In Character is most useful for players who find staying in character difficult.' },
-  { q: "What's a player code?", a: 'Every player gets a unique IC-XXXX-XXXX code on account creation. Share it with your DM to join their campaign without needing your email address.' },
+  { q: 'Is my data private?', a: "Yes. Your sessions and entries are only visible to you. We don't sell data or use it for advertising." },
+  { q: 'What does it cost?', a: 'In Character is free. You bring your own Anthropic API key. A full session typically costs less than $0.10 in API usage.' },
+  { q: 'Do I need a specific game system?', a: 'No. Works for any tabletop RPG — D&D, Pathfinder, Call of Cthulhu, Blades in the Dark, anything with characters and sessions.' },
+  { q: 'How does the AI summary work?', a: "When you end a session, Claude reads all your entries and writes a 3–4 sentence summary of what happened. It only uses what you logged — no invented details." },
+  { q: "What's an Anthropic API key?", a: "It's your personal key to access Claude AI. Get one free at console.anthropic.com. Paste it into In Character during setup. It's encrypted and never visible after you save it." },
+  { q: 'Can I edit past entries?', a: 'You can edit entries within an active session. Once you end a session it\'s locked — the summary is final.' },
+  { q: 'What happens to my data if I stop playing?', a: 'Your sessions stay saved until you delete your account. Reset character in Settings to start fresh while keeping your account.' },
 ]
 
 export default function FAQPage() {
@@ -34,9 +32,11 @@ export default function FAQPage() {
             ))}
           </div>
 
-          <div className="mt-12 text-center">
-            <p className="font-garamond mb-4" style={{ color: '#4a4a4a' }}>Still have questions?</p>
-            <Link href="/contact" className="btn-gold px-8 py-3 text-sm inline-block">Contact Us</Link>
+          <div className="card-light p-6 mt-5">
+            <h2 className="font-cinzel text-sm tracking-wide mb-3" style={{ color: '#c9a84c' }}>Still have questions?</h2>
+            <p className="font-garamond leading-relaxed" style={{ color: '#4a4a4a' }}>
+              <Link href="/contact" style={{ color: '#c9a84c', minHeight: 'auto', minWidth: 'auto' }}>Contact Us</Link>
+            </p>
           </div>
         </main>
       </div>
