@@ -1,14 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as rawClient } from '@supabase/supabase-js'
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyRec = Record<string, any>
-
-const admin = rawClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 
 // POST — delete all sessions (entries cascade) and clear campaign_name
 export async function POST() {
@@ -17,13 +9,20 @@ export async function POST() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { error: sessErr } = await (admin.from('sessions') as AnyRec)
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { error: sessErr } = await supabaseAdmin
+      .from('sessions')
       .delete()
       .eq('player_id', user.id)
 
     if (sessErr) return NextResponse.json({ error: sessErr.message }, { status: 500 })
 
-    await (admin.from('profiles') as AnyRec)
+    await supabaseAdmin
+      .from('profiles')
       .update({ campaign_name: null })
       .eq('id', user.id)
 
