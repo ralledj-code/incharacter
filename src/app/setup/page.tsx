@@ -1,16 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import OnboardingTooltip from '@/components/OnboardingTooltip'
 
 export default function SetupPage() {
   const router = useRouter()
+  const [onboardingState, setOnboardingState] = useState<'loading' | 'show' | 'done'>('loading')
   const [characterName, setCharacterName] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<'ok' | 'fail' | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    async function checkOnboarding() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/auth/login'); return }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase.from('profiles') as any)
+        .select('onboarding_complete')
+        .eq('id', user.id)
+        .single()
+      setOnboardingState(data?.onboarding_complete ? 'done' : 'show')
+    }
+    checkOnboarding()
+  }, [router])
+
+  async function handleOnboardingComplete() {
+    await fetch('/api/player/onboarding', { method: 'POST' })
+    setOnboardingState('done')
+  }
 
   async function testKey() {
     if (!apiKey.trim()) return
@@ -47,6 +70,14 @@ export default function SetupPage() {
     }
     setSaving(false)
   }
+
+  if (onboardingState === 'loading') return (
+    <main style={{ minHeight: '100vh', background: 'var(--bg)' }} />
+  )
+
+  if (onboardingState === 'show') return (
+    <OnboardingTooltip onComplete={handleOnboardingComplete} />
+  )
 
   return (
     <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'var(--bg)' }}>
