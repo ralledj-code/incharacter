@@ -18,12 +18,20 @@ export default async function PlayPage() {
   if (!user) redirect('/auth/login')
 
   // Check setup complete
-  const { data: profile } = await (admin.from('profiles') as AnyRec)
+  const { data: profile, error: profileErr } = await (admin.from('profiles') as AnyRec)
     .select('character_name, character_note, color_scheme, campaign_name, api_key_encrypted')
     .eq('id', user.id)
     .single()
 
-  if (!profile?.character_name || !profile?.api_key_encrypted) {
+  console.log('SETUP CHECK:', {
+    character_name: profile?.character_name,
+    api_key: !!profile?.api_key_encrypted,
+    profileErr: profileErr?.message ?? null,
+  })
+
+  // Only redirect when the profile row exists but the required fields are missing.
+  // If the fetch itself failed (profileErr), don't redirect — it would loop.
+  if (!profileErr && profile && (!profile.character_name || !profile.api_key_encrypted)) {
     redirect('/setup')
   }
 
