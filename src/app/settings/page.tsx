@@ -31,6 +31,7 @@ export default function SettingsPage() {
   const [characterNote, setCharacterNote] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [colorScheme, setColorScheme] = useState('warm')
+  const [dmEmail, setDmEmail] = useState('')
   const [saving, setSaving] = useState(false)
   const [savedMsg, setSavedMsg] = useState('')
   const [testingKey, setTestingKey] = useState(false)
@@ -47,13 +48,14 @@ export default function SettingsPage() {
       if (!user) { router.push('/auth/login'); return }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: profile } = await (supabase.from('profiles') as any)
-        .select('character_name, character_note, color_scheme')
+        .select('character_name, character_note, color_scheme, dm_email')
         .eq('id', user.id)
         .single()
       if (profile) {
         setCharacterName(profile.character_name || '')
         setCharacterNote(profile.character_note || '')
         setColorScheme(profile.color_scheme || 'warm')
+        setDmEmail(profile.dm_email || '')
       }
       setLoading(false)
     }
@@ -74,6 +76,7 @@ export default function SettingsPage() {
         character_name: characterName.trim(),
         character_note: characterNote.trim(),
         color_scheme: colorScheme,
+        dm_email: dmEmail.trim(),
       }
       if (apiKey.trim()) body.api_key = apiKey.trim()
       const res = await fetch('/api/setup', {
@@ -183,6 +186,18 @@ export default function SettingsPage() {
             </div>
             {testResult === 'ok' && <p style={{ fontSize: 12, color: 'var(--accent-text)', marginTop: 6 }}>✓ Key works</p>}
             {testResult === 'fail' && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>Key didn&apos;t work — check it and try again.</p>}
+          </div>
+
+          <div>
+            <label style={labelStyle}>DM</label>
+            <label style={{ ...labelStyle, textTransform: 'none', fontSize: 12, fontWeight: 400, letterSpacing: 0, marginBottom: 6 }}>DM Email</label>
+            <input
+              type="email"
+              value={dmEmail}
+              onChange={e => setDmEmail(e.target.value)}
+              placeholder="your.dm@email.com"
+            />
+            <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: 6 }}>Your DM receives your session feedback here.</p>
           </div>
 
           <div>
