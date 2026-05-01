@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import LandingGlyph from '@/components/LandingGlyph'
+import Image from 'next/image'
 import BurgerMenu from '@/components/BurgerMenu'
 import LandingNav from '@/components/LandingNav'
 import LandingTheme from '@/components/LandingTheme'
@@ -18,27 +18,34 @@ export default function LandingPage() {
           className="relative flex flex-col items-center justify-center min-h-screen px-6 text-center"
           style={{ paddingTop: 80 }}
         >
-          <div
-            className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
-            style={{ opacity: 0.04 }}
-          >
-            <LandingGlyph size={700} color="#c9a84c" />
-          </div>
+          <Image
+            src="/images/hero.webp"
+            alt="An open journal on a tavern table by candlelight"
+            fill
+            priority
+            quality={85}
+            style={{ objectFit: 'cover', objectPosition: 'center top' }}
+          />
+          {/* Gradient overlay — dark at top, fades to parchment at bottom */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 60%, #f5f0e8 100%)',
+          }} />
 
           <div className="relative z-10 max-w-2xl mx-auto">
-            <p className="font-cinzel text-xs tracking-widest mb-6" style={{ color: '#c9a84c' }}>
+            <p className="font-cinzel text-xs tracking-widest mb-6" style={{ color: 'rgba(201,168,76,0.9)' }}>
               FOR THE TABLE
             </p>
             <h1
               className="font-cinzel mb-3 leading-tight"
-              style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', color: '#1a1a1a' }}
+              style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', color: '#f5f0e8' }}
             >
               In Character.<br />Your RPG session journal.
             </h1>
             <div className="mx-auto mb-8" style={{ width: 60, height: 1.5, background: '#c9a84c', opacity: 0.7 }} />
             <p
               className="font-garamond text-xl mb-10 leading-relaxed max-w-lg mx-auto"
-              style={{ color: '#4a4a4a' }}
+              style={{ color: 'rgba(245,240,232,0.75)' }}
             >
               Log moments during play. End the session, get a Claude-written summary.
               Send your DM structured feedback tied to what actually happened.
@@ -47,14 +54,19 @@ export default function LandingPage() {
               <Link href="/auth/login" className="btn-gold-solid px-10 py-3 text-sm tracking-widest">
                 Start Playing
               </Link>
-              <a href="#how-it-works" className="btn-gold px-10 py-3 text-sm tracking-widest">
+              <a
+                href="#how-it-works"
+                className="font-cinzel px-10 py-3 text-sm tracking-widest inline-flex items-center justify-center"
+                style={{
+                  border: '1px solid rgba(255,255,255,0.6)',
+                  color: 'rgba(255,255,255,0.9)',
+                  borderRadius: 2,
+                  minHeight: 44,
+                }}
+              >
                 See How It Works
               </a>
             </div>
-          </div>
-
-          <div className="absolute bottom-8 flex flex-col items-center gap-2 pointer-events-none">
-            <div className="w-px h-12" style={{ background: 'linear-gradient(to bottom, #c9a84c44, transparent)' }} />
           </div>
         </section>
 

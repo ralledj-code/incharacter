@@ -11,7 +11,7 @@ const NAV_LINKS = [
 export default function LandingNav() {
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-6 py-4"
+      className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-6 py-4 pr-8"
       style={{
         background: 'rgba(245,240,232,0.94)',
         backdropFilter: 'blur(12px)',
