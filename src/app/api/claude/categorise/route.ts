@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { entryId, text, characterName } = await req.json()
+    console.log('CATEGORISE HIT:', { entryId, hasText: !!text })
     if (!text?.trim()) return NextResponse.json({ error: 'text is required' }, { status: 400 })
 
     const apiKey = await getDecryptedApiKey(user.id)
@@ -55,12 +56,14 @@ No explanation, no markdown.`
       console.log('[categorise] JSON parse failed, using fallback. raw:', raw)
     }
 
-    // Update entry in DB
+    // Update entry in DB (service role client — bypasses RLS)
+    console.log('CATEGORISE RESULT:', { icon, category, entryId })
     if (entryId) {
-      await (admin.from('entries') as AnyRec)
+      const { error } = await (admin.from('entries') as AnyRec)
         .update({ icon, category, updated_at: new Date().toISOString() })
         .eq('id', entryId)
         .eq('player_id', user.id)
+      console.log('PATCH ERROR:', error)
     }
 
     return NextResponse.json({ icon, category })
