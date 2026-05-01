@@ -238,28 +238,38 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
     setSavingEntry(true)
     const text = newEntryText.trim()
     try {
-      const res = await fetch('/api/entries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: activeSession.id, text }),
-      })
-      const data = await res.json()
-      const entry: Entry = { ...data.entry, icon: null, category: null }
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // 1. Insert entry and get back the new row (including its real id)
+      const { data: newEntry, error } = await supabase
+        .from('entries')
+        .insert({ text, session_id: activeSession.id, player_id: user.id })
+        .select()
+        .single()
+
+      if (error || !newEntry?.id) {
+        console.error('[handleSaveEntry] insert failed:', error)
+        return
+      }
+
+      const entry: Entry = { ...newEntry, icon: null, category: null }
       setActiveSession(prev => prev ? { ...prev, entries: [...prev.entries, entry] } : null)
       setShowAddEntry(false)
       setNewEntryText('')
 
-      // Categorise in background — never blocks the save
+      // 2. Categorise only after we have the real id — never fires with undefined
       fetch('/api/claude/categorise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entryId: entry.id, text, characterName }),
+        body: JSON.stringify({ entryId: newEntry.id, text, characterName }),
       })
         .then(r => r.json())
         .then(result => {
           setActiveSession(prev => prev ? {
             ...prev,
-            entries: prev.entries.map(e => e.id === entry.id
+            entries: prev.entries.map(e => e.id === newEntry.id
               ? { ...e, icon: result.icon || '📝', category: result.category || 'Note' }
               : e
             ),
