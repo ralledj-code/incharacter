@@ -21,22 +21,25 @@ export default function AboutPage() {
           <div className="space-y-8 font-garamond text-lg leading-relaxed" style={{ color: '#4a4a4a' }}>
             <p>
               In Character was built by Rasmus, a digital strategist from Denmark
-              who kept forgetting what happened in last week&rsquo;s session.
+              who kept forgetting what happened in last week&rsquo;s session — and whose
+              DM had no idea what the players actually thought of it.
             </p>
 
             <p>
-              A session journal for tabletop RPG players. Not a character sheet.
-              Not a dice roller. The thing that remembers what happened at the table
-              so you don&rsquo;t have to.
+              A session journal for tabletop RPG players. Log moments during play.
+              End the session and get a summary written by Claude. Then send your DM
+              structured feedback tied to what actually happened — star ratings across
+              combat, roleplay, world and party dynamics, plus what worked and what
+              you&rsquo;d love to explore next time.
             </p>
 
             <p>
-              Log moments during play. End the session and get a summary written by
-              Claude. Come back next week and remember exactly where you left off.
+              No DM account needed. Just an email worth opening.
             </p>
 
             <p>
               Built for the player who cares about the story.
+              And the DM who wants to run a better one.
             </p>
           </div>
         </main>

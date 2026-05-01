@@ -10,6 +10,8 @@ const FAQS = [
   { q: "What's an Anthropic API key?", a: "It's your personal key to access Claude AI. Get one free at console.anthropic.com. Paste it into In Character during setup. It's encrypted and never visible after you save it." },
   { q: 'Can I edit past entries?', a: 'You can edit entries within an active session. Once you end a session it\'s locked — the summary is final.' },
   { q: 'What happens to my data if I stop playing?', a: 'Your sessions stay saved until you delete your account. Reset character in Settings to start fresh while keeping your account.' },
+  { q: 'Can my DM receive session notes?', a: 'Yes — and this is one of In Character\'s best features. Add your DM\'s email in Settings. After each session, rate combat, roleplay, world and party dynamics with stars and optional comments. In Character sends a formatted email with your Claude-written summary, every logged entry, and your feedback. Your DM can reply directly. No account needed.' },
+  { q: 'What does the DM email look like?', a: 'A styled email with your character name large at the top, the session summary written by Claude, your logged entries with icons, and your star ratings with comments. Clean, readable, worth keeping. Your DM can reply directly to you.' },
 ]
 
 export default function FAQPage() {

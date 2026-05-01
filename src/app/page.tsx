@@ -40,8 +40,8 @@ export default function LandingPage() {
               className="font-garamond text-xl mb-10 leading-relaxed max-w-lg mx-auto"
               style={{ color: '#4a4a4a' }}
             >
-              Log what happens. End the session, get a summary.
-              Browse every past session, forever.
+              Log moments during play. End the session, get a Claude-written summary.
+              Send your DM structured feedback tied to what actually happened.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/auth/login" className="btn-gold-solid px-10 py-3 text-sm tracking-widest">
@@ -65,24 +65,29 @@ export default function LandingPage() {
               HOW IT WORKS
             </p>
             <h2 className="font-cinzel text-3xl text-center mb-12" style={{ color: '#1a1a1a' }}>
-              Three steps. No disruption.
+              Four steps. No disruption.
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 {
                   n: '01', icon: '✍️',
                   title: 'Log what happened',
-                  body: 'Type a quick entry after each moment. Claude instantly assigns it an icon and category — no interruption to the game.',
+                  body: 'Type a quick entry after each moment at the table. Claude instantly assigns it an icon and category. No interruption to the game.',
                 },
                 {
                   n: '02', icon: '📖',
                   title: 'End the session, get a summary',
-                  body: 'Tap End Session when you\'re done. Claude reads every entry and writes a 3–4 sentence summary of the session.',
+                  body: 'Tap End Session when you\'re done. Claude reads every entry and writes a 3–4 sentence summary — in the voice of what actually happened.',
                 },
                 {
-                  n: '03', icon: '🗂️',
+                  n: '03', icon: '📩',
+                  title: 'Send your DM a debrief',
+                  body: 'Rate combat, roleplay, world and party dynamics. Add what worked and what you\'d love next time. In Character sends your DM a formatted email with your summary, entries and feedback. No DM account needed.',
+                },
+                {
+                  n: '04', icon: '🗂️',
                   title: 'Browse every past session',
-                  body: 'Search across all your entries and sessions. Everything is saved, searchable, and editable — always.',
+                  body: 'Everything is saved and searchable. Come back next week and remember exactly where you left off.',
                 },
               ].map(step => (
                 <div key={step.n} className="card-light card-hover p-7">
@@ -96,7 +101,38 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── Section 2: Pricing ───────────────────────────── */}
+        {/* ── Section 2: DM Debrief ────────────────────────── */}
+        <section className="px-6 py-20" style={{ background: '#f5f0e8' }}>
+          <div className="max-w-2xl mx-auto">
+            <p className="font-cinzel text-xs tracking-widest mb-3" style={{ color: '#c9a84c' }}>THE DM DEBRIEF</p>
+            <h2 className="font-cinzel text-3xl mb-6" style={{ color: '#1a1a1a' }}>
+              Structured feedback your DM actually wants.
+            </h2>
+            <p className="font-garamond text-lg leading-relaxed mb-8" style={{ color: '#4a4a4a' }}>
+              After every session, rate what happened across four categories.
+              Add what worked. Add what you&rsquo;d love to explore next time.
+              In Character sends your DM an email with:
+            </p>
+            <ul className="space-y-3 mb-8">
+              {[
+                'Your session summary, written by Claude',
+                'Every entry you logged, with icons',
+                'Your star ratings with comments',
+                'A direct reply line back to you',
+              ].map(item => (
+                <li key={item} className="flex items-start gap-3">
+                  <span style={{ color: '#c9a84c', flexShrink: 0, marginTop: 4 }}>·</span>
+                  <span className="font-garamond text-lg" style={{ color: '#4a4a4a' }}>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="font-garamond text-lg" style={{ color: '#4a4a4a' }}>
+              No DM account. No app to install. Just an email worth opening.
+            </p>
+          </div>
+        </section>
+
+        {/* ── Section 3: Pricing ───────────────────────────── */}
         <section className="px-6 py-20">
           <div className="max-w-lg mx-auto text-center">
             <p className="font-cinzel text-xs tracking-widest mb-3" style={{ color: '#c9a84c' }}>PRICING</p>
@@ -105,8 +141,9 @@ export default function LandingPage() {
               <ul className="space-y-4 text-left">
                 {[
                   'In Character is free to use',
-                  'You connect your own Anthropic API key',
+                  'Bring your own Anthropic API key',
                   'Sessions cost less than $0.10 in API usage',
+                  'DM feedback emails included',
                 ].map(item => (
                   <li key={item} className="flex items-start gap-3">
                     <span style={{ color: '#c9a84c', flexShrink: 0, marginTop: 2 }}>✦</span>
