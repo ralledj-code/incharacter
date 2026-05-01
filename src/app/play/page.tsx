@@ -19,7 +19,7 @@ export default async function PlayPage() {
 
   // Check setup complete
   const { data: profile, error: profileErr } = await (admin.from('profiles') as AnyRec)
-    .select('character_name, character_note, color_scheme, campaign_name, api_key_encrypted')
+    .select('character_name, character_note, color_scheme, campaign_name, api_key_encrypted, dm_email')
     .eq('id', user.id)
     .single()
 
@@ -72,6 +72,7 @@ export default async function PlayPage() {
       campaignName={profile.campaign_name || null}
       activeSession={activeSession}
       pastSessions={pastSessions}
+      dmEmail={profile.dm_email || null}
     />
   )
 }

@@ -2,7 +2,9 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react'
 import BurgerMenu from '@/components/BurgerMenu'
-import type { Entry, SessionWithEntries } from '@/types/database'
+import { createClient } from '@/lib/supabase/client'
+import SessionFeedback from '@/components/SessionFeedback'
+import type { Entry, SessionWithEntries, FeedbackData } from '@/types/database'
 
 type Tab = 'current' | 'past'
 
@@ -11,6 +13,7 @@ interface PlayAppProps {
   campaignName: string | null
   activeSession: SessionWithEntries | null
   pastSessions: SessionWithEntries[]
+  dmEmail: string | null
 }
 
 function formatTime(iso: string | null | undefined) {
@@ -118,11 +121,12 @@ function EntryCard({
   )
 }
 
-export default function PlayApp({ characterName, campaignName: initCampaignName, activeSession: initActive, pastSessions: initPast }: PlayAppProps) {
+export default function PlayApp({ characterName, campaignName: initCampaignName, activeSession: initActive, pastSessions: initPast, dmEmail: initDmEmail }: PlayAppProps) {
   const [tab, setTab] = useState<Tab>('current')
   const [activeSession, setActiveSession] = useState<SessionWithEntries | null>(initActive)
   const [pastSessions, setPastSessions] = useState<SessionWithEntries[]>(initPast)
   const [campaignName, setCampaignName] = useState<string | null>(initCampaignName)
+  const [dmEmail, setDmEmail] = useState<string | null>(initDmEmail)
 
   // Start session
   const [showStartModal, setShowStartModal] = useState(false)
@@ -138,6 +142,11 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
   const [showEndConfirm, setShowEndConfirm] = useState(false)
   const [endingSession, setEndingSession] = useState(false)
 
+  // Feedback flow
+  const [showFeedback, setShowFeedback] = useState(false)
+  const [feedbackSession, setFeedbackSession] = useState<SessionWithEntries | null>(null)
+  const [sendingFeedback, setSendingFeedback] = useState(false)
+
   // Edit entry
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
@@ -148,6 +157,32 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
 
   const addEntryRef = useRef<HTMLTextAreaElement>(null)
   useEffect(() => { if (showAddEntry) addEntryRef.current?.focus() }, [showAddEntry])
+
+  // Fetch sessions client-side after confirming auth session is live
+  async function fetchSessions() {
+    const res = await fetch('/api/sessions')
+    if (!res.ok) return
+    const data = await res.json()
+    if (data.activeSession !== undefined) setActiveSession(data.activeSession)
+    if (data.pastSessions) setPastSessions(data.pastSessions)
+    if (data.dmEmail !== undefined) setDmEmail(data.dmEmail)
+    if (data.campaignName) setCampaignName(data.campaignName)
+  }
+
+  useEffect(() => {
+    const supabase = createClient()
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      await fetchSessions()
+    }
+    init()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) fetchSessions()
+    })
+    return () => subscription.unsubscribe()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Sort current entries: pinned first, then newest
   const sortedEntries = useMemo(() => {
@@ -239,13 +274,11 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
     if (!activeSession) return
     setEndingSession(true)
     try {
-      const [sumRes] = await Promise.all([
-        fetch('/api/claude/summarise', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId: activeSession.id }),
-        }),
-      ])
+      const sumRes = await fetch('/api/claude/summarise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: activeSession.id }),
+      })
       const sumData = await sumRes.json()
       const summary = sumData.summary || ''
 
@@ -256,14 +289,52 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
       })
       const endData = await endRes.json()
 
-      const ended: SessionWithEntries = { ...activeSession, ended_at: endData.session?.ended_at || new Date().toISOString(), summary }
+      const ended: SessionWithEntries = { ...activeSession, ended_at: endData.session?.ended_at || new Date().toISOString(), summary, feedback: null }
       setPastSessions(prev => [ended, ...prev])
       setActiveSession(null)
       setShowEndConfirm(false)
-      setTab('past')
-      setExpandedId(ended.id)
+
+      if (dmEmail) {
+        setFeedbackSession(ended)
+        setShowFeedback(true)
+      } else {
+        setTab('past')
+        setExpandedId(ended.id)
+      }
     } catch {}
     setEndingSession(false)
+  }
+
+  async function handleFeedbackSubmit(feedback: FeedbackData) {
+    if (!feedbackSession) return
+    setSendingFeedback(true)
+    try {
+      await fetch(`/api/sessions/${feedbackSession.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedback }),
+      })
+      await fetch('/api/session/feedback-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: feedbackSession.id }),
+      })
+    } catch {}
+    setSendingFeedback(false)
+    setShowFeedback(false)
+    const sid = feedbackSession.id
+    setFeedbackSession(null)
+    setTab('past')
+    setExpandedId(sid)
+  }
+
+  function handleFeedbackSkip() {
+    if (!feedbackSession) return
+    const sid = feedbackSession.id
+    setShowFeedback(false)
+    setFeedbackSession(null)
+    setTab('past')
+    setExpandedId(sid)
   }
 
   async function handleTogglePin(entry: Entry, sessionId: string, isPast: boolean) {
@@ -558,6 +629,15 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
             </button>
           </div>
         </div>
+      )}
+
+      {/* ── Feedback flow ── */}
+      {showFeedback && (
+        <SessionFeedback
+          onSubmit={handleFeedbackSubmit}
+          onSkip={handleFeedbackSkip}
+          sending={sendingFeedback}
+        />
       )}
 
       {/* ── End Session Confirm ── */}

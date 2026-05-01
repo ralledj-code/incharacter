@@ -4,7 +4,22 @@ export interface Profile {
   character_note: string | null
   api_key_encrypted: string | null
   color_scheme: string | null
+  dm_email: string | null
   created_at?: string
+}
+
+export interface FeedbackCategory {
+  stars: number
+  comment?: string
+}
+
+export interface FeedbackData {
+  combat: FeedbackCategory
+  roleplay: FeedbackCategory
+  world: FeedbackCategory
+  party: FeedbackCategory
+  whatWorked: string
+  nextTime: string
 }
 
 export interface Session {
@@ -13,6 +28,7 @@ export interface Session {
   character_name: string | null
   title: string | null
   summary: string | null
+  feedback: FeedbackData | null
   created_at: string
   ended_at: string | null
 }
