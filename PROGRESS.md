@@ -2,7 +2,16 @@
 
 ## Status: Complete ✓
 
-Full rebuild completed 2026-04-29.
+Full rebuild completed 2026-04-29. Feedback flow added 2026-05-01.
+
+---
+
+## SQL migrations (run in Supabase SQL editor)
+
+```sql
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS dm_email text;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS feedback jsonb;
+```
 
 ---
 
@@ -87,7 +96,23 @@ CREATE TABLE IF NOT EXISTS entries (
 
 ---
 
+## New pages / components (2026-05-01)
+
+| Path | Description |
+|------|-------------|
+| `src/components/SessionFeedback.tsx` | Six-step full-screen feedback flow after ending a session |
+| `src/emails/SessionFeedbackEmail.tsx` | React Email template sent to DM |
+| `src/app/api/sessions` GET | Returns active+past sessions + dm_email for client hydration |
+| `src/app/api/session/feedback-email` POST | Renders and sends feedback email via Resend |
+
+---
+
 ## Commit log
+
+- `05312a9` FIX: Data not loading on login — await auth before fetch, subscribe to auth changes
+- `ee48187` FEAT: Add DM email field to Settings
+- `e1ebc7e` FEAT: End Session triggers feedback flow when DM email is set
+- `c9f2f64` FEAT: Session feedback email — React Email template + /api/session/feedback-email
 
 - `0d8e721` CLEANUP: Remove DM, tracker, onboarding, campaign code
 - `724804e` REBUILD: Update types, lib, middleware, nav for new schema
