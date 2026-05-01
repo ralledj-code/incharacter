@@ -24,6 +24,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.ended_at !== undefined) updates.ended_at = body.ended_at
     if (body.summary !== undefined) updates.summary = body.summary
     if (body.title !== undefined) updates.title = body.title
+    if (body.feedback !== undefined) updates.feedback = body.feedback
 
     const { data, error } = await (admin.from('sessions') as AnyRec)
       .update(updates)
