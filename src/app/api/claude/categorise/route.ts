@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getDecryptedApiKey } from '@/lib/getApiKey'
+import { decryptApiKey } from '@/lib/keyEncryption'
 import { createClient as rawClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 
@@ -22,8 +22,22 @@ export async function POST(req: NextRequest) {
     console.log('CATEGORISE HIT:', { entryId, hasText: !!text })
     if (!text?.trim()) return NextResponse.json({ error: 'text is required' }, { status: 400 })
 
-    const apiKey = await getDecryptedApiKey(user.id)
-    if (!apiKey) return NextResponse.json({ error: 'No API key configured' }, { status: 400 })
+    const { data: profileData } = await (admin.from('profiles') as AnyRec)
+      .select('api_key_encrypted')
+      .eq('id', user.id)
+      .single()
+    const keyBlob = profileData?.api_key_encrypted as string | null
+    let decryptedKey: string | null = null
+    if (keyBlob) {
+      try { decryptedKey = decryptApiKey(keyBlob) } catch (e) { console.error('[categorise] decrypt failed:', e) }
+    }
+    console.log('KEY DEBUG:', {
+      encrypted_length: keyBlob?.length,
+      decrypted_length: decryptedKey?.length,
+      starts_with: decryptedKey?.substring(0, 10),
+    })
+    if (!decryptedKey) return NextResponse.json({ error: 'No API key configured' }, { status: 400 })
+    const apiKey = decryptedKey
 
     const prompt = `Given this journal entry from a tabletop RPG session, assign:
 1. A single emoji that represents what happened

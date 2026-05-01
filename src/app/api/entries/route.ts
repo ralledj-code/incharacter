@@ -25,11 +25,15 @@ export async function POST(req: NextRequest) {
     console.log('Saving entry:', { text: text.trim(), session_id, player_id: user.id })
     const { data, error } = await (admin.from('entries') as AnyRec)
       .insert({ session_id, player_id: user.id, text: text.trim() })
-      .select()
+      .select('id')
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ entry: data })
+    if (error) {
+      console.error('[entries] insert error:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+    console.log('[entries] inserted id:', data?.id)
+    return NextResponse.json({ id: data?.id })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
   }
