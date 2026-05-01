@@ -11,6 +11,12 @@ import {
 import * as React from 'react'
 import type { FeedbackData } from '@/types/database'
 
+interface SessionEntry {
+  text: string
+  icon: string | null
+  category: string | null
+}
+
 interface Props {
   characterName: string
   campaignName: string
@@ -19,6 +25,7 @@ interface Props {
   playerEmail: string
   playerName: string
   feedback: FeedbackData
+  entries: SessionEntry[]
 }
 
 function Stars({ value }: { value: number }) {
@@ -53,6 +60,7 @@ export function SessionFeedbackEmail({
   summary,
   playerName,
   feedback,
+  entries,
 }: Props) {
   return (
     <Html>
@@ -82,6 +90,19 @@ export function SessionFeedbackEmail({
                   {summary}
                 </Text>
                 <Hr style={{ borderColor: '#e8e4dd', margin: '0 0 24px' }} />
+              </>
+            ) : null}
+
+            {/* Entries */}
+            {entries && entries.length > 0 ? (
+              <>
+                <Text style={labelStyle}>Session Entries</Text>
+                {entries.map((e, i) => (
+                  <Text key={i} style={{ fontSize: 14, color: '#444', lineHeight: 1.5, margin: '0 0 6px' }}>
+                    {i + 1}. {e.icon ? `${e.icon} ` : ''}{e.text}
+                  </Text>
+                ))}
+                <Hr style={{ borderColor: '#e8e4dd', margin: '20px 0 24px' }} />
               </>
             ) : null}
 

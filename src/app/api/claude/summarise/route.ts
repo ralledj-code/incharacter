@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getDecryptedApiKey } from '@/lib/getApiKey'
+import { decryptApiKey } from '@/lib/keyEncryption'
 import { createClient as rawClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 
@@ -22,8 +22,18 @@ export async function POST(req: NextRequest) {
     console.log('[summarise] called with sessionId:', sessionId)
     if (!sessionId) return NextResponse.json({ error: 'sessionId is required' }, { status: 400 })
 
-    const apiKey = await getDecryptedApiKey(user.id)
-    if (!apiKey) return NextResponse.json({ error: 'No API key configured' }, { status: 400 })
+    const { data: profileKeyData } = await (admin.from('profiles') as AnyRec)
+      .select('api_key_encrypted')
+      .eq('id', user.id)
+      .single()
+    const keyBlob = profileKeyData?.api_key_encrypted as string | null
+    let decryptedKey: string | null = null
+    if (keyBlob) {
+      try { decryptedKey = decryptApiKey(keyBlob) } catch (e) { console.error('[summarise] decrypt failed:', e) }
+    }
+    console.log('api key present:', !!decryptedKey, 'length:', decryptedKey?.length)
+    if (!decryptedKey) return NextResponse.json({ error: 'No API key configured' }, { status: 400 })
+    const apiKey = decryptedKey
 
     // Fetch session, entries, and character note
     const [sessionRes, entriesRes, profileRes] = await Promise.all([

@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const { sessionId } = await req.json()
     if (!sessionId) return NextResponse.json({ error: 'sessionId required' }, { status: 400 })
 
-    const [{ data: session }, { data: profile }] = await Promise.all([
+    const [{ data: session }, { data: profile }, { data: entriesRaw }] = await Promise.all([
       (admin.from('sessions') as AnyRec)
         .select('id, title, summary, feedback, created_at')
         .eq('id', sessionId)
@@ -34,6 +34,10 @@ export async function POST(req: NextRequest) {
         .select('character_name, dm_email')
         .eq('id', user.id)
         .single(),
+      (admin.from('entries') as AnyRec)
+        .select('text, icon, category')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true }),
     ])
 
     if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
@@ -49,6 +53,8 @@ export async function POST(req: NextRequest) {
     const sessionDate = new Date(session.created_at).toLocaleDateString([], {
       month: 'short', day: 'numeric', year: 'numeric',
     })
+    const entries: Array<{ text: string; icon: string | null; category: string | null }> =
+      (entriesRaw || []).map((e: AnyRec) => ({ text: e.text, icon: e.icon || null, category: e.category || null }))
 
     const html = await render(
       React.createElement(SessionFeedbackEmail, {
@@ -59,6 +65,7 @@ export async function POST(req: NextRequest) {
         playerEmail,
         playerName: characterName,
         feedback,
+        entries,
       })
     )
 
