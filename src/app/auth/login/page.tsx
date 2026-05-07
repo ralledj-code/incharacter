@@ -4,13 +4,14 @@ import { useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/client'
+import { safeRedirectUrl } from '@/lib/trusted-redirect'
 
 type Tab = 'signin' | 'signup'
 
 function AuthForm() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const next = searchParams.get('next') || '/play'
+  const next = safeRedirectUrl(searchParams.get('next'), '/play')
   const confirmed = searchParams.get('confirmed') === 'true'
 
   const [tab, setTab] = useState<Tab>('signin')

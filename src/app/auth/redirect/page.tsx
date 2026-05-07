@@ -3,21 +3,23 @@
 import { useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { isTrustedRedirect } from '@/lib/trusted-redirect'
 
 function RedirectHandler() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const to = searchParams.get('to') || '/dashboard'
+  const safeTo = isTrustedRedirect(to) ? to : '/dashboard'
 
   useEffect(() => {
     createClient().auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        window.location.href = to
+        window.location.href = safeTo
       } else {
-        router.replace('/auth/login')
+        router.replace(`/auth/login?next=${encodeURIComponent(safeTo)}`)
       }
     })
-  }, [to, router])
+  }, [safeTo, router])
 
   return <div style={{ minHeight: '100vh', background: 'var(--bg)' }} />
 }
