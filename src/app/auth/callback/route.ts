@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   // role comes from emailRedirectTo URL param set at signup time
   const role = searchParams.get('role') || 'player'
   const type = searchParams.get('type') // 'recovery' for password reset
+  const next = searchParams.get('next')
 
   if (!code) {
     return NextResponse.redirect(`${origin}/auth/error?message=${encodeURIComponent('No confirmation code in URL')}`)
@@ -88,9 +89,11 @@ export async function GET(request: NextRequest) {
     if (!campaign) {
       return NextResponse.redirect(`${origin}/setup?role=dm`)
     }
-    return NextResponse.redirect(`${origin}/dm/dashboard`)
+    const dmDest = next?.startsWith('/') ? next : '/dm/dashboard'
+    return NextResponse.redirect(`${origin}${dmDest}`)
   }
 
-  // Player — send to login with confirmed=true so they can sign in
-  return NextResponse.redirect(`${origin}/auth/login?confirmed=true`)
+  // Player — send to next (if provided) or login with confirmed=true
+  const playerDest = next?.startsWith('/') ? next : '/auth/login?confirmed=true'
+  return NextResponse.redirect(`${origin}${playerDest}`)
 }
