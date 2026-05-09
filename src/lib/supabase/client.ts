@@ -17,7 +17,7 @@ export function createClient() {
   if (!handlerAttached) {
     handlerAttached = true
     client.auth.onAuthStateChange((event) => {
-      if (event === 'TOKEN_REFRESH_FAILED') {
+      if ((event as string) === 'TOKEN_REFRESH_FAILED') {
         client.auth.signOut().finally(() => {
           window.location.href = '/auth/login'
         })
