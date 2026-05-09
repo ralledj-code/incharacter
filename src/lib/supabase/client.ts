@@ -1,7 +1,9 @@
 import { createBrowserClient } from '@supabase/ssr'
 
+let handlerAttached = false
+
 export function createClient() {
-  return createBrowserClient(
+  const client = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -11,4 +13,17 @@ export function createClient() {
       },
     }
   )
+
+  if (!handlerAttached) {
+    handlerAttached = true
+    client.auth.onAuthStateChange((event) => {
+      if (event === 'TOKEN_REFRESH_FAILED') {
+        client.auth.signOut().finally(() => {
+          window.location.href = '/auth/login'
+        })
+      }
+    })
+  }
+
+  return client
 }
