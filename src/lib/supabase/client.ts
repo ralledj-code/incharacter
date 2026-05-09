@@ -16,8 +16,9 @@ export function createClient() {
 
   if (!handlerAttached) {
     handlerAttached = true
-    client.auth.onAuthStateChange((event) => {
-      if ((event as string) === 'TOKEN_REFRESH_FAILED') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    client.auth.onAuthStateChange((event: any) => {
+      if (event === 'TOKEN_REFRESH_FAILED') {
         client.auth.signOut().finally(() => {
           window.location.href = '/auth/login'
         })
