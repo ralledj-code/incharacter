@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-const cookieOptions = { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN }
+const cookieOptions = { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN ?? '.incharacter.cloud' }
 
 export async function createClient() {
   const cookieStore = await cookies()
