@@ -5,6 +5,7 @@ export function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      auth: { flowType: 'pkce' },
       cookieOptions: {
         domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN,
       },

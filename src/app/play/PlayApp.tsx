@@ -171,14 +171,8 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
 
   useEffect(() => {
     const supabase = createClient()
-    const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-      await fetchSessions()
-    }
-    init()
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) fetchSessions()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) fetchSessions()
     })
     return () => subscription.unsubscribe()
     // eslint-disable-next-line react-hooks/exhaustive-deps
