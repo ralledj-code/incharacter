@@ -13,9 +13,18 @@ const admin = rawClient(
 // POST — create an entry
 export async function POST(req: NextRequest) {
   try {
+    const cookieNames = req.cookies.getAll().map(c => c.name)
+    console.log('[entries] cookies present:', cookieNames)
+
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      console.error('[entries] getUser failed — error:', authError?.message, '| status:', authError?.status, '| cookies:', cookieNames)
+      return NextResponse.json(
+        { error: 'Unauthorized', detail: authError?.message ?? 'no user', status: authError?.status },
+        { status: 401 }
+      )
+    }
 
     const { session_id, text } = await req.json()
     if (!session_id || !text?.trim()) {
