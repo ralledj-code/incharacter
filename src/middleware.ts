@@ -24,7 +24,9 @@ function isPublic(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  if (pathname.startsWith('/api/')) return NextResponse.next()
+  // Skip auth-related paths before touching Supabase — prevents refresh storms
+  // on the login/reset/callback pages which don't need session checks.
+  if (pathname.startsWith('/api/') || pathname.startsWith('/auth/')) return NextResponse.next()
 
   let response = NextResponse.next({ request })
 
@@ -59,5 +61,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|auth/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }
