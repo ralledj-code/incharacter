@@ -246,7 +246,7 @@ export default function SettingsPage() {
           <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: 12, padding: 28, maxWidth: 380, width: '100%' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 10 }}>Reset character?</p>
             <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 24, lineHeight: 1.5 }}>
-              This will delete all your sessions and entries. Your character name, note, and API key will be kept.
+              This will delete all your sessions, entries, and character note. Your character name and API key will be kept.
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn-danger" onClick={handleResetCharacter} disabled={resetting} style={{ flex: 1 }}>

@@ -21,9 +21,10 @@ export async function POST() {
 
     if (sessErr) return NextResponse.json({ error: sessErr.message }, { status: 500 })
 
+    // Clear character-specific data only — never touch api_key_encrypted
     await supabaseAdmin
       .from('profiles')
-      .update({ campaign_name: null })
+      .update({ campaign_name: null, character_note: null })
       .eq('id', user.id)
 
     return NextResponse.json({ ok: true })

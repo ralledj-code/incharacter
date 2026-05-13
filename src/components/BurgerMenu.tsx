@@ -52,7 +52,7 @@ export default function BurgerMenu({ loggedIn = false, theme = 'dark' }: BurgerM
       <button
         onClick={() => setOpen(v => !v)}
         aria-label={open ? 'Close menu' : 'Open menu'}
-        className="fixed top-4 right-4 z-50 flex md:hidden flex-col justify-center items-center gap-1.5"
+        className="fixed top-4 right-4 z-50 flex flex-col justify-center items-center gap-1.5"
         style={{ width: 44, height: 44, background: btnBg, border: `1px solid ${btnBorder}`, borderRadius: 3 }}
       >
         <motion.span
