@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import BurgerMenu from '@/components/BurgerMenu'
 
+const MASKED_API_KEY = 'sk-ant-••••••••'
+
 const THEMES = [
   { id: 'warm',   label: 'Warm' },
   { id: 'dark',   label: 'Dark' },
@@ -57,6 +59,11 @@ export default function SettingsPage() {
         setColorScheme(profile.color_scheme || 'warm')
         setDmEmail(profile.dm_email || '')
       }
+      const keyRes = await fetch('/api/setup')
+      if (keyRes.ok) {
+        const { hasKey } = await keyRes.json()
+        if (hasKey) setApiKey(MASKED_API_KEY)
+      }
       setLoading(false)
     }
     load()
@@ -78,7 +85,8 @@ export default function SettingsPage() {
         color_scheme: colorScheme,
         dm_email: dmEmail.trim(),
       }
-      if (apiKey.trim()) body.api_key = apiKey.trim()
+      const trimmedKey = apiKey.trim()
+      if (trimmedKey && trimmedKey !== MASKED_API_KEY) body.api_key = trimmedKey
       const res = await fetch('/api/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -86,7 +94,7 @@ export default function SettingsPage() {
       })
       if (res.ok) {
         setSavedMsg('Saved.')
-        setApiKey('')
+        setApiKey(MASKED_API_KEY)
         applyTheme(colorScheme)
         setTimeout(() => setSavedMsg(''), 2000)
       }
@@ -95,7 +103,7 @@ export default function SettingsPage() {
   }
 
   async function testApiKey() {
-    if (!apiKey.trim()) return
+    if (!apiKey.trim() || apiKey.trim() === MASKED_API_KEY) return
     setTestingKey(true)
     setTestResult(null)
     try {
@@ -176,10 +184,11 @@ export default function SettingsPage() {
                 type="password"
                 value={apiKey}
                 onChange={e => { setApiKey(e.target.value); setTestResult(null) }}
-                placeholder="Leave blank to keep current key"
+                placeholder="Paste your Anthropic API key"
+                autoComplete="new-password"
                 style={{ flex: 1 }}
               />
-              <button type="button" onClick={testApiKey} disabled={testingKey || !apiKey.trim()}
+              <button type="button" onClick={testApiKey} disabled={testingKey || !apiKey.trim() || apiKey.trim() === MASKED_API_KEY}
                 className="btn-ghost" style={{ flexShrink: 0, minHeight: 40, padding: '0 12px', fontSize: 12 }}>
                 {testingKey ? '...' : 'Test'}
               </button>

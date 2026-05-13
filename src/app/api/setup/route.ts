@@ -12,6 +12,25 @@ const admin = rawClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+// GET — returns whether the user has an API key saved
+export async function GET() {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { data } = await (admin.from('profiles') as AnyRec)
+      .select('api_key_encrypted')
+      .eq('id', user.id)
+      .single()
+
+    const hasKey = !!(data as { api_key_encrypted?: string } | null)?.api_key_encrypted
+    return NextResponse.json({ hasKey })
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 })
+  }
+}
+
 // POST — save character_name + api_key (and optionally character_note, color_scheme)
 export async function POST(req: NextRequest) {
   try {
