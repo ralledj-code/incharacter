@@ -65,64 +65,78 @@ export async function POST(req: NextRequest) {
 
     if (entries.length === 0) return NextResponse.json({ threads: existingThreads })
 
-    const mostRecentSessionId = entries.length > 0 ? entries[entries.length - 1].session_id : null
-
     const newEntry = newEntryId ? (entries.find((e: AnyRec) => e.id === newEntryId) ?? null) : null
-    const prompt = buildPrompt(characterName, openThreads, entries, retrospective ?? false, newEntry)
 
     const client = new Anthropic({ apiKey: decryptedKey })
-    const message = await client.messages.create({
+
+    // Phase 1 — identify new threads (small call, guaranteed complete)
+    const phase1Raw = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 6000,
-      messages: [{ role: 'user', content: prompt }],
-    })
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: buildPhase1Prompt(characterName, openThreads, entries, newEntry) }],
+    }).then(m => m.content[0].type === 'text' ? m.content[0].text.trim() : '[]')
+    console.log('[threads] phase1 raw:', phase1Raw)
 
-    const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
-    console.log('[threads] raw length:', raw.length)
-    console.log('[threads] raw:', raw.substring(0, 1000))
-
-    console.log('[threads] attempting parse...')
-    let parsed
+    type Phase1Thread = { title: string; entry_id: string; urgency: string }
+    let identified: Phase1Thread[] = []
     try {
-      parsed = extractJSON(raw)
-      console.log('[threads] parsed new_threads count:', parsed.new_threads?.length ?? 0)
-      console.log('[threads] parsed updates count:', parsed.thread_updates?.length ?? 0)
+      const cleaned = phase1Raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+      const start = cleaned.indexOf('[')
+      const end = cleaned.lastIndexOf(']')
+      if (start !== -1 && end !== -1) identified = JSON.parse(cleaned.substring(start, end + 1))
     } catch (e) {
-      console.log('[threads] parse failed:', (e as Error).message)
-      parsed = { new_threads: [], thread_updates: [], resolved_threads: [] }
+      console.log('[threads] phase1 parse failed:', (e as Error).message)
+    }
+    console.log('[threads] identified', identified.length, 'new threads')
+
+    if (identified.length === 0) {
+      const updatedThreads = await fetchThreadsWithUpdates(user.id)
+      return NextResponse.json({ threads: updatedThreads })
     }
 
-    // Insert new threads — validate FK entry_id; insert even if entry not found (use null)
-    const newThreads = parsed.new_threads ?? []
-    console.log('[threads] processing', newThreads.length, 'new threads')
+    // Phase 2 — one-sentence summary per thread, all in parallel (each call tiny)
+    const summaries = await Promise.all(
+      identified.map(async (thread) => {
+        const triggerEntry = entries.find((e: AnyRec) => e.id === thread.entry_id)
+        const entryText = triggerEntry?.text ?? entries[entries.length - 1]?.text ?? ''
+        const msg = await client.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 200,
+          messages: [{
+            role: 'user',
+            content: `Journal entry: "${entryText}"\nThread: "${thread.title}"\n\nWrite one sentence describing the current unresolved situation. Only facts from the entry, no invention. Return only the sentence.`,
+          }],
+        })
+        return msg.content[0].type === 'text' ? msg.content[0].text.trim() : ''
+      })
+    )
+
+    // Insert threads with FK-validated entry IDs
     const insertResults: { error: AnyRec | null }[] = []
-    for (const nt of newThreads) {
-      console.log('[threads] processing thread:', nt.title, 'entry_id:', nt.entry_id)
+    for (let i = 0; i < identified.length; i++) {
+      const nt = identified[i]
+      const summary = summaries[i] || null
+
       let validEntryId: string | null = null
       let validSessionId: string | null = null
-
       if (nt.entry_id) {
         const { data: entryCheck } = await (supabaseAdmin.from('entries') as AnyRec)
           .select('id, session_id')
           .eq('id', nt.entry_id)
           .single()
-        console.log('[threads] entry valid:', !!entryCheck)
         if (entryCheck) {
           validEntryId = entryCheck.id as string
           validSessionId = (entryCheck.session_id as string) ?? null
         } else {
           console.log('[threads] invalid entry_id from Claude:', nt.entry_id)
         }
-      } else {
-        console.log('[threads] entry valid: no entry_id provided')
       }
 
-      console.log('[threads] attempting insert for:', nt.title)
       const { data, error } = await (supabaseAdmin.from('quest_threads') as AnyRec)
         .insert({
           player_id: user.id,
           title: String(nt.title ?? '').slice(0, 200),
-          summary: nt.summary ? String(nt.summary) : null,
+          summary,
           urgency: nt.urgency === 'urgent' ? 'urgent' : 'normal',
           status: 'active',
           first_entry_id: validEntryId,
@@ -130,98 +144,24 @@ export async function POST(req: NextRequest) {
         })
         .select('id')
         .single()
-      console.log('[threads] insert result:', data?.id, error?.message)
+      console.log('[threads] insert:', { title: nt.title, id: data?.id, error: error?.message })
       insertResults.push({ error })
 
-      if (data?.id && nt.first_update) {
-        const { data: newUpdate, error: updateError } = await (supabaseAdmin.from('quest_thread_updates') as AnyRec)
+      if (data?.id && summary) {
+        const { error: updateError } = await (supabaseAdmin.from('quest_thread_updates') as AnyRec)
           .insert({
             thread_id: data.id,
             player_id: user.id,
             session_id: validSessionId,
             entry_id: validEntryId,
-            update_text: String(nt.first_update),
+            update_text: summary,
           })
-          .select('id')
-          .single()
-        console.log('[threads] insert update (new thread):', { id: newUpdate?.id, error: updateError?.message })
+        console.log('[threads] insert update:', { thread: nt.title, error: updateError?.message })
       }
     }
 
     const successCount = insertResults.filter(r => !r.error).length
-    console.log('[threads] successful inserts:', successCount, 'of', newThreads.length)
-
-    // Insert updates for existing threads — validate thread_id and entry_id
-    for (const tu of (parsed.thread_updates ?? [])) {
-      if (!existingThreadIds.has(tu.thread_id)) {
-        console.log('[threads] skipping update - thread_id not found:', tu.thread_id)
-        continue
-      }
-      let validEntryId: string | null = null
-      let validSessionId: string | null = null
-
-      if (tu.entry_id) {
-        const { data: entryCheck } = await (supabaseAdmin.from('entries') as AnyRec)
-          .select('id, session_id')
-          .eq('id', tu.entry_id)
-          .single()
-        if (entryCheck) {
-          validEntryId = entryCheck.id as string
-          validSessionId = (entryCheck.session_id as string) ?? null
-        } else {
-          console.log('[threads] invalid entry_id from Claude (update):', tu.entry_id)
-        }
-      }
-
-      const { data: tuUpdate, error: tuError } = await (supabaseAdmin.from('quest_thread_updates') as AnyRec)
-        .insert({
-          thread_id: tu.thread_id,
-          player_id: user.id,
-          session_id: validSessionId,
-          entry_id: validEntryId,
-          update_text: String(tu.update_text ?? ''),
-        })
-        .select('id')
-        .single()
-      console.log('[threads] insert update (existing thread):', { id: tuUpdate?.id, error: tuError?.message })
-      if (tu.new_summary) {
-        await (supabaseAdmin.from('quest_threads') as AnyRec)
-          .update({
-            summary: String(tu.new_summary),
-            last_updated_session_id: sessionId,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', tu.thread_id)
-          .eq('player_id', user.id)
-      }
-    }
-
-    // Resolve threads
-    for (const rt of (parsed.resolved_threads ?? [])) {
-      if (!existingThreadIds.has(rt.thread_id)) continue
-      const rtInsertData = {
-        thread_id: rt.thread_id,
-        player_id: user.id,
-        session_id: mostRecentSessionId,
-        entry_id: null,
-        update_text: String(rt.update_text ?? 'Resolved.'),
-      }
-      console.log('[threads] using admin client:', !!supabaseAdmin, 'insert data:', JSON.stringify(rtInsertData).substring(0, 200))
-      const { data: rtUpdate, error: rtError } = await (supabaseAdmin.from('quest_thread_updates') as AnyRec)
-        .insert(rtInsertData)
-        .select('id')
-        .single()
-      console.log('[threads] insert error full:', JSON.stringify(rtError))
-      console.log('[threads] insert quest_thread_updates (resolve):', { id: rtUpdate?.id, error: rtError?.message })
-      await (supabaseAdmin.from('quest_threads') as AnyRec)
-        .update({
-          status: 'resolved',
-          resolved_session_id: mostRecentSessionId,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', rt.thread_id)
-        .eq('player_id', user.id)
-    }
+    console.log('[threads] successful inserts:', successCount, 'of', identified.length)
 
     if (retrospective && successCount > 0) {
       await (supabaseAdmin.from('profiles') as AnyRec)
@@ -279,112 +219,42 @@ async function fetchThreadsWithUpdates(userId: string): Promise<AnyRec[]> {
   return threads.map((t: AnyRec) => ({ ...t, updates: byThread.get(t.id) ?? [] }))
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractJSON(raw: string): { new_threads: AnyRec[]; thread_updates: AnyRec[]; resolved_threads: AnyRec[] } {
-  const empty = { new_threads: [], thread_updates: [], resolved_threads: [] }
-  let cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-  const start = cleaned.indexOf('{')
-  const end = cleaned.lastIndexOf('}')
-  if (start === -1 || end === -1) {
-    console.error('[threads] No JSON object found in raw:', raw.substring(0, 500))
-    return empty
-  }
-  cleaned = cleaned.substring(start, end + 1)
-  try {
-    return JSON.parse(cleaned)
-  } catch {
-    // Attempt to salvage truncated JSON by closing open structures
-    let opens = 0
-    for (const char of cleaned) {
-      if (char === '[' || char === '{') opens++
-      if (char === ']' || char === '}') opens--
-    }
-    let salvaged = cleaned
-    while (opens > 0) {
-      salvaged += '}'
-      opens--
-    }
-    try {
-      return JSON.parse(salvaged)
-    } catch {
-      console.error('[threads] JSON salvage failed, raw:', raw.substring(0, 500))
-      return empty
-    }
-  }
-}
-
-function buildPrompt(
+function buildPhase1Prompt(
   characterName: string | null,
-  threads: AnyRec[],
+  openThreads: AnyRec[],
   entries: AnyRec[],
-  retrospective: boolean,
   newEntry: AnyRec | null,
 ): string {
-  const threadsBlock = threads.length > 0
-    ? threads.map((t: AnyRec) => `[${t.id}] "${t.title}" — ${t.summary ?? ''}`).join('\n')
-    : 'None yet.'
+  const existingBlock = openThreads.length > 0
+    ? openThreads.map((t: AnyRec) => `- "${t.title}"`).join('\n')
+    : 'None.'
 
   const entriesBlock = entries.map((e: AnyRec) => {
     const sessionTitle = (e.sessions as AnyRec | null)?.title ?? 'Session'
-    return `[${e.id}] ${sessionTitle} @ ${e.created_at}: ${e.icon ?? ''} ${e.category ?? ''}: ${e.text}`
+    return `[${e.id}] ${sessionTitle}: ${e.text}`
   }).join('\n')
 
-  return `You are maintaining a quest thread log for a tabletop RPG player's journal.
-Think exactly like Baldur's Gate 3's quest journal -- threads open when something
-unresolved is introduced, update when new information develops them,
-and close when they are clearly resolved.
-
+  return `You are a quest journal tracker for a tabletop RPG.
 Character: ${characterName ?? 'Unknown'}
 
-EXISTING OPEN THREADS:
-${threadsBlock}
+EXISTING OPEN THREADS (do not recreate these):
+${existingBlock}
 
-ALL JOURNAL ENTRIES (chronological):
+ALL JOURNAL ENTRIES:
 ${entriesBlock}
 
-${newEntry
-    ? `NEWLY ADDED ENTRY:\n[${newEntry.id}] ${newEntry.text}`
-    : 'This is a retrospective analysis of all entries.'
-  }
+${newEntry ? `NEWLY ADDED ENTRY:\n[${newEntry.id}] ${newEntry.text}` : 'This is a retrospective analysis.'}
 
-STRICT RULES:
-- Only create threads for things explicitly written in the entries
-- Never infer or assume things not written by the player
-- Thread titles must use words or names from the entries
-- Summaries must reflect only what was logged
-- Connect entries only when the connection is explicit or strongly implied
-- When in doubt, do not create a thread -- a missed thread is better than an invented one
-- Return a maximum of 6 new threads. Choose only the most significant unresolved situations.
-- Maximum 6 updates per call -- prioritise most significant
+List only NEW unresolved situations not already tracked above.
+Return ONLY a JSON array, nothing else:
+[
+  { "title": "short name using words from the entries", "entry_id": "exact uuid from the list above", "urgency": "urgent|normal" }
+]
 
-URGENCY:
-- urgent: immediate danger, active threat, time pressure
-- normal: important but not immediate
-
-Return ONLY valid JSON, no markdown, no explanation:
-{
-  "new_threads": [
-    {
-      "title": "short thread name using words from the entries",
-      "summary": "one sentence current state, only what is written",
-      "urgency": "urgent|normal",
-      "entry_id": "exact uuid of the entry that opens this thread",
-      "first_update": "one sentence describing what opened this thread"
-    }
-  ],
-  "thread_updates": [
-    {
-      "thread_id": "exact uuid of existing thread",
-      "update_text": "one sentence describing what changed, only from entries",
-      "entry_id": "exact uuid of the triggering entry",
-      "new_summary": "updated one sentence current state"
-    }
-  ],
-  "resolved_threads": [
-    {
-      "thread_id": "exact uuid of existing thread",
-      "update_text": "one sentence describing how it resolved, only from entries"
-    }
-  ]
-}`
+Rules:
+- Only situations explicitly written in the entries, never invent
+- Add "urgency": "urgent" if immediate danger or active threat, otherwise "normal"
+- entry_id must be an exact UUID copied from the entries list above
+- Maximum 8 threads. If nothing new, return [].
+Return ONLY the JSON array.`
 }
