@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const { newEntryId, retrospective } = body as { newEntryId?: string; retrospective?: boolean }
 
     const { data: profileData } = await (supabaseAdmin.from('profiles') as AnyRec)
-      .select('api_key_encrypted, character_name')
+      .select('api_key_encrypted, character_name, threads_grouped')
       .eq('id', user.id)
       .single()
     const keyBlob = profileData?.api_key_encrypted as string | null
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
     }
     if (!decryptedKey) return NextResponse.json({ error: 'No API key configured' }, { status: 400 })
     const characterName = (profileData?.character_name as string | null) ?? null
+    const threadsGrouped: boolean = profileData?.threads_grouped ?? false
 
     const existingThreads = await fetchThreadsWithUpdates(user.id)
     const openThreads = existingThreads.filter((t: AnyRec) => t.status === 'active')
@@ -89,79 +90,157 @@ export async function POST(req: NextRequest) {
     }
     console.log('[threads] identified', identified.length, 'new threads')
 
-    if (identified.length === 0) {
-      const updatedThreads = await fetchThreadsWithUpdates(user.id)
-      return NextResponse.json({ threads: updatedThreads })
-    }
-
-    // Phase 2 — one-sentence summary per thread, all in parallel (each call tiny)
-    const summaries = await Promise.all(
-      identified.map(async (thread) => {
-        const triggerEntry = entries.find((e: AnyRec) => e.id === thread.entry_id)
-        const entryText = triggerEntry?.text ?? entries[entries.length - 1]?.text ?? ''
-        const msg = await client.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 200,
-          messages: [{
-            role: 'user',
-            content: `Journal entry: "${entryText}"\nThread: "${thread.title}"\n\nWrite one sentence describing the current unresolved situation. Only facts from the entry, no invention. Return only the sentence.`,
-          }],
+    // Phase 2 — one-sentence summary per thread, all in parallel (only if new threads found)
+    let successCount = 0
+    if (identified.length > 0) {
+      const summaries = await Promise.all(
+        identified.map(async (thread) => {
+          const triggerEntry = entries.find((e: AnyRec) => e.id === thread.entry_id)
+          const entryText = triggerEntry?.text ?? entries[entries.length - 1]?.text ?? ''
+          const msg = await client.messages.create({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 200,
+            messages: [{
+              role: 'user',
+              content: `Journal entry: "${entryText}"\nThread: "${thread.title}"\n\nWrite one sentence describing the current unresolved situation. Only facts from the entry, no invention. Return only the sentence.`,
+            }],
+          })
+          return msg.content[0].type === 'text' ? msg.content[0].text.trim() : ''
         })
-        return msg.content[0].type === 'text' ? msg.content[0].text.trim() : ''
-      })
-    )
+      )
 
-    // Insert threads with FK-validated entry IDs
-    const insertResults: { error: AnyRec | null }[] = []
-    for (let i = 0; i < identified.length; i++) {
-      const nt = identified[i]
-      const summary = summaries[i] || null
+      // Insert threads with FK-validated entry IDs
+      const insertResults: { error: AnyRec | null }[] = []
+      for (let i = 0; i < identified.length; i++) {
+        const nt = identified[i]
+        const summary = summaries[i] || null
 
-      let validEntryId: string | null = null
-      let validSessionId: string | null = null
-      if (nt.entry_id) {
-        const { data: entryCheck } = await (supabaseAdmin.from('entries') as AnyRec)
-          .select('id, session_id')
-          .eq('id', nt.entry_id)
+        let validEntryId: string | null = null
+        let validSessionId: string | null = null
+        if (nt.entry_id) {
+          const { data: entryCheck } = await (supabaseAdmin.from('entries') as AnyRec)
+            .select('id, session_id')
+            .eq('id', nt.entry_id)
+            .single()
+          if (entryCheck) {
+            validEntryId = entryCheck.id as string
+            validSessionId = (entryCheck.session_id as string) ?? null
+          } else {
+            console.log('[threads] invalid entry_id from Claude:', nt.entry_id)
+          }
+        }
+
+        const { data, error } = await (supabaseAdmin.from('quest_threads') as AnyRec)
+          .insert({
+            player_id: user.id,
+            title: String(nt.title ?? '').slice(0, 200),
+            summary,
+            urgency: nt.urgency === 'urgent' ? 'urgent' : 'normal',
+            status: 'active',
+            first_entry_id: validEntryId,
+            first_seen_session_id: validSessionId,
+          })
+          .select('id')
           .single()
-        if (entryCheck) {
-          validEntryId = entryCheck.id as string
-          validSessionId = (entryCheck.session_id as string) ?? null
-        } else {
-          console.log('[threads] invalid entry_id from Claude:', nt.entry_id)
+        console.log('[threads] insert:', { title: nt.title, id: data?.id, error: error?.message })
+        insertResults.push({ error })
+
+        if (data?.id && summary) {
+          const { error: updateError } = await (supabaseAdmin.from('quest_thread_updates') as AnyRec)
+            .insert({
+              thread_id: data.id,
+              player_id: user.id,
+              session_id: validSessionId,
+              entry_id: validEntryId,
+              update_text: summary,
+            })
+          console.log('[threads] insert update:', { thread: nt.title, error: updateError?.message })
         }
       }
 
-      const { data, error } = await (supabaseAdmin.from('quest_threads') as AnyRec)
-        .insert({
-          player_id: user.id,
-          title: String(nt.title ?? '').slice(0, 200),
-          summary,
-          urgency: nt.urgency === 'urgent' ? 'urgent' : 'normal',
-          status: 'active',
-          first_entry_id: validEntryId,
-          first_seen_session_id: validSessionId,
-        })
-        .select('id')
-        .single()
-      console.log('[threads] insert:', { title: nt.title, id: data?.id, error: error?.message })
-      insertResults.push({ error })
-
-      if (data?.id && summary) {
-        const { error: updateError } = await (supabaseAdmin.from('quest_thread_updates') as AnyRec)
-          .insert({
-            thread_id: data.id,
-            player_id: user.id,
-            session_id: validSessionId,
-            entry_id: validEntryId,
-            update_text: summary,
-          })
-        console.log('[threads] insert update:', { thread: nt.title, error: updateError?.message })
-      }
+      successCount = insertResults.filter(r => !r.error).length
+      console.log('[threads] successful inserts:', successCount, 'of', identified.length)
     }
 
-    const successCount = insertResults.filter(r => !r.error).length
-    console.log('[threads] successful inserts:', successCount, 'of', identified.length)
+    // Phase 3 — group related threads + find updates to existing threads
+    const allCurrentThreads = await fetchThreadsWithUpdates(user.id)
+    const activeForPhase3 = allCurrentThreads.filter((t: AnyRec) => t.status === 'active')
+
+    if (activeForPhase3.length > 0) {
+      const doGrouping = retrospective === true && !threadsGrouped
+      const phase3Raw = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: buildPhase3Prompt(activeForPhase3, entries, doGrouping) }],
+      }).then(m => m.content[0].type === 'text' ? m.content[0].text.trim() : '{}')
+      console.log('[threads] phase3 raw:', phase3Raw.substring(0, 500))
+
+      type Phase3Result = { parent_groups?: AnyRec[]; thread_updates?: AnyRec[] }
+      let phase3: Phase3Result = {}
+      try {
+        const cleaned = phase3Raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+        const start = cleaned.indexOf('{')
+        const end = cleaned.lastIndexOf('}')
+        if (start !== -1 && end !== -1) phase3 = JSON.parse(cleaned.substring(start, end + 1))
+      } catch (e) {
+        console.log('[threads] phase3 parse failed:', (e as Error).message)
+      }
+
+      const validThreadIds = new Set(activeForPhase3.map((t: AnyRec) => t.id))
+      const validEntryIds = new Set(entries.map((e: AnyRec) => e.id))
+
+      // Insert parent groups (retrospective only, first time)
+      if (doGrouping) {
+        for (const group of (phase3.parent_groups ?? [])) {
+          const childIds: string[] = (group.child_thread_ids ?? []).filter((id: string) => validThreadIds.has(id))
+          if (childIds.length < 2) continue
+          const { data: parent } = await (supabaseAdmin.from('quest_threads') as AnyRec)
+            .insert({
+              player_id: user.id,
+              title: String(group.parent_title ?? '').slice(0, 200),
+              summary: group.parent_summary ? String(group.parent_summary) : null,
+              urgency: group.parent_urgency === 'urgent' ? 'urgent' : 'normal',
+              status: 'active',
+              parent_thread_id: null,
+            })
+            .select('id')
+            .single()
+          if (parent?.id) {
+            for (const childId of childIds) {
+              await (supabaseAdmin.from('quest_threads') as AnyRec)
+                .update({ parent_thread_id: parent.id })
+                .eq('id', childId)
+                .eq('player_id', user.id)
+            }
+            console.log('[threads] parent group:', group.parent_title, 'children:', childIds.length)
+          }
+        }
+        await (supabaseAdmin.from('profiles') as AnyRec)
+          .update({ threads_grouped: true })
+          .eq('id', user.id)
+      }
+
+      // Insert thread updates (always)
+      for (const tu of (phase3.thread_updates ?? [])) {
+        if (!validThreadIds.has(tu.thread_id)) continue
+        if (tu.entry_id && !validEntryIds.has(tu.entry_id)) continue
+        const entry = tu.entry_id ? entries.find((e: AnyRec) => e.id === tu.entry_id) : null
+        const sessionId = (entry as AnyRec | null)?.session_id ?? null
+        await (supabaseAdmin.from('quest_thread_updates') as AnyRec)
+          .insert({
+            thread_id: tu.thread_id,
+            player_id: user.id,
+            session_id: sessionId,
+            entry_id: tu.entry_id ?? null,
+            update_text: String(tu.update_text ?? ''),
+          })
+        await (supabaseAdmin.from('quest_threads') as AnyRec)
+          .update({ summary: String(tu.update_text ?? ''), updated_at: new Date().toISOString() })
+          .eq('id', tu.thread_id)
+          .eq('player_id', user.id)
+        console.log('[threads] phase3 update thread:', tu.thread_id)
+      }
+    }
 
     if (retrospective && successCount > 0) {
       await (supabaseAdmin.from('profiles') as AnyRec)
@@ -217,6 +296,65 @@ async function fetchThreadsWithUpdates(userId: string): Promise<AnyRec[]> {
   }
 
   return threads.map((t: AnyRec) => ({ ...t, updates: byThread.get(t.id) ?? [] }))
+}
+
+function buildPhase3Prompt(
+  threads: AnyRec[],
+  entries: AnyRec[],
+  includeGrouping: boolean,
+): string {
+  const threadsBlock = threads
+    .map((t: AnyRec) => `[${t.id}] "${t.title}" — ${t.summary ?? ''}`)
+    .join('\n')
+  const entriesBlock = entries
+    .map((e: AnyRec) => `[${e.id}] ${e.text}`)
+    .join('\n')
+
+  return `You are organising quest threads for a tabletop RPG journal.
+
+ALL CURRENT THREADS:
+${threadsBlock}
+
+ALL JOURNAL ENTRIES:
+${entriesBlock}
+
+Tasks:
+${includeGrouping
+    ? `1. GROUP related threads under parent quests where they share a common antagonist, location, cause or goal. A parent thread represents the overarching quest. Children are existing threads that belong to it.
+2. IDENTIFY which journal entries UPDATE existing threads (new developments, not new threads).`
+    : `1. IDENTIFY which journal entries UPDATE existing threads (new developments, not new threads).`
+  }
+
+Return ONLY valid JSON:
+{
+  "parent_groups": [${includeGrouping ? `
+    {
+      "parent_title": "overarching quest name",
+      "parent_summary": "one sentence overarching goal",
+      "parent_urgency": "urgent|normal",
+      "child_thread_ids": ["existing-thread-uuid-1", "existing-thread-uuid-2"]
+    }` : ''}
+  ],
+  "thread_updates": [
+    {
+      "thread_id": "existing-thread-uuid",
+      "entry_id": "entry-uuid-that-updates-it",
+      "update_text": "one sentence what changed"
+    }
+  ]
+}
+
+RULES:
+${includeGrouping
+    ? `- Only group threads clearly related by the same quest or antagonist
+- Parent titles must be broad quest names (e.g. "The Hunt for Severin")
+- A group must have at least 2 children`
+    : `- Leave parent_groups as an empty array []`
+  }
+- Only reference thread IDs and entry IDs from the lists above
+- Thread updates must reference entries that genuinely develop that thread
+- When in doubt, do not group and do not update
+Return ONLY valid JSON, no markdown.`
 }
 
 function buildPhase1Prompt(
