@@ -84,8 +84,10 @@ export async function POST(req: NextRequest) {
 
     // Insert new threads — validate FK entry_id; insert even if entry not found (use null)
     const newThreads = parsed.new_threads ?? []
+    console.log('[threads] processing', newThreads.length, 'new threads')
     const insertResults: { error: AnyRec | null }[] = []
     for (const nt of newThreads) {
+      console.log('[threads] processing thread:', nt.title, 'entry_id:', nt.entry_id)
       let validEntryId: string | null = null
       let validSessionId: string | null = null
 
@@ -94,14 +96,18 @@ export async function POST(req: NextRequest) {
           .select('id, session_id')
           .eq('id', nt.entry_id)
           .single()
+        console.log('[threads] entry valid:', !!entryCheck)
         if (entryCheck) {
           validEntryId = entryCheck.id as string
           validSessionId = (entryCheck.session_id as string) ?? null
         } else {
           console.log('[threads] invalid entry_id from Claude:', nt.entry_id)
         }
+      } else {
+        console.log('[threads] entry valid: no entry_id provided')
       }
 
+      console.log('[threads] attempting insert for:', nt.title)
       const { data, error } = await (supabaseAdmin.from('quest_threads') as AnyRec)
         .insert({
           player_id: user.id,
@@ -114,7 +120,7 @@ export async function POST(req: NextRequest) {
         })
         .select('id')
         .single()
-      console.log('[threads] insert:', { title: nt.title, id: data?.id, error: error?.message })
+      console.log('[threads] insert result:', data?.id, error?.message)
       insertResults.push({ error })
 
       if (data?.id && nt.first_update) {
