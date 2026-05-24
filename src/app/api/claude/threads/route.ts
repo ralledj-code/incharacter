@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     const { newEntryId, retrospective } = body as { newEntryId?: string; retrospective?: boolean }
 
     const { data: profileData } = await (supabaseAdmin.from('profiles') as AnyRec)
-      .select('api_key_encrypted, character_name, threads_grouped')
+      .select('api_key_encrypted, character_name')
       .eq('id', user.id)
       .single()
     const keyBlob = profileData?.api_key_encrypted as string | null
@@ -55,7 +55,6 @@ export async function POST(req: NextRequest) {
     }
     if (!decryptedKey) return NextResponse.json({ error: 'No API key configured' }, { status: 400 })
     const characterName = (profileData?.character_name as string | null) ?? null
-    const threadsGrouped: boolean = profileData?.threads_grouped ?? false
 
     const existingThreads = await fetchThreadsWithUpdates(user.id)
     const openThreads = existingThreads.filter((t: AnyRec) => t.status === 'active')
