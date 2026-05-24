@@ -4,9 +4,9 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import BurgerMenu from '@/components/BurgerMenu'
 import { createClient } from '@/lib/supabase/client'
 import SessionFeedback from '@/components/SessionFeedback'
-import type { Entry, SessionWithEntries, FeedbackData } from '@/types/database'
+import type { Entry, SessionWithEntries, FeedbackData, QuestThreadWithUpdates } from '@/types/database'
 
-type Tab = 'current' | 'past'
+type Tab = 'current' | 'past' | 'threads'
 
 interface PlayAppProps {
   characterName: string
@@ -155,6 +155,13 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
+  // Quest threads
+  const [threads, setThreads] = useState<QuestThreadWithUpdates[] | null>(null)
+  const [threadsLoading, setThreadsLoading] = useState(false)
+  const [threadsAnalysing, setThreadsAnalysing] = useState(false)
+  const [expandedThreadIds, setExpandedThreadIds] = useState<Set<string>>(new Set())
+  const [resolvedExpanded, setResolvedExpanded] = useState(false)
+
   const addEntryRef = useRef<HTMLTextAreaElement>(null)
   useEffect(() => { if (showAddEntry) addEntryRef.current?.focus() }, [showAddEntry])
 
@@ -273,6 +280,14 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
           } : null)
         })
         .catch(() => {})
+
+      // 3. Update quest threads in background — invalidate so tab refetches on next visit
+      fetch('/api/claude/threads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newEntryId: entryId }),
+      }).catch(() => {})
+      setThreads(null)
     } catch {}
     setSavingEntry(false)
   }
