@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
 
     const existingThreads = await fetchThreadsWithUpdates(user.id)
     const openThreads = existingThreads.filter((t: AnyRec) => t.status === 'active')
-    const existingThreadIds = new Set(existingThreads.map((t: AnyRec) => t.id))
+
 
     // Always fetch full entry history — cross-session connections require complete context
     const { data: entryData } = await (supabaseAdmin.from('entries') as AnyRec)
