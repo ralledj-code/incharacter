@@ -162,7 +162,6 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
   const [threadsAnalysing, setThreadsAnalysing] = useState(false)
   const [expandedThreadIds, setExpandedThreadIds] = useState<Set<string>>(new Set())
   const [resolvedExpanded, setResolvedExpanded] = useState(false)
-  const [_threadsGrouped, setThreadsGrouped] = useState<boolean | null>(null)
   const [threadsGrouping, setThreadsGrouping] = useState(false)
 
   const addEntryRef = useRef<HTMLTextAreaElement>(null)
@@ -408,7 +407,6 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
       const initialised: boolean = data.threadsInitialised ?? false
       const grouped: boolean = data.threadsGrouped ?? false
       setThreadsInitialised(initialised)
-      setThreadsGrouped(grouped)
       if (!initialised) {
         setThreadsLoading(false)
         setThreadsAnalysing(true)
@@ -421,7 +419,6 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
         const refreshRes = await fetch('/api/claude/threads')
         const refreshData = await refreshRes.json()
         setThreads(refreshData.threads ?? [])
-        setThreadsGrouped(refreshData.threadsGrouped ?? false)
         setThreadsAnalysing(false)
       } else if (!grouped) {
         setThreads(existing)
@@ -432,7 +429,6 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ retrospective: true }),
         })
-        setThreadsGrouped(true)
         const refreshRes = await fetch('/api/claude/threads')
         const refreshData = await refreshRes.json()
         setThreads(refreshData.threads ?? [])
