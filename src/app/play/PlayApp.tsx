@@ -157,6 +157,7 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
 
   // Quest threads
   const [threads, setThreads] = useState<QuestThreadWithUpdates[] | null>(null)
+  const [threadsInitialised, setThreadsInitialised] = useState<boolean | null>(null)
   const [threadsLoading, setThreadsLoading] = useState(false)
   const [threadsAnalysing, setThreadsAnalysing] = useState(false)
   const [expandedThreadIds, setExpandedThreadIds] = useState<Set<string>>(new Set())
@@ -281,13 +282,16 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
         })
         .catch(() => {})
 
-      // 3. Update quest threads in background — invalidate so tab refetches on next visit
+      // 3. Update quest threads in background; refresh display when done
       fetch('/api/claude/threads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newEntryId: entryId }),
-      }).catch(() => {})
-      setThreads(null)
+      })
+        .then(() => fetch('/api/claude/threads'))
+        .then(r => r.json())
+        .then(data => setThreads(data.threads ?? []))
+        .catch(() => {})
     } catch {}
     setSavingEntry(false)
   }
@@ -399,16 +403,20 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
       const res = await fetch('/api/claude/threads')
       const data = await res.json()
       const existing: QuestThreadWithUpdates[] = data.threads ?? []
-      if (existing.length === 0) {
+      const initialised: boolean = data.threadsInitialised ?? false
+      setThreadsInitialised(initialised)
+      if (!initialised) {
         setThreadsLoading(false)
         setThreadsAnalysing(true)
-        const retroRes = await fetch('/api/claude/threads', {
+        await fetch('/api/claude/threads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ retrospective: true }),
         })
-        const retroData = await retroRes.json()
-        setThreads(retroData.threads ?? [])
+        setThreadsInitialised(true)
+        const refreshRes = await fetch('/api/claude/threads')
+        const refreshData = await refreshRes.json()
+        setThreads(refreshData.threads ?? [])
         setThreadsAnalysing(false)
       } else {
         setThreads(existing)
@@ -659,7 +667,9 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
                     <div style={{ height: 1, background: 'var(--border)', marginBottom: 8 }} />
 
                     {activeThreads.length === 0 ? (
-                      <p style={{ fontSize: 13, color: 'var(--text3)', paddingTop: 8 }}>No active threads.</p>
+                      <p style={{ fontSize: 13, color: 'var(--text3)', paddingTop: 8 }}>
+                        {threadsInitialised ? "No threads found yet — they’ll appear as you log more entries." : 'No active threads.'}
+                      </p>
                     ) : (
                       activeThreads.map(thread => {
                         const isExpanded = expandedThreadIds.has(thread.id)

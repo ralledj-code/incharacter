@@ -17,8 +17,15 @@ export async function GET() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { data: profileData } = await (admin.from('profiles') as AnyRec)
+      .select('threads_initialised')
+      .eq('id', user.id)
+      .single()
+    const threadsInitialised: boolean = profileData?.threads_initialised ?? false
+
     const threads = await fetchThreadsWithUpdates(user.id)
-    return NextResponse.json({ threads })
+    return NextResponse.json({ threads, threadsInitialised })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
   }
@@ -151,6 +158,12 @@ export async function POST(req: NextRequest) {
         })
         .eq('id', rt.thread_id)
         .eq('player_id', user.id)
+    }
+
+    if (retrospective) {
+      await (admin.from('profiles') as AnyRec)
+        .update({ threads_initialised: true })
+        .eq('id', user.id)
     }
 
     const updatedThreads = await fetchThreadsWithUpdates(user.id)
