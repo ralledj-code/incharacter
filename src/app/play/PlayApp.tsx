@@ -393,6 +393,49 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
     await fetch(`/api/entries/${entry.id}`, { method: 'DELETE' })
   }
 
+  async function loadThreads() {
+    setThreadsLoading(true)
+    try {
+      const res = await fetch('/api/claude/threads')
+      const data = await res.json()
+      const existing: QuestThreadWithUpdates[] = data.threads ?? []
+      if (existing.length === 0) {
+        setThreadsLoading(false)
+        setThreadsAnalysing(true)
+        const retroRes = await fetch('/api/claude/threads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ retrospective: true }),
+        })
+        const retroData = await retroRes.json()
+        setThreads(retroData.threads ?? [])
+        setThreadsAnalysing(false)
+      } else {
+        setThreads(existing)
+        setThreadsLoading(false)
+      }
+    } catch {
+      setThreadsLoading(false)
+      setThreadsAnalysing(false)
+      setThreads([])
+    }
+  }
+
+  useEffect(() => {
+    if (tab !== 'threads' || threads !== null) return
+    loadThreads()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, threads])
+
+  function toggleThread(id: string) {
+    setExpandedThreadIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   // Sort past session entries: pinned first, then newest
   function sortSessionEntries(entries: Entry[]) {
     return [...entries].sort((a, b) => {
@@ -421,6 +464,9 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
         </button>
         <button className={`tab-item ${tab === 'past' ? 'active' : ''}`} onClick={() => setTab('past')}>
           Past Sessions
+        </button>
+        <button className={`tab-item ${tab === 'threads' ? 'active' : ''}`} onClick={() => setTab('threads')}>
+          Threads
         </button>
       </div>
 
@@ -581,6 +627,168 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
             )}
           </div>
         )}
+        {/* ── Threads tab ── */}
+        {tab === 'threads' && (
+          <div style={{ padding: '12px 16px 0' }}>
+            {(threadsLoading || threadsAnalysing) ? (
+              <div style={{ textAlign: 'center', paddingTop: 60 }}>
+                <p style={{ fontSize: 14, color: 'var(--text3)' }}>
+                  {threadsAnalysing ? 'Analysing your journal...' : 'Loading...'}
+                </p>
+              </div>
+            ) : (() => {
+              const allThreads = threads ?? []
+              const activeThreads = allThreads
+                .filter(t => t.status === 'active')
+                .sort((a, b) => {
+                  if (a.urgency !== b.urgency) return a.urgency === 'urgent' ? -1 : 1
+                  return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+                })
+              const resolvedThreads = allThreads.filter(t => t.status === 'resolved')
+
+              return (
+                <>
+                  {/* ACTIVE section */}
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <span className="label-caps" style={{ fontSize: 10 }}>Active</span>
+                      <span style={{ fontSize: 11, color: 'var(--text3)', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 10, padding: '1px 8px' }}>
+                        {activeThreads.length}
+                      </span>
+                    </div>
+                    <div style={{ height: 1, background: 'var(--border)', marginBottom: 8 }} />
+
+                    {activeThreads.length === 0 ? (
+                      <p style={{ fontSize: 13, color: 'var(--text3)', paddingTop: 8 }}>No active threads.</p>
+                    ) : (
+                      activeThreads.map(thread => {
+                        const isExpanded = expandedThreadIds.has(thread.id)
+                        const lastUpdate = thread.updates[thread.updates.length - 1]
+                        const sessionName = (lastUpdate?.sessions as { title?: string | null } | null)?.title ?? null
+                        const displayTime = lastUpdate?.created_at ?? thread.created_at
+                        const dot = thread.urgency === 'urgent' ? '🔴' : '🟡'
+                        return (
+                          <div key={thread.id} style={{ marginBottom: 2 }}>
+                            <button
+                              onClick={() => toggleThread(thread.id)}
+                              style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0', minHeight: 'auto' }}
+                            >
+                              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{dot}</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--accent)', marginBottom: 2, lineHeight: 1.3 }}>
+                                    {thread.title}
+                                  </p>
+                                  <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 3, lineHeight: 1.4 }}>
+                                    {thread.summary}
+                                  </p>
+                                  <p style={{ fontSize: 11, color: 'var(--text3)' }}>
+                                    {sessionName ? `${sessionName} · ` : ''}{formatTime(displayTime)}
+                                  </p>
+                                </div>
+                                <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0, marginTop: 2 }}>
+                                  {isExpanded ? '▲' : '▼'}
+                                </span>
+                              </div>
+                            </button>
+
+                            {isExpanded && thread.updates.length > 0 && (
+                              <div style={{ paddingLeft: 24, paddingBottom: 10, display: 'flex', flexDirection: 'column', gap: 0 }}>
+                                {thread.updates.map(update => (
+                                  <div key={update.id} style={{ padding: '7px 0', borderTop: '0.5px solid var(--border)' }}>
+                                    <p style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 3 }}>
+                                      {(update.sessions as { title?: string | null } | null)?.title ?? 'Unknown Session'} · {formatTime(update.created_at)}
+                                    </p>
+                                    <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.4 }}>
+                                      {update.update_text}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+
+                  {/* RESOLVED section */}
+                  <div style={{ marginBottom: 20 }}>
+                    <button
+                      onClick={() => setResolvedExpanded(v => !v)}
+                      style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 6px', minHeight: 'auto' }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="label-caps" style={{ fontSize: 10 }}>Resolved</span>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <span style={{ fontSize: 11, color: 'var(--text3)', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 10, padding: '1px 8px' }}>
+                            {resolvedThreads.length}
+                          </span>
+                          <span style={{ fontSize: 11, color: 'var(--text3)' }}>{resolvedExpanded ? '▲' : '▼'}</span>
+                        </div>
+                      </div>
+                    </button>
+                    <div style={{ height: 1, background: 'var(--border)', marginBottom: resolvedExpanded ? 8 : 0 }} />
+
+                    {resolvedExpanded && (
+                      resolvedThreads.length === 0 ? (
+                        <p style={{ fontSize: 13, color: 'var(--text3)', paddingTop: 8 }}>No resolved threads.</p>
+                      ) : (
+                        resolvedThreads.map(thread => {
+                          const isExpanded = expandedThreadIds.has(thread.id)
+                          const lastUpdate = thread.updates[thread.updates.length - 1]
+                          const resolvedSessionName = (lastUpdate?.sessions as { title?: string | null } | null)?.title ?? null
+                          return (
+                            <div key={thread.id} style={{ marginBottom: 2 }}>
+                              <button
+                                onClick={() => toggleThread(thread.id)}
+                                style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0', minHeight: 'auto' }}
+                              >
+                                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                                  <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>✅</span>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', marginBottom: 2, lineHeight: 1.3 }}>
+                                      {thread.title}
+                                    </p>
+                                    <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 3, lineHeight: 1.4 }}>
+                                      {thread.summary}
+                                    </p>
+                                    <p style={{ fontSize: 11, color: 'var(--text3)' }}>
+                                      Resolved{resolvedSessionName ? ` · ${resolvedSessionName}` : ''}
+                                    </p>
+                                  </div>
+                                  <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0, marginTop: 2 }}>
+                                    {isExpanded ? '▲' : '▼'}
+                                  </span>
+                                </div>
+                              </button>
+
+                              {isExpanded && thread.updates.length > 0 && (
+                                <div style={{ paddingLeft: 24, paddingBottom: 10, display: 'flex', flexDirection: 'column', gap: 0 }}>
+                                  {thread.updates.map(update => (
+                                    <div key={update.id} style={{ padding: '7px 0', borderTop: '0.5px solid var(--border)' }}>
+                                      <p style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 3 }}>
+                                        {(update.sessions as { title?: string | null } | null)?.title ?? 'Unknown Session'} · {formatTime(update.created_at)}
+                                      </p>
+                                      <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.4 }}>
+                                        {update.update_text}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })
+                      )
+                    )}
+                  </div>
+                </>
+              )
+            })()}
+          </div>
+        )}
+
       </div>
 
       {/* Add Entry button — only when session is active and on current tab */}

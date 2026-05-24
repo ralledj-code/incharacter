@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     }
     const mostRecentSessionId = entries.length > 0 ? entries[entries.length - 1].session_id : null
 
-    const newEntry = newEntryId ? entries.find((e: AnyRec) => e.id === newEntryId) : null
+    const newEntry = newEntryId ? (entries.find((e: AnyRec) => e.id === newEntryId) ?? null) : null
     const prompt = buildPrompt(characterName, openThreads, entries, retrospective ?? false, newEntry)
 
     const client = new Anthropic({ apiKey: decryptedKey })
