@@ -49,30 +49,12 @@ export async function POST(req: NextRequest) {
     const openThreads = existingThreads.filter((t: AnyRec) => t.status === 'active')
     const existingThreadIds = new Set(existingThreads.map((t: AnyRec) => t.id))
 
-    // Fetch entries for context
-    let entries: AnyRec[] = []
-    if (retrospective) {
-      const { data } = await (admin.from('entries') as AnyRec)
-        .select('id, text, icon, category, created_at, session_id, sessions(title)')
-        .eq('player_id', user.id)
-        .order('created_at', { ascending: true })
-      entries = data ?? []
-    } else {
-      const { data: recentSessions } = await (admin.from('sessions') as AnyRec)
-        .select('id')
-        .eq('player_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(3)
-      const sessionIds = (recentSessions ?? []).map((s: AnyRec) => s.id)
-      if (sessionIds.length > 0) {
-        const { data } = await (admin.from('entries') as AnyRec)
-          .select('id, text, icon, category, created_at, session_id, sessions(title)')
-          .eq('player_id', user.id)
-          .in('session_id', sessionIds)
-          .order('created_at', { ascending: true })
-        entries = data ?? []
-      }
-    }
+    // Always fetch full entry history — cross-session connections require complete context
+    const { data: entryData } = await (admin.from('entries') as AnyRec)
+      .select('id, text, icon, category, created_at, session_id, sessions(title)')
+      .eq('player_id', user.id)
+      .order('created_at', { ascending: true })
+    const entries: AnyRec[] = entryData ?? []
 
     if (entries.length === 0) return NextResponse.json({ threads: existingThreads })
 
@@ -91,23 +73,14 @@ export async function POST(req: NextRequest) {
     const client = new Anthropic({ apiKey: decryptedKey })
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
+      max_tokens: 4000,
       messages: [{ role: 'user', content: prompt }],
     })
 
     const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
-    console.log('[threads] raw:', raw.slice(0, 300))
+    console.log('[threads] raw:', raw.substring(0, 1000))
 
-    let parsed: { new_threads: AnyRec[]; thread_updates: AnyRec[]; resolved_threads: AnyRec[] } =
-      { new_threads: [], thread_updates: [], resolved_threads: [] }
-
-    try {
-      const clean = raw.replace(/```json|```/g, '').trim()
-      parsed = JSON.parse(clean)
-    } catch {
-      console.log('[threads] JSON parse failed, returning existing threads')
-      return NextResponse.json({ threads: existingThreads })
-    }
+    const parsed = extractJSON(raw)
 
     // Insert new threads
     for (const nt of (parsed.new_threads ?? [])) {
@@ -209,6 +182,40 @@ async function fetchThreadsWithUpdates(userId: string): Promise<AnyRec[]> {
   return threads.map((t: AnyRec) => ({ ...t, updates: byThread.get(t.id) ?? [] }))
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractJSON(raw: string): { new_threads: AnyRec[]; thread_updates: AnyRec[]; resolved_threads: AnyRec[] } {
+  const empty = { new_threads: [], thread_updates: [], resolved_threads: [] }
+  let cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+  const start = cleaned.indexOf('{')
+  const end = cleaned.lastIndexOf('}')
+  if (start === -1 || end === -1) {
+    console.error('[threads] No JSON object found in raw:', raw.substring(0, 500))
+    return empty
+  }
+  cleaned = cleaned.substring(start, end + 1)
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    // Attempt to salvage truncated JSON by closing open structures
+    let opens = 0
+    for (const char of cleaned) {
+      if (char === '[' || char === '{') opens++
+      if (char === ']' || char === '}') opens--
+    }
+    let salvaged = cleaned
+    while (opens > 0) {
+      salvaged += '}'
+      opens--
+    }
+    try {
+      return JSON.parse(salvaged)
+    } catch {
+      console.error('[threads] JSON salvage failed, raw:', raw.substring(0, 500))
+      return empty
+    }
+  }
+}
+
 function buildPrompt(
   characterName: string | null,
   threads: AnyRec[],
@@ -217,65 +224,69 @@ function buildPrompt(
   newEntry: AnyRec | null,
 ): string {
   const threadsBlock = threads.length > 0
-    ? threads.map((t: AnyRec) => `- [${t.id}] ${t.title}: ${t.summary ?? ''}`).join('\n')
-    : 'None'
+    ? threads.map((t: AnyRec) => `[${t.id}] "${t.title}" — ${t.summary ?? ''}`).join('\n')
+    : 'None yet.'
 
   const entriesBlock = entries.map((e: AnyRec) => {
-    const sessionTitle = (e.sessions as AnyRec | null)?.title ?? 'Unknown Session'
-    const ts = new Date(e.created_at).toLocaleString()
-    return `[${sessionTitle} ${ts}] ${e.icon ?? '📝'} ${e.category ?? 'Note'}: ${e.text}`
+    const sessionTitle = (e.sessions as AnyRec | null)?.title ?? 'Session'
+    return `[${e.id}] ${sessionTitle} @ ${e.created_at}: ${e.icon ?? ''} ${e.category ?? ''}: ${e.text}`
   }).join('\n')
 
-  return `You are analysing a tabletop RPG player's session journal to maintain a quest thread log.
+  return `You are maintaining a quest thread log for a tabletop RPG player's journal.
+Think exactly like Baldur's Gate 3's quest journal -- threads open when something
+unresolved is introduced, update when new information develops them,
+and close when they are clearly resolved.
 
-Character name: ${characterName ?? 'Unknown'}
+Character: ${characterName ?? 'Unknown'}
 
-Existing open threads:
+EXISTING OPEN THREADS:
 ${threadsBlock}
 
-Journal entries (oldest first):
+ALL JOURNAL ENTRIES (chronological):
 ${entriesBlock}
 
-${retrospective
-    ? 'This is a retrospective analysis. Identify all threads across the full history.'
-    : `New entry just logged: ${newEntry?.text ?? ''}`
+${newEntry
+    ? `NEWLY ADDED ENTRY:\n[${newEntry.id}] ${newEntry.text}`
+    : 'This is a retrospective analysis of all entries.'
   }
 
-Identify:
-1. NEW threads opened by these entries — unresolved situations, unanswered questions, introduced characters or locations with unclear significance
-2. UPDATES to existing threads — new information that develops a known thread
-3. RESOLVED threads — entries that clearly close a thread
+STRICT RULES:
+- Only create threads for things explicitly written in the entries
+- Never infer or assume things not written by the player
+- Thread titles must use words or names from the entries
+- Summaries must reflect only what was logged
+- Connect entries only when the connection is explicit or strongly implied
+- When in doubt, do not create a thread -- a missed thread is better than an invented one
+- Maximum 8 new threads and 8 updates per call -- prioritise most significant
 
-Urgency rules:
-- urgent: immediate danger, time pressure, active threat
+URGENCY:
+- urgent: immediate danger, active threat, time pressure
 - normal: important but not immediate
 
-Return ONLY valid JSON:
+Return ONLY valid JSON, no markdown, no explanation:
 {
   "new_threads": [
     {
-      "title": "short thread name",
-      "summary": "one sentence current state",
+      "title": "short thread name using words from the entries",
+      "summary": "one sentence current state, only what is written",
       "urgency": "urgent|normal",
-      "entry_id": "uuid of the triggering entry",
+      "entry_id": "exact uuid of the entry that opens this thread",
       "first_update": "one sentence describing what opened this thread"
     }
   ],
   "thread_updates": [
     {
-      "thread_id": "existing thread uuid",
-      "update_text": "one sentence describing what changed",
-      "entry_id": "uuid of the triggering entry",
+      "thread_id": "exact uuid of existing thread",
+      "update_text": "one sentence describing what changed, only from entries",
+      "entry_id": "exact uuid of the triggering entry",
       "new_summary": "updated one sentence current state"
     }
   ],
   "resolved_threads": [
     {
-      "thread_id": "existing thread uuid",
-      "update_text": "one sentence describing how it resolved"
+      "thread_id": "exact uuid of existing thread",
+      "update_text": "one sentence describing how it resolved, only from entries"
     }
   ]
-}
-
-No explanation. No markdown. Only JSON.`
+}`
 }
