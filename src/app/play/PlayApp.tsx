@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useMemo, useRef, useEffect } from 'react'
 import BurgerMenu from '@/components/BurgerMenu'
@@ -671,34 +671,34 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
           </div>
         )}
         {/* ── Threads tab ── */}
-        {tab === ‘threads’ && (
-          <div style={{ padding: ‘12px 16px 0’ }}>
+        {tab === 'threads' && (
+          <div style={{ padding: '12px 16px 0' }}>
             {(threadsLoading || threadsAnalysing || threadsGrouping) ? (
-              <div style={{ textAlign: ‘center’, paddingTop: 60 }}>
-                <p style={{ fontSize: 14, color: ‘var(--text3)’ }}>
-                  {threadsAnalysing ? ‘Analysing your journal...’ : threadsGrouping ? ‘Grouping quest threads...’ : ‘Loading...’}
+              <div style={{ textAlign: 'center', paddingTop: 60 }}>
+                <p style={{ fontSize: 14, color: 'var(--text3)' }}>
+                  {threadsAnalysing ? 'Analysing your journal...' : threadsGrouping ? 'Grouping quest threads...' : 'Loading...'}
                 </p>
               </div>
             ) : (() => {
               const allThreads = threads ?? []
               const activeThreads = allThreads
-                .filter(t => t.status === ‘active’)
+                .filter(t => t.status === 'active')
                 .sort((a, b) => {
-                  const aUrgent = a.urgency === ‘urgent’ || a.children.some(c => c.urgency === ‘urgent’)
-                  const bUrgent = b.urgency === ‘urgent’ || b.children.some(c => c.urgency === ‘urgent’)
+                  const aUrgent = a.urgency === 'urgent' || a.children.some(c => c.urgency === 'urgent')
+                  const bUrgent = b.urgency === 'urgent' || b.children.some(c => c.urgency === 'urgent')
                   if (aUrgent !== bUrgent) return aUrgent ? -1 : 1
                   return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
                 })
-              const resolvedThreads = allThreads.filter(t => t.status === ‘resolved’)
+              const resolvedThreads = allThreads.filter(t => t.status === 'resolved')
 
               const renderUpdates = (t: QuestThreadWithUpdates) => expandedThreadIds.has(t.id) && t.updates.length > 0 ? (
-                <div style={{ paddingLeft: 24, paddingBottom: 8, display: ‘flex’, flexDirection: ‘column’, gap: 0 }}>
+                <div style={{ paddingLeft: 24, paddingBottom: 8, display: 'flex', flexDirection: 'column', gap: 0 }}>
                   {t.updates.map(u => (
-                    <div key={u.id} style={{ padding: ‘7px 0’, borderTop: ‘0.5px solid var(--border)’ }}>
-                      <p style={{ fontSize: 11, color: ‘var(--text3)’, marginBottom: 3 }}>
-                        {(u.sessions as { title?: string | null } | null)?.title ?? ‘Unknown Session’} · {formatTime(u.created_at)}
+                    <div key={u.id} style={{ padding: '7px 0', borderTop: '0.5px solid var(--border)' }}>
+                      <p style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 3 }}>
+                        {(u.sessions as { title?: string | null } | null)?.title ?? 'Unknown Session'} · {formatTime(u.created_at)}
                       </p>
-                      <p style={{ fontSize: 13, color: ‘var(--text2)’, lineHeight: 1.4 }}>{u.update_text}</p>
+                      <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.4 }}>{u.update_text}</p>
                     </div>
                   ))}
                 </div>
@@ -708,62 +708,62 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
                 <>
                   {/* ACTIVE section */}
                   <div style={{ marginBottom: 20 }}>
-                    <div style={{ display: ‘flex’, justifyContent: ‘space-between’, alignItems: ‘center’, marginBottom: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                       <span className="label-caps" style={{ fontSize: 10 }}>Active</span>
-                      <span style={{ fontSize: 11, color: ‘var(--text3)’, background: ‘var(--surface)’, border: ‘0.5px solid var(--border)’, borderRadius: 10, padding: ‘1px 8px’ }}>
+                      <span style={{ fontSize: 11, color: 'var(--text3)', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 10, padding: '1px 8px' }}>
                         {activeThreads.length}
                       </span>
                     </div>
-                    <div style={{ height: 1, background: ‘var(--border)’, marginBottom: 8 }} />
+                    <div style={{ height: 1, background: 'var(--border)', marginBottom: 8 }} />
 
                     {activeThreads.length === 0 ? (
-                      <p style={{ fontSize: 13, color: ‘var(--text3)’, paddingTop: 8 }}>
-                        {threadsInitialised ? ‘No active threads.’ : "No threads found yet — they’ll appear as you log more entries."}
+                      <p style={{ fontSize: 13, color: 'var(--text3)', paddingTop: 8 }}>
+                        {threadsInitialised ? 'No active threads.' : "No threads found yet — they'll appear as you log more entries."}
                       </p>
                     ) : (
                       activeThreads.map(thread => {
                         const isExpanded = expandedThreadIds.has(thread.id)
-                        const activeChildren = thread.children.filter(c => c.status !== ‘dismissed’)
+                        const activeChildren = thread.children.filter(c => c.status !== 'dismissed')
                         const hasChildren = activeChildren.length > 0
-                        const dot = thread.urgency === ‘urgent’ ? ‘🔴’ : ‘🟡’
+                        const dot = thread.urgency === 'urgent' ? '🔴' : '🟡'
                         const lastUpdate = thread.updates[thread.updates.length - 1]
                         const sessionName = (lastUpdate?.sessions as { title?: string | null } | null)?.title ?? null
                         const displayTime = lastUpdate?.created_at ?? thread.created_at
 
                         return (
                           <div key={thread.id} style={{ marginBottom: hasChildren ? 6 : 2 }}>
-                            <div style={{ display: ‘flex’, alignItems: ‘flex-start’ }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start' }}>
                               <button
                                 onClick={() => toggleThread(thread.id)}
-                                style={{ flex: 1, textAlign: ‘left’, background: ‘none’, border: ‘none’, cursor: ‘pointer’, padding: ‘10px 0’, minHeight: ‘auto’ }}
+                                style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0', minHeight: 'auto' }}
                               >
-                                <div style={{ display: ‘flex’, gap: 10, alignItems: ‘flex-start’ }}>
+                                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                                   <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>
-                                    {hasChildren ? ‘◆’ : dot}
+                                    {hasChildren ? '◆' : dot}
                                   </span>
                                   <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ fontSize: 14, fontWeight: 500, color: hasChildren ? ‘var(--text)’ : ‘var(--accent)’, marginBottom: 2, lineHeight: 1.3 }}>
+                                    <p style={{ fontSize: 14, fontWeight: 500, color: hasChildren ? 'var(--text)' : 'var(--accent)', marginBottom: 2, lineHeight: 1.3 }}>
                                       {thread.title}
                                     </p>
                                     {thread.summary && (
-                                      <p style={{ fontSize: 13, color: ‘var(--text2)’, marginBottom: 3, lineHeight: 1.4 }}>
+                                      <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 3, lineHeight: 1.4 }}>
                                         {thread.summary}
                                       </p>
                                     )}
                                     {!hasChildren && (
-                                      <p style={{ fontSize: 11, color: ‘var(--text3)’ }}>
-                                        {sessionName ? `${sessionName} · ` : ‘’}{formatTime(displayTime)}
+                                      <p style={{ fontSize: 11, color: 'var(--text3)' }}>
+                                        {sessionName ? `${sessionName} · ` : ''}{formatTime(displayTime)}
                                       </p>
                                     )}
                                   </div>
-                                  <span style={{ fontSize: 11, color: ‘var(--text3)’, flexShrink: 0, marginTop: 2 }}>
-                                    {isExpanded ? ‘▲’ : ‘▼’}
+                                  <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0, marginTop: 2 }}>
+                                    {isExpanded ? '▲' : '▼'}
                                   </span>
                                 </div>
                               </button>
                               <button
                                 onClick={() => dismissThread(thread.id)}
-                                style={{ background: ‘none’, border: ‘none’, cursor: ‘pointer’, padding: ‘12px 0 12px 10px’, fontSize: 11, color: ‘var(--text3)’, flexShrink: 0 }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '12px 0 12px 10px', fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}
                               >
                                 Dismiss
                               </button>
@@ -774,37 +774,37 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
 
                             {/* Parent thread: children + own updates */}
                             {hasChildren && isExpanded && (
-                              <div style={{ marginTop: 2, marginBottom: 6, display: ‘flex’, flexDirection: ‘column’, gap: 2 }}>
+                              <div style={{ marginTop: 2, marginBottom: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 {activeChildren.map(child => {
                                   const childExpanded = expandedThreadIds.has(child.id)
-                                  const childDot = child.urgency === ‘urgent’ ? ‘🔴’ : ‘🟡’
+                                  const childDot = child.urgency === 'urgent' ? '🔴' : '🟡'
                                   return (
-                                    <div key={child.id} style={{ borderLeft: ‘2px solid var(--border)’, paddingLeft: 12 }}>
-                                      <div style={{ display: ‘flex’, alignItems: ‘flex-start’ }}>
+                                    <div key={child.id} style={{ borderLeft: '2px solid var(--border)', paddingLeft: 12 }}>
+                                      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
                                         <button
                                           onClick={() => toggleThread(child.id)}
-                                          style={{ flex: 1, textAlign: ‘left’, background: ‘none’, border: ‘none’, cursor: ‘pointer’, padding: ‘8px 0’, minHeight: ‘auto’ }}
+                                          style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', minHeight: 'auto' }}
                                         >
-                                          <div style={{ display: ‘flex’, gap: 8, alignItems: ‘flex-start’ }}>
+                                          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                                             <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>{childDot}</span>
                                             <div style={{ flex: 1, minWidth: 0 }}>
-                                              <p style={{ fontSize: 13, fontWeight: 500, color: ‘var(--accent)’, marginBottom: 2, lineHeight: 1.3 }}>
+                                              <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--accent)', marginBottom: 2, lineHeight: 1.3 }}>
                                                 {child.title}
                                               </p>
                                               {child.summary && (
-                                                <p style={{ fontSize: 12, color: ‘var(--text2)’, lineHeight: 1.4 }}>
+                                                <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.4 }}>
                                                   {child.summary}
                                                 </p>
                                               )}
                                             </div>
-                                            <span style={{ fontSize: 11, color: ‘var(--text3)’, flexShrink: 0, marginTop: 2 }}>
-                                              {childExpanded ? ‘▲’ : ‘▼’}
+                                            <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0, marginTop: 2 }}>
+                                              {childExpanded ? '▲' : '▼'}
                                             </span>
                                           </div>
                                         </button>
                                         <button
                                           onClick={() => dismissThread(child.id)}
-                                          style={{ background: ‘none’, border: ‘none’, cursor: ‘pointer’, padding: ‘10px 0 10px 10px’, fontSize: 11, color: ‘var(--text3)’, flexShrink: 0 }}
+                                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0 10px 10px', fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}
                                         >
                                           Dismiss
                                         </button>
@@ -825,23 +825,23 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
                   <div style={{ marginBottom: 20 }}>
                     <button
                       onClick={() => setResolvedExpanded(v => !v)}
-                      style={{ width: ‘100%’, background: ‘none’, border: ‘none’, cursor: ‘pointer’, padding: ‘0 0 6px’, minHeight: ‘auto’ }}
+                      style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 6px', minHeight: 'auto' }}
                     >
-                      <div style={{ display: ‘flex’, justifyContent: ‘space-between’, alignItems: ‘center’ }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span className="label-caps" style={{ fontSize: 10 }}>Resolved</span>
-                        <div style={{ display: ‘flex’, gap: 8, alignItems: ‘center’ }}>
-                          <span style={{ fontSize: 11, color: ‘var(--text3)’, background: ‘var(--surface)’, border: ‘0.5px solid var(--border)’, borderRadius: 10, padding: ‘1px 8px’ }}>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <span style={{ fontSize: 11, color: 'var(--text3)', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 10, padding: '1px 8px' }}>
                             {resolvedThreads.length}
                           </span>
-                          <span style={{ fontSize: 11, color: ‘var(--text3)’ }}>{resolvedExpanded ? ‘▲’ : ‘▼’}</span>
+                          <span style={{ fontSize: 11, color: 'var(--text3)' }}>{resolvedExpanded ? '▲' : '▼'}</span>
                         </div>
                       </div>
                     </button>
-                    <div style={{ height: 1, background: ‘var(--border)’, marginBottom: resolvedExpanded ? 8 : 0 }} />
+                    <div style={{ height: 1, background: 'var(--border)', marginBottom: resolvedExpanded ? 8 : 0 }} />
 
                     {resolvedExpanded && (
                       resolvedThreads.length === 0 ? (
-                        <p style={{ fontSize: 13, color: ‘var(--text3)’, paddingTop: 8 }}>No resolved threads.</p>
+                        <p style={{ fontSize: 13, color: 'var(--text3)', paddingTop: 8 }}>No resolved threads.</p>
                       ) : (
                         resolvedThreads.map(thread => {
                           const isExpanded = expandedThreadIds.has(thread.id)
@@ -851,25 +851,25 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
                             <div key={thread.id} style={{ marginBottom: 2 }}>
                               <button
                                 onClick={() => toggleThread(thread.id)}
-                                style={{ width: ‘100%’, textAlign: ‘left’, background: ‘none’, border: ‘none’, cursor: ‘pointer’, padding: ‘10px 0’, minHeight: ‘auto’ }}
+                                style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0', minHeight: 'auto' }}
                               >
-                                <div style={{ display: ‘flex’, gap: 10, alignItems: ‘flex-start’ }}>
+                                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                                   <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>✅</span>
                                   <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ fontSize: 14, fontWeight: 500, color: ‘var(--text)’, marginBottom: 2, lineHeight: 1.3 }}>
+                                    <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', marginBottom: 2, lineHeight: 1.3 }}>
                                       {thread.title}
                                     </p>
                                     {thread.summary && (
-                                      <p style={{ fontSize: 13, color: ‘var(--text2)’, marginBottom: 3, lineHeight: 1.4 }}>
+                                      <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 3, lineHeight: 1.4 }}>
                                         {thread.summary}
                                       </p>
                                     )}
-                                    <p style={{ fontSize: 11, color: ‘var(--text3)’ }}>
-                                      Resolved{resolvedSessionName ? ` · ${resolvedSessionName}` : ‘’}
+                                    <p style={{ fontSize: 11, color: 'var(--text3)' }}>
+                                      Resolved{resolvedSessionName ? ` · ${resolvedSessionName}` : ''}
                                     </p>
                                   </div>
-                                  <span style={{ fontSize: 11, color: ‘var(--text3)’, flexShrink: 0, marginTop: 2 }}>
-                                    {isExpanded ? ‘▲’ : ‘▼’}
+                                  <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0, marginTop: 2 }}>
+                                    {isExpanded ? '▲' : '▼'}
                                   </span>
                                 </div>
                               </button>
