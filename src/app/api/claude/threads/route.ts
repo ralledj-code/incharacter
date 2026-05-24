@@ -26,7 +26,10 @@ export async function GET() {
     const threadsGrouped: boolean = profileData?.threads_grouped ?? false
 
     const threads = await fetchThreadsHierarchy(user.id)
-    return NextResponse.json({ threads, threadsInitialised, threadsGrouped })
+    // If threads exist but none are grouped yet, override the flag so the UI re-triggers grouping
+    const hasAnyParent = threads.some((t: AnyRec) => (t.children ?? []).length > 0)
+    const effectiveGrouped = threads.length === 0 ? threadsGrouped : (threadsGrouped && hasAnyParent)
+    return NextResponse.json({ threads, threadsInitialised, threadsGrouped: effectiveGrouped })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
   }
@@ -98,12 +101,13 @@ export async function POST(req: NextRequest) {
         identified.map(async (thread) => {
           const triggerEntry = entries.find((e: AnyRec) => e.id === thread.entry_id)
           const entryText = triggerEntry?.text ?? entries[entries.length - 1]?.text ?? ''
+          const entryTs = triggerEntry ? new Date(triggerEntry.created_at).toLocaleString() : ''
           const msg = await client.messages.create({
             model: 'claude-haiku-4-5-20251001',
             max_tokens: 200,
             messages: [{
               role: 'user',
-              content: `Journal entry: "${entryText}"\nThread: "${thread.title}"\n\nWrite one sentence describing the current unresolved situation. Only facts from the entry, no invention. Return only the sentence.`,
+              content: `Character: ${characterName ?? 'Unknown'}\nJournal entry [${entryTs}]: "${entryText}"\nThread: "${thread.title}"\n\nWrite one sentence describing the current unresolved situation for ${characterName ?? 'the character'}. Only facts from the entry, no invention. Return only the sentence.`,
             }],
           })
           return msg.content[0].type === 'text' ? msg.content[0].text.trim() : ''
@@ -168,11 +172,11 @@ export async function POST(req: NextRequest) {
     const activeForPhase3 = allCurrentThreads.filter((t: AnyRec) => t.status === 'active')
 
     if (activeForPhase3.length > 0) {
-      const doGrouping = retrospective === true && !threadsGrouped
+      const doGrouping = retrospective === true
       const phase3Raw = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1500,
-        messages: [{ role: 'user', content: buildPhase3Prompt(activeForPhase3, entries, doGrouping) }],
+        messages: [{ role: 'user', content: buildPhase3Prompt(characterName, activeForPhase3, entries, doGrouping) }],
       }).then(m => m.content[0].type === 'text' ? m.content[0].text.trim() : '{}')
       console.log('[threads] phase3 raw:', phase3Raw.substring(0, 500))
 
@@ -190,7 +194,8 @@ export async function POST(req: NextRequest) {
       const validThreadIds = new Set(activeForPhase3.map((t: AnyRec) => t.id))
       const validEntryIds = new Set(entries.map((e: AnyRec) => e.id))
 
-      // Insert parent groups (retrospective only, first time)
+      // Insert parent groups (retrospective only)
+      let parentCreated = false
       if (doGrouping) {
         for (const group of (phase3.parent_groups ?? [])) {
           const childIds: string[] = (group.child_thread_ids ?? []).filter((id: string) => validThreadIds.has(id))
@@ -207,6 +212,7 @@ export async function POST(req: NextRequest) {
             .select('id')
             .single()
           if (parent?.id) {
+            parentCreated = true
             for (const childId of childIds) {
               await (supabaseAdmin.from('quest_threads') as AnyRec)
                 .update({ parent_thread_id: parent.id })
@@ -216,9 +222,11 @@ export async function POST(req: NextRequest) {
             console.log('[threads] parent group:', group.parent_title, 'children:', childIds.length)
           }
         }
-        await (supabaseAdmin.from('profiles') as AnyRec)
-          .update({ threads_grouped: true })
-          .eq('id', user.id)
+        if (parentCreated) {
+          await (supabaseAdmin.from('profiles') as AnyRec)
+            .update({ threads_grouped: true })
+            .eq('id', user.id)
+        }
       }
 
       // Insert thread updates (always)
@@ -326,42 +334,72 @@ async function fetchThreadsHierarchy(userId: string): Promise<AnyRec[]> {
 }
 
 function buildPhase3Prompt(
+  characterName: string | null,
   threads: AnyRec[],
   entries: AnyRec[],
   includeGrouping: boolean,
 ): string {
+  const name = characterName ?? 'Unknown'
   const threadsBlock = threads
     .map((t: AnyRec) => `[${t.id}] "${t.title}" — ${t.summary ?? ''}`)
     .join('\n')
   const entriesBlock = entries
-    .map((e: AnyRec) => `[${e.id}] ${e.text}`)
+    .map((e: AnyRec) => `[${e.id}] [${new Date(e.created_at).toLocaleString()}] ${e.text}`)
     .join('\n')
 
-  return `You are organising quest threads for a tabletop RPG journal.
+  if (includeGrouping) {
+    return `You are organising quest threads for ${name}'s RPG journal into a BG3-style quest hierarchy.
 
-ALL CURRENT THREADS:
+EXISTING THREADS:
 ${threadsBlock}
 
-ALL JOURNAL ENTRIES:
+ALL JOURNAL ENTRIES (chronological):
 ${entriesBlock}
 
-Tasks:
-${includeGrouping
-    ? `1. GROUP related threads under parent quests where they share a common antagonist, location, cause or goal. A parent thread represents the overarching quest. Children are existing threads that belong to it.
-2. IDENTIFY which journal entries UPDATE existing threads (new developments, not new threads).`
-    : `1. IDENTIFY which journal entries UPDATE existing threads (new developments, not new threads).`
-  }
+Group threads that share the same antagonist, location, cause or overarching goal into parent quests.
+Think like BG3: "The Hunt for Severin" would be a parent with child threads about his location,
+the assassin he sent, and the black blood plot he's behind.
+
+RULES:
+- Create parent threads only when 2+ children clearly belong together
+- Parent title should be the overarching quest name
+- Only use thread IDs from the list above
+- ${name} is the player character, not "narrator" or "character"
 
 Return ONLY valid JSON:
 {
-  "parent_groups": [${includeGrouping ? `
+  "parent_groups": [
     {
-      "parent_title": "overarching quest name",
+      "parent_title": "The Hunt for Severin",
       "parent_summary": "one sentence overarching goal",
       "parent_urgency": "urgent|normal",
-      "child_thread_ids": ["existing-thread-uuid-1", "existing-thread-uuid-2"]
-    }` : ''}
+      "child_thread_ids": ["uuid1", "uuid2", "uuid3"]
+    }
   ],
+  "thread_updates": []
+}
+Return ONLY valid JSON, no markdown.`
+  }
+
+  return `You are updating quest threads for ${name}'s RPG journal.
+
+EXISTING THREADS:
+${threadsBlock}
+
+ALL JOURNAL ENTRIES (chronological):
+${entriesBlock}
+
+IDENTIFY which journal entries UPDATE existing threads (new developments, not new threads).
+
+RULES:
+- Only reference thread IDs and entry IDs from the lists above
+- Thread updates must reference entries that genuinely develop that thread
+- ${name} is the player character, not "narrator" or "character"
+- When in doubt, do not update
+
+Return ONLY valid JSON:
+{
+  "parent_groups": [],
   "thread_updates": [
     {
       "thread_id": "existing-thread-uuid",
@@ -370,17 +408,6 @@ Return ONLY valid JSON:
     }
   ]
 }
-
-RULES:
-${includeGrouping
-    ? `- Only group threads clearly related by the same quest or antagonist
-- Parent titles must be broad quest names (e.g. "The Hunt for Severin")
-- A group must have at least 2 children`
-    : `- Leave parent_groups as an empty array []`
-  }
-- Only reference thread IDs and entry IDs from the lists above
-- Thread updates must reference entries that genuinely develop that thread
-- When in doubt, do not group and do not update
 Return ONLY valid JSON, no markdown.`
 }
 
@@ -396,7 +423,8 @@ function buildPhase1Prompt(
 
   const entriesBlock = entries.map((e: AnyRec) => {
     const sessionTitle = (e.sessions as AnyRec | null)?.title ?? 'Session'
-    return `[${e.id}] ${sessionTitle}: ${e.text}`
+    const ts = new Date(e.created_at).toLocaleString()
+    return `[${e.id}] [${ts}] ${sessionTitle}: ${e.text}`
   }).join('\n')
 
   return `You are a quest journal tracker for a tabletop RPG.
