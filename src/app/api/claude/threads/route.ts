@@ -65,13 +65,6 @@ export async function POST(req: NextRequest) {
 
     if (entries.length === 0) return NextResponse.json({ threads: existingThreads })
 
-    const validEntryIds = new Set(entries.map((e: AnyRec) => e.id))
-    const safeEntryId = (id: string | null | undefined): string | null =>
-      (id && validEntryIds.has(id)) ? id : null
-    const getSessionId = (entryId: string | null): string | null => {
-      if (!entryId) return null
-      return entries.find((e: AnyRec) => e.id === entryId)?.session_id ?? null
-    }
     const mostRecentSessionId = entries.length > 0 ? entries[entries.length - 1].session_id : null
 
     const newEntry = newEntryId ? (entries.find((e: AnyRec) => e.id === newEntryId) ?? null) : null
@@ -89,12 +82,29 @@ export async function POST(req: NextRequest) {
 
     const parsed = extractJSON(raw)
 
-    // Insert new threads — collect results to gate threads_initialised
+    // Insert new threads — validate FK entry_id via DB before inserting
     const newThreads = parsed.new_threads ?? []
     const insertResults: { error: AnyRec | null }[] = []
     for (const nt of newThreads) {
-      const entryId = safeEntryId(nt.entry_id)
-      const sessionId = getSessionId(entryId)
+      const rawEntryId = nt.entry_id as string | null | undefined
+      let entryId: string | null = null
+      let sessionId: string | null = null
+
+      if (rawEntryId) {
+        const { data: entryCheck } = await (supabaseAdmin.from('entries') as AnyRec)
+          .select('id, session_id')
+          .eq('id', rawEntryId)
+          .eq('player_id', user.id)
+          .single()
+        if (!entryCheck) {
+          console.log('[threads] skipping thread - entry_id not found:', rawEntryId)
+          insertResults.push({ error: { message: 'entry_id not found' } })
+          continue
+        }
+        entryId = entryCheck.id as string
+        sessionId = (entryCheck.session_id as string) ?? null
+      }
+
       const threadInsertData = {
         player_id: user.id,
         title: String(nt.title ?? '').slice(0, 200),
@@ -104,7 +114,6 @@ export async function POST(req: NextRequest) {
         first_entry_id: entryId,
         last_updated_session_id: sessionId,
       }
-      console.log('[threads] using admin client:', !!supabaseAdmin, 'insert data:', JSON.stringify(threadInsertData).substring(0, 200))
       const { data: newThread, error: threadError } = await (supabaseAdmin.from('quest_threads') as AnyRec)
         .insert(threadInsertData)
         .select('id')
@@ -112,17 +121,16 @@ export async function POST(req: NextRequest) {
       console.log('[threads] insert error full:', JSON.stringify(threadError))
       console.log('[threads] insert quest_threads:', { id: newThread?.id, error: threadError?.message })
       insertResults.push({ error: threadError })
+
       if (newThread?.id && nt.first_update) {
-        const updateInsertData = {
-          thread_id: newThread.id,
-          player_id: user.id,
-          session_id: sessionId,
-          entry_id: entryId,
-          update_text: String(nt.first_update),
-        }
-        console.log('[threads] using admin client:', !!supabaseAdmin, 'insert data:', JSON.stringify(updateInsertData).substring(0, 200))
         const { data: newUpdate, error: updateError } = await (supabaseAdmin.from('quest_thread_updates') as AnyRec)
-          .insert(updateInsertData)
+          .insert({
+            thread_id: newThread.id,
+            player_id: user.id,
+            session_id: sessionId,
+            entry_id: entryId,
+            update_text: String(nt.first_update),
+          })
           .select('id')
           .single()
         console.log('[threads] insert error full:', JSON.stringify(updateError))
@@ -133,21 +141,38 @@ export async function POST(req: NextRequest) {
     const successCount = insertResults.filter(r => !r.error).length
     console.log('[threads] successful inserts:', successCount, 'of', newThreads.length)
 
-    // Insert updates for existing threads
+    // Insert updates for existing threads — validate thread_id and entry_id
     for (const tu of (parsed.thread_updates ?? [])) {
-      if (!existingThreadIds.has(tu.thread_id)) continue
-      const entryId = safeEntryId(tu.entry_id)
-      const sessionId = getSessionId(entryId)
-      const tuInsertData = {
-        thread_id: tu.thread_id,
-        player_id: user.id,
-        session_id: sessionId,
-        entry_id: entryId,
-        update_text: String(tu.update_text ?? ''),
+      if (!existingThreadIds.has(tu.thread_id)) {
+        console.log('[threads] skipping update - thread_id not found:', tu.thread_id)
+        continue
       }
-      console.log('[threads] using admin client:', !!supabaseAdmin, 'insert data:', JSON.stringify(tuInsertData).substring(0, 200))
+      const rawEntryId = tu.entry_id as string | null | undefined
+      let entryId: string | null = null
+      let sessionId: string | null = null
+
+      if (rawEntryId) {
+        const { data: entryCheck } = await (supabaseAdmin.from('entries') as AnyRec)
+          .select('id, session_id')
+          .eq('id', rawEntryId)
+          .eq('player_id', user.id)
+          .single()
+        if (!entryCheck) {
+          console.log('[threads] skipping update - entry_id not found:', rawEntryId)
+          continue
+        }
+        entryId = entryCheck.id as string
+        sessionId = (entryCheck.session_id as string) ?? null
+      }
+
       const { data: tuUpdate, error: tuError } = await (supabaseAdmin.from('quest_thread_updates') as AnyRec)
-        .insert(tuInsertData)
+        .insert({
+          thread_id: tu.thread_id,
+          player_id: user.id,
+          session_id: sessionId,
+          entry_id: entryId,
+          update_text: String(tu.update_text ?? ''),
+        })
         .select('id')
         .single()
       console.log('[threads] insert error full:', JSON.stringify(tuError))
