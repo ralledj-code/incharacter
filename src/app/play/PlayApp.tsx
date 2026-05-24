@@ -162,7 +162,7 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
   const [threadsAnalysing, setThreadsAnalysing] = useState(false)
   const [expandedThreadIds, setExpandedThreadIds] = useState<Set<string>>(new Set())
   const [resolvedExpanded, setResolvedExpanded] = useState(false)
-  const [threadsGrouped, setThreadsGrouped] = useState<boolean | null>(null)
+  const [_threadsGrouped, setThreadsGrouped] = useState<boolean | null>(null)
   const [threadsGrouping, setThreadsGrouping] = useState(false)
 
   const addEntryRef = useRef<HTMLTextAreaElement>(null)
