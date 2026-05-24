@@ -11,6 +11,37 @@ Full rebuild completed 2026-04-29. Feedback flow added 2026-05-01.
 ```sql
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS dm_email text;
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS feedback jsonb;
+
+-- Quest Threads (2026-05-24)
+CREATE TABLE IF NOT EXISTS quest_threads (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  player_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  summary text,
+  urgency text DEFAULT 'normal',   -- 'urgent' | 'normal'
+  status text DEFAULT 'active',    -- 'active' | 'resolved'
+  first_entry_id uuid REFERENCES entries(id) ON DELETE SET NULL,
+  last_updated_session_id uuid REFERENCES sessions(id) ON DELETE SET NULL,
+  resolved_session_id uuid REFERENCES sessions(id) ON DELETE SET NULL,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS quest_thread_updates (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  thread_id uuid REFERENCES quest_threads(id) ON DELETE CASCADE,
+  player_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  session_id uuid REFERENCES sessions(id) ON DELETE SET NULL,
+  entry_id uuid REFERENCES entries(id) ON DELETE SET NULL,
+  update_text text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE quest_threads ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own threads" ON quest_threads FOR ALL USING (auth.uid() = player_id);
+
+ALTER TABLE quest_thread_updates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own thread updates" ON quest_thread_updates FOR ALL USING (auth.uid() = player_id);
 ```
 
 ---
@@ -93,6 +124,25 @@ CREATE TABLE IF NOT EXISTS entries (
 | `/api/entries/[id]` | DELETE | Delete entry |
 | `/api/claude/categorise` | POST | Assign icon + category (Claude Haiku) |
 | `/api/claude/summarise` | POST | Write 3–4 sentence summary (Claude Haiku) |
+| `/api/claude/threads` | GET | Return existing quest threads with update history |
+| `/api/claude/threads` | POST | Run Claude thread analysis; persists new threads, updates, resolutions |
+
+---
+
+## Quest Threads (2026-05-24)
+
+BG3-style quest thread log that tracks unresolved situations, characters, and arcs.
+
+**Tables:** `quest_threads` (title, summary, urgency, status, session refs) and `quest_thread_updates` (chronological update log per thread, with session and entry refs).
+
+**Route POST body:**
+```typescript
+{ playerId?: string, newEntryId?: string, retrospective?: boolean }
+```
+- `retrospective: true` — analyses full entry history to seed threads from scratch; triggered once when the Threads tab is first visited and the table is empty.
+- `newEntryId` — analyses last 3 sessions, updates existing threads, opens new ones. Fired fire-and-forget from the entry save flow (does not block the UI).
+
+**Threads tab:** Third tab in `/play` app. On first load: GET threads; if empty, POST with `retrospective: true` and show "Analysing your journal..." until complete. Active threads sorted urgent-first then by `updated_at` desc. Resolved section collapsed by default. Tap any thread to expand its chronological update history.
 
 ---
 
@@ -113,6 +163,10 @@ CREATE TABLE IF NOT EXISTS entries (
 - `ee48187` FEAT: Add DM email field to Settings
 - `e1ebc7e` FEAT: End Session triggers feedback flow when DM email is set
 - `c9f2f64` FEAT: Session feedback email — React Email template + /api/session/feedback-email
+
+- `3f131a2` FEAT: Quest Threads — API route + DB types (Section 1)
+- `c8f88c4` FEAT: Quest Threads — wire to entry save (Section 2)
+- `5b817ac` FEAT: Quest Threads — Threads tab UI (Section 3)
 
 - `0d8e721` CLEANUP: Remove DM, tracker, onboarding, campaign code
 - `724804e` REBUILD: Update types, lib, middleware, nav for new schema
