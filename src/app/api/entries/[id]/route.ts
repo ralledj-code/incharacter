@@ -55,6 +55,30 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       .eq('player_id', user.id)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // Clean up quest threads that opened on this entry
+    const { data: affectedThreads } = await (admin.from('quest_threads') as AnyRec)
+      .select('id')
+      .eq('first_entry_id', id)
+      .eq('player_id', user.id)
+
+    for (const thread of (affectedThreads ?? [])) {
+      const { count } = await (admin.from('quest_thread_updates') as AnyRec)
+        .select('*', { count: 'exact', head: true })
+        .eq('thread_id', thread.id)
+      if ((count ?? 0) <= 1) {
+        await (admin.from('quest_threads') as AnyRec)
+          .delete()
+          .eq('id', thread.id)
+          .eq('player_id', user.id)
+      } else {
+        await (admin.from('quest_threads') as AnyRec)
+          .update({ first_entry_id: null })
+          .eq('id', thread.id)
+          .eq('player_id', user.id)
+      }
+    }
+
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })

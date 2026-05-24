@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     for (const nt of (parsed.new_threads ?? [])) {
       const entryId = safeEntryId(nt.entry_id)
       const sessionId = getSessionId(entryId)
-      const { data: inserted } = await (admin.from('quest_threads') as AnyRec)
+      const { data: newThread, error: threadError } = await (admin.from('quest_threads') as AnyRec)
         .insert({
           player_id: user.id,
           title: String(nt.title ?? '').slice(0, 200),
@@ -105,14 +105,19 @@ export async function POST(req: NextRequest) {
         })
         .select('id')
         .single()
-      if (inserted?.id && nt.first_update) {
-        await (admin.from('quest_thread_updates') as AnyRec).insert({
-          thread_id: inserted.id,
-          player_id: user.id,
-          session_id: sessionId,
-          entry_id: entryId,
-          update_text: String(nt.first_update),
-        })
+      console.log('[threads] insert quest_threads:', { id: newThread?.id, error: threadError?.message })
+      if (newThread?.id && nt.first_update) {
+        const { data: newUpdate, error: updateError } = await (admin.from('quest_thread_updates') as AnyRec)
+          .insert({
+            thread_id: newThread.id,
+            player_id: user.id,
+            session_id: sessionId,
+            entry_id: entryId,
+            update_text: String(nt.first_update),
+          })
+          .select('id')
+          .single()
+        console.log('[threads] insert quest_thread_updates (new thread):', { id: newUpdate?.id, error: updateError?.message })
       }
     }
 
@@ -121,13 +126,17 @@ export async function POST(req: NextRequest) {
       if (!existingThreadIds.has(tu.thread_id)) continue
       const entryId = safeEntryId(tu.entry_id)
       const sessionId = getSessionId(entryId)
-      await (admin.from('quest_thread_updates') as AnyRec).insert({
-        thread_id: tu.thread_id,
-        player_id: user.id,
-        session_id: sessionId,
-        entry_id: entryId,
-        update_text: String(tu.update_text ?? ''),
-      })
+      const { data: tuUpdate, error: tuError } = await (admin.from('quest_thread_updates') as AnyRec)
+        .insert({
+          thread_id: tu.thread_id,
+          player_id: user.id,
+          session_id: sessionId,
+          entry_id: entryId,
+          update_text: String(tu.update_text ?? ''),
+        })
+        .select('id')
+        .single()
+      console.log('[threads] insert quest_thread_updates (existing thread):', { id: tuUpdate?.id, error: tuError?.message })
       if (tu.new_summary) {
         await (admin.from('quest_threads') as AnyRec)
           .update({
@@ -143,13 +152,17 @@ export async function POST(req: NextRequest) {
     // Resolve threads
     for (const rt of (parsed.resolved_threads ?? [])) {
       if (!existingThreadIds.has(rt.thread_id)) continue
-      await (admin.from('quest_thread_updates') as AnyRec).insert({
-        thread_id: rt.thread_id,
-        player_id: user.id,
-        session_id: mostRecentSessionId,
-        entry_id: null,
-        update_text: String(rt.update_text ?? 'Resolved.'),
-      })
+      const { data: rtUpdate, error: rtError } = await (admin.from('quest_thread_updates') as AnyRec)
+        .insert({
+          thread_id: rt.thread_id,
+          player_id: user.id,
+          session_id: mostRecentSessionId,
+          entry_id: null,
+          update_text: String(rt.update_text ?? 'Resolved.'),
+        })
+        .select('id')
+        .single()
+      console.log('[threads] insert quest_thread_updates (resolve):', { id: rtUpdate?.id, error: rtError?.message })
       await (admin.from('quest_threads') as AnyRec)
         .update({
           status: 'resolved',
@@ -170,6 +183,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ threads: updatedThreads })
   } catch (error) {
     console.error('[threads] error:', error)
+    return NextResponse.json({ error: String(error) }, { status: 500 })
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const body = await req.json().catch(() => ({}))
+    const { threadId, status } = body as { threadId?: string; status?: string }
+    if (!threadId || !status) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+
+    await (admin.from('quest_threads') as AnyRec)
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', threadId)
+      .eq('player_id', user.id)
+
+    return NextResponse.json({ ok: true })
+  } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
   }
 }

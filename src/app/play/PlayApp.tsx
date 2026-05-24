@@ -444,6 +444,16 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
     })
   }
 
+  async function dismissThread(id: string) {
+    if (!window.confirm("Dismiss this thread? It won't affect your journal entries.")) return
+    await fetch('/api/claude/threads', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ threadId: id, status: 'dismissed' }),
+    })
+    setThreads(prev => prev ? prev.map(t => t.id === id ? { ...t, status: 'dismissed' } : t) : prev)
+  }
+
   // Sort past session entries: pinned first, then newest
   function sortSessionEntries(entries: Entry[]) {
     return [...entries].sort((a, b) => {
@@ -679,28 +689,36 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
                         const dot = thread.urgency === 'urgent' ? '🔴' : '🟡'
                         return (
                           <div key={thread.id} style={{ marginBottom: 2 }}>
-                            <button
-                              onClick={() => toggleThread(thread.id)}
-                              style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0', minHeight: 'auto' }}
-                            >
-                              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{dot}</span>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--accent)', marginBottom: 2, lineHeight: 1.3 }}>
-                                    {thread.title}
-                                  </p>
-                                  <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 3, lineHeight: 1.4 }}>
-                                    {thread.summary}
-                                  </p>
-                                  <p style={{ fontSize: 11, color: 'var(--text3)' }}>
-                                    {sessionName ? `${sessionName} · ` : ''}{formatTime(displayTime)}
-                                  </p>
+                            <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                              <button
+                                onClick={() => toggleThread(thread.id)}
+                                style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0', minHeight: 'auto' }}
+                              >
+                                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                                  <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{dot}</span>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--accent)', marginBottom: 2, lineHeight: 1.3 }}>
+                                      {thread.title}
+                                    </p>
+                                    <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 3, lineHeight: 1.4 }}>
+                                      {thread.summary}
+                                    </p>
+                                    <p style={{ fontSize: 11, color: 'var(--text3)' }}>
+                                      {sessionName ? `${sessionName} · ` : ''}{formatTime(displayTime)}
+                                    </p>
+                                  </div>
+                                  <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0, marginTop: 2 }}>
+                                    {isExpanded ? '▲' : '▼'}
+                                  </span>
                                 </div>
-                                <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0, marginTop: 2 }}>
-                                  {isExpanded ? '▲' : '▼'}
-                                </span>
-                              </div>
-                            </button>
+                              </button>
+                              <button
+                                onClick={() => dismissThread(thread.id)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '12px 0 12px 10px', fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}
+                              >
+                                Dismiss
+                              </button>
+                            </div>
 
                             {isExpanded && thread.updates.length > 0 && (
                               <div style={{ paddingLeft: 24, paddingBottom: 10, display: 'flex', flexDirection: 'column', gap: 0 }}>
