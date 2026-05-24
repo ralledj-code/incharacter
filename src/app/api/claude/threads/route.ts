@@ -343,7 +343,11 @@ function buildPhase3Prompt(
     .map((t: AnyRec) => `[${t.id}] "${t.title}" — ${t.summary ?? ''}`)
     .join('\n')
   const entriesBlock = entries
-    .map((e: AnyRec) => `[${e.id}] [${new Date(e.created_at).toLocaleString()}] ${e.text}`)
+    .map((e: AnyRec) => {
+      const d = new Date(e.created_at)
+      const label = `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`
+      return `[${e.id}] [${label}] ${e.text}`
+    })
     .join('\n')
 
   if (includeGrouping) {
@@ -355,15 +359,23 @@ ${threadsBlock}
 ALL JOURNAL ENTRIES (chronological):
 ${entriesBlock}
 
+IMPORTANT: The player character's name is ${name}.
+Never refer to them as "the narrator", "the character", "the journal writer" or any other generic term.
+Always use ${name} when referring to the player character.
+
 Group threads that share the same antagonist, location, cause or overarching goal into parent quests.
 Think like BG3: "The Hunt for Severin" would be a parent with child threads about his location,
 the assassin he sent, and the black blood plot he's behind.
 
-RULES:
+STRICT RULES:
+- Only group threads if their connection is EXPLICITLY stated in the journal entries
+- Do NOT infer connections based on proximity in time or general RPG logic
+- Do NOT assume NPCs are related to each other unless an entry explicitly states it
+- If you are uncertain whether two threads are connected, do NOT group them
+- Never add information not present in the entries — "Severin's wife" is wrong if the entries say "wife" and "Severin" separately without connecting them
 - Create parent threads only when 2+ children clearly belong together
 - Parent title should be the overarching quest name
 - Only use thread IDs from the list above
-- ${name} is the player character, not "narrator" or "character"
 
 Return ONLY valid JSON:
 {
@@ -390,10 +402,14 @@ ${entriesBlock}
 
 IDENTIFY which journal entries UPDATE existing threads (new developments, not new threads).
 
-RULES:
+IMPORTANT: The player character's name is ${name}.
+Never refer to them as "the narrator", "the character", "the journal writer" or any other generic term.
+Always use ${name} when referring to the player character.
+
+STRICT RULES:
 - Only reference thread IDs and entry IDs from the lists above
 - Thread updates must reference entries that genuinely develop that thread
-- ${name} is the player character, not "narrator" or "character"
+- Only update a thread if the entry explicitly adds new information to it
 - When in doubt, do not update
 
 Return ONLY valid JSON:
