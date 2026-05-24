@@ -19,8 +19,9 @@ CREATE TABLE IF NOT EXISTS quest_threads (
   title text NOT NULL,
   summary text,
   urgency text DEFAULT 'normal',   -- 'urgent' | 'normal'
-  status text DEFAULT 'active',    -- 'active' | 'resolved'
+  status text DEFAULT 'active',    -- 'active' | 'resolved' | 'dismissed'
   first_entry_id uuid REFERENCES entries(id) ON DELETE SET NULL,
+  parent_thread_id uuid REFERENCES quest_threads(id) ON DELETE SET NULL,
   last_updated_session_id uuid REFERENCES sessions(id) ON DELETE SET NULL,
   resolved_session_id uuid REFERENCES sessions(id) ON DELETE SET NULL,
   created_at timestamptz DEFAULT now(),
@@ -133,16 +134,45 @@ CREATE TABLE IF NOT EXISTS entries (
 
 BG3-style quest thread log that tracks unresolved situations, characters, and arcs.
 
-**Tables:** `quest_threads` (title, summary, urgency, status, session refs) and `quest_thread_updates` (chronological update log per thread, with session and entry refs).
+**Tables:** `quest_threads` (title, summary, urgency, status, parent_thread_id, session refs) and `quest_thread_updates` (chronological update log per thread, with session and entry refs).
+
+**Additional columns needed:**
+```sql
+ALTER TABLE quest_threads
+  ADD COLUMN IF NOT EXISTS parent_thread_id uuid REFERENCES quest_threads(id) ON DELETE SET NULL;
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS threads_initialised boolean DEFAULT false;
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS threads_grouped boolean DEFAULT false;
+```
+
+**Three-phase Claude analysis (POST):**
+- Phase 1 (1000 tokens): identify new threads → `[{title, entry_id, urgency}]`
+- Phase 2 (200 tokens each, parallel): one-sentence summary per new thread
+- Phase 3 (1500 tokens): group related threads under parent quests + find thread updates to existing threads
+
+**Profile flags:**
+- `threads_initialised` — set after first retrospective succeeds; gates the one-time full-history seed
+- `threads_grouped` — set after Phase 3 grouping runs; gates the one-time parent-grouping pass
 
 **Route POST body:**
 ```typescript
-{ playerId?: string, newEntryId?: string, retrospective?: boolean }
+{ newEntryId?: string, retrospective?: boolean }
 ```
-- `retrospective: true` — analyses full entry history to seed threads from scratch; triggered once when the Threads tab is first visited and the table is empty.
-- `newEntryId` — analyses last 3 sessions, updates existing threads, opens new ones. Fired fire-and-forget from the entry save flow (does not block the UI).
+- `retrospective: true` — analyses full entry history; triggers Phase 3 grouping on first call where `!threads_grouped`; sets `threads_initialised` on success
+- `newEntryId` — fires fire-and-forget from entry save flow; runs phases 1–3 but skips grouping
 
-**Threads tab:** Third tab in `/play` app. On first load: GET threads; if empty, POST with `retrospective: true` and show "Analysing your journal..." until complete. Active threads sorted urgent-first then by `updated_at` desc. Resolved section collapsed by default. Tap any thread to expand its chronological update history.
+**GET route:** Returns `{ threads, threadsInitialised, threadsGrouped }`. Threads are returned as a hierarchy: parent threads contain `children: QuestThreadWithUpdates[]`; orphaned threads appear at root level with `children: []`; dismissed threads are excluded.
+
+**Threads tab:** Third tab in `/play` app.
+- First visit, not initialised: POST `{ retrospective: true }`, show "Analysing your journal..."
+- Initialised but not grouped: show threads immediately, POST `{ retrospective: true }` in background, show "Grouping quest threads..."
+- Active threads sorted urgent-first (including urgency of children) then by `updated_at` desc
+- Parent threads (with children) shown with `◆` prefix; children indented with left border
+- Solo threads (no parent, no children) shown with urgency dot (🔴/🟡)
+- Resolved section collapsed by default
+- Tap any thread to expand its chronological update history; tap child to expand child updates
+- Dismiss button on every thread (top-level and child)
 
 ---
 
@@ -167,6 +197,9 @@ BG3-style quest thread log that tracks unresolved situations, characters, and ar
 - `3f131a2` FEAT: Quest Threads — API route + DB types (Section 1)
 - `c8f88c4` FEAT: Quest Threads — wire to entry save (Section 2)
 - `5b817ac` FEAT: Quest Threads — Threads tab UI (Section 3)
+- `a5f6573` FIX: Quest Threads — full history, robust JSON, BG3 prompt
+- `7a36653` FEAT: Quest Threads — GET returns hierarchy, POST returns hierarchy (Section 2 rev2)
+- `aebea30` FEAT: Quest Threads — hierarchical UI + grouping trigger (Sections 3+4)
 
 - `0d8e721` CLEANUP: Remove DM, tracker, onboarding, campaign code
 - `724804e` REBUILD: Update types, lib, middleware, nav for new schema
