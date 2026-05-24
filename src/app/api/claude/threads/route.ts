@@ -7,7 +7,7 @@ import Anthropic from '@anthropic-ai/sdk'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyRec = Record<string, any>
 
-const admin = rawClient(
+const supabaseAdmin = rawClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
@@ -18,7 +18,7 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: profileData } = await (admin.from('profiles') as AnyRec)
+    const { data: profileData } = await (supabaseAdmin.from('profiles') as AnyRec)
       .select('threads_initialised')
       .eq('id', user.id)
       .single()
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}))
     const { newEntryId, retrospective } = body as { newEntryId?: string; retrospective?: boolean }
 
-    const { data: profileData } = await (admin.from('profiles') as AnyRec)
+    const { data: profileData } = await (supabaseAdmin.from('profiles') as AnyRec)
       .select('api_key_encrypted, character_name')
       .eq('id', user.id)
       .single()
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     const existingThreadIds = new Set(existingThreads.map((t: AnyRec) => t.id))
 
     // Always fetch full entry history — cross-session connections require complete context
-    const { data: entryData } = await (admin.from('entries') as AnyRec)
+    const { data: entryData } = await (supabaseAdmin.from('entries') as AnyRec)
       .select('id, text, icon, category, created_at, session_id, sessions(title)')
       .eq('player_id', user.id)
       .order('created_at', { ascending: true })
@@ -93,30 +93,36 @@ export async function POST(req: NextRequest) {
     for (const nt of (parsed.new_threads ?? [])) {
       const entryId = safeEntryId(nt.entry_id)
       const sessionId = getSessionId(entryId)
-      const { data: newThread, error: threadError } = await (admin.from('quest_threads') as AnyRec)
-        .insert({
-          player_id: user.id,
-          title: String(nt.title ?? '').slice(0, 200),
-          summary: nt.summary ? String(nt.summary) : null,
-          urgency: nt.urgency === 'urgent' ? 'urgent' : 'normal',
-          status: 'active',
-          first_entry_id: entryId,
-          last_updated_session_id: sessionId,
-        })
+      const threadInsertData = {
+        player_id: user.id,
+        title: String(nt.title ?? '').slice(0, 200),
+        summary: nt.summary ? String(nt.summary) : null,
+        urgency: nt.urgency === 'urgent' ? 'urgent' : 'normal',
+        status: 'active',
+        first_entry_id: entryId,
+        last_updated_session_id: sessionId,
+      }
+      console.log('[threads] using admin client:', !!supabaseAdmin, 'insert data:', JSON.stringify(threadInsertData).substring(0, 200))
+      const { data: newThread, error: threadError } = await (supabaseAdmin.from('quest_threads') as AnyRec)
+        .insert(threadInsertData)
         .select('id')
         .single()
+      console.log('[threads] insert error:', threadError?.message, threadError?.code, threadError?.details)
       console.log('[threads] insert quest_threads:', { id: newThread?.id, error: threadError?.message })
       if (newThread?.id && nt.first_update) {
-        const { data: newUpdate, error: updateError } = await (admin.from('quest_thread_updates') as AnyRec)
-          .insert({
-            thread_id: newThread.id,
-            player_id: user.id,
-            session_id: sessionId,
-            entry_id: entryId,
-            update_text: String(nt.first_update),
-          })
+        const updateInsertData = {
+          thread_id: newThread.id,
+          player_id: user.id,
+          session_id: sessionId,
+          entry_id: entryId,
+          update_text: String(nt.first_update),
+        }
+        console.log('[threads] using admin client:', !!supabaseAdmin, 'insert data:', JSON.stringify(updateInsertData).substring(0, 200))
+        const { data: newUpdate, error: updateError } = await (supabaseAdmin.from('quest_thread_updates') as AnyRec)
+          .insert(updateInsertData)
           .select('id')
           .single()
+        console.log('[threads] insert error:', updateError?.message, updateError?.code, updateError?.details)
         console.log('[threads] insert quest_thread_updates (new thread):', { id: newUpdate?.id, error: updateError?.message })
       }
     }
@@ -126,19 +132,22 @@ export async function POST(req: NextRequest) {
       if (!existingThreadIds.has(tu.thread_id)) continue
       const entryId = safeEntryId(tu.entry_id)
       const sessionId = getSessionId(entryId)
-      const { data: tuUpdate, error: tuError } = await (admin.from('quest_thread_updates') as AnyRec)
-        .insert({
-          thread_id: tu.thread_id,
-          player_id: user.id,
-          session_id: sessionId,
-          entry_id: entryId,
-          update_text: String(tu.update_text ?? ''),
-        })
+      const tuInsertData = {
+        thread_id: tu.thread_id,
+        player_id: user.id,
+        session_id: sessionId,
+        entry_id: entryId,
+        update_text: String(tu.update_text ?? ''),
+      }
+      console.log('[threads] using admin client:', !!supabaseAdmin, 'insert data:', JSON.stringify(tuInsertData).substring(0, 200))
+      const { data: tuUpdate, error: tuError } = await (supabaseAdmin.from('quest_thread_updates') as AnyRec)
+        .insert(tuInsertData)
         .select('id')
         .single()
+      console.log('[threads] insert error:', tuError?.message, tuError?.code, tuError?.details)
       console.log('[threads] insert quest_thread_updates (existing thread):', { id: tuUpdate?.id, error: tuError?.message })
       if (tu.new_summary) {
-        await (admin.from('quest_threads') as AnyRec)
+        await (supabaseAdmin.from('quest_threads') as AnyRec)
           .update({
             summary: String(tu.new_summary),
             last_updated_session_id: sessionId,
@@ -152,18 +161,21 @@ export async function POST(req: NextRequest) {
     // Resolve threads
     for (const rt of (parsed.resolved_threads ?? [])) {
       if (!existingThreadIds.has(rt.thread_id)) continue
-      const { data: rtUpdate, error: rtError } = await (admin.from('quest_thread_updates') as AnyRec)
-        .insert({
-          thread_id: rt.thread_id,
-          player_id: user.id,
-          session_id: mostRecentSessionId,
-          entry_id: null,
-          update_text: String(rt.update_text ?? 'Resolved.'),
-        })
+      const rtInsertData = {
+        thread_id: rt.thread_id,
+        player_id: user.id,
+        session_id: mostRecentSessionId,
+        entry_id: null,
+        update_text: String(rt.update_text ?? 'Resolved.'),
+      }
+      console.log('[threads] using admin client:', !!supabaseAdmin, 'insert data:', JSON.stringify(rtInsertData).substring(0, 200))
+      const { data: rtUpdate, error: rtError } = await (supabaseAdmin.from('quest_thread_updates') as AnyRec)
+        .insert(rtInsertData)
         .select('id')
         .single()
+      console.log('[threads] insert error:', rtError?.message, rtError?.code, rtError?.details)
       console.log('[threads] insert quest_thread_updates (resolve):', { id: rtUpdate?.id, error: rtError?.message })
-      await (admin.from('quest_threads') as AnyRec)
+      await (supabaseAdmin.from('quest_threads') as AnyRec)
         .update({
           status: 'resolved',
           resolved_session_id: mostRecentSessionId,
@@ -174,7 +186,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (retrospective) {
-      await (admin.from('profiles') as AnyRec)
+      await (supabaseAdmin.from('profiles') as AnyRec)
         .update({ threads_initialised: true })
         .eq('id', user.id)
     }
@@ -197,7 +209,7 @@ export async function PATCH(req: NextRequest) {
     const { threadId, status } = body as { threadId?: string; status?: string }
     if (!threadId || !status) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
-    await (admin.from('quest_threads') as AnyRec)
+    await (supabaseAdmin.from('quest_threads') as AnyRec)
       .update({ status, updated_at: new Date().toISOString() })
       .eq('id', threadId)
       .eq('player_id', user.id)
@@ -209,13 +221,13 @@ export async function PATCH(req: NextRequest) {
 }
 
 async function fetchThreadsWithUpdates(userId: string): Promise<AnyRec[]> {
-  const { data: threads } = await (admin.from('quest_threads') as AnyRec)
+  const { data: threads } = await (supabaseAdmin.from('quest_threads') as AnyRec)
     .select('*')
     .eq('player_id', userId)
     .order('updated_at', { ascending: false })
   if (!threads?.length) return []
 
-  const { data: updates } = await (admin.from('quest_thread_updates') as AnyRec)
+  const { data: updates } = await (supabaseAdmin.from('quest_thread_updates') as AnyRec)
     .select('id, thread_id, session_id, entry_id, update_text, created_at, sessions(title)')
     .in('thread_id', threads.map((t: AnyRec) => t.id))
     .order('created_at', { ascending: true })
