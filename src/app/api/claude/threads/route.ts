@@ -19,13 +19,14 @@ export async function GET() {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { data: profileData } = await (supabaseAdmin.from('profiles') as AnyRec)
-      .select('threads_initialised')
+      .select('threads_initialised, threads_grouped')
       .eq('id', user.id)
       .single()
     const threadsInitialised: boolean = profileData?.threads_initialised ?? false
+    const threadsGrouped: boolean = profileData?.threads_grouped ?? false
 
-    const threads = await fetchThreadsWithUpdates(user.id)
-    return NextResponse.json({ threads, threadsInitialised })
+    const threads = await fetchThreadsHierarchy(user.id)
+    return NextResponse.json({ threads, threadsInitialised, threadsGrouped })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
   }
@@ -248,7 +249,7 @@ export async function POST(req: NextRequest) {
         .eq('id', user.id)
     }
 
-    const updatedThreads = await fetchThreadsWithUpdates(user.id)
+    const updatedThreads = await fetchThreadsHierarchy(user.id)
     return NextResponse.json({ threads: updatedThreads })
   } catch (error) {
     console.error('[threads] error:', error)
@@ -296,6 +297,32 @@ async function fetchThreadsWithUpdates(userId: string): Promise<AnyRec[]> {
   }
 
   return threads.map((t: AnyRec) => ({ ...t, updates: byThread.get(t.id) ?? [] }))
+}
+
+async function fetchThreadsHierarchy(userId: string): Promise<AnyRec[]> {
+  const { data: allThreads } = await (supabaseAdmin.from('quest_threads') as AnyRec)
+    .select('*, updates:quest_thread_updates(id, thread_id, session_id, entry_id, update_text, created_at, sessions(title))')
+    .eq('player_id', userId)
+    .order('created_at', { ascending: true })
+  if (!allThreads?.length) return []
+
+  const parentThreads = allThreads.filter((t: AnyRec) => !t.parent_thread_id && t.status !== 'dismissed')
+  const result = parentThreads.map((parent: AnyRec) => ({
+    ...parent,
+    updates: parent.updates ?? [],
+    children: allThreads
+      .filter((t: AnyRec) => t.parent_thread_id === parent.id)
+      .map((c: AnyRec) => ({ ...c, updates: c.updates ?? [], children: [] }))
+  }))
+  const orphaned = allThreads.filter((t: AnyRec) =>
+    !t.parent_thread_id &&
+    !parentThreads.find((p: AnyRec) => p.id === t.id) &&
+    t.status !== 'dismissed'
+  )
+  return [
+    ...result,
+    ...orphaned.map((t: AnyRec) => ({ ...t, updates: t.updates ?? [], children: [] }))
+  ]
 }
 
 function buildPhase3Prompt(

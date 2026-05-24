@@ -57,6 +57,7 @@ export interface QuestThread {
   urgency: 'urgent' | 'normal'
   status: 'active' | 'resolved' | 'dismissed'
   first_entry_id: string | null
+  parent_thread_id: string | null
   last_updated_session_id: string | null
   resolved_session_id: string | null
   created_at: string
@@ -75,4 +76,5 @@ export interface QuestThreadUpdate {
 
 export interface QuestThreadWithUpdates extends QuestThread {
   updates: QuestThreadUpdate[]
+  children: QuestThreadWithUpdates[]
 }
