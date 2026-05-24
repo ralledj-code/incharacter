@@ -73,14 +73,24 @@ export async function POST(req: NextRequest) {
     const client = new Anthropic({ apiKey: decryptedKey })
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 4000,
+      max_tokens: 6000,
       messages: [{ role: 'user', content: prompt }],
     })
 
     const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+    console.log('[threads] raw length:', raw.length)
     console.log('[threads] raw:', raw.substring(0, 1000))
 
-    const parsed = extractJSON(raw)
+    console.log('[threads] attempting parse...')
+    let parsed
+    try {
+      parsed = extractJSON(raw)
+      console.log('[threads] parsed new_threads count:', parsed.new_threads?.length ?? 0)
+      console.log('[threads] parsed updates count:', parsed.thread_updates?.length ?? 0)
+    } catch (e) {
+      console.log('[threads] parse failed:', (e as Error).message)
+      parsed = { new_threads: [], thread_updates: [], resolved_threads: [] }
+    }
 
     // Insert new threads — validate FK entry_id; insert even if entry not found (use null)
     const newThreads = parsed.new_threads ?? []
@@ -344,7 +354,8 @@ STRICT RULES:
 - Summaries must reflect only what was logged
 - Connect entries only when the connection is explicit or strongly implied
 - When in doubt, do not create a thread -- a missed thread is better than an invented one
-- Maximum 8 new threads and 8 updates per call -- prioritise most significant
+- Return a maximum of 6 new threads. Choose only the most significant unresolved situations.
+- Maximum 6 updates per call -- prioritise most significant
 
 URGENCY:
 - urgent: immediate danger, active threat, time pressure
