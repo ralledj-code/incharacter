@@ -55,7 +55,7 @@ export interface QuestThread {
   title: string
   summary: string | null
   urgency: 'urgent' | 'normal'
-  status: 'active' | 'resolved'
+  status: 'active' | 'resolved' | 'dismissed'
   first_entry_id: string | null
   last_updated_session_id: string | null
   resolved_session_id: string | null
