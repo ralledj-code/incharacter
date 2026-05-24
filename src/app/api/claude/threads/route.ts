@@ -89,8 +89,10 @@ export async function POST(req: NextRequest) {
 
     const parsed = extractJSON(raw)
 
-    // Insert new threads
-    for (const nt of (parsed.new_threads ?? [])) {
+    // Insert new threads — collect results to gate threads_initialised
+    const newThreads = parsed.new_threads ?? []
+    const insertResults: { error: AnyRec | null }[] = []
+    for (const nt of newThreads) {
       const entryId = safeEntryId(nt.entry_id)
       const sessionId = getSessionId(entryId)
       const threadInsertData = {
@@ -107,8 +109,9 @@ export async function POST(req: NextRequest) {
         .insert(threadInsertData)
         .select('id')
         .single()
-      console.log('[threads] insert error:', threadError?.message, threadError?.code, threadError?.details)
+      console.log('[threads] insert error full:', JSON.stringify(threadError))
       console.log('[threads] insert quest_threads:', { id: newThread?.id, error: threadError?.message })
+      insertResults.push({ error: threadError })
       if (newThread?.id && nt.first_update) {
         const updateInsertData = {
           thread_id: newThread.id,
@@ -122,10 +125,13 @@ export async function POST(req: NextRequest) {
           .insert(updateInsertData)
           .select('id')
           .single()
-        console.log('[threads] insert error:', updateError?.message, updateError?.code, updateError?.details)
+        console.log('[threads] insert error full:', JSON.stringify(updateError))
         console.log('[threads] insert quest_thread_updates (new thread):', { id: newUpdate?.id, error: updateError?.message })
       }
     }
+
+    const successCount = insertResults.filter(r => !r.error).length
+    console.log('[threads] successful inserts:', successCount, 'of', newThreads.length)
 
     // Insert updates for existing threads
     for (const tu of (parsed.thread_updates ?? [])) {
@@ -144,7 +150,7 @@ export async function POST(req: NextRequest) {
         .insert(tuInsertData)
         .select('id')
         .single()
-      console.log('[threads] insert error:', tuError?.message, tuError?.code, tuError?.details)
+      console.log('[threads] insert error full:', JSON.stringify(tuError))
       console.log('[threads] insert quest_thread_updates (existing thread):', { id: tuUpdate?.id, error: tuError?.message })
       if (tu.new_summary) {
         await (supabaseAdmin.from('quest_threads') as AnyRec)
@@ -173,7 +179,7 @@ export async function POST(req: NextRequest) {
         .insert(rtInsertData)
         .select('id')
         .single()
-      console.log('[threads] insert error:', rtError?.message, rtError?.code, rtError?.details)
+      console.log('[threads] insert error full:', JSON.stringify(rtError))
       console.log('[threads] insert quest_thread_updates (resolve):', { id: rtUpdate?.id, error: rtError?.message })
       await (supabaseAdmin.from('quest_threads') as AnyRec)
         .update({
@@ -185,7 +191,7 @@ export async function POST(req: NextRequest) {
         .eq('player_id', user.id)
     }
 
-    if (retrospective) {
+    if (retrospective && successCount > 0) {
       await (supabaseAdmin.from('profiles') as AnyRec)
         .update({ threads_initialised: true })
         .eq('id', user.id)
