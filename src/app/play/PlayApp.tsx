@@ -1,10 +1,10 @@
-﻿'use client'
+'use client'
 
 import { useState, useMemo, useRef, useEffect } from 'react'
 import BurgerMenu from '@/components/BurgerMenu'
 import { createClient } from '@/lib/supabase/client'
 import SessionFeedback from '@/components/SessionFeedback'
-import type { Entry, SessionWithEntries, FeedbackData, QuestThreadWithUpdates } from '@/types/database'
+import type { Entry, SessionWithEntries, FeedbackData, QuestWithUpdates } from '@/types/database'
 
 type Tab = 'current' | 'past' | 'threads'
 
@@ -155,14 +155,17 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  // Quest threads
-  const [threads, setThreads] = useState<QuestThreadWithUpdates[] | null>(null)
-  const [threadsInitialised, setThreadsInitialised] = useState<boolean | null>(null)
-  const [threadsLoading, setThreadsLoading] = useState(false)
-  const [threadsAnalysing, setThreadsAnalysing] = useState(false)
-  const [expandedThreadIds, setExpandedThreadIds] = useState<Set<string>>(new Set())
+  // Quests
+  const [quests, setQuests] = useState<QuestWithUpdates[] | null>(null)
+  const [questsLoading, setQuestsLoading] = useState(false)
+  const [questsBuilding, setQuestsBuilding] = useState(false)
+  const [questsNeedRefresh, setQuestsNeedRefresh] = useState(false)
+  const [expandedQuestIds, setExpandedQuestIds] = useState<Set<string>>(new Set())
   const [resolvedExpanded, setResolvedExpanded] = useState(false)
-  const [threadsGrouping, setThreadsGrouping] = useState(false)
+  const [recalibrateQuestId, setRecalibrateQuestId] = useState<string | null>(null)
+  const [recalibrateText, setRecalibrateText] = useState('')
+  const [recalibrating, setRecalibrating] = useState(false)
+  const questsRetroRanRef = useRef(false)
 
   const addEntryRef = useRef<HTMLTextAreaElement>(null)
   useEffect(() => { if (showAddEntry) addEntryRef.current?.focus() }, [showAddEntry])
@@ -213,7 +216,6 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
     setStartingSession(true)
     try {
       let name = campaignName
-      // First time: save campaign name to profile, then use it for all future sessions
       if (!name && newCampaignName.trim()) {
         name = newCampaignName.trim()
         await fetch('/api/setup', {
@@ -241,7 +243,6 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
     setSavingEntry(true)
     const text = newEntryText.trim()
     try {
-      // 1. POST to /api/entries — waits for INSERT to complete and returns the real id
       const res = await fetch('/api/entries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -265,7 +266,7 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
       setShowAddEntry(false)
       setNewEntryText('')
 
-      // 2. Categorise only after we have the real id — never fires with undefined
+      // Categorise (fire and forget)
       fetch('/api/claude/categorise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -283,15 +284,22 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
         })
         .catch(() => {})
 
-      // 3. Update quest threads in background; refresh display when done
-      fetch('/api/claude/threads', {
+      // Quest assignment (fire and forget)
+      fetch('/api/claude/quest-assign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newEntryId: entryId }),
+        body: JSON.stringify({ entryId }),
       })
-        .then(() => fetch('/api/claude/threads'))
         .then(r => r.json())
-        .then(data => setThreads(data.threads ?? []))
+        .then(({ questId }) => {
+          if (!questId) return Promise.resolve()
+          return fetch('/api/claude/quest-update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ questId }),
+          })
+        })
+        .then(() => setQuestsNeedRefresh(true))
         .catch(() => {})
     } catch {}
     setSavingEntry(false)
@@ -398,61 +406,80 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
     await fetch(`/api/entries/${entry.id}`, { method: 'DELETE' })
   }
 
-  async function loadThreads() {
-    setThreadsLoading(true)
+  // Quest handlers
+
+  async function loadQuests() {
+    setQuestsLoading(true)
     try {
-      const res = await fetch('/api/claude/threads')
+      const res = await fetch('/api/quests')
       const data = await res.json()
-      const existing: QuestThreadWithUpdates[] = data.threads ?? []
-      const initialised: boolean = data.threadsInitialised ?? false
-      const grouped: boolean = data.threadsGrouped ?? false
-      setThreadsInitialised(initialised)
-      if (!initialised) {
-        setThreadsLoading(false)
-        setThreadsAnalysing(true)
-        await fetch('/api/claude/threads', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ retrospective: true }),
-        })
-        setThreadsInitialised(true)
-        const refreshRes = await fetch('/api/claude/threads')
-        const refreshData = await refreshRes.json()
-        setThreads(refreshData.threads ?? [])
-        setThreadsAnalysing(false)
-      } else if (!grouped) {
-        setThreads(existing)
-        setThreadsLoading(false)
-        setThreadsGrouping(true)
-        await fetch('/api/claude/threads', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ retrospective: true }),
-        })
-        const refreshRes = await fetch('/api/claude/threads')
-        const refreshData = await refreshRes.json()
-        setThreads(refreshData.threads ?? [])
-        setThreadsGrouping(false)
+      const existing: QuestWithUpdates[] = data.quests ?? []
+
+      const allEntries = [
+        ...(activeSession?.entries ?? []),
+        ...pastSessions.flatMap(s => s.entries),
+      ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+
+      if (existing.length === 0 && allEntries.length > 0 && !questsRetroRanRef.current) {
+        questsRetroRanRef.current = true
+        setQuestsLoading(false)
+        setQuestsBuilding(true)
+
+        for (let i = 0; i < allEntries.length; i += 5) {
+          const batch = allEntries.slice(i, i + 5)
+          for (const entry of batch) {
+            try {
+              const assignRes = await fetch('/api/claude/quest-assign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ entryId: entry.id }),
+              })
+              const { questId } = await assignRes.json()
+              if (questId) {
+                await fetch('/api/claude/quest-update', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ questId }),
+                })
+              }
+            } catch {}
+          }
+        }
+
+        const finalRes = await fetch('/api/quests')
+        const finalData = await finalRes.json()
+        setQuests(finalData.quests ?? [])
+        setQuestsBuilding(false)
       } else {
-        setThreads(existing)
-        setThreadsLoading(false)
+        setQuests(existing)
+        setQuestsLoading(false)
       }
     } catch {
-      setThreadsLoading(false)
-      setThreadsAnalysing(false)
-      setThreadsGrouping(false)
-      setThreads([])
+      setQuestsLoading(false)
+      setQuestsBuilding(false)
+      setQuests([])
     }
   }
 
+  // Initial load when Threads tab first opened
   useEffect(() => {
-    if (tab !== 'threads' || threads !== null) return
-    loadThreads()
+    if (tab !== 'threads' || quests !== null) return
+    loadQuests()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, threads])
+  }, [tab, quests])
 
-  function toggleThread(id: string) {
-    setExpandedThreadIds(prev => {
+  // Refresh quests after entry save completes
+  useEffect(() => {
+    if (tab !== 'threads' || !questsNeedRefresh) return
+    setQuestsNeedRefresh(false)
+    fetch('/api/quests')
+      .then(r => r.json())
+      .then(d => setQuests(d.quests ?? []))
+      .catch(() => {})
+  }, [tab, questsNeedRefresh])
+
+  function toggleQuestEntries(id: string) {
+    setExpandedQuestIds(prev => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
@@ -460,19 +487,40 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
     })
   }
 
-  async function dismissThread(id: string) {
-    if (!window.confirm("Dismiss this thread? It won't affect your journal entries.")) return
-    await fetch('/api/claude/threads', {
+  async function handleDismissQuest(id: string) {
+    if (!window.confirm("Dismiss this quest? It won't affect your journal entries.")) return
+    await fetch(`/api/quests/${id}/dismiss`, { method: 'PATCH' })
+    setQuests(prev => prev ? prev.filter(q => q.id !== id) : prev)
+  }
+
+  async function handleReopenQuest(id: string) {
+    await fetch(`/api/quests/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ threadId: id, status: 'dismissed' }),
+      body: JSON.stringify({ status: 'active' }),
     })
-    setThreads(prev => prev
-      ? prev
-          .map(t => ({ ...t, children: t.children.filter(c => c.id !== id) }))
-          .filter(t => t.id !== id)
+    setQuests(prev => prev
+      ? prev.map(q => q.id === id ? { ...q, status: 'active' as const } : q)
       : prev
     )
+  }
+
+  async function handleRecalibrate() {
+    if (!recalibrateQuestId || !recalibrateText.trim()) return
+    setRecalibrating(true)
+    try {
+      await fetch('/api/claude/quest-recalibrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questId: recalibrateQuestId, instruction: recalibrateText }),
+      })
+      const freshRes = await fetch('/api/quests')
+      const freshData = await freshRes.json()
+      setQuests(freshData.quests ?? [])
+      setRecalibrateQuestId(null)
+      setRecalibrateText('')
+    } catch {}
+    setRecalibrating(false)
   }
 
   // Sort past session entries: pinned first, then newest
@@ -666,39 +714,25 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
             )}
           </div>
         )}
-        {/* ── Threads tab ── */}
+
+        {/* ── Threads (Quests) tab ── */}
         {tab === 'threads' && (
           <div style={{ padding: '12px 16px 0' }}>
-            {(threadsLoading || threadsAnalysing || threadsGrouping) ? (
+            {(questsLoading || questsBuilding) ? (
               <div style={{ textAlign: 'center', paddingTop: 60 }}>
                 <p style={{ fontSize: 14, color: 'var(--text3)' }}>
-                  {threadsAnalysing ? 'Analysing your journal...' : threadsGrouping ? 'Grouping quest threads...' : 'Loading...'}
+                  {questsBuilding ? 'Building your quest log...' : 'Loading...'}
                 </p>
               </div>
             ) : (() => {
-              const allThreads = threads ?? []
-              const activeThreads = allThreads
-                .filter(t => t.status === 'active')
+              const allQuests = quests ?? []
+              const activeQuests = allQuests
+                .filter(q => q.status === 'active')
                 .sort((a, b) => {
-                  const aUrgent = a.urgency === 'urgent' || a.children.some(c => c.urgency === 'urgent')
-                  const bUrgent = b.urgency === 'urgent' || b.children.some(c => c.urgency === 'urgent')
-                  if (aUrgent !== bUrgent) return aUrgent ? -1 : 1
+                  if (a.urgency !== b.urgency) return a.urgency === 'urgent' ? -1 : 1
                   return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
                 })
-              const resolvedThreads = allThreads.filter(t => t.status === 'resolved')
-
-              const renderUpdates = (t: QuestThreadWithUpdates) => expandedThreadIds.has(t.id) && t.updates.length > 0 ? (
-                <div style={{ paddingLeft: 24, paddingBottom: 8, display: 'flex', flexDirection: 'column', gap: 0 }}>
-                  {t.updates.map(u => (
-                    <div key={u.id} style={{ padding: '7px 0', borderTop: '0.5px solid var(--border)' }}>
-                      <p style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 3 }}>
-                        {(u.sessions as { title?: string | null } | null)?.title ?? 'Unknown Session'} · {formatTime(u.created_at)}
-                      </p>
-                      <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.4 }}>{u.update_text}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : null
+              const resolvedQuests = allQuests.filter(q => q.status === 'resolved')
 
               return (
                 <>
@@ -707,108 +741,96 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                       <span className="label-caps" style={{ fontSize: 10 }}>Active</span>
                       <span style={{ fontSize: 11, color: 'var(--text3)', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 10, padding: '1px 8px' }}>
-                        {activeThreads.length}
+                        {activeQuests.length}
                       </span>
                     </div>
                     <div style={{ height: 1, background: 'var(--border)', marginBottom: 8 }} />
 
-                    {activeThreads.length === 0 ? (
-                      <p style={{ fontSize: 13, color: 'var(--text3)', paddingTop: 8 }}>
-                        {threadsInitialised ? 'No active threads.' : "No threads found yet — they'll appear as you log more entries."}
-                      </p>
+                    {activeQuests.length === 0 ? (
+                      <p style={{ fontSize: 13, color: 'var(--text3)', paddingTop: 8 }}>No active quests.</p>
                     ) : (
-                      activeThreads.map(thread => {
-                        const isExpanded = expandedThreadIds.has(thread.id)
-                        const activeChildren = thread.children.filter(c => c.status !== 'dismissed')
-                        const hasChildren = activeChildren.length > 0
-                        const dot = thread.urgency === 'urgent' ? '🔴' : '🟡'
-                        const lastUpdate = thread.updates[thread.updates.length - 1]
-                        const sessionName = (lastUpdate?.sessions as { title?: string | null } | null)?.title ?? null
-                        const displayTime = lastUpdate?.created_at ?? thread.created_at
+                      activeQuests.map(quest => {
+                        const entriesExpanded = expandedQuestIds.has(quest.id)
+                        const currentUpdate = quest.updates.find(u => u.is_current)
+                        const oldUpdates = quest.updates.filter(u => !u.is_current)
+                        const questEntries = [...quest.entries].sort((a, b) =>
+                          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                        )
 
                         return (
-                          <div key={thread.id} style={{ marginBottom: hasChildren ? 6 : 2 }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                          <div key={quest.id} style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '0.5px solid var(--border)' }}>
+                            {/* Title row */}
+                            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 6 }}>
+                              <span style={{ fontSize: 14, color: 'var(--text3)', flexShrink: 0, marginTop: 2 }}>◆</span>
+                              <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: 'var(--text)', lineHeight: 1.3 }}>
+                                {quest.title}
+                              </p>
+                              <span style={{ flexShrink: 0, fontSize: 14 }}>{quest.urgency === 'urgent' ? '🔴' : '🟡'}</span>
+                            </div>
+
+                            {/* Status history */}
+                            <div style={{ paddingLeft: 24 }}>
+                              {currentUpdate && (
+                                <p style={{ fontSize: 14, color: 'var(--text)', marginBottom: 4, lineHeight: 1.4 }}>
+                                  {currentUpdate.status_text}
+                                </p>
+                              )}
+                              {oldUpdates.slice(0, 3).map(u => (
+                                <p key={u.id} style={{ fontSize: 13, color: 'var(--text3)', textDecoration: 'line-through', marginBottom: 2, lineHeight: 1.4 }}>
+                                  {u.status_text}
+                                </p>
+                              ))}
+                            </div>
+
+                            {/* Action bar */}
+                            <div style={{ paddingLeft: 24, display: 'flex', gap: 14, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                               <button
-                                onClick={() => toggleThread(thread.id)}
-                                style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0', minHeight: 'auto' }}
+                                onClick={() => toggleQuestEntries(quest.id)}
+                                style={{ fontSize: 12, color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, minHeight: 'auto' }}
                               >
-                                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                                  <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>
-                                    {hasChildren ? '◆' : dot}
-                                  </span>
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ fontSize: 14, fontWeight: 500, color: hasChildren ? 'var(--text)' : 'var(--accent)', marginBottom: 2, lineHeight: 1.3 }}>
-                                      {thread.title}
-                                    </p>
-                                    {thread.summary && (
-                                      <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 3, lineHeight: 1.4 }}>
-                                        {thread.summary}
-                                      </p>
-                                    )}
-                                    {!hasChildren && (
-                                      <p style={{ fontSize: 11, color: 'var(--text3)' }}>
-                                        {sessionName ? `${sessionName} · ` : ''}{formatTime(displayTime)}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0, marginTop: 2 }}>
-                                    {isExpanded ? '▲' : '▼'}
-                                  </span>
-                                </div>
+                                {entriesExpanded ? '▲' : '▼'} {questEntries.length} {questEntries.length === 1 ? 'entry' : 'entries'}
                               </button>
                               <button
-                                onClick={() => dismissThread(thread.id)}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '12px 0 12px 10px', fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}
+                                onClick={() => { setRecalibrateQuestId(quest.id); setRecalibrateText('') }}
+                                style={{ fontSize: 12, color: 'var(--text2)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, minHeight: 'auto' }}
+                              >
+                                Recalibrate
+                              </button>
+                              <button
+                                onClick={() => handleDismissQuest(quest.id)}
+                                style={{ fontSize: 12, color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, minHeight: 'auto' }}
                               >
                                 Dismiss
                               </button>
                             </div>
 
-                            {/* Solo thread: update history */}
-                            {!hasChildren && renderUpdates(thread)}
-
-                            {/* Parent thread: children + own updates */}
-                            {hasChildren && isExpanded && (
-                              <div style={{ marginTop: 2, marginBottom: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                {activeChildren.map(child => {
-                                  const childExpanded = expandedThreadIds.has(child.id)
-                                  const childDot = child.urgency === 'urgent' ? '🔴' : '🟡'
-                                  return (
-                                    <div key={child.id} style={{ borderLeft: '2px solid var(--border)', paddingLeft: 12 }}>
-                                      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                                        <button
-                                          onClick={() => toggleThread(child.id)}
-                                          style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', minHeight: 'auto' }}
-                                        >
-                                          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                                            <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>{childDot}</span>
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                              <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--accent)', marginBottom: 2, lineHeight: 1.3 }}>
-                                                {child.title}
-                                              </p>
-                                              {child.summary && (
-                                                <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.4 }}>
-                                                  {child.summary}
-                                                </p>
-                                              )}
-                                            </div>
-                                            <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0, marginTop: 2 }}>
-                                              {childExpanded ? '▲' : '▼'}
-                                            </span>
-                                          </div>
-                                        </button>
-                                        <button
-                                          onClick={() => dismissThread(child.id)}
-                                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0 10px 10px', fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}
-                                        >
-                                          Dismiss
-                                        </button>
+                            {/* Expanded entries */}
+                            {entriesExpanded && (
+                              <div style={{ paddingLeft: 24, marginTop: 8 }}>
+                                {questEntries.length === 0 ? (
+                                  <p style={{ fontSize: 13, color: 'var(--text3)' }}>No entries linked yet.</p>
+                                ) : (
+                                  questEntries.map(entry => (
+                                    <div key={entry.id} style={{ padding: '7px 0', borderTop: '0.5px solid var(--border)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                                      <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{entry.icon || '📝'}</span>
+                                      <div style={{ flex: 1, minWidth: 0 }}>
+                                        <span className="label-caps" style={{ fontSize: 9, display: 'block', marginBottom: 2 }}>{entry.category || 'Note'}</span>
+                                        <p style={{
+                                          fontSize: 13,
+                                          color: 'var(--text2)',
+                                          lineHeight: 1.4,
+                                          overflow: 'hidden',
+                                          display: '-webkit-box',
+                                          WebkitLineClamp: 2,
+                                          WebkitBoxOrient: 'vertical',
+                                        } as React.CSSProperties}>
+                                          {entry.text}
+                                        </p>
                                       </div>
-                                      {renderUpdates(child)}
+                                      <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0, paddingTop: 1 }}>{formatTime(entry.created_at)}</span>
                                     </div>
-                                  )
-                                })}
+                                  ))
+                                )}
                               </div>
                             )}
                           </div>
@@ -827,7 +849,7 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
                         <span className="label-caps" style={{ fontSize: 10 }}>Resolved</span>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                           <span style={{ fontSize: 11, color: 'var(--text3)', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 10, padding: '1px 8px' }}>
-                            {resolvedThreads.length}
+                            {resolvedQuests.length}
                           </span>
                           <span style={{ fontSize: 11, color: 'var(--text3)' }}>{resolvedExpanded ? '▲' : '▼'}</span>
                         </div>
@@ -836,40 +858,35 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
                     <div style={{ height: 1, background: 'var(--border)', marginBottom: resolvedExpanded ? 8 : 0 }} />
 
                     {resolvedExpanded && (
-                      resolvedThreads.length === 0 ? (
-                        <p style={{ fontSize: 13, color: 'var(--text3)', paddingTop: 8 }}>No resolved threads.</p>
+                      resolvedQuests.length === 0 ? (
+                        <p style={{ fontSize: 13, color: 'var(--text3)', paddingTop: 8 }}>No resolved quests.</p>
                       ) : (
-                        resolvedThreads.map(thread => {
-                          const isExpanded = expandedThreadIds.has(thread.id)
-                          const lastUpdate = thread.updates[thread.updates.length - 1]
-                          const resolvedSessionName = (lastUpdate?.sessions as { title?: string | null } | null)?.title ?? null
+                        resolvedQuests.map(quest => {
+                          const currentUpdate = quest.updates.find(u => u.is_current)
                           return (
-                            <div key={thread.id} style={{ marginBottom: 2 }}>
-                              <button
-                                onClick={() => toggleThread(thread.id)}
-                                style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0', minHeight: 'auto' }}
-                              >
-                                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                                  <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>✅</span>
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', marginBottom: 2, lineHeight: 1.3 }}>
-                                      {thread.title}
+                            <div key={quest.id} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '0.5px solid var(--border)' }}>
+                              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 6 }}>
+                                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>✅</span>
+                                <div style={{ flex: 1 }}>
+                                  <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', lineHeight: 1.3, marginBottom: currentUpdate ? 4 : 0 }}>
+                                    {quest.title}
+                                  </p>
+                                  {currentUpdate && (
+                                    <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.4 }}>
+                                      {currentUpdate.status_text}
                                     </p>
-                                    {thread.summary && (
-                                      <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 3, lineHeight: 1.4 }}>
-                                        {thread.summary}
-                                      </p>
-                                    )}
-                                    <p style={{ fontSize: 11, color: 'var(--text3)' }}>
-                                      Resolved{resolvedSessionName ? ` · ${resolvedSessionName}` : ''}
-                                    </p>
-                                  </div>
-                                  <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0, marginTop: 2 }}>
-                                    {isExpanded ? '▲' : '▼'}
-                                  </span>
+                                  )}
                                 </div>
-                              </button>
-                              {renderUpdates(thread)}
+                              </div>
+                              <div style={{ paddingLeft: 24 }}>
+                                <button
+                                  onClick={() => handleReopenQuest(quest.id)}
+                                  className="btn-ghost"
+                                  style={{ fontSize: 12, minHeight: 28, padding: '3px 10px' }}
+                                >
+                                  Reopen
+                                </button>
+                              </div>
                             </div>
                           )
                         })
@@ -900,7 +917,7 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
         </div>
       )}
 
-      {/* ── Start Session Modal — only shown once to name the campaign ── */}
+      {/* ── Start Session Modal ── */}
       {showStartModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: 12, padding: 24, width: '100%', maxWidth: 400 }}>
@@ -950,6 +967,41 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
             <button className="btn-primary" onClick={handleSaveEntry} disabled={savingEntry || !newEntryText.trim()} style={{ width: '100%', fontSize: 14 }}>
               {savingEntry ? 'Saving...' : 'Save'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Recalibrate Modal ── */}
+      {recalibrateQuestId && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: 12, padding: 24, width: '100%', maxWidth: 420 }}>
+            <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 4, color: 'var(--text)' }}>Recalibrate quest</p>
+            <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 16 }}>What should Claude know?</p>
+            <textarea
+              value={recalibrateText}
+              onChange={e => setRecalibrateText(e.target.value)}
+              placeholder="e.g. This quest is resolved — Lucien cured himself."
+              autoFocus
+              style={{ fontSize: 14, lineHeight: 1.5, minHeight: 80, resize: 'none', width: '100%', marginBottom: 16 }}
+            />
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                className="btn-primary"
+                onClick={handleRecalibrate}
+                disabled={recalibrating || !recalibrateText.trim()}
+                style={{ flex: 1 }}
+              >
+                {recalibrating ? 'Recalibrating...' : 'Recalibrate'}
+              </button>
+              <button
+                className="btn-ghost"
+                onClick={() => { setRecalibrateQuestId(null); setRecalibrateText('') }}
+                disabled={recalibrating}
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
