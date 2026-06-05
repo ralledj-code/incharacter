@@ -16,11 +16,12 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: quests } = await (admin.from('quests') as AnyRec)
+    const { data: quests, error: questsError } = await (admin.from('quests') as AnyRec)
       .select('id, title, status, urgency, created_at, updated_at')
       .eq('player_id', user.id)
       .neq('status', 'dismissed')
       .order('updated_at', { ascending: false })
+    if (questsError) console.error('[quests GET] quests fetch error:', questsError)
 
     if (!quests?.length) return NextResponse.json({ quests: [] })
 

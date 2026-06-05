@@ -22,15 +22,17 @@ export async function POST(req: NextRequest) {
     const { entryId } = body as { entryId?: string }
     if (!entryId) return NextResponse.json({ error: 'Missing entryId' }, { status: 400 })
 
-    const { data: profileData } = await (admin.from('profiles') as AnyRec)
+    const { data: profileData, error: profileError } = await (admin.from('profiles') as AnyRec)
       .select('api_key_encrypted, character_name')
       .eq('id', user.id)
       .single()
+    if (profileError) console.error('[quest-assign] profiles fetch error:', profileError)
+    console.log('[quest-assign] profile:', { userId: user.id, hasKeyBlob: !!profileData?.api_key_encrypted, hasName: !!profileData?.character_name })
 
     const keyBlob = profileData?.api_key_encrypted as string | null
     let decryptedKey: string | null = null
     if (keyBlob) {
-      try { decryptedKey = decryptApiKey(keyBlob) } catch {}
+      try { decryptedKey = decryptApiKey(keyBlob) } catch (e) { console.error('[quest-assign] decrypt failed:', e) }
     }
     if (!decryptedKey) return NextResponse.json({ error: 'No API key' }, { status: 400 })
 
@@ -42,10 +44,11 @@ export async function POST(req: NextRequest) {
       .single()
     if (!entryData) return NextResponse.json({ error: 'Entry not found' }, { status: 404 })
 
-    const { data: existingQuests } = await (admin.from('quests') as AnyRec)
+    const { data: existingQuests, error: questsError } = await (admin.from('quests') as AnyRec)
       .select('id, title')
       .eq('player_id', user.id)
       .eq('status', 'active')
+    if (questsError) console.error('[quest-assign] quests fetch error:', questsError)
 
     const quests: AnyRec[] = existingQuests ?? []
 

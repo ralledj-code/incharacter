@@ -22,15 +22,17 @@ export async function POST(req: NextRequest) {
     const { questId } = body as { questId?: string }
     if (!questId) return NextResponse.json({ error: 'Missing questId' }, { status: 400 })
 
-    const { data: profileData } = await (admin.from('profiles') as AnyRec)
+    const { data: profileData, error: profileError } = await (admin.from('profiles') as AnyRec)
       .select('api_key_encrypted, character_name')
       .eq('id', user.id)
       .single()
+    if (profileError) console.error('[quest-update] profiles fetch error:', profileError)
+    console.log('[quest-update] profile:', { userId: user.id, hasKeyBlob: !!profileData?.api_key_encrypted })
 
     const keyBlob = profileData?.api_key_encrypted as string | null
     let decryptedKey: string | null = null
     if (keyBlob) {
-      try { decryptedKey = decryptApiKey(keyBlob) } catch {}
+      try { decryptedKey = decryptApiKey(keyBlob) } catch (e) { console.error('[quest-update] decrypt failed:', e) }
     }
     if (!decryptedKey) return NextResponse.json({ error: 'No API key' }, { status: 400 })
 
