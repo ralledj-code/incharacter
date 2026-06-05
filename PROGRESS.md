@@ -125,54 +125,92 @@ CREATE TABLE IF NOT EXISTS entries (
 | `/api/entries/[id]` | DELETE | Delete entry |
 | `/api/claude/categorise` | POST | Assign icon + category (Claude Haiku) |
 | `/api/claude/summarise` | POST | Write 3–4 sentence summary (Claude Haiku) |
-| `/api/claude/threads` | GET | Return existing quest threads with update history |
-| `/api/claude/threads` | POST | Run Claude thread analysis; persists new threads, updates, resolutions |
+| `/api/claude/quest-assign` | POST | Map new entry to an existing quest or create a new one |
+| `/api/claude/quest-update` | POST | Rewrite current status of a quest from all its entries |
+| `/api/claude/quest-recalibrate` | POST | Manual recalibration with player instruction |
+| `/api/quests` | GET | Return all quests with update history and linked entries |
+| `/api/quests/[id]` | PATCH | Generic status update (used for reopen) |
+| `/api/quests/[id]/dismiss` | PATCH | Set quest status to dismissed |
 
 ---
 
-## Quest Threads (2026-05-24)
+## Quest System — Architecture Replacement (2026-06-05)
 
-BG3-style quest thread log that tracks unresolved situations, characters, and arcs.
+Replaced the old `quest_threads` / `quest_thread_updates` two-table model with a cleaner three-table design.
 
-**Tables:** `quest_threads` (title, summary, urgency, status, parent_thread_id, session refs) and `quest_thread_updates` (chronological update log per thread, with session and entry refs).
-
-**Additional columns needed:**
+**New tables (run in Supabase SQL editor):**
 ```sql
-ALTER TABLE quest_threads
-  ADD COLUMN IF NOT EXISTS parent_thread_id uuid REFERENCES quest_threads(id) ON DELETE SET NULL;
-ALTER TABLE profiles
-  ADD COLUMN IF NOT EXISTS threads_initialised boolean DEFAULT false;
-ALTER TABLE profiles
-  ADD COLUMN IF NOT EXISTS threads_grouped boolean DEFAULT false;
+CREATE TABLE quests (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  player_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  status text DEFAULT 'active',
+  urgency text DEFAULT 'normal',
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE quest_updates (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  quest_id uuid REFERENCES quests(id) ON DELETE CASCADE,
+  status_text text NOT NULL,
+  is_current boolean DEFAULT true,
+  entry_id uuid REFERENCES entries(id) ON DELETE SET NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE entry_quest_map (
+  entry_id uuid REFERENCES entries(id) ON DELETE CASCADE,
+  quest_id uuid REFERENCES quests(id) ON DELETE CASCADE,
+  PRIMARY KEY (entry_id, quest_id)
+);
+
+ALTER TABLE quests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE quest_updates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE entry_quest_map ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Own quests" ON quests
+  FOR ALL USING (auth.uid() = player_id)
+  WITH CHECK (auth.uid() = player_id);
+
+CREATE POLICY "Own quest updates" ON quest_updates
+  FOR ALL USING (
+    auth.uid() = (SELECT player_id FROM quests WHERE id = quest_id)
+  );
+
+CREATE POLICY "Own entry quest map" ON entry_quest_map
+  FOR ALL USING (
+    auth.uid() = (SELECT player_id FROM entries WHERE id = entry_id)
+  );
 ```
 
-**Three-phase Claude analysis (POST):**
-- Phase 1 (1000 tokens): identify new threads → `[{title, entry_id, urgency}]`
-- Phase 2 (200 tokens each, parallel): one-sentence summary per new thread
-- Phase 3 (1500 tokens): group related threads under parent quests + find thread updates to existing threads
-
-**Profile flags:**
-- `threads_initialised` — set after first retrospective succeeds; gates the one-time full-history seed
-- `threads_grouped` — set after Phase 3 grouping runs; gates the one-time parent-grouping pass
-
-**Route POST body:**
-```typescript
-{ newEntryId?: string, retrospective?: boolean }
+**Drop old tables after confirming new system works:**
+```sql
+DROP TABLE IF EXISTS quest_thread_updates CASCADE;
+DROP TABLE IF EXISTS quest_threads CASCADE;
+ALTER TABLE profiles DROP COLUMN IF EXISTS threads_initialised;
+ALTER TABLE profiles DROP COLUMN IF EXISTS threads_grouped;
 ```
-- `retrospective: true` — analyses full entry history; triggers Phase 3 grouping on first call where `!threads_grouped`; sets `threads_initialised` on success
-- `newEntryId` — fires fire-and-forget from entry save flow; runs phases 1–3 but skips grouping
 
-**GET route:** Returns `{ threads, threadsInitialised, threadsGrouped }`. Threads are returned as a hierarchy: parent threads contain `children: QuestThreadWithUpdates[]`; orphaned threads appear at root level with `children: []`; dismissed threads are excluded.
+**Three Claude calls:**
+- `quest-assign` (400 tokens): for each new entry, match to existing quest or create new one
+- `quest-update` (300 tokens): rewrite current one-sentence status from all entries for that quest
+- `quest-recalibrate` (500 tokens): player provides instruction; re-evaluate status/urgency/resolution
 
-**Threads tab:** Third tab in `/play` app.
-- First visit, not initialised: POST `{ retrospective: true }`, show "Analysing your journal..."
-- Initialised but not grouped: show threads immediately, POST `{ retrospective: true }` in background, show "Grouping quest threads..."
-- Active threads sorted urgent-first (including urgency of children) then by `updated_at` desc
-- Parent threads (with children) shown with `◆` prefix; children indented with left border
-- Solo threads (no parent, no children) shown with urgency dot (🔴/🟡)
-- Resolved section collapsed by default
-- Tap any thread to expand its chronological update history; tap child to expand child updates
-- Dismiss button on every thread (top-level and child)
+**Retrospective (first Threads tab visit, empty quests):**
+- Shows "Building your quest log..."
+- Fetches all entries from existing session state (no extra API call)
+- Processes chronologically in sequential batches of 5: quest-assign → quest-update per entry
+- Prevents double-run with a `useRef` flag within the session
+
+**Threads tab UI:**
+- Active quests sorted urgent-first then by `updated_at` desc
+- Each quest: `◆` prefix + title (15px fw600) + urgency dot (🔴/🟡) on right
+- Current status (14px, bold) + old statuses with `text-decoration: line-through`
+- Action bar: entries toggle (shows count) + Recalibrate + Dismiss
+- Recalibrate opens a modal: "What should Claude know?" → calls quest-recalibrate
+- Entries expand to show icon + category + truncated text + timestamp (newest first)
+- Resolved section collapsed by default; shows final status text + Reopen ghost button
 
 ---
 
@@ -200,6 +238,10 @@ ALTER TABLE profiles
 - `a5f6573` FIX: Quest Threads — full history, robust JSON, BG3 prompt
 - `7a36653` FEAT: Quest Threads — GET returns hierarchy, POST returns hierarchy (Section 2 rev2)
 - `aebea30` FEAT: Quest Threads — hierarchical UI + grouping trigger (Sections 3+4)
+
+- `174f724` FEAT: Quest system — new API routes (Section 1, architecture replacement)
+- `fe9b0a3` FEAT: Quests tab — entry wiring, retrospective, new UI (Sections 2-4)
+- `7f7b2a8` CLEANUP: Remove old quest_threads references from entries DELETE (Section 5)
 
 - `0d8e721` CLEANUP: Remove DM, tracker, onboarding, campaign code
 - `724804e` REBUILD: Update types, lib, middleware, nav for new schema
