@@ -49,32 +49,34 @@ export interface SessionWithEntries extends Session {
   entries: Entry[]
 }
 
-export interface QuestThread {
+export interface Quest {
   id: string
   player_id: string
   title: string
-  summary: string | null
-  urgency: 'urgent' | 'normal'
   status: 'active' | 'resolved' | 'dismissed'
-  first_entry_id: string | null
-  parent_thread_id: string | null
-  last_updated_session_id: string | null
-  resolved_session_id: string | null
+  urgency: 'urgent' | 'normal'
   created_at: string
   updated_at: string
 }
 
-export interface QuestThreadUpdate {
+export interface QuestUpdate {
   id: string
-  thread_id: string
-  session_id: string | null
+  quest_id: string
+  status_text: string
+  is_current: boolean
   entry_id: string | null
-  update_text: string
   created_at: string
-  sessions?: { title: string | null } | null
 }
 
-export interface QuestThreadWithUpdates extends QuestThread {
-  updates: QuestThreadUpdate[]
-  children: QuestThreadWithUpdates[]
+export interface QuestEntry {
+  id: string
+  text: string
+  icon: string | null
+  category: string | null
+  created_at: string
+}
+
+export interface QuestWithUpdates extends Quest {
+  updates: QuestUpdate[]
+  entries: QuestEntry[]
 }
