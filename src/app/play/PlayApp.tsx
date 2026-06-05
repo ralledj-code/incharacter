@@ -291,9 +291,9 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
         body: JSON.stringify({ entryId }),
       })
         .then(r => r.json())
-        .then(({ questId }) => {
-          if (!questId) return Promise.resolve()
-          return fetch('/api/claude/quest-update', {
+        .then(({ questId }: { questId: string | null }) => {
+          if (!questId) return
+          fetch('/api/claude/quest-update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ questId }),
