@@ -64,12 +64,26 @@ NEW JOURNAL ENTRY:
 
 Does this entry belong to an existing quest, or does it open a new one?
 
-RULES:
-- Only create a new quest if the entry introduces a genuinely new unresolved situation
+QUEST CREATION RULES -- only create a new quest if ALL of these are true:
+1. The situation requires future action from ${characterName}
+2. The outcome is unknown and unresolved
+3. It will likely span multiple sessions or moments
+
+DO NOT create a quest for:
+- Current combat or immediate danger (fighting a monster, being attacked)
+- Momentary states (being swallowed, falling, surprised)
+- Things already resolved within the same entry
+- Reactions or observations with no required follow-up action
+
+Examples of what IS a quest: "We need to find the druids to restore moonwater"
+Examples of what is NOT a quest: "A gelatinous cube swallowed me"
+
+Additional rules:
 - Quest titles are HIGH LEVEL (e.g. "The Werewolf Crisis", "Hunt for Severin", "Lucien's Secret")
 - Never create duplicate quests for the same situation
 - An entry can belong to an existing quest even if it doesn't mention it by name
 - If the entry is routine or doesn't relate to any quest, return quest_id: null and new_quest_title: null
+- When in doubt, map to an existing quest rather than creating a new one
 - ${characterName} is the player character
 
 Return ONLY valid JSON:
