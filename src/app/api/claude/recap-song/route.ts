@@ -142,12 +142,14 @@ Write the full lyrics now. Match the style prompt: ${stylePrompt}`
     const client = new Anthropic({ apiKey })
     const message = await client.messages.create({
       model: 'claude-sonnet-5',
-      max_tokens: 2000,
+      max_tokens: 4000,
+      thinking: { type: 'disabled' },
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
     })
 
-    const lyrics = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+    const textBlock = message.content.find(b => b.type === 'text')
+    const lyrics = textBlock?.type === 'text' ? textBlock.text.trim() : ''
 
     // 6. Return the style prompt and the lyrics
     return NextResponse.json({ stylePrompt, lyrics })
