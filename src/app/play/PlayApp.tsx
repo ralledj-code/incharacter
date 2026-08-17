@@ -161,6 +161,7 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
   const [songResult, setSongResult] = useState<{ stylePrompt: string; lyrics: string } | null>(null)
   const [songError, setSongError] = useState<string | null>(null)
   const [copiedField, setCopiedField] = useState<'style' | 'lyrics' | null>(null)
+  const [songResultsBySession, setSongResultsBySession] = useState<Record<string, { stylePrompt: string; lyrics: string }>>({})
 
   // Quests
   const [quests, setQuests] = useState<QuestWithUpdates[] | null>(null)
@@ -415,10 +416,17 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
 
   // Recap song handlers
 
-  async function handleGenerateSong(session: SessionWithEntries) {
+  async function handleGenerateSong(session: SessionWithEntries, force = false) {
     setSongSession(session)
-    setSongResult(null)
     setSongError(null)
+
+    const cached = songResultsBySession[session.id]
+    if (cached && !force) {
+      setSongResult(cached)
+      return
+    }
+
+    setSongResult(null)
     setSongLoading(true)
     try {
       const res = await fetch('/api/claude/recap-song', {
@@ -427,8 +435,13 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
         body: JSON.stringify({ sessionId: session.id, playerId: session.player_id }),
       })
       const data = await res.json()
-      if (!res.ok) setSongError(data.error || 'Something went wrong composing your recap.')
-      else setSongResult({ stylePrompt: data.stylePrompt || '', lyrics: data.lyrics || '' })
+      if (!res.ok) {
+        setSongError(data.error || 'Something went wrong composing your recap.')
+      } else {
+        const result = { stylePrompt: data.stylePrompt || '', lyrics: data.lyrics || '' }
+        setSongResult(result)
+        setSongResultsBySession(prev => ({ ...prev, [session.id]: result }))
+      }
     } catch {
       setSongError('Could not reach the composer. Check your connection and try again.')
     }
@@ -736,7 +749,7 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
                               disabled={songLoading || session.entries.length === 0}
                               style={{ fontSize: 12, minHeight: 30, padding: '4px 12px' }}
                             >
-                              🎵 Generate Song
+                              {songResultsBySession[session.id] ? '🎵 View Song' : '🎵 Generate Song'}
                             </button>
                           </div>
                           {visibleEntries.length === 0 ? (
@@ -1139,7 +1152,16 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
                   })}
                 </div>
 
-                <button className="btn-ghost" onClick={closeSong} style={{ width: '100%' }}>Close</button>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    className="btn-ghost"
+                    onClick={() => songSession && handleGenerateSong(songSession, true)}
+                    style={{ flex: 1 }}
+                  >
+                    Regenerate
+                  </button>
+                  <button className="btn-ghost" onClick={closeSong} style={{ flex: 1 }}>Close</button>
+                </div>
               </>
             ) : null}
           </div>
