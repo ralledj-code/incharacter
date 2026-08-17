@@ -224,13 +224,17 @@ Turns any past session into a bard's ballad for Suno v5.5 — a copy-ready style
 2. **Entries** — read from the `entries` table ordered by `created_at ASC` (strict chronological), never the `summary` blob.
 3. **Mood scoring** — counts `entries.category` frequency (upper-cased to match `MOOD_MAP` keys); the final 20% of entries are weighted `1.5x` (`MOOD_WEIGHTS = { early: 1.0, late: 1.5 }`) so the ending colours the tone. Non-mood categories (Rest, Note) are ignored; falls back to `MYSTERY` if none. Top 1–2 tags become the dominant moods.
 4. **Style string** — `buildStyleString` maps the dominant moods through `MOOD_MAP` (instruments/bpm/energy) into a Suno v5.5 line: BPM + D minor, nordic battle-hymn genre, instrument stack, raspy male bard vocal, negatives — under 1000 chars.
-5. **Claude** — `claude-sonnet-5`, strict system prompt: hardcoded character context (Lucien Vale first-person narrator, Arthas paladin, Cedric monk), Suno bracket-tag format rules, chronological-order/no-invention/unresolved-outro content rules. User message carries the timestamped entry list, dominant moods, title, and style prompt.
+5. **Claude** — `claude-sonnet-5` with `thinking: {type: 'disabled'}`, strict system prompt: hardcoded character context (Lucien Vale first-person narrator, Arthas paladin, Cedric monk), Suno bracket-tag format rules, chronological-order/no-invention/unresolved-outro content rules. User message carries the timestamped entry list, dominant moods, title, and style prompt.
 6. **Returns** `{ stylePrompt, lyrics }`.
 
+**Bug fixed:** Sonnet 5 runs adaptive thinking by default when `thinking` is omitted (unlike Sonnet 4.6, which defaulted to thinking-off) — a `thinking` block landed ahead of the `text` block in `message.content`, and reading `content[0]` unconditionally returned empty lyrics while the locally-built `stylePrompt` still succeeded. Fixed by finding the block by `.type === 'text'` and explicitly disabling thinking for this bounded lyric-writing task.
+
 **UI** — `PlayApp.tsx` Past Sessions:
-- Each expanded session card gets a `🎵 Generate Song` ghost button (`btn-ghost`).
+- Each expanded session card gets a `🎵 Generate Song` ghost button (`btn-ghost`); label switches to `🎵 View Song` once a song has been generated for that session.
+- Songs are cached client-side per `session.id` (`songResultsBySession` state) — re-clicking the button reopens the cached result instead of re-calling Claude. Cache is in-memory only, not persisted to Supabase, so it resets on page reload.
 - Loading modal: "Composing your recap…" (10–15s).
-- Result modal (max-width 680px, scrollable, `var(--surface)`, 12px radius): title, a monospace `var(--bg2)` style-prompt block, and lyrics at 15px with `[section]` header lines rendered in `var(--accent)` and line breaks preserved exactly. Both sections have a `Copy ↗` button (style → Suno Style field, lyrics → Suno Lyrics field). Error state offers Try again / Close.
+- Result modal (max-width 680px, scrollable, `var(--surface)`, 12px radius): title, a monospace `var(--bg2)` style-prompt block, and lyrics at 15px with `[section]` header lines rendered in `var(--accent)` and line breaks preserved exactly. Both sections have a `Copy ↗` button (style → Suno Style field, lyrics → Suno Lyrics field). Footer has `Regenerate` (force-refetch, overwrites cache) and `Close`. Error state offers Try again / Close.
+- Entries are scoped strictly to the session being viewed (`entries.session_id = sessionId`) — never cross-session, never the `summary` blob.
 
 ---
 
@@ -264,6 +268,8 @@ Turns any past session into a bard's ballad for Suno v5.5 — a copy-ready style
 - `7f7b2a8` CLEANUP: Remove old quest_threads references from entries DELETE (Section 5)
 
 - FEAT: Recap Song Generator — /api/claude/recap-song + Generate Song button in Past Sessions
+- FIX: recap-song lyrics empty — Sonnet 5 defaults to adaptive thinking, read content[0] unconditionally
+- FEAT: Cache recap songs per session — button opens existing, modal gets Regenerate
 
 - `0d8e721` CLEANUP: Remove DM, tracker, onboarding, campaign code
 - `724804e` REBUILD: Update types, lib, middleware, nav for new schema
