@@ -155,6 +155,13 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
+  // Recap song
+  const [songSession, setSongSession] = useState<SessionWithEntries | null>(null)
+  const [songLoading, setSongLoading] = useState(false)
+  const [songResult, setSongResult] = useState<{ stylePrompt: string; lyrics: string } | null>(null)
+  const [songError, setSongError] = useState<string | null>(null)
+  const [copiedField, setCopiedField] = useState<'style' | 'lyrics' | null>(null)
+
   // Quests
   const [quests, setQuests] = useState<QuestWithUpdates[] | null>(null)
   const [questsLoading, setQuestsLoading] = useState(false)
@@ -404,6 +411,43 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
     if (isPast) setPastSessions(update)
     else setActiveSession(prev => prev ? { ...prev, entries: prev.entries.filter(e => e.id !== entry.id) } : null)
     await fetch(`/api/entries/${entry.id}`, { method: 'DELETE' })
+  }
+
+  // Recap song handlers
+
+  async function handleGenerateSong(session: SessionWithEntries) {
+    setSongSession(session)
+    setSongResult(null)
+    setSongError(null)
+    setSongLoading(true)
+    try {
+      const res = await fetch('/api/claude/recap-song', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: session.id, playerId: session.player_id }),
+      })
+      const data = await res.json()
+      if (!res.ok) setSongError(data.error || 'Something went wrong composing your recap.')
+      else setSongResult({ stylePrompt: data.stylePrompt || '', lyrics: data.lyrics || '' })
+    } catch {
+      setSongError('Could not reach the composer. Check your connection and try again.')
+    }
+    setSongLoading(false)
+  }
+
+  function closeSong() {
+    setSongSession(null)
+    setSongResult(null)
+    setSongError(null)
+    setSongLoading(false)
+    setCopiedField(null)
+  }
+
+  function copySong(text: string, field: 'style' | 'lyrics') {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedField(field)
+      setTimeout(() => setCopiedField(prev => (prev === field ? null : prev)), 1500)
+    }).catch(() => {})
   }
 
   // Quest handlers
@@ -685,6 +729,16 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
                       {/* Expanded entries */}
                       {isExpanded && (
                         <div style={{ borderTop: '0.5px solid var(--border)', padding: '10px 12px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 2 }}>
+                            <button
+                              className="btn-ghost"
+                              onClick={() => handleGenerateSong(session)}
+                              disabled={songLoading || session.entries.length === 0}
+                              style={{ fontSize: 12, minHeight: 30, padding: '4px 12px' }}
+                            >
+                              🎵 Generate Song
+                            </button>
+                          </div>
                           {visibleEntries.length === 0 ? (
                             <p style={{ fontSize: 13, color: 'var(--text3)', padding: '8px 4px' }}>No entries match this search.</p>
                           ) : (
@@ -1013,6 +1067,83 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
           onSkip={handleFeedbackSkip}
           sending={sendingFeedback}
         />
+      )}
+
+      {/* ── Recap Song Modal ── */}
+      {songSession && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: 12, padding: 24, width: '100%', maxWidth: 680, maxHeight: '85vh', overflowY: 'auto' }}>
+            {songLoading ? (
+              <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>Composing your recap…</p>
+                <p style={{ fontSize: 13, color: 'var(--text3)' }}>This takes 10–15 seconds.</p>
+              </div>
+            ) : songError ? (
+              <>
+                <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>Couldn&apos;t compose the song</p>
+                <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.5, marginBottom: 20 }}>{songError}</p>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button className="btn-primary" onClick={() => handleGenerateSong(songSession)} style={{ flex: 1 }}>Try again</button>
+                  <button className="btn-ghost" onClick={closeSong} style={{ flex: 1 }}>Close</button>
+                </div>
+              </>
+            ) : songResult ? (
+              <>
+                <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 20 }}>
+                  {songSession.title || formatDate(songSession.created_at)} — Recap Song
+                </p>
+
+                {/* Style prompt */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <span className="label-caps" style={{ fontSize: 10 }}>Suno Style Prompt</span>
+                  <button
+                    onClick={() => copySong(songResult.stylePrompt, 'style')}
+                    style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 2, minHeight: 'auto' }}
+                  >
+                    {copiedField === 'style' ? 'Copied ✓' : 'Copy ↗'}
+                  </button>
+                </div>
+                <div style={{
+                  background: 'var(--bg2)', borderRadius: 8, padding: '12px 14px', marginBottom: 24,
+                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: 12.5, lineHeight: 1.55,
+                  color: 'var(--text2)', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                }}>
+                  {songResult.stylePrompt}
+                </div>
+
+                {/* Lyrics */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <span className="label-caps" style={{ fontSize: 10 }}>Lyrics</span>
+                  <button
+                    onClick={() => copySong(songResult.lyrics, 'lyrics')}
+                    style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 2, minHeight: 'auto' }}
+                  >
+                    {copiedField === 'lyrics' ? 'Copied ✓' : 'Copy ↗'}
+                  </button>
+                </div>
+                <div style={{ marginBottom: 24 }}>
+                  {songResult.lyrics.split('\n').map((line, i) => {
+                    const isHeader = line.trim().startsWith('[')
+                    return (
+                      <div key={i} style={{
+                        fontSize: 15,
+                        lineHeight: 1.55,
+                        color: isHeader ? 'var(--accent)' : 'var(--text)',
+                        fontWeight: isHeader ? 600 : 400,
+                        minHeight: line.trim() ? undefined : '0.7em',
+                        wordBreak: 'break-word',
+                      }}>
+                        {line}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <button className="btn-ghost" onClick={closeSong} style={{ width: '100%' }}>Close</button>
+              </>
+            ) : null}
+          </div>
+        </div>
       )}
 
       {/* ── End Session Confirm ── */}

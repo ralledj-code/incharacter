@@ -128,6 +128,7 @@ CREATE TABLE IF NOT EXISTS entries (
 | `/api/claude/quest-assign` | POST | Map new entry to an existing quest or create a new one |
 | `/api/claude/quest-update` | POST | Rewrite current status of a quest from all its entries |
 | `/api/claude/quest-recalibrate` | POST | Manual recalibration with player instruction |
+| `/api/claude/recap-song` | POST | Generate a Suno v5.5 style prompt + lyrics recap of a past session (Claude Sonnet) |
 | `/api/quests` | GET | Return all quests with update history and linked entries |
 | `/api/quests/[id]` | PATCH | Generic status update (used for reopen) |
 | `/api/quests/[id]/dismiss` | PATCH | Set quest status to dismissed |
@@ -214,6 +215,25 @@ ALTER TABLE profiles DROP COLUMN IF EXISTS threads_grouped;
 
 ---
 
+## Recap Song Generator (2026-08-17)
+
+Turns any past session into a bard's ballad for Suno v5.5 — a copy-ready style prompt plus structured lyrics.
+
+**API route** — `POST /api/claude/recap-song`, input `{ sessionId, playerId }`:
+1. **Auth** — fetches the session with the service-role client and returns `403` if `sessions.player_id !== auth.uid()` (`404` if the session is missing) before any Claude call. `playerId` from the client is ignored; the authed `user.id` is authoritative.
+2. **Entries** — read from the `entries` table ordered by `created_at ASC` (strict chronological), never the `summary` blob.
+3. **Mood scoring** — counts `entries.category` frequency (upper-cased to match `MOOD_MAP` keys); the final 20% of entries are weighted `1.5x` (`MOOD_WEIGHTS = { early: 1.0, late: 1.5 }`) so the ending colours the tone. Non-mood categories (Rest, Note) are ignored; falls back to `MYSTERY` if none. Top 1–2 tags become the dominant moods.
+4. **Style string** — `buildStyleString` maps the dominant moods through `MOOD_MAP` (instruments/bpm/energy) into a Suno v5.5 line: BPM + D minor, nordic battle-hymn genre, instrument stack, raspy male bard vocal, negatives — under 1000 chars.
+5. **Claude** — `claude-sonnet-5`, strict system prompt: hardcoded character context (Lucien Vale first-person narrator, Arthas paladin, Cedric monk), Suno bracket-tag format rules, chronological-order/no-invention/unresolved-outro content rules. User message carries the timestamped entry list, dominant moods, title, and style prompt.
+6. **Returns** `{ stylePrompt, lyrics }`.
+
+**UI** — `PlayApp.tsx` Past Sessions:
+- Each expanded session card gets a `🎵 Generate Song` ghost button (`btn-ghost`).
+- Loading modal: "Composing your recap…" (10–15s).
+- Result modal (max-width 680px, scrollable, `var(--surface)`, 12px radius): title, a monospace `var(--bg2)` style-prompt block, and lyrics at 15px with `[section]` header lines rendered in `var(--accent)` and line breaks preserved exactly. Both sections have a `Copy ↗` button (style → Suno Style field, lyrics → Suno Lyrics field). Error state offers Try again / Close.
+
+---
+
 ## New pages / components (2026-05-01)
 
 | Path | Description |
@@ -242,6 +262,8 @@ ALTER TABLE profiles DROP COLUMN IF EXISTS threads_grouped;
 - `174f724` FEAT: Quest system — new API routes (Section 1, architecture replacement)
 - `fe9b0a3` FEAT: Quests tab — entry wiring, retrospective, new UI (Sections 2-4)
 - `7f7b2a8` CLEANUP: Remove old quest_threads references from entries DELETE (Section 5)
+
+- FEAT: Recap Song Generator — /api/claude/recap-song + Generate Song button in Past Sessions
 
 - `0d8e721` CLEANUP: Remove DM, tracker, onboarding, campaign code
 - `724804e` REBUILD: Update types, lib, middleware, nav for new schema
