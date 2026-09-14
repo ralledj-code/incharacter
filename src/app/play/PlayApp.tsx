@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import BurgerMenu from '@/components/BurgerMenu'
 import { createClient } from '@/lib/supabase/client'
 import SessionFeedback from '@/components/SessionFeedback'
+import LucienChat, { type LucienChatHandle } from '@/components/LucienChat'
 import type { Entry, SessionWithEntries, FeedbackData, QuestWithUpdates } from '@/types/database'
 
 type Tab = 'current' | 'past' | 'threads'
@@ -141,6 +142,8 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
   // End session
   const [showEndConfirm, setShowEndConfirm] = useState(false)
   const [endingSession, setEndingSession] = useState(false)
+  const [clearLucienOnEnd, setClearLucienOnEnd] = useState(false)
+  const lucienRef = useRef<LucienChatHandle>(null)
 
   // Feedback flow
   const [showFeedback, setShowFeedback] = useState(false)
@@ -336,6 +339,11 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
       setPastSessions(prev => [ended, ...prev])
       setActiveSession(null)
       setShowEndConfirm(false)
+
+      if (clearLucienOnEnd) {
+        lucienRef.current?.clearActiveConversation()
+        setClearLucienOnEnd(false)
+      }
 
       if (dmEmail) {
         setFeedbackSession(ended)
@@ -1176,6 +1184,15 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
             <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 20, lineHeight: 1.5 }}>
               This will lock the session and generate a summary to help you remember it next time. You won&apos;t be able to add more entries after this.
             </p>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={clearLucienOnEnd}
+                onChange={e => setClearLucienOnEnd(e.target.checked)}
+                style={{ width: 16, height: 16, minHeight: 'auto', flexShrink: 0 }}
+              />
+              <span style={{ fontSize: 13, color: 'var(--text2)' }}>Clear Lucien conversation after this session</span>
+            </label>
             {endingSession && (
               <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 12 }}>Writing summary...</p>
             )}
@@ -1190,6 +1207,8 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
           </div>
         </div>
       )}
+
+      <LucienChat ref={lucienRef} />
     </div>
   )
 }
