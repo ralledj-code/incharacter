@@ -80,3 +80,27 @@ export interface QuestWithUpdates extends Quest {
   updates: QuestUpdate[]
   entries: QuestEntry[]
 }
+
+export interface LucienConversation {
+  id: string
+  player_id: string
+  title: string
+  created_at: string
+  updated_at: string
+}
+
+export interface LucienConversationSummary {
+  id: string
+  title: string
+  updated_at: string
+  message_count: number
+}
+
+export interface LucienMessage {
+  id: string
+  conversation_id: string
+  player_id: string
+  role: 'user' | 'assistant'
+  content: string
+  created_at: string
+}

@@ -2,7 +2,7 @@
 
 ## Status: Complete ✓
 
-Full rebuild completed 2026-04-29. Feedback flow added 2026-05-01.
+Full rebuild completed 2026-04-29. Feedback flow added 2026-05-01. Lucien chat companion added 2026-09-14.
 
 ---
 
@@ -248,6 +248,75 @@ Turns any past session into a bard's ballad for Suno v5.5 — a copy-ready style
 | `src/app/api/session/feedback-email` POST | Renders and sends feedback email via Resend |
 
 ---
+
+## Lucien Chat Companion (2026-09-14)
+
+A persistent chat with Lucien Vale (the campaign's first-person narrator character) available from any tab of the play app, backed by its own conversation history.
+
+**New tables (run in Supabase SQL editor):**
+```sql
+CREATE TABLE lucien_conversations (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  player_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  title text NOT NULL DEFAULT 'New conversation',
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE lucien_messages (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  conversation_id uuid REFERENCES lucien_conversations(id) ON DELETE CASCADE,
+  player_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  role text NOT NULL CHECK (role IN ('user', 'assistant')),
+  content text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE lucien_conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lucien_messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Own conversations" ON lucien_conversations
+  FOR ALL USING (auth.uid() = player_id)
+  WITH CHECK (auth.uid() = player_id);
+
+CREATE POLICY "Own messages" ON lucien_messages
+  FOR ALL USING (auth.uid() = player_id)
+  WITH CHECK (auth.uid() = player_id);
+```
+
+**API routes:**
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/lucien/conversations` | GET | All conversations for this player, ordered by `updated_at` desc, with a `message_count` per conversation |
+| `/api/lucien/conversations` | POST | Create a new conversation (`title` defaults to "New conversation") |
+| `/api/lucien/conversations/[id]` | GET | Full conversation with all messages, ordered by `created_at` asc |
+| `/api/lucien/conversations/[id]` | DELETE | Delete conversation and all messages (cascade) |
+| `/api/lucien/conversations/[id]/messages` | DELETE | Clear messages from a conversation, keep the thread (used by End Session) |
+| `/api/lucien/chat` | POST | Send a message to Lucien and get a reply, using the player's own Anthropic key |
+
+**Context assembly (`/api/lucien/chat`):**
+- All `entries` for the player, chronological, plus the last 10 flagged separately as "most recent"
+- Session summaries (ended sessions only, `summary is not null`)
+- Active quest titles + urgency
+- `profiles.character_note` folded into the system prompt via the Lucien Vale dossier
+- Entry threshold: if a player has 400+ entries, the full entries list is dropped from the prompt in favour of session summaries only (`[lucien] mode: summary|full` logged server-side) — keeps the request from growing unbounded for long-running campaigns
+- Auth follows the `recap-song` pattern: service-role fetch of `lucien_conversations`, 403 if `player_id !== auth.uid()`, 404 if missing; the `playerId` field in the request body is accepted for the client's convenience but never trusted
+- Model: `claude-sonnet-4-6`, `max_tokens: 600`, using the player's own decrypted key (`decryptApiKey`)
+- First exchange in a conversation triggers a second, tiny Claude Haiku call (`max_tokens: 30`) to auto-title the thread from the opening message
+- Cost: roughly $0.05 per message at current entry volumes (Sonnet-tier context + response)
+
+**UI** — `src/components/LucienChat.tsx`, mounted once in `PlayApp.tsx`:
+- Floating action button (bottom-right, 52px circle, `var(--accent)`) on every tab of the play app; toggles a slide-in panel (desktop: 380px fixed right panel; mobile: full-screen overlay)
+- Panel header: "Lucien" + current conversation title (truncated) + ↺ conversation list toggle + close
+- Conversation list: New conversation button, past conversations with relative dates and a 🗑 delete
+- Message bubbles: user right-aligned/accent-faint, Lucien left-aligned/accent left-border; three-dot "thinking" animation while awaiting a reply
+- Input auto-expands 1–4 lines; Enter sends, Shift+Enter newlines; disabled while thinking
+- Exposes `clearActiveConversation()` via `useImperativeHandle` so the End Session flow can clear the active thread without unmounting/remounting the panel
+
+**End Session integration** — `PlayApp.tsx`:
+- End Session confirm modal has an optional, unchecked-by-default checkbox: "Clear Lucien conversation after this session"
+- If checked, ending the session calls `DELETE /api/lucien/conversations/[id]/messages` on the active Lucien conversation — clears messages, keeps the conversation row and title so the thread persists across sessions
 
 ## Commit log
 
