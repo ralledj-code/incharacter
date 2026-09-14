@@ -39,3 +39,32 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: String(error) }, { status: 500 })
   }
 }
+
+// DELETE — delete a session, but only if it has no entries
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
+
+    const { count, error: countError } = await (admin.from('entries') as AnyRec)
+      .select('id', { count: 'exact', head: true })
+      .eq('session_id', id)
+    if (countError) return NextResponse.json({ error: countError.message }, { status: 500 })
+    if ((count ?? 0) > 0) {
+      return NextResponse.json({ error: 'This session has entries and cannot be deleted.' }, { status: 400 })
+    }
+
+    const { error } = await (admin.from('sessions') as AnyRec)
+      .delete()
+      .eq('id', id)
+      .eq('player_id', user.id)
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 })
+  }
+}

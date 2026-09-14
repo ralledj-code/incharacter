@@ -388,6 +388,23 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
     setExpandedId(sid)
   }
 
+  async function deleteSession(session: SessionWithEntries) {
+    if (session.entries.length > 0) return
+    if (!window.confirm('Delete this empty session?')) return
+    try {
+      const res = await fetch(`/api/sessions/${session.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        window.alert(data.error || 'Could not delete session.')
+        return
+      }
+      setPastSessions(prev => prev.filter(s => s.id !== session.id))
+      if (expandedId === session.id) setExpandedId(null)
+    } catch {
+      window.alert('Could not delete session.')
+    }
+  }
+
   async function handleTogglePin(entry: Entry, sessionId: string, isPast: boolean) {
     const pinned = !entry.pinned
     const update = (sessions: SessionWithEntries[]) =>
@@ -720,9 +737,12 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
                   return (
                     <div key={session.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
                       {/* Session card header */}
-                      <button
+                      <div
+                        role="button"
+                        tabIndex={0}
                         onClick={() => setExpandedId(isExpanded ? null : session.id)}
-                        style={{ width: '100%', textAlign: 'left', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', minHeight: 'auto' }}
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setExpandedId(isExpanded ? null : session.id) }}
+                        style={{ width: '100%', textAlign: 'left', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer' }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -743,9 +763,20 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
                               </p>
                             )}
                           </div>
-                          <span style={{ fontSize: 12, color: 'var(--text3)', flexShrink: 0, marginTop: 2 }}>{isExpanded ? '▲' : '▼'}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                            {session.entries.length === 0 && (
+                              <button
+                                onClick={e => { e.stopPropagation(); deleteSession(session) }}
+                                title="Delete empty session"
+                                style={{ fontSize: 13, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', minHeight: 'auto', padding: 2, lineHeight: 1 }}
+                              >
+                                🗑
+                              </button>
+                            )}
+                            <span style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{isExpanded ? '▲' : '▼'}</span>
+                          </div>
                         </div>
-                      </button>
+                      </div>
 
                       {/* Expanded entries */}
                       {isExpanded && (
