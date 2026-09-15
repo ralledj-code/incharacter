@@ -27,33 +27,6 @@ const MOOD_MAP: Record<string, { instruments: string; bpm: string; energy: strin
   FEAR:        { instruments: 'low tremolo strings, sparse piano, slow building tension', bpm: '55-75', energy: 'tense, creeping' },
 }
 
-function buildStyleString(dominantMoods: string[]): string {
-  const top = dominantMoods.slice(0, 2)
-  const primary = MOOD_MAP[top[0]] ?? MOOD_MAP['MYSTERY']
-  const secondary = top[1] ? MOOD_MAP[top[1]] : null
-
-  const bpmRange = primary.bpm
-  const instruments = secondary
-    ? `${primary.instruments}, blending into ${secondary.instruments}`
-    : primary.instruments
-
-  // Suno v5.5 format: BPM, key, genre, instruments, vocal, negatives — under 1000 chars
-  return [
-    `${bpmRange} BPM, D minor`,
-    `epic cinematic nordic battle hymn, viking bard ballad`,
-    instruments,
-    `nyckelharpa low string drone, heavy soaring pan flute lead melody, powerful deep choir`,
-    `single raspy deep male bard vocal — weathered storyteller's voice, not screamed, not metal growl`,
-    `dynamic explosive shifts between quiet solo narration and full choir-and-drum battle swells`,
-    `no autotune, no reverb wash, no electronic elements`,
-  ].join(', ')
-}
-
-const CHARACTER_CONTEXT = `CHARACTER CONTEXT (never deviate from this):
-- Lucien Vale: Wild Magic Sorcerer, half-brother to Arthas and Cedric. Good-hearted but criminal and deceitful. FIRST PERSON NARRATOR.
-- Arthas: Paladin of Tyr, Lucien's half-brother. Deeply protective, oath-bound.
-- Cedric: Monk, Arthas's brother and Lucien's half-brother. Cunning, extremely quick.`
-
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
@@ -102,10 +75,7 @@ export async function POST(req: NextRequest) {
     const sessionTitle: string = session.title || 'Untitled Session'
     const characterName: string = session.character_name || 'Lucien Vale'
 
-    // 4. Build the Suno v5.5 style string
-    const stylePrompt = buildStyleString(dominantMoods)
-
-    // 5. Call Claude
+    // 4. Call Claude
     const systemPrompt = `You are a viking bard writing a song recap of a tabletop RPG session.
 Your job is to make the players want to listen to it again and again — in the car, at the table, around a fire.
 
@@ -253,26 +223,29 @@ Write the style prompt first, then the full lyrics.
 Return as JSON: { "stylePrompt": "...", "lyrics": "..." }
 No markdown. No explanation. Only JSON.`
 
-    const userPrompt = `SESSION ENTRIES (chronological — DO NOT REORDER):
-${entries.map((e, i) => `${i + 1}. [${new Date(e.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}] [${e.category}] ${e.text}`).join('\n')}
-
-DOMINANT MOOD: ${dominantMoods.join(', ')}
-SESSION TITLE: ${sessionTitle}
-CHARACTER: ${characterName}
-
-Write the full lyrics now. Match the style prompt: ${stylePrompt}`
-
     const client = new Anthropic({ apiKey })
     const message = await client.messages.create({
       model: 'claude-sonnet-5',
       max_tokens: 4000,
       thinking: { type: 'disabled' },
       system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
+      messages: [{ role: 'user', content: 'Write the song now, following all instructions above. Return only the JSON object.' }],
     })
 
     const textBlock = message.content.find(b => b.type === 'text')
-    const lyrics = textBlock?.type === 'text' ? textBlock.text.trim() : ''
+    const rawText = textBlock?.type === 'text' ? textBlock.text.trim() : ''
+
+    // 5. Parse Claude's JSON response — strip accidental markdown fences before parsing
+    const jsonText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '')
+    let stylePrompt = ''
+    let lyrics = ''
+    try {
+      const parsed = JSON.parse(jsonText)
+      stylePrompt = parsed.stylePrompt || ''
+      lyrics = parsed.lyrics || ''
+    } catch {
+      return NextResponse.json({ error: 'Failed to parse song response from Claude.' }, { status: 502 })
+    }
 
     // 6. Return the style prompt and the lyrics
     return NextResponse.json({ stylePrompt, lyrics })
