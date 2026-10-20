@@ -92,6 +92,7 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
 /* Baphomet's Chains: world engine (Three.js r128 global build) */
 (function (root) {
@@ -347,9 +348,10 @@ const C = root.__cw, THREE = C.THREE;
 
 /* Loaded art (CC0 Quaternius models + Poly Haven textures, packed by scripts/pack-assets.mjs).
    Everything here is optional: builders ask for a model/texture and fall back to procedural shapes when it is missing. */
-const A = C.assets = { models: {}, tex: {}, ready: false };
+const A = C.assets = { models: {}, tex: {}, chars: {}, clips: {}, ready: false };
 const GLB = ['nature', 'props', 'village'];
 const DIM = { props: 0.68, village: 0.8 };  // colour scale per pack
+const CHARS = ['body_m', 'ranger_m', 'peasant_m', 'hair_long', 'hair_beard'];  // + chars/anims.glb (clips only)
 const TEX = ['old_wood_floor', 'wood_plank_wall', 'rustic_stone_wall', 'forest_ground_04', 'cobblestone_floor_04', 'castle_brick_07'];
 
 // asset base: next to the page, also when served as /chronicle (no trailing slash)
@@ -360,16 +362,16 @@ C.BASE = function () {
 
 // glTF PBR -> Lambert with the same map/colour, so models sit in the existing flat-lit look.
 // Textures stay in "display" space like the rest of the scene (renderer output is linear).
-function toLambert(m) {
+function toLambert(m, skinning) {
   if (m.map) m.map.encoding = THREE.LinearEncoding;
   const masked = m.alphaTest > 0 || m.transparent;
-  return new THREE.MeshLambertMaterial({ map: m.map || null, color: m.color, side: m.side, alphaTest: masked ? Math.max(0.5, m.alphaTest) : 0, name: m.name });
+  return new THREE.MeshLambertMaterial({ map: m.map || null, color: m.color, side: m.side, alphaTest: masked ? Math.max(0.5, m.alphaTest) : 0, name: m.name, skinning: !!skinning });
 }
 function prep(node, dim) {
   const cache = new Map();
   node.traverse((o) => {
     if (!o.isMesh) return;
-    o.material = [].concat(o.material).map((m) => { if (!cache.has(m)) { const l = toLambert(m); if (dim) l.color.multiplyScalar(dim); cache.set(m, l); } return cache.get(m); });
+    o.material = [].concat(o.material).map((m) => { if (!cache.has(m)) { const l = toLambert(m, o.isSkinnedMesh); if (dim) l.color.multiplyScalar(dim); cache.set(m, l); } return cache.get(m); });
     if (o.material.length === 1) o.material = o.material[0];
   });
   node.position.set(0, 0, 0); node.updateMatrixWorld(true);
@@ -377,18 +379,42 @@ function prep(node, dim) {
   return node;
 }
 
+// The free base body is a full figure; outfits are worn over it and its skin pokes through.
+// Keep only the triangles skinned (mostly) to the head and neck, so the outfit carries the rest.
+function headOnly(root) {
+  root.traverse((o) => {
+    if (!o.isSkinnedMesh || !/SuperHero/i.test(o.name)) return;
+    const g = o.geometry, si = g.attributes.skinIndex, sw = g.attributes.skinWeight, bones = o.skeleton.bones;
+    const comp = (at, v, k) => (k === 0 ? at.getX(v) : k === 1 ? at.getY(v) : k === 2 ? at.getZ(v) : at.getW(v));  // r128 has no getComponent
+    const keep = (v) => { let best = 0, bi = 0; for (let k = 0; k < 4; k++) { const w = comp(sw, v, k); if (w > best) { best = w; bi = comp(si, v, k); } } return /^(Head|neck_0\d)$/.test(bones[bi].name); };
+    const idx = g.index ? g.index.array : null, n = idx ? idx.length : g.attributes.position.count, out = [];
+    for (let i = 0; i < n; i += 3) {
+      const a = idx ? idx[i] : i, b = idx ? idx[i + 1] : i + 1, c = idx ? idx[i + 2] : i + 2;
+      if (keep(a) && keep(b) && keep(c)) out.push(a, b, c);
+    }
+    g.setIndex(out);
+  });
+}
+
 C.loadAssets = function (onProgress) {
   if (!THREE.GLTFLoader || typeof document === 'undefined') return Promise.resolve();
   const base = C.BASE(), jobs = [];
-  let done = 0, total = GLB.length + TEX.length * 2;
+  let done = 0, total = GLB.length + TEX.length + (THREE.SkeletonUtils ? CHARS.length + 1 : 0);
   const tick = () => { done++; if (onProgress) onProgress(done / total); };
+  const safe = (fn, res) => (x) => { try { fn(x); } catch (e) { console.warn('asset', e); } tick(); res(); };
   const gl = new THREE.GLTFLoader(), tl = new THREE.TextureLoader();
   GLB.forEach((n) => jobs.push(new Promise((res) => gl.load(new URL('assets/' + n + '.glb', base).href,
-    (g) => { g.scene.children.slice().forEach((c) => { A.models[c.name] = prep(c, DIM[n]); }); tick(); res(); },
+    safe((g) => { g.scene.children.slice().forEach((c) => { A.models[c.name] = prep(c, DIM[n]); }); }, res),
     undefined, () => { tick(); res(); }))));
-  TEX.forEach((n) => ['diff', 'nor'].forEach((k) => jobs.push(new Promise((res) => tl.load(new URL('assets/tex/' + n + '_' + k + '.jpg', base).href,
-    (t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; A.tex[n + '_' + k] = t; tick(); res(); },
-    undefined, () => { tick(); res(); })))));
+  TEX.forEach((n) => jobs.push(new Promise((res) => tl.load(new URL('assets/tex/' + n + '_diff.jpg', base).href,
+    safe((t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; A.tex[n + '_diff'] = t; }, res),
+    undefined, () => { tick(); res(); }))));
+  if (THREE.SkeletonUtils) {
+    CHARS.forEach((n) => jobs.push(new Promise((res) => gl.load(new URL('assets/chars/' + n + '.glb', base).href,
+      safe((g) => { A.chars[n] = prep(g.scene, 0.85); if (n === 'body_m') headOnly(A.chars[n]); }, res), undefined, () => { tick(); res(); }))));
+    jobs.push(new Promise((res) => gl.load(new URL('assets/chars/anims.glb', base).href,
+      safe((g) => { g.animations.forEach((c) => { A.clips[c.name] = c; }); }, res), undefined, () => { tick(); res(); })));
+  }
   return Promise.all(jobs).then(() => { A.ready = true; });
 };
 
@@ -428,6 +454,60 @@ C.instModel = function (key, mats, o) {
 C.place = function (key, p, yaw, s) {
   const m = C.model(key); if (!m) return null;
   m.position.set(p[0], p[1], p[2]); m.rotation.y = yaw || 0; if (s) m.scale.setScalar(s); return m;
+};
+
+/* Rigged character from the CC0 base body + outfit/hair parts, all bound to the body's skeleton.
+   spec: { parts: [[key, tint, skipRegex, onlyRegex]], body: tint, pose: clip name, h: height in m }
+   tint: hex (multiplies the texture) or { color, only: materialNameRegex } (solid colour, texture dropped)
+   Returns a Group (front +z) with userData.mixer, or null when the character files are missing. */
+C.hasChars = () => !!(A.chars.body_m && THREE.SkeletonUtils);
+C.rigChar = function (spec) {
+  if (!C.hasChars()) return null;
+  const tinted = (mesh, tint) => {
+    if (tint === undefined || tint === null) return;
+    const flat = typeof tint === 'object', c = new THREE.Color(flat ? tint.color : tint);
+    mesh.material = [].concat(mesh.material).map((m) => {
+      const y = m.clone();
+      if (flat && (!tint.only || tint.only.test(m.name))) { y.map = null; y.color.copy(c); } else if (!flat) y.color.multiply(c);
+      return y;
+    });
+    if (mesh.material.length === 1) mesh.material = mesh.material[0];
+  };
+  const body = THREE.SkeletonUtils.clone(A.chars.body_m), bones = {};
+  let arm = null;
+  body.traverse((o) => { if (o.isBone) bones[o.name] = o; if (o.isSkinnedMesh) { arm = arm || o.parent; tinted(o, spec.body); } });
+  (spec.parts || []).forEach(([key, tint, skip, only]) => {
+    const src = A.chars[key]; if (!src) return;
+    const part = THREE.SkeletonUtils.clone(src), meshes = [];
+    part.traverse((o) => { if (o.isSkinnedMesh && !(skip && skip.test(o.name)) && !(only && !only.test(o.name))) meshes.push(o); });
+    meshes.forEach((m) => {
+      const sk = m.skeleton;
+      m.bind(new THREE.Skeleton(sk.bones.map((b) => bones[b.name] || b), sk.boneInverses), m.bindMatrix);
+      tinted(m, tint); arm.add(m);
+    });
+  });
+  body.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
+  const g = new THREE.Group(); g.add(body);
+  const box = new THREE.Box3().setFromObject(A.chars.body_m), hh = box.max.y - box.min.y;
+  body.scale.setScalar((spec.h || 1.8) / hh);
+  const mixer = new THREE.AnimationMixer(body);
+  let cur = null;
+  g.userData.pose = (name) => {
+    const clip = A.clips[name] || A.clips.Idle_Loop; if (!clip || cur === clip.name) return;
+    mixer.stopAllAction(); mixer.clipAction(clip).play(); cur = clip.name;
+  };
+  g.userData.pose(spec.pose || 'Idle_Loop');
+  g.userData.mixer = mixer; g.userData.bones = bones; g.userData.ph = Math.random() * 3;
+  g.updateMatrixWorld(true);
+  return g;
+};
+/* attach an object to a bone of a rigged character (bone space is scaled with the body) */
+C.attach = function (ch, bone, obj, p, r, s) {
+  const b = ch.userData.bones && ch.userData.bones[bone]; if (!b) return null;
+  ch.updateMatrixWorld(true);
+  const inv = 1 / b.getWorldScale(new THREE.Vector3()).x;  // undo the body scale so props keep their size in metres
+  obj.position.set(p[0], p[1], p[2]).multiplyScalar(inv); if (r) obj.rotation.set(r[0], r[1], r[2]); obj.scale.multiplyScalar((s || 1) * inv);
+  b.add(obj); return obj;
 };
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -632,7 +712,7 @@ C.create = function (opts) {
   const storyRoot = new THREE.Group(); scene.add(storyRoot);
   const X = {
     THREE, C, scene, camera, TEX, at, yawAt, frame, distAt, tAtDist, fx, mobile, root: storyRoot,
-    sec: sec, Dend: Dend, dBack: dBack, tCross: tCross, Z0: Z0, story: null,
+    sec: sec, Dend: Dend, dBack: dBack, tCross: tCross, Z0: Z0, story: null, anims: [],
     glow(color, size, op) {
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.glow, color, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: op === undefined ? 1 : op }));
       s.scale.set(size, size, 1); return s;
@@ -673,7 +753,7 @@ C.create = function (opts) {
       camera.updateProjectionMatrix();
     },
     loadStory(st) {
-      disposeRoot(); defs = [];
+      disposeRoot(); defs = []; X.anims.length = 0;
       story = st; X.story = st;
       buildTimeline(st); buildPath();
       X.sec = sec; X.Dend = Dend; X.dBack = dBack; X.tCross = tCross;
@@ -693,6 +773,7 @@ C.create = function (opts) {
       dirL.color.copy(Mo.dc); dirL.intensity = Mo.di;
       lamp.color.copy(Mo.lc); lamp.intensity = Mo.li * (0.93 + 0.07 * Math.sin(time * 9.1) * Math.sin(time * 5.3 + 1));
       groundMat.color.copy(Mo.gr).multiplyScalar(gBoost);
+      groundMat.color.r = Math.min(0.62, groundMat.color.r); groundMat.color.g = Math.min(0.62, groundMat.color.g); groundMat.color.b = Math.min(0.62, groundMat.color.b);  // bright moods (the flash) would blow the photo ground out
       const U = skyMat.uniforms;
       U.top.value.copy(Mo.skyT); U.hor.value.copy(Mo.skyH); U.stars.value = Mo.stars; U.moon.value = Mo.moon; U.aur.value = Mo.aur;
       U.aurA.value.copy(Mo.aA); U.aurB.value.copy(Mo.aB); U.time.value = time;
@@ -735,6 +816,12 @@ C.create = function (opts) {
         const vis = ride && camD > s.d0 - (s.vis || 120) && camD < s.d1 + (s.vis || 120);
         s.group.visible = vis;
         if (vis && s.update) s.update(t, ctx);
+      }
+      // rigged characters: pose from song time (deterministic, so seeking works); skip hidden ones
+      for (let i = 0; i < X.anims.length; i++) {
+        const a = X.anims[i]; let o = a, vis = true;
+        while (o) { if (!o.visible) { vis = false; break; } o = o.parent; }
+        if (vis) a.userData.mixer.setTime(Math.max(0, t) + a.userData.ph);
       }
       const fT = story && story.flashAt;
       W.flash = (!ride || fT === undefined) ? 0 : (t < fT - 0.2 ? 0 : (t < fT ? (t - (fT - 0.2)) / 0.2 : Math.exp(-(t - fT) * 2.6)));
@@ -785,7 +872,8 @@ C.kit = function (X) {
   const rockGeo = merge([ic(1, 0, 0x5a5e66, [0, 0.35, 0], [1, 0.7, 0.9])]);
   K.trees = function (d0, d1, o) {
     o = o || {};
-    const step = o.step || 3.6, minS = o.minSide || 7, maxS = o.maxSide || 46, dens = (o.dens || 1.2) * (X.mobile ? 0.7 : 1);
+    // phones: no trees beyond ~28 m to the side, the fog hides them anyway
+    const step = o.step || 3.6, minS = o.minSide || 7, maxS = Math.min(o.maxSide || 46, X.mobile ? 28 : 1e3), dens = (o.dens || 1.2) * (X.mobile ? 0.7 : 1);
     const deadP = o.deadP === undefined ? 0 : o.deadP, rockP = o.rockP === undefined ? 0.12 : o.rockP, sc = o.scale || [0.8, 1.6];
     const pines = [], deads = [], rocks = [];
     for (let d = d0; d < d1; d += step) {
@@ -1062,6 +1150,43 @@ C.chars = function (X) {
     const e1 = eyeMesh(0xffb030, 1), e2 = e1.clone(); e1.position.set(-0.06, h * 0.87, 0.25); e2.position.set(0.06, h * 0.87, 0.25); g.add(e1); g.add(e2);
     return g;
   };
+
+  /* Rigged CC0 versions of the party (Neeris stays procedural). o.pose = animation clip name.
+     Their mixers are registered in X.anims; the engine sets them from song time each frame. */
+  if (C.hasChars()) {
+    const rig = (spec) => { const g = C.rigChar(spec); X.anims.push(g); return g; };
+    const ear = (g, side) => C.attach(g, 'Head', solid([cn(0.025, 0.11, 4, 0xe0b898, [0, 0, 0])]), [side * 0.085, 0.1, 0.0], [0, 0, -side * 1.15]);
+    // Lucien Vale: half-elf wild magic sorcerer. Burgundy coat, long blond hair, pointed ears, crackling hand, glowing blue dagger.
+    K.lucien = function (o) {
+      o = o || {};
+      const g = rig({ parts: [['ranger_m', 0xb04060, /Hood|Pauldron/], ['hair_long', 0xfff2b8]], pose: o.pose || 'Spell_Simple_Idle_Loop', h: 1.8 });
+      ear(g, -1); ear(g, 1);
+      const spark = X.glow(0xb070ff, 0.7, 0.85); C.attach(g, 'hand_r', spark, [0, 0.1, 0]); g.userData.spark = spark;
+      const dag = new THREE.Group();
+      const blade = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.34, 4), new THREE.MeshBasicMaterial({ color: 0x66ddff })); blade.position.y = 0.2; dag.add(blade);
+      const gl = X.glow(0x40c8ff, 0.5, 0.7); gl.position.y = 0.2; dag.add(gl);
+      C.attach(g, 'hand_l', dag, [0, 0.08, 0]);
+      g.userData.blade = blade; g.userData.bladeGlow = gl;
+      return g;
+    };
+    // Cedric: human monk. Red leather, green tunic, bronze dragon pauldrons, beard, wooden staff.
+    K.cedric = function (o) {
+      o = o || {};
+      const g = rig({ parts: [['peasant_m', 0xd07a60], ['ranger_m', { color: 0xb08440 }, null, /Pauldron/], ['hair_beard', 0x6a4430]], pose: o.pose || 'Idle_Loop', h: 1.85 });
+      if (!o.noStaff) C.attach(g, 'hand_r', solid([cy(0.022, 0.022, 2.0, 5, 0x5a3a2a, [0, 0, 0]), cy(0.032, 0.032, 0.1, 5, 0xa0a4ac, [0, 0.98, 0])]), [0, 0.05, 0], [0, 0, 0]);
+      return g;
+    };
+    // Arthas: devout human paladin. Steel plate, dark helm-hood with a glowing visor slit, sword.
+    K.arthas = function (o) {
+      o = o || {};
+      const g = rig({ parts: [['ranger_m', { color: 0x747a86, only: /Ranger/ }]], pose: o.pose || 'Sword_Idle', h: 1.95 });
+      g.traverse((m) => { if (m.isMesh && /Hood/.test(m.name)) [].concat(m.material).forEach((x) => x.color.setHex(0x2a2c34)); });
+      const v = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.018, 0.02), new THREE.MeshBasicMaterial({ color: 0xff7a30 }));
+      C.attach(g, 'Head', v, [0, 0.1, 0.1]); g.userData.visor = v;
+      const sw = C.model('Sword_Bronze'); if (sw) C.attach(g, 'hand_r', sw, [0, 0.05, 0], [0, 0, -Math.PI / 2], 1.1);
+      return g;
+    };
+  }
   return K;
 };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -1665,7 +1790,7 @@ SC.push(function (X) {
   const headW = dragon.localToWorld(dragon.userData.head.clone());
   const eyeG = [X.glow(0xff2a1a, 3.2, 0), X.glow(0xff2a1a, 3.2, 0)]; eyeG[0].position.copy(headW).add(new THREE.Vector3(0.6, 1.2, 0)); eyeG[1].position.copy(headW).add(new THREE.Vector3(-0.6, 1.2, 0)); eyeG.forEach((e) => g.add(e));
   // Cedric: runs ahead, then stands on the dragon's head
-  const ced = ch.cedric(); g.add(ced);
+  const ced = ch.cedric({ pose: 'Sprint_Loop' }); g.add(ced);
   return {
     group: g, d0: S.d0, d1: Sc.d1, vis: 110,
     update(t, ctx) {
@@ -1676,10 +1801,12 @@ SC.push(function (X) {
       eyeG.forEach((e) => { e.material.opacity = glowK; });
       if (!killed) {
         const dc = Math.min(dCr - 3, X.distAt(Math.max(S.t0, t)) + 26), p = X.at(dc, 1.2, 0);
-        ced.position.set(p.x, Math.abs(Math.sin(ctx.time * 9)) * 0.15, p.z); ced.rotation.y = X.yawAt(dc) + Math.PI; ced.visible = t > S.t0 + 1;
+        ced.position.set(p.x, ced.userData.mixer ? 0 : Math.abs(Math.sin(ctx.time * 9)) * 0.15, p.z); ced.rotation.y = X.yawAt(dc) + Math.PI; ced.visible = t > S.t0 + 1;
+        if (ced.userData.pose) ced.userData.pose('Sprint_Loop');
         ctx.light(0, headW.x, 1.6, headW.z, 0xff3a22, 0.8 * glowK, 30);
       } else {
         ced.visible = true; ced.position.set(headW.x, headW.y + 0.55 * SCL * 0.5, headW.z); ced.rotation.y = X.yawAt(dCr) + Math.PI / 2 + 0.6;
+        if (ced.userData.pose) ced.userData.pose('Idle_Torch_Loop');
         const k = Math.exp(-(t - TK) * 1.5);
         ctx.light(0, headW.x, 3.0, headW.z, 0xffd890, 2.2 + 8 * k, 42);
       }
@@ -1706,7 +1833,7 @@ SC.push(function (X) {
   const ring = solid(stones.concat(logs)); ring.position.set(fp.x, 0, fp.z); g.add(ring);
   // Neeris sits opposite, hands bound; Lucien's coat lies on the log nearest the path
   const ner = ch.neeris(); const np = X.at(dF, 8.6, 0); ner.position.copy(np); ner.scale.y = 0.72; ner.rotation.y = X.yawAt(dF) + Math.PI / 2; g.add(ner);
-  const lu = ch.lucien(); const lp = X.at(dF + 0.5, 1.9, 0); lu.position.copy(lp); lu.rotation.y = X.yawAt(dF) - Math.PI / 2 - 0.4; lu.scale.y = 0.78; g.add(lu);
+  const lu = ch.lucien({ pose: 'Sitting_Idle_Loop' }); const lp = X.at(dF + 0.5, 1.9, 0); lu.position.copy(lp); lu.rotation.y = X.yawAt(dF) - Math.PI / 2 - 0.4; if (!lu.userData.mixer) lu.scale.y = 0.78; g.add(lu);
   // a loose chain on the ground
   const links = []; for (let i = 0; i < 14; i++) { const a = i * 0.5; links.push(M([fp.x + 2.2 + Math.cos(a) * (0.4 + i * 0.05), 0.06, fp.z + 1.2 + Math.sin(a) * (0.4 + i * 0.05)], [Math.PI / 2, i % 2 ? Math.PI / 2 : 0, a], [1.5, 1, 1])); }
   g.add(inst(kit.linkGeo, lamb({ color: 0xb8bcc8 }), links));
@@ -1831,7 +1958,7 @@ SC.push(function (X) {
 
   // the three of them walk ahead, carrying the wyrm's head
   const marchers = new THREE.Group(); g.add(marchers);
-  const ced = ch.cedric(), lu = ch.lucien(), art = ch.arthas();
+  const ced = ch.cedric({ pose: 'Walk_Loop' }), lu = ch.lucien({ pose: 'Walk_Loop' }), art = ch.arthas({ pose: 'Walk_Formal_Loop' });
   ced.position.set(-1.7, 0, 0); lu.position.set(0, 0, -0.6); art.position.set(1.8, 0, 0); marchers.add(ced); marchers.add(lu); marchers.add(art);
   lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false;
   const head = new THREE.Group(); head.add(solid([bx(0.8, 0.6, 1.1, 0x1c1618, [0, 0, 0]), bx(0.55, 0.4, 0.95, 0x1c1618, [0, -0.05, -0.95]), bx(0.5, 0.18, 0.85, 0x3a2626, [0, -0.4, -0.85], [0.35, 0, 0]), cn(0.12, 0.8, 4, 0x2a2224, [-0.3, 0.45, 0.3], [1, 0, 0.3]), cn(0.12, 0.8, 4, 0x2a2224, [0.3, 0.45, 0.3], [1, 0, -0.3])]));
@@ -1849,7 +1976,7 @@ SC.push(function (X) {
       marchers.visible = t < S2.t0 + 9;
       if (marchers.visible) {
         const dc = Math.min(ctx.camD + 11, dE - 1), p = X.at(dc, 0, 0);
-        marchers.position.set(p.x, Math.abs(Math.sin(ctx.time * 3.2)) * 0.06, p.z); marchers.rotation.y = X.yawAt(dc) + Math.PI;
+        marchers.position.set(p.x, ced.userData.mixer ? 0 : Math.abs(Math.sin(ctx.time * 3.2)) * 0.06, p.z); marchers.rotation.y = X.yawAt(dc) + Math.PI;
       }
       const gp = X.at(clamp(ctx.camD + 6, dG - 30, dE), 0, 5);
       ctx.light(0, gp.x, 7, gp.z, 0xffc880, 1.2, 36);

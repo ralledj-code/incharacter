@@ -66,7 +66,7 @@ SC.push(function (X) {
 
   // the three of them walk ahead, carrying the wyrm's head
   const marchers = new THREE.Group(); g.add(marchers);
-  const ced = ch.cedric(), lu = ch.lucien(), art = ch.arthas();
+  const ced = ch.cedric({ pose: 'Walk_Loop' }), lu = ch.lucien({ pose: 'Walk_Loop' }), art = ch.arthas({ pose: 'Walk_Formal_Loop' });
   ced.position.set(-1.7, 0, 0); lu.position.set(0, 0, -0.6); art.position.set(1.8, 0, 0); marchers.add(ced); marchers.add(lu); marchers.add(art);
   lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false;
   const head = new THREE.Group(); head.add(solid([bx(0.8, 0.6, 1.1, 0x1c1618, [0, 0, 0]), bx(0.55, 0.4, 0.95, 0x1c1618, [0, -0.05, -0.95]), bx(0.5, 0.18, 0.85, 0x3a2626, [0, -0.4, -0.85], [0.35, 0, 0]), cn(0.12, 0.8, 4, 0x2a2224, [-0.3, 0.45, 0.3], [1, 0, 0.3]), cn(0.12, 0.8, 4, 0x2a2224, [0.3, 0.45, 0.3], [1, 0, -0.3])]));
@@ -84,7 +84,7 @@ SC.push(function (X) {
       marchers.visible = t < S2.t0 + 9;
       if (marchers.visible) {
         const dc = Math.min(ctx.camD + 11, dE - 1), p = X.at(dc, 0, 0);
-        marchers.position.set(p.x, Math.abs(Math.sin(ctx.time * 3.2)) * 0.06, p.z); marchers.rotation.y = X.yawAt(dc) + Math.PI;
+        marchers.position.set(p.x, ced.userData.mixer ? 0 : Math.abs(Math.sin(ctx.time * 3.2)) * 0.06, p.z); marchers.rotation.y = X.yawAt(dc) + Math.PI;
       }
       const gp = X.at(clamp(ctx.camD + 6, dG - 30, dE), 0, 5);
       ctx.light(0, gp.x, 7, gp.z, 0xffc880, 1.2, 36);

@@ -78,6 +78,43 @@ C.chars = function (X) {
     const e1 = eyeMesh(0xffb030, 1), e2 = e1.clone(); e1.position.set(-0.06, h * 0.87, 0.25); e2.position.set(0.06, h * 0.87, 0.25); g.add(e1); g.add(e2);
     return g;
   };
+
+  /* Rigged CC0 versions of the party (Neeris stays procedural). o.pose = animation clip name.
+     Their mixers are registered in X.anims; the engine sets them from song time each frame. */
+  if (C.hasChars()) {
+    const rig = (spec) => { const g = C.rigChar(spec); X.anims.push(g); return g; };
+    const ear = (g, side) => C.attach(g, 'Head', solid([cn(0.025, 0.11, 4, 0xe0b898, [0, 0, 0])]), [side * 0.085, 0.1, 0.0], [0, 0, -side * 1.15]);
+    // Lucien Vale: half-elf wild magic sorcerer. Burgundy coat, long blond hair, pointed ears, crackling hand, glowing blue dagger.
+    K.lucien = function (o) {
+      o = o || {};
+      const g = rig({ parts: [['ranger_m', 0xb04060, /Hood|Pauldron/], ['hair_long', 0xfff2b8]], pose: o.pose || 'Spell_Simple_Idle_Loop', h: 1.8 });
+      ear(g, -1); ear(g, 1);
+      const spark = X.glow(0xb070ff, 0.7, 0.85); C.attach(g, 'hand_r', spark, [0, 0.1, 0]); g.userData.spark = spark;
+      const dag = new THREE.Group();
+      const blade = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.34, 4), new THREE.MeshBasicMaterial({ color: 0x66ddff })); blade.position.y = 0.2; dag.add(blade);
+      const gl = X.glow(0x40c8ff, 0.5, 0.7); gl.position.y = 0.2; dag.add(gl);
+      C.attach(g, 'hand_l', dag, [0, 0.08, 0]);
+      g.userData.blade = blade; g.userData.bladeGlow = gl;
+      return g;
+    };
+    // Cedric: human monk. Red leather, green tunic, bronze dragon pauldrons, beard, wooden staff.
+    K.cedric = function (o) {
+      o = o || {};
+      const g = rig({ parts: [['peasant_m', 0xd07a60], ['ranger_m', { color: 0xb08440 }, null, /Pauldron/], ['hair_beard', 0x6a4430]], pose: o.pose || 'Idle_Loop', h: 1.85 });
+      if (!o.noStaff) C.attach(g, 'hand_r', solid([cy(0.022, 0.022, 2.0, 5, 0x5a3a2a, [0, 0, 0]), cy(0.032, 0.032, 0.1, 5, 0xa0a4ac, [0, 0.98, 0])]), [0, 0.05, 0], [0, 0, 0]);
+      return g;
+    };
+    // Arthas: devout human paladin. Steel plate, dark helm-hood with a glowing visor slit, sword.
+    K.arthas = function (o) {
+      o = o || {};
+      const g = rig({ parts: [['ranger_m', { color: 0x747a86, only: /Ranger/ }]], pose: o.pose || 'Sword_Idle', h: 1.95 });
+      g.traverse((m) => { if (m.isMesh && /Hood/.test(m.name)) [].concat(m.material).forEach((x) => x.color.setHex(0x2a2c34)); });
+      const v = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.018, 0.02), new THREE.MeshBasicMaterial({ color: 0xff7a30 }));
+      C.attach(g, 'Head', v, [0, 0.1, 0.1]); g.userData.visor = v;
+      const sw = C.model('Sword_Bronze'); if (sw) C.attach(g, 'hand_r', sw, [0, 0.05, 0], [0, 0, -Math.PI / 2], 1.1);
+      return g;
+    };
+  }
   return K;
 };
 })(typeof window !== 'undefined' ? window : globalThis);

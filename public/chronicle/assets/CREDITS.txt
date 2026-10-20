@@ -7,3 +7,6 @@ Models (packed and reduced by chronicle/scripts/pack-assets.mjs):
 Textures (tex/, resized to 512 px):
   Poly Haven - old_wood_floor, wood_plank_wall, rustic_stone_wall, forest_ground_04, cobblestone_floor_04, castle_brick_07
   https://polyhaven.com
+
+Characters (chars/, rebound to one skeleton at runtime):
+  Quaternius - Universal Base Characters, Modular Character Outfits - Fantasy, Universal Animation Library

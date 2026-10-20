@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { mergeDocuments, dedup, prune, textureCompress, weld, quantize } from '@gltf-transform/functions';
+import { mergeDocuments, dedup, prune, textureCompress, weld, quantize, resample } from '@gltf-transform/functions';
 import sharp from 'sharp';
 
 const SRC = process.argv[2];
@@ -45,6 +45,19 @@ const PACKS = {
   }
 };
 
+// Character parts: one glb each (bone names must stay identical across files so one clip drives every part).
+const UBC = 'Universal Base Characters/Universal Base Characters[Standard]';
+const OUTF = 'Modular Character Outfits - Fantasy/Modular Character Outfits - Fantasy[Standard]/Exports/glTF (Godot-Unreal)/Outfits';
+const HAIR = `${UBC}/Hairstyles/Rigged to Head Bone/glTF (Godot -Unreal)`;
+const CHARS = {
+  body_m: `${UBC}/Base Characters/Godot - UE/Superhero_Male_FullBody.gltf`,
+  ranger_m: `${OUTF}/Male_Ranger.gltf`, peasant_m: `${OUTF}/Male_Peasant.gltf`,
+  hair_long: `${HAIR}/Hair_Long.gltf`, hair_beard: `${HAIR}/Hair_Beard.gltf`, brows: `${HAIR}/Eyebrows_Regular.gltf`
+};
+const ANIMS = { file: 'Universal Animation Library/Universal Animation Library[Standard]/Unreal-Godot/UAL1_Standard.glb',
+  keep: ['Idle_Loop', 'Walk_Loop', 'Sitting_Idle_Loop', 'Crouch_Idle_Loop', 'Dance_Loop',
+    'Spell_Simple_Idle_Loop', 'Sword_Idle', 'Idle_Talking_Loop', 'Walk_Formal_Loop', 'Idle_Torch_Loop', 'Fixing_Kneeling', 'Jog_Fwd_Loop', 'Sprint_Loop'] };
+
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 fs.mkdirSync(OUT, { recursive: true });
 const only = process.argv[3];
@@ -79,4 +92,29 @@ for (const [name, pack] of Object.entries(PACKS)) {
   const file = path.join(OUT, `${name}.glb`);
   await io.write(file, doc);
   console.log(name, (fs.statSync(file).size / 1024).toFixed(0) + ' KB', pack.models.length + ' models');
+}
+
+if (!only || only === 'chars') {
+  fs.mkdirSync(`${OUT}/chars`, { recursive: true });
+  for (const [key, file] of Object.entries(CHARS)) {
+    const doc = await io.read(path.join(SRC, file)), root = doc.getRoot();
+    root.listMaterials().forEach((m) => { m.setNormalTexture(null); m.setOcclusionTexture(null); m.setMetallicRoughnessTexture(null); m.setMetallicFactor(0); m.setRoughnessFactor(1); });
+    root.listAnimations().forEach((a) => a.dispose());
+    await doc.transform(prune(), dedup(), textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [512, 512], quality: 80 }));
+    const f = `${OUT}/chars/${key}.glb`; await io.write(f, doc); console.log(key, (fs.statSync(f).size / 1024).toFixed(0) + ' KB');
+  }
+  // animations only: drop the mannequin mesh, keep the bone nodes the clips target
+  const doc = await io.read(path.join(SRC, ANIMS.file)), root = doc.getRoot();
+  root.listAnimations().forEach((a) => { if (!ANIMS.keep.includes(a.getName())) a.dispose(); });
+  root.listNodes().forEach((n) => { n.setMesh(null); n.setSkin(null); });
+  root.listMeshes().forEach((m) => m.dispose()); root.listSkins().forEach((s) => s.dispose());
+  // finger tracks are invisible at ride distance; drop them, then thin out linear keys
+  root.listAnimations().forEach((a) => a.listChannels().forEach((c) => {
+    const n = c.getTargetNode(); if (n && /^(index|middle|pinky|ring|thumb)_/.test(n.getName())) { const smp = c.getSampler(); c.dispose(); if (smp) smp.dispose(); }
+  }));
+  await doc.transform(resample({ tolerance: 5e-3 }), prune({ keepLeaves: true }), dedup());
+  // prune leaves the old clips' accessors behind here; drop every accessor no remaining sampler uses
+  const used = new Set(); root.listAnimations().forEach((a) => a.listSamplers().forEach((smp) => { used.add(smp.getInput()); used.add(smp.getOutput()); }));
+  root.listAccessors().forEach((acc) => { if (!used.has(acc)) acc.dispose(); });
+  const f = `${OUT}/chars/anims.glb`; await io.write(f, doc); console.log('anims', (fs.statSync(f).size / 1024).toFixed(0) + ' KB', root.listAnimations().length + ' clips');
 }

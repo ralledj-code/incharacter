@@ -142,7 +142,7 @@ SC.push(function (X) {
   const headW = dragon.localToWorld(dragon.userData.head.clone());
   const eyeG = [X.glow(0xff2a1a, 3.2, 0), X.glow(0xff2a1a, 3.2, 0)]; eyeG[0].position.copy(headW).add(new THREE.Vector3(0.6, 1.2, 0)); eyeG[1].position.copy(headW).add(new THREE.Vector3(-0.6, 1.2, 0)); eyeG.forEach((e) => g.add(e));
   // Cedric: runs ahead, then stands on the dragon's head
-  const ced = ch.cedric(); g.add(ced);
+  const ced = ch.cedric({ pose: 'Sprint_Loop' }); g.add(ced);
   return {
     group: g, d0: S.d0, d1: Sc.d1, vis: 110,
     update(t, ctx) {
@@ -153,10 +153,12 @@ SC.push(function (X) {
       eyeG.forEach((e) => { e.material.opacity = glowK; });
       if (!killed) {
         const dc = Math.min(dCr - 3, X.distAt(Math.max(S.t0, t)) + 26), p = X.at(dc, 1.2, 0);
-        ced.position.set(p.x, Math.abs(Math.sin(ctx.time * 9)) * 0.15, p.z); ced.rotation.y = X.yawAt(dc) + Math.PI; ced.visible = t > S.t0 + 1;
+        ced.position.set(p.x, ced.userData.mixer ? 0 : Math.abs(Math.sin(ctx.time * 9)) * 0.15, p.z); ced.rotation.y = X.yawAt(dc) + Math.PI; ced.visible = t > S.t0 + 1;
+        if (ced.userData.pose) ced.userData.pose('Sprint_Loop');
         ctx.light(0, headW.x, 1.6, headW.z, 0xff3a22, 0.8 * glowK, 30);
       } else {
         ced.visible = true; ced.position.set(headW.x, headW.y + 0.55 * SCL * 0.5, headW.z); ced.rotation.y = X.yawAt(dCr) + Math.PI / 2 + 0.6;
+        if (ced.userData.pose) ced.userData.pose('Idle_Torch_Loop');
         const k = Math.exp(-(t - TK) * 1.5);
         ctx.light(0, headW.x, 3.0, headW.z, 0xffd890, 2.2 + 8 * k, 42);
       }

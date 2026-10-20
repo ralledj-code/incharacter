@@ -199,7 +199,7 @@ C.create = function (opts) {
   const storyRoot = new THREE.Group(); scene.add(storyRoot);
   const X = {
     THREE, C, scene, camera, TEX, at, yawAt, frame, distAt, tAtDist, fx, mobile, root: storyRoot,
-    sec: sec, Dend: Dend, dBack: dBack, tCross: tCross, Z0: Z0, story: null,
+    sec: sec, Dend: Dend, dBack: dBack, tCross: tCross, Z0: Z0, story: null, anims: [],
     glow(color, size, op) {
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.glow, color, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: op === undefined ? 1 : op }));
       s.scale.set(size, size, 1); return s;
@@ -240,7 +240,7 @@ C.create = function (opts) {
       camera.updateProjectionMatrix();
     },
     loadStory(st) {
-      disposeRoot(); defs = [];
+      disposeRoot(); defs = []; X.anims.length = 0;
       story = st; X.story = st;
       buildTimeline(st); buildPath();
       X.sec = sec; X.Dend = Dend; X.dBack = dBack; X.tCross = tCross;
@@ -260,6 +260,7 @@ C.create = function (opts) {
       dirL.color.copy(Mo.dc); dirL.intensity = Mo.di;
       lamp.color.copy(Mo.lc); lamp.intensity = Mo.li * (0.93 + 0.07 * Math.sin(time * 9.1) * Math.sin(time * 5.3 + 1));
       groundMat.color.copy(Mo.gr).multiplyScalar(gBoost);
+      groundMat.color.r = Math.min(0.62, groundMat.color.r); groundMat.color.g = Math.min(0.62, groundMat.color.g); groundMat.color.b = Math.min(0.62, groundMat.color.b);  // bright moods (the flash) would blow the photo ground out
       const U = skyMat.uniforms;
       U.top.value.copy(Mo.skyT); U.hor.value.copy(Mo.skyH); U.stars.value = Mo.stars; U.moon.value = Mo.moon; U.aur.value = Mo.aur;
       U.aurA.value.copy(Mo.aA); U.aurB.value.copy(Mo.aB); U.time.value = time;
@@ -302,6 +303,12 @@ C.create = function (opts) {
         const vis = ride && camD > s.d0 - (s.vis || 120) && camD < s.d1 + (s.vis || 120);
         s.group.visible = vis;
         if (vis && s.update) s.update(t, ctx);
+      }
+      // rigged characters: pose from song time (deterministic, so seeking works); skip hidden ones
+      for (let i = 0; i < X.anims.length; i++) {
+        const a = X.anims[i]; let o = a, vis = true;
+        while (o) { if (!o.visible) { vis = false; break; } o = o.parent; }
+        if (vis) a.userData.mixer.setTime(Math.max(0, t) + a.userData.ph);
       }
       const fT = story && story.flashAt;
       W.flash = (!ride || fT === undefined) ? 0 : (t < fT - 0.2 ? 0 : (t < fT ? (t - (fT - 0.2)) / 0.2 : Math.exp(-(t - fT) * 2.6)));

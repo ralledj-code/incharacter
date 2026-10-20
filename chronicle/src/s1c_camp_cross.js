@@ -16,7 +16,7 @@ SC.push(function (X) {
   const ring = solid(stones.concat(logs)); ring.position.set(fp.x, 0, fp.z); g.add(ring);
   // Neeris sits opposite, hands bound; Lucien's coat lies on the log nearest the path
   const ner = ch.neeris(); const np = X.at(dF, 8.6, 0); ner.position.copy(np); ner.scale.y = 0.72; ner.rotation.y = X.yawAt(dF) + Math.PI / 2; g.add(ner);
-  const lu = ch.lucien(); const lp = X.at(dF + 0.5, 1.9, 0); lu.position.copy(lp); lu.rotation.y = X.yawAt(dF) - Math.PI / 2 - 0.4; lu.scale.y = 0.78; g.add(lu);
+  const lu = ch.lucien({ pose: 'Sitting_Idle_Loop' }); const lp = X.at(dF + 0.5, 1.9, 0); lu.position.copy(lp); lu.rotation.y = X.yawAt(dF) - Math.PI / 2 - 0.4; if (!lu.userData.mixer) lu.scale.y = 0.78; g.add(lu);
   // a loose chain on the ground
   const links = []; for (let i = 0; i < 14; i++) { const a = i * 0.5; links.push(M([fp.x + 2.2 + Math.cos(a) * (0.4 + i * 0.05), 0.06, fp.z + 1.2 + Math.sin(a) * (0.4 + i * 0.05)], [Math.PI / 2, i % 2 ? Math.PI / 2 : 0, a], [1.5, 1, 1])); }
   g.add(inst(kit.linkGeo, lamb({ color: 0xb8bcc8 }), links));

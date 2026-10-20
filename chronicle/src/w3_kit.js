@@ -19,7 +19,8 @@ C.kit = function (X) {
   const rockGeo = merge([ic(1, 0, 0x5a5e66, [0, 0.35, 0], [1, 0.7, 0.9])]);
   K.trees = function (d0, d1, o) {
     o = o || {};
-    const step = o.step || 3.6, minS = o.minSide || 7, maxS = o.maxSide || 46, dens = (o.dens || 1.2) * (X.mobile ? 0.7 : 1);
+    // phones: no trees beyond ~28 m to the side, the fog hides them anyway
+    const step = o.step || 3.6, minS = o.minSide || 7, maxS = Math.min(o.maxSide || 46, X.mobile ? 28 : 1e3), dens = (o.dens || 1.2) * (X.mobile ? 0.7 : 1);
     const deadP = o.deadP === undefined ? 0 : o.deadP, rockP = o.rockP === undefined ? 0.12 : o.rockP, sc = o.scale || [0.8, 1.6];
     const pines = [], deads = [], rocks = [];
     for (let d = d0; d < d1; d += step) {
