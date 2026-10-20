@@ -41,12 +41,17 @@ SC.push(function (X) {
   const gtor = kit.torches(gt, { glow: 0xffc070, size: 4, op: 0.9 }); g.add(gtor.group);
 
   // the feast street
+  const street = [];
   for (let d = dG + 9; d < dE; d += 8.5) {
     [-1, 1].forEach((sg) => {
       const w = R(6, 8.5), dep = R(6, 8), h = R(4.6, 7), hs = kit.house({ w, d: dep, h, wall: pick([0x6a5444, 0x5a4a50, 0x6a5a40]), roof: pick([0x3a2a2e, 0x2e2a36]), light: pick([0xffc070, 0xff9ab0, 0xffd090]) });
-      const p = X.at(d + R(-1, 1), sg * (8.8 + w / 2 * 0.35 + 3), 0); hs.position.copy(p); kit.placeFacing(hs, d, sg); g.add(hs);
+      const p = X.at(d + R(-1, 1), sg * (8.8 + w / 2 * 0.35 + 3), 0); hs.position.copy(p); kit.placeFacing(hs, d, sg);
+      street.push({ x: p.x, z: p.z, yaw: hs.rotation.y, w: w > 7.2 ? 6 : 4, d: dep > 7 ? 6 : 4, st: h > 5.6 ? 2 : 1, brick: R(0, 1) < 0.3, box: hs });
     });
   }
+  // modular kit houses when loaded, else the procedural boxes
+  const vil = kit.village(street);
+  if (vil) g.add(vil); else street.forEach((s) => g.add(s.box));
   const bulbs = [], bcol = [];
   for (let d = dG + 5; d < dE - 2; d += 6.5) {
     for (let k = 0; k < 9; k++) { const u = k / 8, p = X.at(d, lerp(-9, 9, u), 5.8 - 1.1 * Math.sin(u * Math.PI)); bulbs.push(M([p.x, p.y, p.z], null, 1)); bcol.push(pick([0xffc070, 0xff7a9a, 0x70c8ff, 0xffe080])); }
@@ -93,8 +98,13 @@ SC.push(function (X) {
   const kit = C.kit(X), g = new THREE.Group();
   const dBars = X.Dend + 2.4, dc = (X.dBack + dBars) / 2, L = dBars - X.dBack, HW = 2.5, H = 3.6;
   const G = new THREE.Group(); G.position.copy(X.at(dc, 0, 0)); G.rotation.y = X.yawAt(dc); g.add(G);
-  const stoneMat = (rx, ry) => { const t = X.TEX.stone.clone(); t.needsUpdate = true; t.repeat.set(rx, ry); return new THREE.MeshLambertMaterial({ map: t, color: 0xa0a4ae, side: THREE.DoubleSide }); };
-  const plane = (w, h, rx, ry, x, y, z, rot) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), stoneMat(rx, ry)); m.position.set(x, y, z); m.rotation.set(rot[0], rot[1], rot[2]); G.add(m); };
+  const stoneMat = (rx, ry, floor) => {
+    // photo brick walls and cobbled floor when loaded (about 2 m per tile), else the procedural stone
+    const real = C.tex(floor ? 'cobblestone_floor_04_diff' : 'castle_brick_07_diff', rx, ry);
+    if (real) return new THREE.MeshLambertMaterial({ map: real, color: floor ? 0x8a8c94 : 0x9a9ca6, side: THREE.DoubleSide });
+    const t = X.TEX.stone.clone(); t.needsUpdate = true; t.repeat.set(rx, ry); return new THREE.MeshLambertMaterial({ map: t, color: 0xa0a4ae, side: THREE.DoubleSide });
+  };
+  const plane = (w, h, rx, ry, x, y, z, rot) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), stoneMat(rx, ry, rot[0] === -Math.PI / 2)); m.position.set(x, y, z); m.rotation.set(rot[0], rot[1], rot[2]); G.add(m); };
   plane(L, H, L / 2, 1.5, -HW, H / 2, 0, [0, Math.PI / 2, 0]); plane(L, H, L / 2, 1.5, HW, H / 2, 0, [0, -Math.PI / 2, 0]);
   plane(1.3, H, 0.6, 1.5, -1.85, H / 2, L / 2, [0, Math.PI, 0]); plane(1.3, H, 0.6, 1.5, 1.85, H / 2, L / 2, [0, Math.PI, 0]); plane(2.4, 0.6, 1, 0.3, 0, H - 0.3, L / 2, [0, Math.PI, 0]);
   plane(HW * 2, L, 2, L / 2, 0, 0, 0, [-Math.PI / 2, 0, 0]); plane(HW * 2, L, 2, L / 2, 0, H, 0, [Math.PI / 2, 0, 0]);
@@ -127,14 +137,18 @@ SC.push(function (X) {
 /* ---- Cobh burns; the wraith comes ---- */
 SC.push(function (X) {
   const S = X.sec.outro, Sf = X.sec.final, kit = C.kit(X), g = new THREE.Group();
-  const d0 = X.Dend + 8, fires = [];
+  const d0 = X.Dend + 8, fires = [], burnt = [], useKit = C.hasModel('Wall_Plaster_Straight');
   for (let d = d0; d < d0 + 90; d += 8.5) {
     [-1, 1].forEach((sg) => {
       const w = R(6, 8.5), dep = R(6, 8), h = R(4.6, 7.5), hs = kit.house({ w, d: dep, h, wall: 0x3a3030, roof: 0x242026, light: 0xff7a30 });
-      const p = X.at(d + R(-1, 1), sg * (9 + R(0, 6)), 0); hs.position.copy(p); kit.placeFacing(hs, d, sg); g.add(hs);
-      if (R(0, 1) < 0.75) { const f = kit.fire({ scale: R(1.2, 2.2), size: 7 }); f.group.position.set(p.x, h + 1.6, p.z); g.add(f.group); fires.push(f); }
+      const p = X.at(d + R(-1, 1), sg * (9 + R(0, 6)), 0); hs.position.copy(p); kit.placeFacing(hs, d, sg);
+      const st = h > 5.6 ? 2 : 1;
+      if (useKit) burnt.push({ x: p.x, z: p.z, yaw: hs.rotation.y, w: w > 7.2 ? 6 : 4, d: dep > 7 ? 6 : 4, st, brick: R(0, 1) < 0.4 }); else g.add(hs);
+      if (R(0, 1) < 0.75) { const f = kit.fire({ scale: R(1.2, 2.2), size: 7 }); f.group.position.set(p.x, useKit ? st * 3.12 + 2.2 : h + 1.6, p.z); g.add(f.group); fires.push(f); }
     });
   }
+  // scorched kit houses with fire-lit windows
+  if (burnt.length) g.add(kit.village(burnt, { tint: 0x4a4040, glass: 0xff7a30 }));
   // the wraith
   const wr = new THREE.Group(), cloak = 0x0b0d14;
   const WP = [cn(4.2, 15, 10, cloak, [0, 7.5, 0]), bx(5, 1.2, 2, 0x10121a, [0, 14.2, 0]), ic(1.7, 1, 0x080a10, [0, 15.4, 0], [1, 1.2, 1]), cn(1.2, 2.4, 6, 0x080a10, [0, 17.2, -0.3])];

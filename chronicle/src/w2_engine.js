@@ -129,7 +129,9 @@ C.create = function (opts) {
 
   /* ---- ground that follows the rider, snapped to its texture period ---- */
   const PERIOD = 8, GSIZE = 480;
-  const gtex = TEX.ground; gtex.repeat.set(GSIZE / PERIOD, GSIZE / PERIOD);
+  // photo ground texture when loaded (darker than the procedural one, so its mood colour is boosted)
+  const gReal = C.tex('forest_ground_04_diff'), gtex = gReal || TEX.ground, gBoost = gReal ? 2.2 : 1;
+  gtex.repeat.set(GSIZE / PERIOD, GSIZE / PERIOD);
   const groundMat = new THREE.MeshLambertMaterial({ map: gtex, color: 0x1a2430 });
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(GSIZE, GSIZE), groundMat);
   ground.rotation.x = -Math.PI / 2; ground.position.y = -0.05; scene.add(ground);
@@ -257,7 +259,7 @@ C.create = function (opts) {
       hemi.color.copy(Mo.hs); hemi.groundColor.copy(Mo.hg); hemi.intensity = Mo.hi;
       dirL.color.copy(Mo.dc); dirL.intensity = Mo.di;
       lamp.color.copy(Mo.lc); lamp.intensity = Mo.li * (0.93 + 0.07 * Math.sin(time * 9.1) * Math.sin(time * 5.3 + 1));
-      groundMat.color.copy(Mo.gr);
+      groundMat.color.copy(Mo.gr).multiplyScalar(gBoost);
       const U = skyMat.uniforms;
       U.top.value.copy(Mo.skyT); U.hor.value.copy(Mo.skyH); U.stars.value = Mo.stars; U.moon.value = Mo.moon; U.aur.value = Mo.aur;
       U.aurA.value.copy(Mo.aA); U.aurB.value.copy(Mo.aB); U.time.value = time;

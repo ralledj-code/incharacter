@@ -20,8 +20,10 @@ const LOGGED_OUT_LINKS = [
   { href: '/contact', label: 'Contact' },
 ]
 
-const PLAYER_LINKS = [
+const PLAYER_LINKS: { href: string; label: string; static?: boolean }[] = [
   { href: '/play', label: 'My Journal' },
+  // static page in public/chronicle, so it needs a full page load rather than client routing
+  { href: '/chronicle', label: 'Chronicle', static: true },
   { href: '/settings', label: 'Settings' },
 ]
 
@@ -97,19 +99,19 @@ export default function BurgerMenu({ loggedIn = false, theme = 'dark' }: BurgerM
                   className="flex items-center justify-center">×</button>
               </div>
               <div className="flex-1 overflow-y-auto py-3">
-                {links.map(link => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setOpen(false)}
-                    className="flex items-center px-6 py-3 font-garamond text-base transition-colors"
-                    style={{ color: linkColor, minHeight: 50 }}
-                    onMouseEnter={e => (e.currentTarget.style.color = linkHoverColor)}
-                    onMouseLeave={e => (e.currentTarget.style.color = linkColor)}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+                {links.map(link => {
+                  const props = {
+                    href: link.href,
+                    onClick: () => setOpen(false),
+                    className: 'flex items-center px-6 py-3 font-garamond text-base transition-colors',
+                    style: { color: linkColor, minHeight: 50 },
+                    onMouseEnter: (e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = linkHoverColor),
+                    onMouseLeave: (e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = linkColor),
+                  }
+                  return 'static' in link && link.static
+                    ? <a key={link.href} {...props}>{link.label}</a>
+                    : <Link key={link.href} {...props}>{link.label}</Link>
+                })}
                 {!loggedIn && (
                   <>
                     <div style={{ margin: '8px 24px', borderTop: `1px solid ${drawerBorder}` }} />

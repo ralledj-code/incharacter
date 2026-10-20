@@ -2,7 +2,7 @@ const path=require.resolve('three').replace(/build.*$/,'');
 const ctxStub=new Proxy({}, {get:(t,k)=>k==='measureText'?()=>({width:10}):(k==='createRadialGradient'||k==='createLinearGradient')?()=>({addColorStop(){}}):()=>{} ,set:()=>true});
 global.document={createElement:()=>({width:0,height:0,getContext:()=>ctxStub})};
 global.THREE=require(path);
-const files='w1_core w2_engine w3_kit w3b_chars w4_bar w4_book s1a_well s1b_dragon s1c_camp_cross s1d_city s0_stories'.split(' ').map(f=>f+'.js');
+const files='w1_core w1b_assets w2_engine w3_kit w3b_chars w4_bar w4_book s1a_well s1b_dragon s1c_camp_cross s1d_city s0_stories'.split(' ').map(f=>f+'.js');
 files.forEach(f=>require('../src/'+f));
 const C=global.__cw;
 const W=C.create({mobile:false});

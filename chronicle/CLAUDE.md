@@ -12,6 +12,12 @@ Inside the InCharacter repo (ralledj-code/incharacter). Source: `chronicle/`. Bu
 - Dev hook: `window.__alaron.dev.hold = <W.update state>` freezes rendering on a given state (e.g. `{mode:'ride', t:177, ...}`); `dev.shot(state)` renders one frame. Handy for headless screenshots at any song time.
 - Three.js r128 from cdnjs (global UMD). Pin exact version.
 
+## Assets (CC0)
+- Runtime: `src/w1b_assets.js` loads `public/chronicle/assets/{nature,props,village}.glb` + `assets/tex/*.jpg` before the world is built (GLTFLoader r128 from jsdelivr). Builders call `C.hasModel / C.instModel / C.place / C.tex` and fall back to procedural shapes when an asset is missing (so `npm test` runs without them). glTF materials become Lambert; textures stay in display space like the rest of the scene.
+- Packing: raw packs are NOT in git. Download the free tiers from quaternius.itch.io (Stylized Nature MegaKit, Fantasy Props MegaKit, Medieval Village MegaKit; for characters later: Universal Base Characters, Modular Character Outfits - Fantasy, Universal Animation Library), unzip each into `<packsDir>/<pack name>/`, then `node scripts/pack-assets.mjs <packsDir> [pack]`. Edit the PACKS lists to add models. Textures: Poly Haven API, 1k JPG resized to 512 with sharp.
+- Used: trees/rocks/undergrowth in `kit.trees`, modular houses in `kit.village` (feast street + burning city), tavern props in `w4_bar dressBar`, photo textures on tavern walls/floor/fireplace, gaol walls/floor and outdoor ground.
+- Skipped: Bush_Common (its leaves need the pack's vertex-colour shader).
+
 ## Architecture (src/, IIFEs sharing `window.__cw`; build order in scripts/build.mjs)
 - w1_core: helpers, CUES (lyrics, stamps, speed v, mote kind), MOODS/KEYS (mood keyframes lerped by song time), geometry/texture helpers. `C.storyData.baphomet`.
 - w2_engine: `C.create()` -> W. Sky shader, lights, ground, motes, chair, rail path from timeline, modes walk|book|ride, `W.update(state)`. Everything is a deterministic function of song time t (audio.currentTime is the master clock; seeking works).

@@ -1,0 +1,9 @@
+All assets here are CC0 (public domain). Credit is not required but given with thanks.
+
+Models (packed and reduced by chronicle/scripts/pack-assets.mjs):
+  Quaternius - Stylized Nature MegaKit, Fantasy Props MegaKit, Medieval Village MegaKit
+  https://quaternius.com  (downloaded via quaternius.itch.io, free tier)
+
+Textures (tex/, resized to 512 px):
+  Poly Haven - old_wood_floor, wood_plank_wall, rustic_stone_wall, forest_ground_04, cobblestone_floor_04, castle_brick_07
+  https://polyhaven.com

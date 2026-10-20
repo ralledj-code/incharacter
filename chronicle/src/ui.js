@@ -1,6 +1,10 @@
 (function () {
 'use strict';
-const C = window.__cw, THREE = C.THREE;
+const C = window.__cw;
+const goBtn = document.getElementById('go');
+C.loadAssets((k) => { goBtn.textContent = 'Loading the world… ' + Math.round(k * 100) + '%'; }).catch(() => { }).then(boot);
+function boot() {
+const THREE = C.THREE;
 const $ = (id) => document.getElementById(id);
 const clamp = C.clamp;
 const mobile = !!(window.matchMedia && matchMedia('(pointer:coarse)').matches);
@@ -29,8 +33,7 @@ const keys = {}; let padHeld = false;
 const audio = new Audio(); audio.preload = 'auto';
 let audioReady = false, audioErr = false;
 function setAudioSrc(url) { audio.src = url; audio.load(); audioReady = true; audioErr = false; refreshBookUI(); }
-// resolve assets next to the page even when served as /chronicle (no trailing slash) by InCharacter
-const BASE = /\/$|\.html$/.test(location.pathname) ? location.href : location.href.replace(/[?#].*$/, '') + '/';
+const BASE = C.BASE();
 fetch(new URL('song.mp3', BASE)).then((r) => { if (!r.ok) throw 0; return r.blob(); }).then((b) => setAudioSrc(URL.createObjectURL(b))).catch(() => {
   audioErr = true;
   const l = document.createElement('label'); l.style.cssText = 'color:var(--dim);font-size:.95rem';
@@ -242,4 +245,5 @@ function frame(now) {
 const dev = { hold: null, shot(st) { W.update(st); renderer.render(W.scene, W.camera); } };
 requestAnimationFrame(frame);
 window.__alaron = { W, renderer, dev, player, look, audio, get mode() { return mode; }, sit, begin, flip, seek(t) { audio.currentTime = t; } };
+}
 })();

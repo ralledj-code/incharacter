@@ -3,16 +3,48 @@
 const C = root.__cw, THREE = C.THREE;
 const { TAU, clamp, sm, ss, M, bx, cy, cn, ic, tri, merge, part, solid, emis, lamb, R } = C;
 
+/* Furniture and clutter from the CC0 props pack (only when it loaded). */
+function dressBar(g, tables) {
+  const put = (k, p, yaw, s) => { const m = C.place(k, p, yaw, s); if (m) g.add(m); return m; };
+  // long tables with benches, mugs and candles
+  tables.forEach((t, i) => {
+    const tb = put('Table_Large', [t[0], 0, t[1]], Math.PI / 2); if (tb) tb.scale.set(0.75, 1, 0.8);
+    [-0.75, 0.75].forEach((dx) => { const b = put('Bench', [t[0] + dx, 0, t[1]], Math.PI / 2); if (b) b.scale.set(0.72, 1, 1); });
+    put('Mug', [t[0] + 0.15, 0.81, t[1] + 0.4], 0.4); put('Mug', [t[0] - 0.2, 0.81, t[1] - 0.5], 2.1);
+    if (i !== 1) put('CandleStick_Triple', [t[0], 0.81, t[1] - 0.1], Math.PI / 2);
+  });
+  // bar stools (stretched a little: the counter is tall), one knocked over
+  [-7.2, -5.9, -4.6, -2.0].forEach((z) => { const st = put('Stool', [2.7, 0, z], z); if (st) st.scale.set(1, 1.3, 1); });
+  const st = put('Stool', [2.45, 0.24, -3.3], 0); if (st) st.rotation.z = Math.PI / 2;
+  // behind and on the counter
+  [-7.6, -6.2, -4.8, -3.4, -2.0].forEach((z, i) => put(i % 2 ? 'SmallBottles_1' : 'Bottle_1', [4.0, 1.17, z + 0.3], i));
+  put('Barrel_Holder', [5.55, 1.2, -9.3], -Math.PI / 2);
+  put('Barrel', [5.4, 0, -0.2], 0.3); put('Barrel', [5.45, 0, 0.6], 1.2); put('Crate_Wooden', [5.3, 0, 1.7], 0.2);
+  // the back wall (behind the player at the start): bookcases, chest, banners, weapons
+  put('Bookcase_2', [-3.6, 0, 5.25], Math.PI); put('Bookcase_2', [3.6, 0, 5.25], Math.PI);
+  put('Chest_Wood', [0, 0, 4.9], Math.PI, 0.8);
+  put('Banner_1', [-5.95, 1.8, 1.4], Math.PI / 2, 0.8); put('Banner_2', [-5.95, 1.8, -6.6], Math.PI / 2, 0.8);
+  put('WeaponStand', [-5.3, 0, 3.6], Math.PI / 2, 0.9); put('Shield_Wooden', [-5.95, 2.4, -2.5], Math.PI / 2, 0.9);
+  put('Cauldron', [-4.7, 0, -4.7], 0.5, 0.7); put('Bucket_Wooden_1', [-4.6, 0, -0.3], 0);
+  put('Book_Stack_1', [-2.95, 0.81, 2.0], 0.6);
+}
+
 /* The empty tavern: the permanent hub every story starts and ends in. */
 C.buildBar = function (X) {
   const g = new THREE.Group(), Z0 = X.Z0, kit = C.kit(X);
   const wallMat = new THREE.MeshLambertMaterial({ map: X.TEX.plank, color: 0xb89a7a });
-  const mk = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat); m.position.set(x, y, z); g.add(m); return m; };
+  const HAS = C.hasModel('Table_Large'), wallTex = C.tex('wood_plank_wall_diff');
+  // photo planks: one material per wall so the texture repeats at a real-world scale (~2.5 m per tile)
+  const mk = (w, h, d, x, y, z) => {
+    let mat = wallMat;
+    if (wallTex) mat = new THREE.MeshLambertMaterial({ map: C.tex('wood_plank_wall_diff', Math.max(w, d) / 2.5, h / 2.5), color: 0xa08868 });
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); g.add(m); return m;
+  };
   mk(12.8, 4.2, 0.4, 0, 2.1, 5.7);
   mk(5.1, 4.2, 0.4, -3.85, 2.1, -10.2); mk(5.1, 4.2, 0.4, 3.85, 2.1, -10.2); mk(2.6, 1.2, 0.4, 0, 3.6, -10.2);
   mk(0.4, 4.2, 15.9, -6.2, 2.1, -2.25); mk(0.4, 4.2, 15.9, 6.2, 2.1, -2.25);
-  const ft = X.TEX.plank.clone(); ft.needsUpdate = true; ft.repeat.set(3, 5);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(12, 15.5), new THREE.MeshLambertMaterial({ map: ft, color: 0xcdb394 }));
+  const ftReal = C.tex('old_wood_floor_diff', 4, 5.2), ft = ftReal || X.TEX.plank.clone(); ft.needsUpdate = true; if (!ftReal) ft.repeat.set(3, 5);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(12, 15.5), new THREE.MeshLambertMaterial({ map: ft, color: ftReal ? 0x9a8068 : 0xcdb394 }));
   floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, -2.25); g.add(floor);
   const ceil = new THREE.Mesh(new THREE.PlaneGeometry(12, 15.5), new THREE.MeshLambertMaterial({ color: 0x2a1d14 }));
   ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 4.2, -2.25); g.add(ceil);
@@ -22,9 +54,11 @@ C.buildBar = function (X) {
   [-8.5, -5, -1.5, 2, 5].forEach((z) => P.push(bx(12, 0.35, 0.35, dark, [0, 4.0, z])));
   P.push(bx(0.35, 0.35, 15.5, dark, [-3, 4.0, -2.25]), bx(0.35, 0.35, 15.5, dark, [3, 4.0, -2.25]));
   // fireplace on the left wall
-  P.push(bx(1.0, 0.4, 3.2, stone, [-5.3, 0.2, -2.5]), bx(1.0, 2.6, 0.7, stone, [-5.3, 1.3, -4.0]), bx(1.0, 2.6, 0.7, stone, [-5.3, 1.3, -1.0]),
-    bx(1.0, 0.5, 3.2, stone, [-5.3, 2.65, -2.5]), bx(0.8, 1.5, 2.6, stone, [-5.4, 3.65, -2.5]),
-    cy(0.1, 0.1, 1.2, 6, 0x3a2a1c, [-5.2, 0.5, -2.8], [0, 0, Math.PI / 2]), cy(0.1, 0.1, 1.2, 6, 0x3a2a1c, [-5.2, 0.6, -2.2], [0.3, 0, Math.PI / 2]));
+  const FP = [[1.0, 0.4, 3.2, -5.3, 0.2, -2.5], [1.0, 2.6, 0.7, -5.3, 1.3, -4.0], [1.0, 2.6, 0.7, -5.3, 1.3, -1.0], [1.0, 0.5, 3.2, -5.3, 2.65, -2.5], [0.8, 1.5, 2.6, -5.4, 3.65, -2.5]];
+  if (C.tex('rustic_stone_wall_diff')) {
+    FP.forEach((b) => { const m = new THREE.Mesh(new THREE.BoxGeometry(b[0], b[1], b[2]), new THREE.MeshLambertMaterial({ map: C.tex('rustic_stone_wall_diff', Math.max(b[0], b[2]) / 1.6, b[1] / 1.6), color: 0x8a8480 })); m.position.set(b[3], b[4], b[5]); g.add(m); });
+  } else FP.forEach((b) => P.push(bx(b[0], b[1], b[2], stone, [b[3], b[4], b[5]])));
+  P.push(cy(0.1, 0.1, 1.2, 6, 0x3a2a1c, [-5.2, 0.5, -2.8], [0, 0, Math.PI / 2]), cy(0.1, 0.1, 1.2, 6, 0x3a2a1c, [-5.2, 0.6, -2.2], [0.3, 0, Math.PI / 2]));
   // bar counter and shelves on the right
   P.push(bx(1.3, 1.1, 7.5, wood, [4.1, 0.55, -4.7]), bx(1.5, 0.1, 7.7, dark, [4.0, 1.12, -4.7]),
     bx(0.4, 0.08, 7, wood, [5.6, 1.9, -4.7]), bx(0.4, 0.08, 7, wood, [5.6, 2.6, -4.7]));
@@ -34,11 +68,11 @@ C.buildBar = function (X) {
   }
   for (let i = 0; i < 6; i++) P.push(cy(0.09, 0.08, 0.16, 7, 0x9a9aa0, [3.95, 1.25, -7.4 + i * 1.15]));
   // stools, one knocked over
-  [-7.2, -5.9, -4.6, -2.0].forEach((z) => P.push(cy(0.22, 0.22, 0.07, 8, wood, [2.7, 0.72, z]), cy(0.04, 0.05, 0.7, 5, dark, [2.7, 0.36, z])));
-  P.push(cy(0.22, 0.22, 0.07, 8, wood, [2.4, 0.2, -3.3], [0, 0, Math.PI / 2]), cy(0.04, 0.05, 0.7, 5, dark, [2.75, 0.2, -3.3], [0, 0, Math.PI / 2]));
+  if (!HAS) [-7.2, -5.9, -4.6, -2.0].forEach((z) => P.push(cy(0.22, 0.22, 0.07, 8, wood, [2.7, 0.72, z]), cy(0.04, 0.05, 0.7, 5, dark, [2.7, 0.36, z])));
+  if (!HAS) P.push(cy(0.22, 0.22, 0.07, 8, wood, [2.4, 0.2, -3.3], [0, 0, Math.PI / 2]), cy(0.04, 0.05, 0.7, 5, dark, [2.75, 0.2, -3.3], [0, 0, Math.PI / 2]));
   // round tables with tankards and a few small chairs
   const tables = [[-3.2, -6.3], [-3.0, -0.8], [-2.8, 2.6]];
-  tables.forEach((t) => {
+  if (!HAS) tables.forEach((t) => {
     P.push(cy(0.9, 0.9, 0.08, 10, wood, [t[0], 0.8, t[1]]), cy(0.12, 0.16, 0.8, 6, dark, [t[0], 0.4, t[1]]));
     P.push(cy(0.07, 0.06, 0.14, 7, 0x9a9aa0, [t[0] + 0.4, 0.91, t[1] + 0.2]), cy(0.07, 0.06, 0.14, 7, 0x9a9aa0, [t[0] - 0.3, 0.91, t[1] - 0.3]));
     for (let k = 0; k < 3; k++) {
@@ -48,6 +82,7 @@ C.buildBar = function (X) {
     }
   });
   g.add(solid(P));
+  if (HAS) dressBar(g, tables);
 
   // hanging lanterns and the single red d20 on the middle table
   const lanternPos = [[-2.5, 3.1, -2], [2.2, 3.1, -6.5], [0, 3.1, 1.5]];

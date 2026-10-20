@@ -35,11 +35,38 @@ C.kit = function (X) {
     }
     const g = new THREE.Group();
     const tint = new THREE.Color(o.tint === undefined ? 0xffffff : o.tint);
+    if (C.hasModel('Pine_1')) {
+      // CC0 models: spread each list over a few variants; k converts the procedural scale to the model's size
+      split(g, ['Pine_1', 'Pine_2', 'Pine_3'], pines, 1.15, tint);
+      split(g, ['DeadTree_1', 'DeadTree_2', 'DeadTree_3'], deads, 0.6, tint);
+      split(g, ['Rock_Medium_1', 'Rock_Medium_2', 'Rock_Medium_3'], rocks, 0.45, tint);
+      if (o.under !== false) {
+        // undergrowth close to the rail, kept clear of the chair's path
+        // (Bush_Common is left out: its leaves need the pack's own vertex-colour shader)
+        const U = [['Fern_1', 0.55], ['Grass_Wispy_Tall', 0.42], ['Pebble_Round_1', 1.4], ['Grass_Common_Tall', 0.38], ['Mushroom_Common', 0.7]];
+        const lists = U.map(() => []), uStep = X.mobile ? 4.2 : 2.6;
+        for (let d = d0; d < d1; d += uStep) {
+          for (let k = 0; k < 2; k++) {
+            const side = (rnd01() < 0.5 ? -1 : 1) * (2.6 + rnd01() * 9), p = at(d + (rnd01() - 0.5) * uStep, side, 0);
+            const r = rnd01(), i = r < 0.3 ? 0 : r < 0.6 ? 1 : r < 0.8 ? 2 : r < 0.96 ? 3 : 4;
+            lists[i].push(M([p.x, 0, p.z], [0, rnd01() * TAU, 0], U[i][1] * (0.7 + rnd01() * 0.6)));
+          }
+        }
+        const uTint = tint.clone().multiplyScalar(0.5);  // upward-facing blades catch too much sky light at full colour
+        U.forEach((u, i) => { const m = C.instModel(u[0], lists[i], { tint: uTint }); if (m) g.add(m); });
+      }
+      return g;
+    }
     if (pines.length) g.add(inst(pineGeo, lamb({ color: tint }), pines));
     if (deads.length) g.add(inst(deadGeo, lamb({ color: tint }), deads));
     if (rocks.length) g.add(inst(rockGeo, lamb({ color: tint }), rocks));
     return g;
   };
+  function split(g, keys, mats, k, tint) {
+    const sc = new THREE.Matrix4().makeScale(k, k, k), lists = keys.map(() => []);
+    mats.forEach((m, i) => lists[i % keys.length].push(m.clone().multiply(sc)));
+    keys.forEach((key, i) => { const m = C.instModel(key, lists[i], { tint }); if (m) g.add(m); });
+  }
   function rnd01() { return R(0, 1); }
 
   /* ---- torches with flickering flames ---- */
@@ -135,6 +162,48 @@ C.kit = function (X) {
       if (h > 5.5) wins.push(part(new THREE.PlaneGeometry(0.8, 1.0), wc, M([x, h * 0.88, d / 2 + 0.03])));
     }
     g.add(emis(wins, { side: THREE.DoubleSide }));
+    return g;
+  };
+
+  /* ---- modular timber/plaster houses (CC0 Medieval Village kit), all houses instanced together ----
+     hs: [{ x, z, yaw, w: 4|6, d: 4|6, st: 1|2, brick }]; front (+z local) has windows and a door. null if the kit is missing. */
+  K.village = function (hs, o) {
+    o = o || {};
+    if (!C.hasModel('Wall_Plaster_Straight')) return null;
+    const lists = {}, add = (k, m) => { (lists[k] = lists[k] || []).push(m); };
+    const WH = 3.12;
+    hs.forEach((h, hi) => {
+      const H = M([h.x, 0, h.z], [0, h.yaw, 0]), w = h.w, d = h.d, st = h.st || 1, pre = h.brick ? 'Wall_UnevenBrick_' : 'Wall_Plaster_';
+      const put = (k, x, y, z, yaw) => add(k, H.clone().multiply(M([x, y, z], [0, yaw || 0, 0])));
+      for (let s = 0; s < st; s++) {
+        const y = s * WH, nw = w / 2, nd = d / 2;
+        for (let i = 0; i < nw; i++) {
+          const x = -w / 2 + 1 + i * 2;
+          // front: a door low in the middle-ish module, windows elsewhere
+          const door = s === 0 && i === Math.floor((nw - 1) / 2) && (hi % 3 !== 2);
+          const fk = door ? pre + 'Door_Round' : (s === 0 && h.brick ? pre + 'Window_Wide_Round' : (s > 0 && !h.brick && i % 2 ? 'Wall_Plaster_WoodGrid' : pre + 'Window_Wide_Round'));
+          put(fk, x, y, d / 2 - 0.09, 0);
+          if (door) put('Door_1_Round', x - 0.53, y, d / 2 - 0.15, 0);
+          else if (/Window/.test(fk)) { put('Window_Wide_Round1', x, y, d / 2 - 0.1, 0); if (s > 0 && i % 2 === 0) put('WindowShutters_Wide_Round_Open', x, y, d / 2 - 0.09, 0); }
+          put(pre + 'Straight', x, y, -d / 2 + 0.09, Math.PI);
+        }
+        for (let i = 0; i < nd; i++) {
+          const z = -d / 2 + 1 + i * 2;
+          put(i % 2 ? pre + 'Window_Wide_Round' : pre + 'Straight', w / 2 - 0.09, y, z, Math.PI / 2);
+          put(pre + 'Straight', -w / 2 + 0.09, y, z, -Math.PI / 2);
+        }
+        [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach((c) => put(h.brick ? 'Corner_Exterior_Brick' : 'Corner_Exterior_Wood', c[0] * w / 2, y, c[1] * d / 2, 0));
+      }
+      const top = st * WH;
+      put('Roof_RoundTiles_' + w + 'x' + d, 0, top, 0, 0);
+      put('Roof_Front_Brick' + w, 0, top, d / 2 - 0.25, 0); put('Roof_Front_Brick' + w, 0, top, -d / 2 + 0.25, Math.PI);
+      if (hi % 2 === 0) put('Prop_Chimney', w / 4, top + 0.6, -d / 4, 0);
+    });
+    const g = new THREE.Group();
+    Object.keys(lists).forEach((k) => { const m = C.instModel(k, lists[k], { tint: o.tint }); if (m) g.add(m); });
+    // lit windows: the kit's glass becomes an unlit warm pane
+    const glass = new THREE.MeshBasicMaterial({ color: o.glass || 0xffb860 });
+    g.traverse((m) => { if (m.isMesh && m.material && m.material.name === 'MI_WindowGlass') m.material = glass; });
     return g;
   };
 

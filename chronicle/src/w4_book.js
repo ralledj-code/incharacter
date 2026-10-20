@@ -87,7 +87,7 @@ C.buildBook = function (X) {
   let stories = [], leaves = [], cur = 0, texCache = [];
   const leafGeoF = new THREE.PlaneGeometry(W, H); leafGeoF.rotateX(-Math.PI / 2); leafGeoF.translate(W / 2, 0, 0);
   const leafGeoB = new THREE.PlaneGeometry(W, H); leafGeoB.rotateX(Math.PI / 2); leafGeoB.translate(W / 2, 0, 0);
-  const baseL = new THREE.Mesh(leafGeoF.clone(), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+  const baseL = new THREE.Mesh(leafGeoF.clone(), new THREE.MeshLambertMaterial({ color: 0xb8ae9a }));
   baseL.scale.x = -1; baseL.position.set(0, pivotY + 0.0008, 0); book.add(baseL);
   const baseR = new THREE.Mesh(leafGeoF.clone(), new THREE.MeshLambertMaterial({ color: 0xd8c8a0 }));
   baseR.position.set(0, pivotY + 0.0008, 0); book.add(baseR);
@@ -101,9 +101,9 @@ C.buildBook = function (X) {
     baseL.material.map = tex(artPage(list[0], 'h')); baseL.material.needsUpdate = true;
     for (let j = 0; j < N; j++) {
       const pivot = new THREE.Group(); pivot.position.set(0, pivotY, 0);
-      const front = new THREE.Mesh(leafGeoF, new THREE.MeshLambertMaterial({ map: right[j] }));
+      const front = new THREE.Mesh(leafGeoF, new THREE.MeshLambertMaterial({ map: right[j], color: 0xb8ae9a }));
       const backTex = j + 1 < N ? tex(artPage(list[j + 1], 'hv')) : null;
-      const back = new THREE.Mesh(leafGeoB, new THREE.MeshLambertMaterial(backTex ? { map: backTex } : { color: 0xd8c8a0 }));
+      const back = new THREE.Mesh(leafGeoB, new THREE.MeshLambertMaterial(backTex ? { map: backTex, color: 0xb8ae9a } : { color: 0xa89c80 }));
       const off = 0.0012 * (N - j);
       front.position.y = off; back.position.y = off - 0.0006;
       pivot.add(front); pivot.add(back);

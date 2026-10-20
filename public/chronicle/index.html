@@ -91,6 +91,7 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
 <div id="dev"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 /* Baphomet's Chains: world engine (Three.js r128 global build) */
 (function (root) {
@@ -343,6 +344,96 @@ root.__cw = { THREE, TAU, clamp, lerp, sm, ss, mkRng, R, RP, pick, MOODS, newMoo
 (function (root) {
 'use strict';
 const C = root.__cw, THREE = C.THREE;
+
+/* Loaded art (CC0 Quaternius models + Poly Haven textures, packed by scripts/pack-assets.mjs).
+   Everything here is optional: builders ask for a model/texture and fall back to procedural shapes when it is missing. */
+const A = C.assets = { models: {}, tex: {}, ready: false };
+const GLB = ['nature', 'props', 'village'];
+const DIM = { props: 0.68, village: 0.8 };  // colour scale per pack
+const TEX = ['old_wood_floor', 'wood_plank_wall', 'rustic_stone_wall', 'forest_ground_04', 'cobblestone_floor_04', 'castle_brick_07'];
+
+// asset base: next to the page, also when served as /chronicle (no trailing slash)
+C.BASE = function () {
+  if (typeof location === 'undefined') return '';
+  return /\/$|\.html$/.test(location.pathname) ? location.href : location.href.replace(/[?#].*$/, '') + '/';
+};
+
+// glTF PBR -> Lambert with the same map/colour, so models sit in the existing flat-lit look.
+// Textures stay in "display" space like the rest of the scene (renderer output is linear).
+function toLambert(m) {
+  if (m.map) m.map.encoding = THREE.LinearEncoding;
+  const masked = m.alphaTest > 0 || m.transparent;
+  return new THREE.MeshLambertMaterial({ map: m.map || null, color: m.color, side: m.side, alphaTest: masked ? Math.max(0.5, m.alphaTest) : 0, name: m.name });
+}
+function prep(node, dim) {
+  const cache = new Map();
+  node.traverse((o) => {
+    if (!o.isMesh) return;
+    o.material = [].concat(o.material).map((m) => { if (!cache.has(m)) { const l = toLambert(m); if (dim) l.color.multiplyScalar(dim); cache.set(m, l); } return cache.get(m); });
+    if (o.material.length === 1) o.material = o.material[0];
+  });
+  node.position.set(0, 0, 0); node.updateMatrixWorld(true);
+  node.userData.box = new THREE.Box3().setFromObject(node);
+  return node;
+}
+
+C.loadAssets = function (onProgress) {
+  if (!THREE.GLTFLoader || typeof document === 'undefined') return Promise.resolve();
+  const base = C.BASE(), jobs = [];
+  let done = 0, total = GLB.length + TEX.length * 2;
+  const tick = () => { done++; if (onProgress) onProgress(done / total); };
+  const gl = new THREE.GLTFLoader(), tl = new THREE.TextureLoader();
+  GLB.forEach((n) => jobs.push(new Promise((res) => gl.load(new URL('assets/' + n + '.glb', base).href,
+    (g) => { g.scene.children.slice().forEach((c) => { A.models[c.name] = prep(c, DIM[n]); }); tick(); res(); },
+    undefined, () => { tick(); res(); }))));
+  TEX.forEach((n) => ['diff', 'nor'].forEach((k) => jobs.push(new Promise((res) => tl.load(new URL('assets/tex/' + n + '_' + k + '.jpg', base).href,
+    (t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; A.tex[n + '_' + k] = t; tick(); res(); },
+    undefined, () => { tick(); res(); })))));
+  return Promise.all(jobs).then(() => { A.ready = true; });
+};
+
+/* a cloned texture with its own repeat, or null */
+C.tex = function (name, rx, ry) {
+  const t = A.tex[name]; if (!t) return null;
+  const c = t.clone(); c.needsUpdate = true; c.repeat.set(rx || 1, ry === undefined ? (rx || 1) : ry); return c;
+};
+/* a model instance (shares geometry and materials), or null */
+C.model = function (key) { const m = A.models[key]; return m ? m.clone() : null; };
+C.hasModel = (key) => !!A.models[key];
+C.modelSize = function (key) { const m = A.models[key]; if (!m) return null; const s = new THREE.Vector3(); m.userData.box.getSize(s); return s; };
+
+/* Many copies of one model as InstancedMeshes (one per mesh part). mats: Matrix4 list in world space.
+   o.tint multiplies material colours (cloned per call); o.norm scales the model so its height is 1 (then mats scale to metres). */
+C.instModel = function (key, mats, o) {
+  const src = A.models[key]; if (!src || !mats.length) return null;
+  o = o || {};
+  const g = new THREE.Group(), tint = o.tint !== undefined ? new THREE.Color(o.tint) : null;
+  const h = o.norm ? Math.max(1e-3, src.userData.box.max.y - src.userData.box.min.y) : 1;
+  const pre = new THREE.Matrix4().makeScale(1 / h, 1 / h, 1 / h), tmp = new THREE.Matrix4();
+  src.updateMatrixWorld(true);
+  src.traverse((m) => {
+    if (!m.isMesh) return;
+    let mat = m.material;
+    if (tint) mat = [].concat(mat).map((x) => { const y = x.clone(); y.color.multiply(tint); return y; });
+    if (Array.isArray(mat) && mat.length === 1) mat = mat[0];
+    const im = new THREE.InstancedMesh(m.geometry, mat, mats.length);
+    const local = new THREE.Matrix4().multiplyMatrices(pre, m.matrixWorld);
+    mats.forEach((w, i) => im.setMatrixAt(i, tmp.multiplyMatrices(w, local)));
+    im.instanceMatrix.needsUpdate = true; im.frustumCulled = false;
+    g.add(im);
+  });
+  return g;
+};
+/* place one model: position [x,y,z], yaw, uniform scale */
+C.place = function (key, p, yaw, s) {
+  const m = C.model(key); if (!m) return null;
+  m.position.set(p[0], p[1], p[2]); m.rotation.y = yaw || 0; if (s) m.scale.setScalar(s); return m;
+};
+})(typeof window !== 'undefined' ? window : globalThis);
+
+(function (root) {
+'use strict';
+const C = root.__cw, THREE = C.THREE;
 const { TAU, clamp, lerp, sm, ss, MOODS, newMood, moodAt, M, bx, cy, cn, ic, solid, emis, inst, lamb } = C;
 
 const SKY_VS = 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }';
@@ -471,7 +562,9 @@ C.create = function (opts) {
 
   /* ---- ground that follows the rider, snapped to its texture period ---- */
   const PERIOD = 8, GSIZE = 480;
-  const gtex = TEX.ground; gtex.repeat.set(GSIZE / PERIOD, GSIZE / PERIOD);
+  // photo ground texture when loaded (darker than the procedural one, so its mood colour is boosted)
+  const gReal = C.tex('forest_ground_04_diff'), gtex = gReal || TEX.ground, gBoost = gReal ? 2.2 : 1;
+  gtex.repeat.set(GSIZE / PERIOD, GSIZE / PERIOD);
   const groundMat = new THREE.MeshLambertMaterial({ map: gtex, color: 0x1a2430 });
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(GSIZE, GSIZE), groundMat);
   ground.rotation.x = -Math.PI / 2; ground.position.y = -0.05; scene.add(ground);
@@ -599,7 +692,7 @@ C.create = function (opts) {
       hemi.color.copy(Mo.hs); hemi.groundColor.copy(Mo.hg); hemi.intensity = Mo.hi;
       dirL.color.copy(Mo.dc); dirL.intensity = Mo.di;
       lamp.color.copy(Mo.lc); lamp.intensity = Mo.li * (0.93 + 0.07 * Math.sin(time * 9.1) * Math.sin(time * 5.3 + 1));
-      groundMat.color.copy(Mo.gr);
+      groundMat.color.copy(Mo.gr).multiplyScalar(gBoost);
       const U = skyMat.uniforms;
       U.top.value.copy(Mo.skyT); U.hor.value.copy(Mo.skyH); U.stars.value = Mo.stars; U.moon.value = Mo.moon; U.aur.value = Mo.aur;
       U.aurA.value.copy(Mo.aA); U.aurB.value.copy(Mo.aB); U.time.value = time;
@@ -708,11 +801,38 @@ C.kit = function (X) {
     }
     const g = new THREE.Group();
     const tint = new THREE.Color(o.tint === undefined ? 0xffffff : o.tint);
+    if (C.hasModel('Pine_1')) {
+      // CC0 models: spread each list over a few variants; k converts the procedural scale to the model's size
+      split(g, ['Pine_1', 'Pine_2', 'Pine_3'], pines, 1.15, tint);
+      split(g, ['DeadTree_1', 'DeadTree_2', 'DeadTree_3'], deads, 0.6, tint);
+      split(g, ['Rock_Medium_1', 'Rock_Medium_2', 'Rock_Medium_3'], rocks, 0.45, tint);
+      if (o.under !== false) {
+        // undergrowth close to the rail, kept clear of the chair's path
+        // (Bush_Common is left out: its leaves need the pack's own vertex-colour shader)
+        const U = [['Fern_1', 0.55], ['Grass_Wispy_Tall', 0.42], ['Pebble_Round_1', 1.4], ['Grass_Common_Tall', 0.38], ['Mushroom_Common', 0.7]];
+        const lists = U.map(() => []), uStep = X.mobile ? 4.2 : 2.6;
+        for (let d = d0; d < d1; d += uStep) {
+          for (let k = 0; k < 2; k++) {
+            const side = (rnd01() < 0.5 ? -1 : 1) * (2.6 + rnd01() * 9), p = at(d + (rnd01() - 0.5) * uStep, side, 0);
+            const r = rnd01(), i = r < 0.3 ? 0 : r < 0.6 ? 1 : r < 0.8 ? 2 : r < 0.96 ? 3 : 4;
+            lists[i].push(M([p.x, 0, p.z], [0, rnd01() * TAU, 0], U[i][1] * (0.7 + rnd01() * 0.6)));
+          }
+        }
+        const uTint = tint.clone().multiplyScalar(0.5);  // upward-facing blades catch too much sky light at full colour
+        U.forEach((u, i) => { const m = C.instModel(u[0], lists[i], { tint: uTint }); if (m) g.add(m); });
+      }
+      return g;
+    }
     if (pines.length) g.add(inst(pineGeo, lamb({ color: tint }), pines));
     if (deads.length) g.add(inst(deadGeo, lamb({ color: tint }), deads));
     if (rocks.length) g.add(inst(rockGeo, lamb({ color: tint }), rocks));
     return g;
   };
+  function split(g, keys, mats, k, tint) {
+    const sc = new THREE.Matrix4().makeScale(k, k, k), lists = keys.map(() => []);
+    mats.forEach((m, i) => lists[i % keys.length].push(m.clone().multiply(sc)));
+    keys.forEach((key, i) => { const m = C.instModel(key, lists[i], { tint }); if (m) g.add(m); });
+  }
   function rnd01() { return R(0, 1); }
 
   /* ---- torches with flickering flames ---- */
@@ -808,6 +928,48 @@ C.kit = function (X) {
       if (h > 5.5) wins.push(part(new THREE.PlaneGeometry(0.8, 1.0), wc, M([x, h * 0.88, d / 2 + 0.03])));
     }
     g.add(emis(wins, { side: THREE.DoubleSide }));
+    return g;
+  };
+
+  /* ---- modular timber/plaster houses (CC0 Medieval Village kit), all houses instanced together ----
+     hs: [{ x, z, yaw, w: 4|6, d: 4|6, st: 1|2, brick }]; front (+z local) has windows and a door. null if the kit is missing. */
+  K.village = function (hs, o) {
+    o = o || {};
+    if (!C.hasModel('Wall_Plaster_Straight')) return null;
+    const lists = {}, add = (k, m) => { (lists[k] = lists[k] || []).push(m); };
+    const WH = 3.12;
+    hs.forEach((h, hi) => {
+      const H = M([h.x, 0, h.z], [0, h.yaw, 0]), w = h.w, d = h.d, st = h.st || 1, pre = h.brick ? 'Wall_UnevenBrick_' : 'Wall_Plaster_';
+      const put = (k, x, y, z, yaw) => add(k, H.clone().multiply(M([x, y, z], [0, yaw || 0, 0])));
+      for (let s = 0; s < st; s++) {
+        const y = s * WH, nw = w / 2, nd = d / 2;
+        for (let i = 0; i < nw; i++) {
+          const x = -w / 2 + 1 + i * 2;
+          // front: a door low in the middle-ish module, windows elsewhere
+          const door = s === 0 && i === Math.floor((nw - 1) / 2) && (hi % 3 !== 2);
+          const fk = door ? pre + 'Door_Round' : (s === 0 && h.brick ? pre + 'Window_Wide_Round' : (s > 0 && !h.brick && i % 2 ? 'Wall_Plaster_WoodGrid' : pre + 'Window_Wide_Round'));
+          put(fk, x, y, d / 2 - 0.09, 0);
+          if (door) put('Door_1_Round', x - 0.53, y, d / 2 - 0.15, 0);
+          else if (/Window/.test(fk)) { put('Window_Wide_Round1', x, y, d / 2 - 0.1, 0); if (s > 0 && i % 2 === 0) put('WindowShutters_Wide_Round_Open', x, y, d / 2 - 0.09, 0); }
+          put(pre + 'Straight', x, y, -d / 2 + 0.09, Math.PI);
+        }
+        for (let i = 0; i < nd; i++) {
+          const z = -d / 2 + 1 + i * 2;
+          put(i % 2 ? pre + 'Window_Wide_Round' : pre + 'Straight', w / 2 - 0.09, y, z, Math.PI / 2);
+          put(pre + 'Straight', -w / 2 + 0.09, y, z, -Math.PI / 2);
+        }
+        [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach((c) => put(h.brick ? 'Corner_Exterior_Brick' : 'Corner_Exterior_Wood', c[0] * w / 2, y, c[1] * d / 2, 0));
+      }
+      const top = st * WH;
+      put('Roof_RoundTiles_' + w + 'x' + d, 0, top, 0, 0);
+      put('Roof_Front_Brick' + w, 0, top, d / 2 - 0.25, 0); put('Roof_Front_Brick' + w, 0, top, -d / 2 + 0.25, Math.PI);
+      if (hi % 2 === 0) put('Prop_Chimney', w / 4, top + 0.6, -d / 4, 0);
+    });
+    const g = new THREE.Group();
+    Object.keys(lists).forEach((k) => { const m = C.instModel(k, lists[k], { tint: o.tint }); if (m) g.add(m); });
+    // lit windows: the kit's glass becomes an unlit warm pane
+    const glass = new THREE.MeshBasicMaterial({ color: o.glass || 0xffb860 });
+    g.traverse((m) => { if (m.isMesh && m.material && m.material.name === 'MI_WindowGlass') m.material = glass; });
     return g;
   };
 
@@ -909,16 +1071,48 @@ C.chars = function (X) {
 const C = root.__cw, THREE = C.THREE;
 const { TAU, clamp, sm, ss, M, bx, cy, cn, ic, tri, merge, part, solid, emis, lamb, R } = C;
 
+/* Furniture and clutter from the CC0 props pack (only when it loaded). */
+function dressBar(g, tables) {
+  const put = (k, p, yaw, s) => { const m = C.place(k, p, yaw, s); if (m) g.add(m); return m; };
+  // long tables with benches, mugs and candles
+  tables.forEach((t, i) => {
+    const tb = put('Table_Large', [t[0], 0, t[1]], Math.PI / 2); if (tb) tb.scale.set(0.75, 1, 0.8);
+    [-0.75, 0.75].forEach((dx) => { const b = put('Bench', [t[0] + dx, 0, t[1]], Math.PI / 2); if (b) b.scale.set(0.72, 1, 1); });
+    put('Mug', [t[0] + 0.15, 0.81, t[1] + 0.4], 0.4); put('Mug', [t[0] - 0.2, 0.81, t[1] - 0.5], 2.1);
+    if (i !== 1) put('CandleStick_Triple', [t[0], 0.81, t[1] - 0.1], Math.PI / 2);
+  });
+  // bar stools (stretched a little: the counter is tall), one knocked over
+  [-7.2, -5.9, -4.6, -2.0].forEach((z) => { const st = put('Stool', [2.7, 0, z], z); if (st) st.scale.set(1, 1.3, 1); });
+  const st = put('Stool', [2.45, 0.24, -3.3], 0); if (st) st.rotation.z = Math.PI / 2;
+  // behind and on the counter
+  [-7.6, -6.2, -4.8, -3.4, -2.0].forEach((z, i) => put(i % 2 ? 'SmallBottles_1' : 'Bottle_1', [4.0, 1.17, z + 0.3], i));
+  put('Barrel_Holder', [5.55, 1.2, -9.3], -Math.PI / 2);
+  put('Barrel', [5.4, 0, -0.2], 0.3); put('Barrel', [5.45, 0, 0.6], 1.2); put('Crate_Wooden', [5.3, 0, 1.7], 0.2);
+  // the back wall (behind the player at the start): bookcases, chest, banners, weapons
+  put('Bookcase_2', [-3.6, 0, 5.25], Math.PI); put('Bookcase_2', [3.6, 0, 5.25], Math.PI);
+  put('Chest_Wood', [0, 0, 4.9], Math.PI, 0.8);
+  put('Banner_1', [-5.95, 1.8, 1.4], Math.PI / 2, 0.8); put('Banner_2', [-5.95, 1.8, -6.6], Math.PI / 2, 0.8);
+  put('WeaponStand', [-5.3, 0, 3.6], Math.PI / 2, 0.9); put('Shield_Wooden', [-5.95, 2.4, -2.5], Math.PI / 2, 0.9);
+  put('Cauldron', [-4.7, 0, -4.7], 0.5, 0.7); put('Bucket_Wooden_1', [-4.6, 0, -0.3], 0);
+  put('Book_Stack_1', [-2.95, 0.81, 2.0], 0.6);
+}
+
 /* The empty tavern: the permanent hub every story starts and ends in. */
 C.buildBar = function (X) {
   const g = new THREE.Group(), Z0 = X.Z0, kit = C.kit(X);
   const wallMat = new THREE.MeshLambertMaterial({ map: X.TEX.plank, color: 0xb89a7a });
-  const mk = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat); m.position.set(x, y, z); g.add(m); return m; };
+  const HAS = C.hasModel('Table_Large'), wallTex = C.tex('wood_plank_wall_diff');
+  // photo planks: one material per wall so the texture repeats at a real-world scale (~2.5 m per tile)
+  const mk = (w, h, d, x, y, z) => {
+    let mat = wallMat;
+    if (wallTex) mat = new THREE.MeshLambertMaterial({ map: C.tex('wood_plank_wall_diff', Math.max(w, d) / 2.5, h / 2.5), color: 0xa08868 });
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); g.add(m); return m;
+  };
   mk(12.8, 4.2, 0.4, 0, 2.1, 5.7);
   mk(5.1, 4.2, 0.4, -3.85, 2.1, -10.2); mk(5.1, 4.2, 0.4, 3.85, 2.1, -10.2); mk(2.6, 1.2, 0.4, 0, 3.6, -10.2);
   mk(0.4, 4.2, 15.9, -6.2, 2.1, -2.25); mk(0.4, 4.2, 15.9, 6.2, 2.1, -2.25);
-  const ft = X.TEX.plank.clone(); ft.needsUpdate = true; ft.repeat.set(3, 5);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(12, 15.5), new THREE.MeshLambertMaterial({ map: ft, color: 0xcdb394 }));
+  const ftReal = C.tex('old_wood_floor_diff', 4, 5.2), ft = ftReal || X.TEX.plank.clone(); ft.needsUpdate = true; if (!ftReal) ft.repeat.set(3, 5);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(12, 15.5), new THREE.MeshLambertMaterial({ map: ft, color: ftReal ? 0x9a8068 : 0xcdb394 }));
   floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, -2.25); g.add(floor);
   const ceil = new THREE.Mesh(new THREE.PlaneGeometry(12, 15.5), new THREE.MeshLambertMaterial({ color: 0x2a1d14 }));
   ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 4.2, -2.25); g.add(ceil);
@@ -928,9 +1122,11 @@ C.buildBar = function (X) {
   [-8.5, -5, -1.5, 2, 5].forEach((z) => P.push(bx(12, 0.35, 0.35, dark, [0, 4.0, z])));
   P.push(bx(0.35, 0.35, 15.5, dark, [-3, 4.0, -2.25]), bx(0.35, 0.35, 15.5, dark, [3, 4.0, -2.25]));
   // fireplace on the left wall
-  P.push(bx(1.0, 0.4, 3.2, stone, [-5.3, 0.2, -2.5]), bx(1.0, 2.6, 0.7, stone, [-5.3, 1.3, -4.0]), bx(1.0, 2.6, 0.7, stone, [-5.3, 1.3, -1.0]),
-    bx(1.0, 0.5, 3.2, stone, [-5.3, 2.65, -2.5]), bx(0.8, 1.5, 2.6, stone, [-5.4, 3.65, -2.5]),
-    cy(0.1, 0.1, 1.2, 6, 0x3a2a1c, [-5.2, 0.5, -2.8], [0, 0, Math.PI / 2]), cy(0.1, 0.1, 1.2, 6, 0x3a2a1c, [-5.2, 0.6, -2.2], [0.3, 0, Math.PI / 2]));
+  const FP = [[1.0, 0.4, 3.2, -5.3, 0.2, -2.5], [1.0, 2.6, 0.7, -5.3, 1.3, -4.0], [1.0, 2.6, 0.7, -5.3, 1.3, -1.0], [1.0, 0.5, 3.2, -5.3, 2.65, -2.5], [0.8, 1.5, 2.6, -5.4, 3.65, -2.5]];
+  if (C.tex('rustic_stone_wall_diff')) {
+    FP.forEach((b) => { const m = new THREE.Mesh(new THREE.BoxGeometry(b[0], b[1], b[2]), new THREE.MeshLambertMaterial({ map: C.tex('rustic_stone_wall_diff', Math.max(b[0], b[2]) / 1.6, b[1] / 1.6), color: 0x8a8480 })); m.position.set(b[3], b[4], b[5]); g.add(m); });
+  } else FP.forEach((b) => P.push(bx(b[0], b[1], b[2], stone, [b[3], b[4], b[5]])));
+  P.push(cy(0.1, 0.1, 1.2, 6, 0x3a2a1c, [-5.2, 0.5, -2.8], [0, 0, Math.PI / 2]), cy(0.1, 0.1, 1.2, 6, 0x3a2a1c, [-5.2, 0.6, -2.2], [0.3, 0, Math.PI / 2]));
   // bar counter and shelves on the right
   P.push(bx(1.3, 1.1, 7.5, wood, [4.1, 0.55, -4.7]), bx(1.5, 0.1, 7.7, dark, [4.0, 1.12, -4.7]),
     bx(0.4, 0.08, 7, wood, [5.6, 1.9, -4.7]), bx(0.4, 0.08, 7, wood, [5.6, 2.6, -4.7]));
@@ -940,11 +1136,11 @@ C.buildBar = function (X) {
   }
   for (let i = 0; i < 6; i++) P.push(cy(0.09, 0.08, 0.16, 7, 0x9a9aa0, [3.95, 1.25, -7.4 + i * 1.15]));
   // stools, one knocked over
-  [-7.2, -5.9, -4.6, -2.0].forEach((z) => P.push(cy(0.22, 0.22, 0.07, 8, wood, [2.7, 0.72, z]), cy(0.04, 0.05, 0.7, 5, dark, [2.7, 0.36, z])));
-  P.push(cy(0.22, 0.22, 0.07, 8, wood, [2.4, 0.2, -3.3], [0, 0, Math.PI / 2]), cy(0.04, 0.05, 0.7, 5, dark, [2.75, 0.2, -3.3], [0, 0, Math.PI / 2]));
+  if (!HAS) [-7.2, -5.9, -4.6, -2.0].forEach((z) => P.push(cy(0.22, 0.22, 0.07, 8, wood, [2.7, 0.72, z]), cy(0.04, 0.05, 0.7, 5, dark, [2.7, 0.36, z])));
+  if (!HAS) P.push(cy(0.22, 0.22, 0.07, 8, wood, [2.4, 0.2, -3.3], [0, 0, Math.PI / 2]), cy(0.04, 0.05, 0.7, 5, dark, [2.75, 0.2, -3.3], [0, 0, Math.PI / 2]));
   // round tables with tankards and a few small chairs
   const tables = [[-3.2, -6.3], [-3.0, -0.8], [-2.8, 2.6]];
-  tables.forEach((t) => {
+  if (!HAS) tables.forEach((t) => {
     P.push(cy(0.9, 0.9, 0.08, 10, wood, [t[0], 0.8, t[1]]), cy(0.12, 0.16, 0.8, 6, dark, [t[0], 0.4, t[1]]));
     P.push(cy(0.07, 0.06, 0.14, 7, 0x9a9aa0, [t[0] + 0.4, 0.91, t[1] + 0.2]), cy(0.07, 0.06, 0.14, 7, 0x9a9aa0, [t[0] - 0.3, 0.91, t[1] - 0.3]));
     for (let k = 0; k < 3; k++) {
@@ -954,6 +1150,7 @@ C.buildBar = function (X) {
     }
   });
   g.add(solid(P));
+  if (HAS) dressBar(g, tables);
 
   // hanging lanterns and the single red d20 on the middle table
   const lanternPos = [[-2.5, 3.1, -2], [2.2, 3.1, -6.5], [0, 3.1, 1.5]];
@@ -1114,7 +1311,7 @@ C.buildBook = function (X) {
   let stories = [], leaves = [], cur = 0, texCache = [];
   const leafGeoF = new THREE.PlaneGeometry(W, H); leafGeoF.rotateX(-Math.PI / 2); leafGeoF.translate(W / 2, 0, 0);
   const leafGeoB = new THREE.PlaneGeometry(W, H); leafGeoB.rotateX(Math.PI / 2); leafGeoB.translate(W / 2, 0, 0);
-  const baseL = new THREE.Mesh(leafGeoF.clone(), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+  const baseL = new THREE.Mesh(leafGeoF.clone(), new THREE.MeshLambertMaterial({ color: 0xb8ae9a }));
   baseL.scale.x = -1; baseL.position.set(0, pivotY + 0.0008, 0); book.add(baseL);
   const baseR = new THREE.Mesh(leafGeoF.clone(), new THREE.MeshLambertMaterial({ color: 0xd8c8a0 }));
   baseR.position.set(0, pivotY + 0.0008, 0); book.add(baseR);
@@ -1128,9 +1325,9 @@ C.buildBook = function (X) {
     baseL.material.map = tex(artPage(list[0], 'h')); baseL.material.needsUpdate = true;
     for (let j = 0; j < N; j++) {
       const pivot = new THREE.Group(); pivot.position.set(0, pivotY, 0);
-      const front = new THREE.Mesh(leafGeoF, new THREE.MeshLambertMaterial({ map: right[j] }));
+      const front = new THREE.Mesh(leafGeoF, new THREE.MeshLambertMaterial({ map: right[j], color: 0xb8ae9a }));
       const backTex = j + 1 < N ? tex(artPage(list[j + 1], 'hv')) : null;
-      const back = new THREE.Mesh(leafGeoB, new THREE.MeshLambertMaterial(backTex ? { map: backTex } : { color: 0xd8c8a0 }));
+      const back = new THREE.Mesh(leafGeoB, new THREE.MeshLambertMaterial(backTex ? { map: backTex, color: 0xb8ae9a } : { color: 0xa89c80 }));
       const off = 0.0012 * (N - j);
       front.position.y = off; back.position.y = off - 0.0006;
       pivot.add(front); pivot.add(back);
@@ -1609,12 +1806,17 @@ SC.push(function (X) {
   const gtor = kit.torches(gt, { glow: 0xffc070, size: 4, op: 0.9 }); g.add(gtor.group);
 
   // the feast street
+  const street = [];
   for (let d = dG + 9; d < dE; d += 8.5) {
     [-1, 1].forEach((sg) => {
       const w = R(6, 8.5), dep = R(6, 8), h = R(4.6, 7), hs = kit.house({ w, d: dep, h, wall: pick([0x6a5444, 0x5a4a50, 0x6a5a40]), roof: pick([0x3a2a2e, 0x2e2a36]), light: pick([0xffc070, 0xff9ab0, 0xffd090]) });
-      const p = X.at(d + R(-1, 1), sg * (8.8 + w / 2 * 0.35 + 3), 0); hs.position.copy(p); kit.placeFacing(hs, d, sg); g.add(hs);
+      const p = X.at(d + R(-1, 1), sg * (8.8 + w / 2 * 0.35 + 3), 0); hs.position.copy(p); kit.placeFacing(hs, d, sg);
+      street.push({ x: p.x, z: p.z, yaw: hs.rotation.y, w: w > 7.2 ? 6 : 4, d: dep > 7 ? 6 : 4, st: h > 5.6 ? 2 : 1, brick: R(0, 1) < 0.3, box: hs });
     });
   }
+  // modular kit houses when loaded, else the procedural boxes
+  const vil = kit.village(street);
+  if (vil) g.add(vil); else street.forEach((s) => g.add(s.box));
   const bulbs = [], bcol = [];
   for (let d = dG + 5; d < dE - 2; d += 6.5) {
     for (let k = 0; k < 9; k++) { const u = k / 8, p = X.at(d, lerp(-9, 9, u), 5.8 - 1.1 * Math.sin(u * Math.PI)); bulbs.push(M([p.x, p.y, p.z], null, 1)); bcol.push(pick([0xffc070, 0xff7a9a, 0x70c8ff, 0xffe080])); }
@@ -1661,8 +1863,13 @@ SC.push(function (X) {
   const kit = C.kit(X), g = new THREE.Group();
   const dBars = X.Dend + 2.4, dc = (X.dBack + dBars) / 2, L = dBars - X.dBack, HW = 2.5, H = 3.6;
   const G = new THREE.Group(); G.position.copy(X.at(dc, 0, 0)); G.rotation.y = X.yawAt(dc); g.add(G);
-  const stoneMat = (rx, ry) => { const t = X.TEX.stone.clone(); t.needsUpdate = true; t.repeat.set(rx, ry); return new THREE.MeshLambertMaterial({ map: t, color: 0xa0a4ae, side: THREE.DoubleSide }); };
-  const plane = (w, h, rx, ry, x, y, z, rot) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), stoneMat(rx, ry)); m.position.set(x, y, z); m.rotation.set(rot[0], rot[1], rot[2]); G.add(m); };
+  const stoneMat = (rx, ry, floor) => {
+    // photo brick walls and cobbled floor when loaded (about 2 m per tile), else the procedural stone
+    const real = C.tex(floor ? 'cobblestone_floor_04_diff' : 'castle_brick_07_diff', rx, ry);
+    if (real) return new THREE.MeshLambertMaterial({ map: real, color: floor ? 0x8a8c94 : 0x9a9ca6, side: THREE.DoubleSide });
+    const t = X.TEX.stone.clone(); t.needsUpdate = true; t.repeat.set(rx, ry); return new THREE.MeshLambertMaterial({ map: t, color: 0xa0a4ae, side: THREE.DoubleSide });
+  };
+  const plane = (w, h, rx, ry, x, y, z, rot) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), stoneMat(rx, ry, rot[0] === -Math.PI / 2)); m.position.set(x, y, z); m.rotation.set(rot[0], rot[1], rot[2]); G.add(m); };
   plane(L, H, L / 2, 1.5, -HW, H / 2, 0, [0, Math.PI / 2, 0]); plane(L, H, L / 2, 1.5, HW, H / 2, 0, [0, -Math.PI / 2, 0]);
   plane(1.3, H, 0.6, 1.5, -1.85, H / 2, L / 2, [0, Math.PI, 0]); plane(1.3, H, 0.6, 1.5, 1.85, H / 2, L / 2, [0, Math.PI, 0]); plane(2.4, 0.6, 1, 0.3, 0, H - 0.3, L / 2, [0, Math.PI, 0]);
   plane(HW * 2, L, 2, L / 2, 0, 0, 0, [-Math.PI / 2, 0, 0]); plane(HW * 2, L, 2, L / 2, 0, H, 0, [Math.PI / 2, 0, 0]);
@@ -1695,14 +1902,18 @@ SC.push(function (X) {
 /* ---- Cobh burns; the wraith comes ---- */
 SC.push(function (X) {
   const S = X.sec.outro, Sf = X.sec.final, kit = C.kit(X), g = new THREE.Group();
-  const d0 = X.Dend + 8, fires = [];
+  const d0 = X.Dend + 8, fires = [], burnt = [], useKit = C.hasModel('Wall_Plaster_Straight');
   for (let d = d0; d < d0 + 90; d += 8.5) {
     [-1, 1].forEach((sg) => {
       const w = R(6, 8.5), dep = R(6, 8), h = R(4.6, 7.5), hs = kit.house({ w, d: dep, h, wall: 0x3a3030, roof: 0x242026, light: 0xff7a30 });
-      const p = X.at(d + R(-1, 1), sg * (9 + R(0, 6)), 0); hs.position.copy(p); kit.placeFacing(hs, d, sg); g.add(hs);
-      if (R(0, 1) < 0.75) { const f = kit.fire({ scale: R(1.2, 2.2), size: 7 }); f.group.position.set(p.x, h + 1.6, p.z); g.add(f.group); fires.push(f); }
+      const p = X.at(d + R(-1, 1), sg * (9 + R(0, 6)), 0); hs.position.copy(p); kit.placeFacing(hs, d, sg);
+      const st = h > 5.6 ? 2 : 1;
+      if (useKit) burnt.push({ x: p.x, z: p.z, yaw: hs.rotation.y, w: w > 7.2 ? 6 : 4, d: dep > 7 ? 6 : 4, st, brick: R(0, 1) < 0.4 }); else g.add(hs);
+      if (R(0, 1) < 0.75) { const f = kit.fire({ scale: R(1.2, 2.2), size: 7 }); f.group.position.set(p.x, useKit ? st * 3.12 + 2.2 : h + 1.6, p.z); g.add(f.group); fires.push(f); }
     });
   }
+  // scorched kit houses with fire-lit windows
+  if (burnt.length) g.add(kit.village(burnt, { tint: 0x4a4040, glass: 0xff7a30 }));
   // the wraith
   const wr = new THREE.Group(), cloak = 0x0b0d14;
   const WP = [cn(4.2, 15, 10, cloak, [0, 7.5, 0]), bx(5, 1.2, 2, 0x10121a, [0, 14.2, 0]), ic(1.7, 1, 0x080a10, [0, 15.4, 0], [1, 1.2, 1]), cn(1.2, 2.4, 6, 0x080a10, [0, 17.2, -0.3])];
@@ -1752,7 +1963,11 @@ C.stories = [
 <script>
 (function () {
 'use strict';
-const C = window.__cw, THREE = C.THREE;
+const C = window.__cw;
+const goBtn = document.getElementById('go');
+C.loadAssets((k) => { goBtn.textContent = 'Loading the world… ' + Math.round(k * 100) + '%'; }).catch(() => { }).then(boot);
+function boot() {
+const THREE = C.THREE;
 const $ = (id) => document.getElementById(id);
 const clamp = C.clamp;
 const mobile = !!(window.matchMedia && matchMedia('(pointer:coarse)').matches);
@@ -1781,8 +1996,7 @@ const keys = {}; let padHeld = false;
 const audio = new Audio(); audio.preload = 'auto';
 let audioReady = false, audioErr = false;
 function setAudioSrc(url) { audio.src = url; audio.load(); audioReady = true; audioErr = false; refreshBookUI(); }
-// resolve assets next to the page even when served as /chronicle (no trailing slash) by InCharacter
-const BASE = /\/$|\.html$/.test(location.pathname) ? location.href : location.href.replace(/[?#].*$/, '') + '/';
+const BASE = C.BASE();
 fetch(new URL('song.mp3', BASE)).then((r) => { if (!r.ok) throw 0; return r.blob(); }).then((b) => setAudioSrc(URL.createObjectURL(b))).catch(() => {
   audioErr = true;
   const l = document.createElement('label'); l.style.cssText = 'color:var(--dim);font-size:.95rem';
@@ -1994,6 +2208,7 @@ function frame(now) {
 const dev = { hold: null, shot(st) { W.update(st); renderer.render(W.scene, W.camera); } };
 requestAnimationFrame(frame);
 window.__alaron = { W, renderer, dev, player, look, audio, get mode() { return mode; }, sit, begin, flip, seek(t) { audio.currentTime = t; } };
+}
 })();
 
 </script>
