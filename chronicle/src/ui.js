@@ -113,6 +113,34 @@ function tavernMusic(on) {
   const g = tavGain.gain, now = actx.currentTime;
   g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(on && !muted ? 0.45 : 0, now + (on ? 2.5 : 0.8));
 }
+/* ---------- first-visit coach: one hint per step, each shown once (remembered on this device) ---------- */
+const COACH = {
+  look: mobile ? 'Drag anywhere to look around.' : 'Drag with the mouse to look around.',
+  walk: mobile ? 'Hold the Walk button to walk. Head for the stage at the back.' : 'Walk with W A S D (or the arrow keys). Head for the stage at the back.',
+  stage: 'You reached Lucien. Ask him for a song.',
+  book: mobile ? 'Swipe the songbook (or tap ◀ ▶) to pick a song, then ask for it.' : 'Turn the pages with ◀ ▶ or the arrow keys, then ask for a song.',
+  ride: 'Sit back: the camera follows the song. Pause and Calm camera are top right; tap the bar at the bottom to jump.'
+};
+let coachSeen = {}; try { coachSeen = JSON.parse(localStorage.getItem('alaron:coach') || '{}'); } catch (e) { }
+let coachKey = null, coachT = 0;
+function coach(key) {
+  if (key === coachKey || (key && coachSeen[key])) return;
+  if (coachKey) { coachSeen[coachKey] = 1; try { localStorage.setItem('alaron:coach', JSON.stringify(coachSeen)); } catch (e) { } }
+  coachKey = key; coachT = 0; const el = $('coach');
+  if (key) { el.textContent = COACH[key]; el.classList.add('on'); } else el.classList.remove('on');
+}
+function coachTick(dt) {
+  if (!started) return;
+  coachT += dt;
+  if (coachKey && coachT > (coachKey === 'ride' ? 9 : 14)) { coach(null); return; }  // never nag
+  if (mode === 'walk') {
+    if (W.nearChair) coach('stage');
+    else if (!coachSeen.look && coachKey !== 'look') coach('look');
+    else if (coachKey === 'look' && (drag || coachT > 5)) coach('walk');
+    else if (!coachKey && !coachSeen.walk) coach('walk');
+  } else if (mode === 'book' && !sitting) coach('book');
+  else if (mode === 'ride') coach('ride');
+}
 let calm = false;
 try { calm = localStorage.getItem('alaron:calm') === '1'; } catch (e) { }
 
@@ -275,6 +303,7 @@ function frame(now) {
 
   const t = mode === 'ride' ? audio.currentTime : -1;
   if (dev.hold) { W.update(dev.hold); renderer.render(W.scene, W.camera); return; }
+  coachTick(dt);
   W.update({ mode, t, dt, time, player, look, sit: sitT, calm });
   if (mode === 'walk' && started && W.nearChair !== lastNear) { lastNear = W.nearChair; $('rowSit').hidden = !W.nearChair || !!auto; if (!auto) $('hint').textContent = W.nearChair ? (HINT_NEAR + (mobile ? '' : ' (E)')) : HINT_FAR; }
   if (mode !== 'walk') $('rowSit').hidden = true;

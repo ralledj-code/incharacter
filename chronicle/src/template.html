@@ -43,7 +43,10 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
 #flash, #fade { position: fixed; inset: 0; pointer-events: none; opacity: 0; z-index: 9; }
 #flash { background: #fff3da; } #fade { background: #000; transition: opacity 0.9s; z-index: 10; }
 #dev { position: fixed; left: 8px; bottom: 80px; background: var(--panel); border: 1px solid var(--line); padding: 8px 10px; font: 12px/1.4 ui-monospace, Menlo, monospace; max-width: 320px; z-index: 30; display: none; }
-#walkpad { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(90px, env(safe-area-inset-bottom, 0px)); width: 84px; height: 84px; border-radius: 50%; z-index: 6; display: none; touch-action: none; user-select: none; }
+#walkpad { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(170px, calc(env(safe-area-inset-bottom, 0px) + 150px)); width: 84px; height: 84px; border-radius: 50%; z-index: 6; display: none; touch-action: none; user-select: none; }
+#coach { position: fixed; left: 50%; top: max(64px, calc(env(safe-area-inset-top, 0px) + 56px)); transform: translateX(-50%); max-width: min(30em, calc(100vw - 32px)); box-sizing: border-box;
+  background: var(--panel); border: 1px solid var(--ember); color: #ffd9a8; padding: 10px 16px; font-size: 1rem; line-height: 1.4; text-align: center; z-index: 12; opacity: 0; transition: opacity 0.6s; pointer-events: none; }
+#coach.on { opacity: 1; }
 [hidden] { display: none !important; }
 @media (prefers-reduced-motion: reduce) { #lyric, #stamp, #fade { transition: none; } }
 </style>
@@ -87,6 +90,7 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
   <p>The tavern roars for another.</p>
   <div id="endbtns"><button id="bBack" class="primary">Back to the tavern</button><button id="bAgain">Play it again</button></div>
 </div>
+<div id="coach" role="status" aria-live="polite"></div>
 <div id="dev"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>

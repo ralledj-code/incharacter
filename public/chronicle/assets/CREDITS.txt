@@ -10,3 +10,7 @@ Textures (tex/, resized to 512 px):
 
 Characters (chars/, rebound to one skeleton at runtime):
   Quaternius - Universal Base Characters, Modular Character Outfits - Fantasy, Universal Animation Library
+
+Creatures (creatures/): Quaternius via Poly Pizza (Wolf, Dragon, Demon, Lute; CC0) and itch.io (Monster Pack Animated: Bat; CC0).
+
+Music: tavern-loop.mp3 = "The Old Tower Inn" (loop version) by RandomMind, CC0, opengameart.org/content/medieval-the-old-tower-inn

@@ -19,14 +19,15 @@ Inside the InCharacter repo (ralledj-code/incharacter). Source: `chronicle/`. Bu
 - Characters: `assets/chars/*.glb` (one file per part so bone names stay identical) + `anims.glb` (13 clips, fingers stripped). `C.rigChar` clones the base body (cut to head+neck at load, since the free body is a full figure and pokes through outfits), rebinds outfit/hair meshes to its bones, and plays a clip; `X.anims` mixers are set from song time in `W.update` (deterministic, seek-safe). Lucien (half-elf wild magic sorcerer: burgundy ranger coat w/o hood, long blond hair, ears, purple spark + blue dagger, spell idle), Cedric (human monk: peasant tinted red, bronze pauldron, beard, staff), Arthas (human paladin: ranger as flat steel, dark hood with glowing eyes, bronze sword). Neeris stays procedural. Scenes pass `{ pose: '<clip>' }`; `g.userData.pose(name)` switches. SkeletonUtils r128 from jsdelivr.
 - Skipped: Bush_Common (its leaves need the pack's vertex-colour shader).
 
-## Architecture (src/, IIFEs sharing `window.__cw`; build order in scripts/build.mjs)
-- w1_core: helpers, CUES (lyrics, stamps, speed v, mote kind), MOODS/KEYS (mood keyframes lerped by song time), geometry/texture helpers. `C.storyData.baphomet`.
-- w2_engine: `C.create()` -> W. Sky shader, lights, ground, motes, chair, rail path from timeline, modes walk|book|ride, `W.update(state)`. Everything is a deterministic function of song time t (audio.currentTime is the master clock; seeking works).
-- w3_kit / w3b_chars: trees, torches, figures, fire, houses; characters cedric, lucien, arthas, neeris.
-- w4_bar / w4_book: tavern hub, lectern + page-flip book (`setStories`, `next/prev`).
-- s0_stories: story registry (plug-in modules: id,title,blurb,audio,cues,keys,duration,flashAt,gaolCue,build(X)). s1*: Baphomet scenes.
-- ui.js: renderer, input (drag look, WASD, touch Walk pad), sit/book/ride flow, HUD, lyrics, lyric tap-sync, end card, dev panel (D, K marks).
-- Rail: speed per cue integrated into distance table; heading frozen before the gaol cell. Camera yaw = atan2(-tx,-tz).
+## Architecture (src/, IIFEs sharing `window.__cw`; build order in scripts/build.mjs, levels/*.js auto-included)
+- Flow: start screen -> busy tavern hub (walk to the stage) -> Lucien's songbook on the music stand -> "Ask for this song" (downloads that level's packs + mp3) -> music video on song time -> end card -> back to the tavern. Tavern music loop between songs. First-visit coach hints (localStorage `alaron:coach`). `/chronicle` is public (middleware skips it).
+- w1_core: helpers, level 8 data (CUES, LINE_TIMES, KEYS), moods (`C.defineMood`), procedural textures/geometry.
+- w1b_assets: on-demand packs (`C.PACKS`, `C.loadPacks`), `C.place / instModel / instObject / tex`, rigged people (`C.rigChar`, `C.bakeRig`), creatures (`C.creature`), `C.attach` to bones.
+- w2b_director: camera director (shot lists, beat kicks). w2_engine: `C.create()` -> W: sky, lights, ground, motes, story path from cues, modes walk|book|ride, anims on song time (story) / wall time (tavern `X.hubAnims`), scene visibility near the camera.
+- w3_kit (trees with clearings, village houses, torches, fire), w3b_chars (party, persons, wraith; procedural fallbacks), w4_bar (tavern, stage, band, crowd, brothers' table), w4_book (songbook pages, `setStories`).
+- s0_stories: the 12-level PLAYLIST; playable = level 8 (built-in) + any `C.levels[id]` from src/levels. s1a-s1d: level 8 scenes; levels/L08-baphomet-shots.js: its shots, beats, clearings.
+- ui.js: renderer, input, hub/book/ride flow, per-level audio, tavern music, coach, HUD, lyrics, tap-sync, dev hook.
+- New levels: **LEVELS.md** (full runbook) + `.claude/skills/chronicle-level`. Tools for headless checks: `tools/`.
 
 ## Known problems / TODO (priority order)
 1. Done in first pass: chair lantern moved behind the rider (was blocking the right of the view), crossroads signpost moved off the rail, fireplace/gate/city light blowouts toned down, phone top bar fits, portrait FOV widened. Still to do: test on a real phone + Legion Go (SteamOS, perf). Linear tone mapping kept on purpose (ACES tried, washed colours out).
