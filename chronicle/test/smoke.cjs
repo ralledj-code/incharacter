@@ -1,0 +1,20 @@
+const path=require.resolve('three').replace(/build.*$/,'');
+const ctxStub=new Proxy({}, {get:(t,k)=>k==='measureText'?()=>({width:10}):(k==='createRadialGradient'||k==='createLinearGradient')?()=>({addColorStop(){}}):()=>{} ,set:()=>true});
+global.document={createElement:()=>({width:0,height:0,getContext:()=>ctxStub})};
+global.THREE=require(path);
+const files='w1_core w2_engine w3_kit w3b_chars w4_bar w4_book s1a_well s1b_dragon s1c_camp_cross s1d_city s0_stories'.split(' ').map(f=>f+'.js');
+files.forEach(f=>require('../src/'+f));
+const C=global.__cw;
+const W=C.create({mobile:false});
+W.book.setStories(C.stories);
+W.loadStory(C.stories[0]);
+console.log('defs',W.story.id,'Dend',W.info.Dend.toFixed(1),'dBack',W.info.dBack.toFixed(1));
+const player={x:0,z:4.4,yaw:0,pitch:0};
+let n=0;
+function step(mode,t,extra){W.update(Object.assign({mode,t,dt:0.016,time:t+n++*0.016,player,look:{yaw:0,pitch:0}},extra||{}));}
+step('walk',-1);step('book',-1,{sit:1});
+W.beginRide({x:0,y:1.28,z:-3.2,yaw:0,pitch:-0.3});
+const T=[0,3,10,24,28,30,40,50,60,67,70,85,100,120,150,176,177.2,180,200,215,235,250,280,290,300,312,320,340,356,358,365];
+T.forEach(t=>{step('ride',t);});
+const r=new THREE.Vector3();
+console.log('ok; cam at end',W.camera.position.toArray().map(v=>v.toFixed(1)).join(','));

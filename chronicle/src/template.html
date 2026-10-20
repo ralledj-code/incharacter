@@ -1,0 +1,97 @@
+<title>Alaron Chronicle</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+DW+Pica:ital@0;1&family=IM+Fell+English+SC&display=swap">
+<style>
+/* Layout concept: a full-bleed 3D canvas with quiet chronicle-style overlays. Boldness lives in the scene; the UI stays small and parchment-toned. */
+:root {
+  --bg: #07090d; --ink: #e9e0cf; --dim: #a89f8d; --ember: #e0903f; --cold: #8fb4e0; --panel: rgba(10, 12, 16, 0.74); --line: rgba(233, 224, 207, 0.22);
+  --head: "IM Fell English SC", Georgia, "Times New Roman", serif; --body: "IM Fell DW Pica", Georgia, "Times New Roman", serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); overflow: hidden; margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0; }
+canvas#gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; background: var(--bg); }
+.layer { position: fixed; left: 0; right: 0; pointer-events: none; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+.layer > * { pointer-events: auto; }
+button { font-family: var(--head); letter-spacing: 0.08em; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 2px; min-height: 44px; min-width: 44px; padding: 0 18px; font-size: 1rem; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button:hover { border-color: var(--ember); }
+button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+button.primary { border-color: var(--ember); color: #ffd9a8; }
+#start, #end { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 18px; background: radial-gradient(ellipse at 50% 40%, #151a24 0%, #07090d 70%); z-index: 20; padding: 24px max(16px, env(safe-area-inset-left, 0px)); box-sizing: border-box; }
+#end { background: rgba(3, 4, 6, 0.9); z-index: 18; }
+#start h1, #end h2 { font-family: var(--head); font-weight: 400; letter-spacing: 0.12em; margin: 0; font-size: clamp(1.9rem, 6vw, 3.4rem); text-wrap: balance; color: #f1e6cf; }
+#start p, #end p { max-width: 34em; margin: 0; color: var(--dim); font-size: 1.1rem; line-height: 1.5; text-wrap: balance; }
+#start small { color: var(--dim); opacity: 0.8; max-width: 30em; font-size: 0.95rem; }
+#endbtns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+#hud { bottom: 0; padding-bottom: max(18px, env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 5; }
+#stamp { font-family: var(--head); letter-spacing: 0.18em; color: var(--ember); font-size: 0.95rem; text-transform: uppercase; opacity: 0; transition: opacity 0.8s; min-height: 1.2em; text-shadow: 0 1px 8px #000; }
+#lyric { font-style: italic; font-size: clamp(1.15rem, 3.6vw, 1.7rem); text-align: center; max-width: 30em; text-wrap: balance; line-height: 1.3; min-height: 2.6em; opacity: 0; transition: opacity 0.7s; text-shadow: 0 1px 10px #000, 0 0 24px #000; pointer-events: none; }
+#lyric.on, #stamp.on { opacity: 1; }
+#hint { font-size: 1.05rem; color: var(--ink); text-shadow: 0 1px 10px #000; text-align: center; max-width: 28em; text-wrap: balance; }
+.row { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
+#top { top: 0; padding-top: max(10px, env(safe-area-inset-top, 0px)); display: flex; justify-content: flex-end; gap: 8px; z-index: 6; }
+#top button { min-height: 40px; padding: 0 12px; font-size: 0.9rem; white-space: nowrap; }
+@media (max-width: 560px) { #top { gap: 6px; } #top button { padding: 0 8px; font-size: 0.78rem; letter-spacing: 0.03em; } #bSync { display: none; } }
+#prog { position: fixed; left: 0; right: 0; bottom: 0; height: 12px; z-index: 7; cursor: pointer; display: none; }
+#prog i { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--ember); box-shadow: 0 0 8px var(--ember); }
+#prog::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(233, 224, 207, 0.12); }
+#sync { display: flex; flex-direction: column; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--ember); padding: 12px; max-width: 34em; width: 100%; box-sizing: border-box; }
+#syncLine { font-style: italic; font-size: 1.2rem; text-align: center; text-wrap: balance; }
+#syncOut { width: 100%; box-sizing: border-box; background: #000; color: var(--ink); font: 12px ui-monospace, Menlo, monospace; border: 1px solid var(--line); }
+#bTap { min-height: 64px; flex: 1 1 14em; }
+#flash, #fade { position: fixed; inset: 0; pointer-events: none; opacity: 0; z-index: 9; }
+#flash { background: #fff3da; } #fade { background: #000; transition: opacity 0.9s; z-index: 10; }
+#dev { position: fixed; left: 8px; bottom: 80px; background: var(--panel); border: 1px solid var(--line); padding: 8px 10px; font: 12px/1.4 ui-monospace, Menlo, monospace; max-width: 320px; z-index: 30; display: none; }
+#walkpad { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(90px, env(safe-area-inset-bottom, 0px)); width: 84px; height: 84px; border-radius: 50%; z-index: 6; display: none; touch-action: none; user-select: none; }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { #lyric, #stamp, #fade { transition: none; } }
+</style>
+
+<canvas id="gl"></canvas>
+<div id="flash"></div><div id="fade"></div>
+
+<div id="start">
+  <h1>Alaron Chronicle</h1>
+  <p>A tavern with one chair. A book on the lectern. Each page is a song, and each song is a ride through the story it tells.</p>
+  <button id="go" class="primary" disabled>Loading the world…</button>
+  <small>Headphones help. Drag to look around. Keys: W A S D to walk, E to sit, arrow keys to turn pages.</small>
+</div>
+
+<div class="layer" id="top" hidden>
+  <button id="bBright" title="Brightness">Brightness</button>
+  <button id="bMute" title="Mute (M)">Sound on</button>
+  <button id="bPause" title="Pause (Space)" hidden>Pause</button>
+  <button id="bSync" title="Tap lyrics to the real vocals" hidden>Sync lyrics</button>
+  <button id="bClose" title="Close the book" hidden>Close the book</button>
+</div>
+
+<div class="layer" id="hud" hidden>
+  <div id="hint"></div>
+  <div class="row" id="rowSit" hidden><button id="bSit" class="primary">Take the chair</button><button id="bAuto">Walk me there</button></div>
+  <div class="row" id="rowBook" hidden><button id="bPrev" aria-label="Previous page">◀</button><button id="bBegin" class="primary">Begin this story</button><button id="bNext" aria-label="Next page">▶</button></div>
+  <div id="sync" hidden>
+    <div id="syncLine"></div>
+    <div class="row"><button id="bTap" class="primary">Tap when this line starts</button><button id="bUndo">Undo</button><button id="bSyncDone">Done</button></div>
+    <textarea id="syncOut" readonly rows="3" hidden></textarea>
+  </div>
+  <div id="stamp"></div>
+  <div id="lyric" aria-live="polite"></div>
+</div>
+<button id="walkpad" aria-label="Hold to walk forward">Walk</button>
+<div id="prog"><i></i></div>
+
+<div id="end" hidden>
+  <h2>The song’s not over.</h2>
+  <p>The war’s just begun…</p>
+  <div id="endbtns"><button id="bBack" class="primary">Back to the book</button><button id="bAgain">Ride again</button></div>
+</div>
+<div id="dev"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/*__WORLD__*/
+</script>
+<script>
+/*__UI__*/
+</script>
