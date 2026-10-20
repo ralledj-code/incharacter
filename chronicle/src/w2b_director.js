@@ -112,10 +112,7 @@ C.makeDirector = function (X) {
       }
       // music: a small zoom punch on every bar, a shake on strong hits (off in calm mode)
       let fov = A.fov, shake = 0;
-      if (beats && !calm) {
-        fov -= 2.2 * kickAt(beats.bars, t, 7);
-        shake = 0.06 * kickAt(beats.hits, t, 10);
-      }
+      // beat kicks/shake removed: they read as jitter on phones (feedback 2026-10-20). Beats still drive cuts and band animation.
       camera.position.copy(A.pos);
       if (shake) camera.position.add(new THREE.Vector3(Math.sin(t * 91) * shake, Math.sin(t * 67 + 1) * shake, Math.sin(t * 53 + 2) * shake));
       camera.up.set(0, 1, 0); camera.lookAt(A.look);

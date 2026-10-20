@@ -30,6 +30,7 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
 #stamp { font-family: var(--head); letter-spacing: 0.18em; color: var(--ember); font-size: 0.95rem; text-transform: uppercase; opacity: 0; transition: opacity 0.8s; min-height: 1.2em; text-shadow: 0 1px 8px #000; }
 #lyric { font-style: italic; font-size: clamp(1.15rem, 3.6vw, 1.7rem); text-align: center; max-width: 30em; text-wrap: balance; line-height: 1.3; min-height: 2.6em; opacity: 0; transition: opacity 0.7s; text-shadow: 0 1px 10px #000, 0 0 24px #000; pointer-events: none; }
 #lyric.on, #stamp.on { opacity: 1; }
+#hud.book #hint { background: rgba(10, 8, 6, 0.86); border: 1px solid var(--line); padding: 10px 14px; text-shadow: none; max-width: min(30em, calc(100vw - 32px)); box-sizing: border-box; }
 #hint { font-size: 1.05rem; color: var(--ink); text-shadow: 0 1px 10px #000; text-align: center; max-width: 28em; text-wrap: balance; }
 .row { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
 #top { top: 0; padding-top: max(10px, env(safe-area-inset-top, 0px)); display: flex; justify-content: flex-end; gap: 8px; z-index: 6; }
@@ -366,7 +367,7 @@ const PACKS = {
   tavern: { glb: ['props'], tex: ['old_wood_floor', 'wood_plank_wall', 'rustic_stone_wall'], creatures: ['lute'],
     chars: ['body_m', 'body_f', 'ranger_m', 'peasant_m', 'ranger_f', 'peasant_f', 'hair_long', 'hair_beard', 'hair_buns', 'hair_parted', 'hair_buzzed', 'hair_buzzed_f'] },
   nature: { glb: ['nature'], tex: ['forest_ground_04'] },
-  beasts: { creatures: ['wolf', 'dragon', 'bat', 'demon'] },
+  beasts: { creatures: ['wolf', 'wyrm', 'bat'] },
   village: { glb: ['village'], tex: ['cobblestone_floor_04', 'castle_brick_07'] }
 };
 C.PACKS = PACKS;
@@ -717,10 +718,7 @@ C.makeDirector = function (X) {
       }
       // music: a small zoom punch on every bar, a shake on strong hits (off in calm mode)
       let fov = A.fov, shake = 0;
-      if (beats && !calm) {
-        fov -= 2.2 * kickAt(beats.bars, t, 7);
-        shake = 0.06 * kickAt(beats.hits, t, 10);
-      }
+      // beat kicks/shake removed: they read as jitter on phones (feedback 2026-10-20). Beats still drive cuts and band animation.
       camera.position.copy(A.pos);
       if (shake) camera.position.add(new THREE.Vector3(Math.sin(t * 91) * shake, Math.sin(t * 67 + 1) * shake, Math.sin(t * 53 + 2) * shake));
       camera.up.set(0, 1, 0); camera.lookAt(A.look);
@@ -951,7 +949,7 @@ C.create = function (opts) {
   const BAR_KEYS = [{ t: -1e6, m: 'bar', b: 0 }];
   const from = { x: 0, y: 1.28, z: Z0, yaw: 0, pitch: 0 };
   let riding = false;
-  const SEAT = { x: 0, y: 1.28, z: Z0 + 0.02 }, BOOK_PITCH = -0.2;
+  const SEAT = { x: 0, y: 1.28, z: Z0 + 0.02 }, BOOK_PITCH = -0.36;
   const angDiff = (a, b) => { let d = (b - a) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU; return d; };
   const ctx = {
     t: -1, dt: 0, time: 0, camD: -50, cam: camPos, mood: Mo, mode: 'walk',
@@ -988,6 +986,13 @@ C.create = function (opts) {
       story = st; X.story = st;
       buildTimeline(st); buildPath();
       X.sec = sec; X.Dend = Dend; X.dBack = dBack; X.tCross = tCross;
+      // X.line(k, dt): start of lyric line k (0-based over the song); falls back to even spacing inside sections
+      const flat = []; (st.cues || []).forEach((c, ci) => (c.lines || []).forEach((tx, j) => flat.push({ ci, j, n: c.lines.length })));
+      X.line = (k, dt) => {
+        const lt = st.lineTimes; if (lt && lt[k] != null) return lt[k] + (dt || 0);
+        const f = flat[k]; if (!f) return 1e9; const c = st.cues[f.ci], nx = st.cues[f.ci + 1], t1 = nx ? nx.t : st.duration;
+        return c.t + 0.4 + (t1 - c.t - 0.8) * f.j / f.n + (dt || 0);
+      };
       X.clearings = typeof st.clearings === 'function' ? st.clearings(X) : [];  // [{ x, z, r }] kept free of trees for the camera
       const list = (typeof st.build === 'function') ? st.build(X) : [];
       list.forEach((d) => { if (d) { storyRoot.add(d.group); defs.push(d); } });
@@ -1026,7 +1031,7 @@ C.create = function (opts) {
         chair.position.set(0, 0, Z0); chair.rotation.y = 0;
       } else if (director && director.active) {
         director.pose(t, camera, st.calm);
-        camD = nearRail(camera.position, distAt(t));
+        camD = distAt(t);  // scene visibility follows song time, not the camera (no popping when shots orbit far off the path)
       } else {
         camD = distAt(t);
         const f = frame(camD), yawP = Math.atan2(-f.tx, -f.tz);
@@ -1046,11 +1051,13 @@ C.create = function (opts) {
 
       ctx.t = t; ctx.dt = dt; ctx.time = time; ctx.camD = camD; ctx.ride = ride; ctx.mode = mode;
       fx[0].intensity = 0; fx[1].intensity = 0;
-      hub.group.visible = camD < 70;
+      const dA = story && story.doorAt !== undefined ? story.doorAt : 30;
+      hub.group.visible = !ride || t < dA + 6 || camD < 25;  // the tavern stays up while the intro films it
       if (hub.group.visible) hub.update(t, ctx);
       for (let i = 0; i < defs.length; i++) {
         const s = defs[i];
-        const vis = ride && camD > s.d0 - (s.vis || 120) && camD < s.d1 + (s.vis || 120);
+        // shown while the song is at this scene (path distance from song time), or inside its explicit time window [t0, t1]
+        const vis = ride && (s.t0 !== undefined ? t >= s.t0 && t <= s.t1 : camD > s.d0 - (s.vis || 120) && camD < s.d1 + (s.vis || 120));
         s.group.visible = vis;
         if (vis && s.update) s.update(t, ctx);
       }
@@ -1316,7 +1323,7 @@ C.kit = function (X) {
 (function (root) {
 'use strict';
 const C = root.__cw, THREE = C.THREE;
-const { TAU, M, bx, cy, cn, ic, solid } = C;
+const { TAU, lerp, M, bx, cy, cn, ic, solid } = C;
 
 /* The party, built from the reference portraits. Detail level: readable at 5-15 m in fog. */
 C.chars = function (X) {
@@ -1456,6 +1463,56 @@ C.chars = function (X) {
       return rig({ base: f ? 'body_f' : 'body_m', parts, pose: o.pose || 'Idle_Loop', h: o.h || (f ? 1.68 : 1.8) }, o);
     };
 
+    /* Baphomet: a winged, goat-headed giant on the rigged body. Built at human scale (1.8 m) and scaled to o.h.
+       userData: wings [L, R] pivots (flap in update), eyes, pose(). */
+    const tube = (pts, r0, r1, color) => {  // tapered horn/bone along points (human-scale metres, bone space)
+      const parts = [];
+      for (let i = 0; i < pts.length - 1; i++) {
+        const a = pts[i], b = pts[i + 1], dir = new THREE.Vector3().subVectors(b, a), len = dir.length();
+        const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+        const r = (k) => lerp(r0, r1, k / (pts.length - 1)), g = new THREE.CylinderGeometry(r(i + 1), r(i), len * 1.08, 7);
+        g.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(q)); g.translate((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);  // r128: no applyQuaternion on geometry
+        parts.push(C.part(g, color));
+      }
+      return parts;
+    };
+    K.baphomet = function (o) {
+      o = o || {};
+      const H = o.h || 14, k = H / 1.8;
+      const g = rig({ parts: [['ranger_m', { color: 0x3a2628 }, /Hood/], ['peasant_m', { color: 0x4a2a2a }, /Body|Arms/]], body: 0x4a2c2c, pose: o.pose || 'Idle_Loop', h: H }, o);
+      const bone = 0x8a7c6a, horn = 0x4a4038, V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+      // goat skull over the human head: long muzzle, heavy brow, beard, ears, two great back-swept horns
+      const P = [
+        ic(0.13, 1, bone, [0, 0.1, 0.0], [1, 1.05, 1.15]),
+        cy(0.045, 0.07, 0.22, 7, bone, [0, 0.04, 0.16], [Math.PI / 2 + 0.35, 0, 0]),
+        bx(0.2, 0.05, 0.08, 0x1a1416, [0, 0.13, 0.1]),
+        cn(0.05, 0.22, 6, 0x1a1214, [0, -0.1, 0.17], [Math.PI, 0, 0]),
+        cn(0.03, 0.14, 4, bone, [-0.15, 0.12, -0.02], [0, 0, 1.3]), cn(0.03, 0.14, 4, bone, [0.15, 0.12, -0.02], [0, 0, -1.3])
+      ];
+      [-1, 1].forEach((sd) => {
+        const pts = []; for (let i = 0; i <= 8; i++) { const u = i / 8; pts.push(V3(sd * (0.06 + 0.1 * u + 0.05 * Math.sin(u * 3)), 0.2 + 0.32 * Math.sin(u * 1.9), -0.02 - 0.28 * u * u)); }
+        P.push(...tube(pts, 0.045, 0.008, horn));
+      });
+      const skull = solid(P); C.attach(g, 'Head', skull, [0, 0, 0.02 * k], null, k);
+      const eyes = [-0.055, 0.055].map((x) => { const e = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.014, 0.02), new THREE.MeshBasicMaterial({ color: 0xff3a10 })); C.attach(g, 'Head', e, [x * k, 0.12 * k, 0.17 * k], null, k); return e; });
+      const eg = X.glow(0xff3010, 0.5 * k, 0.9); C.attach(g, 'Head', eg, [0, 0.12 * k, 0.2 * k]);
+      // bat wings from the shoulder blades: finger bones + membrane
+      const wings = [-1, 1].map((sd) => {
+        const piv = new THREE.Group(), span = 1.5, fingers = [[1.0, 0.75], [1.45, 0.25], [1.25, -0.3], [0.8, -0.65]];
+        const Wp = [];
+        fingers.forEach(([x, y]) => Wp.push(...tube([V3(0, 0, 0), V3(sd * x * 0.45, y * 0.6 + 0.35, -0.05), V3(sd * x * span * 0.62, y * span * 0.45 + 0.3, -0.1)], 0.02, 0.006, bone)));
+        const sh = new THREE.Shape(); sh.moveTo(0, 0);
+        fingers.forEach(([x, y], i) => { const tx = sd * x * span * 0.62, ty = y * span * 0.45 + 0.3; sh.lineTo(tx, ty); if (i < fingers.length - 1) { const [nx, ny] = fingers[i + 1]; sh.quadraticCurveTo(sd * (x + nx) * span * 0.22, (y + ny) * span * 0.16 + 0.2, sd * nx * span * 0.62, ny * span * 0.45 + 0.3); } });
+        sh.lineTo(0, -0.2); sh.lineTo(0, 0);
+        const mem = new THREE.Mesh(new THREE.ShapeGeometry(sh, 6), new THREE.MeshLambertMaterial({ color: 0x4a1a20, side: THREE.DoubleSide }));
+        mem.position.z = -0.08; piv.add(mem); piv.add(solid(Wp));
+        C.attach(g, 'spine_03', piv, [sd * 0.09 * k, 0.12 * k, -0.12 * k], [0, sd * 0.5, 0], k);
+        return piv;
+      });
+      g.userData.wings = wings; g.userData.eyes = eyes; g.userData.eyeGlow = eg;
+      return g;
+    };
+
     // The wraith over Cobh: a giant hooded figure, nearly black, eyes burning cold.
     K.wraith = function (o) {
       o = o || {};
@@ -1467,6 +1524,83 @@ C.chars = function (X) {
   }
   return K;
 };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+(function (root) {
+'use strict';
+const C = root.__cw, THREE = C.THREE;
+const { clamp, lerp, sm } = C;
+
+/* Story actions keyed to song time (usually lyric lines), so what is sung happens on screen.
+   C.act(obj, steps) -> { update(t) }. steps: [{ t, pose?, to?, face?, move?, y?, s?, show?, fn? }] in time order:
+     t     start time (s). Tip: X.line(k) = start of lyric line k (0-based over the whole song), X.line(k, +0.5) offsets.
+     pose  clip name for rigged characters/creatures (userData.pose)
+     to    Vector3 (or [x,z] / () => Vector3) to move to; travels from the previous position over `move` s (default: walk at 1.6 m/s)
+     face  Vector3 / Object3D / angle (rad) to turn toward (eases over 0.4 s)
+     y     height offset (jumps, flying); s = uniform scale; show = visible on/off
+     fn    (u, t) => {} custom effect while this step runs (u = seconds since step start)
+   Everything is evaluated from t alone, so seeking works. */
+const V = new THREE.Vector3(), V2 = new THREE.Vector3();
+function asVec(p, out) {
+  if (!p) return null;
+  if (typeof p === 'function') return out.copy(p());
+  if (Array.isArray(p)) return out.set(p[0], 0, p[1]);
+  if (p.isObject3D) return p.getWorldPosition(out);
+  return out.copy(p);
+}
+C.act = function (obj, steps) {
+  // resolve positions once: each step starts where the previous one ended
+  const pts = [], start = obj.position.clone();
+  let cur = start.clone();
+  steps.forEach((s) => {
+    const from = cur.clone(), to = s.to ? asVec(s.to, new THREE.Vector3()) : null;
+    if (to) { to.y = obj.position.y; cur = to.clone(); }
+    const dist = to ? from.distanceTo(to) : 0;
+    pts.push({ from, to: to || from, dur: s.move !== undefined ? s.move : dist / 1.6 });
+  });
+  let lastPose = null;
+  return {
+    steps,
+    update(t, ctx) {
+      let i = -1;
+      for (let k = 0; k < steps.length; k++) if (steps[k].t <= t) i = k;
+      if (i < 0) { obj.position.copy(start); return; }
+      const s = steps[i], p = pts[i], u = t - s.t, k = p.dur > 0 ? clamp(u / p.dur) : 1;
+      obj.position.lerpVectors(p.from, p.to, p.dur > 0 && s.move === undefined ? k : sm(k));
+      // find the most recent pose / face / y / s / show at or before i
+      let pose = null, face = null, y = 0, sc = null, show = null;
+      for (let j = i; j >= 0; j--) {
+        const q = steps[j];
+        if (pose === null && q.pose) pose = q.pose;
+        if (face === null && q.face !== undefined) face = q.face;
+        if (sc === null && q.s !== undefined) sc = q.s;
+        if (show === null && q.show !== undefined) show = q.show;
+      }
+      if (s.y !== undefined) y = typeof s.y === 'function' ? s.y(u) : s.y;
+      obj.position.y += y;
+      // while travelling, walk/run toward the target unless a pose is given for this step
+      const moving = p.dur > 0 && k < 1;
+      if (obj.userData.pose) {
+        const want = s.pose || (moving ? (p.from.distanceTo(p.to) / p.dur > 3 ? 'Sprint_Loop' : 'Walk_Loop') : pose);
+        if (want && want !== lastPose) { obj.userData.pose(want); lastPose = want; }
+      }
+      const tgt = moving && !s.face ? p.to : face;
+      if (tgt !== null && tgt !== undefined) {
+        let ang;
+        if (typeof tgt === 'number') ang = tgt;
+        else { asVec(tgt, V2); ang = Math.atan2(V2.x - obj.position.x, V2.z - obj.position.z); }
+        let d = ang - obj.rotation.y; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2;
+        obj.rotation.y += d * (ctx && ctx.dt ? Math.min(1, ctx.dt * 8) : 1);
+        if (!ctx || !ctx.dt || ctx.seek) obj.rotation.y = ang;
+      }
+      if (sc !== null) obj.scale.setScalar(sc);
+      if (show !== null) obj.visible = show;
+      if (s.fn) s.fn(u, t);
+    }
+  };
+};
+/* run several actors: C.acts([a, b]) -> { update(t, ctx) } */
+C.acts = (list) => ({ update(t, ctx) { list.forEach((a) => a && a.update(t, ctx)); } });
 })(typeof window !== 'undefined' ? window : globalThis);
 
 (function (root) {
@@ -1493,7 +1627,7 @@ function dressBar(g, tables) {
   put('Barrel', [5.4, 0, -0.2], 0.3); put('Barrel', [5.45, 0, 0.6], 1.2); put('Crate_Wooden', [5.3, 0, 1.7], 0.2);
   // the back wall (behind the player at the start): bookcases, chest, banners, weapons
   put('Bookcase_2', [-3.6, 0, 5.25], Math.PI); put('Bookcase_2', [3.6, 0, 5.25], Math.PI);
-  put('Chest_Wood', [0, 0, 4.9], Math.PI, 0.8);
+  put('Chest_Wood', [-4.9, 0, 4.7], Math.PI / 2, 0.8);  // corner, clear of the player's start spot (z 4.4)
   put('Banner_1', [-5.95, 1.8, 1.4], Math.PI / 2, 0.8); put('Banner_2', [-5.95, 1.8, -6.6], Math.PI / 2, 0.8);
   put('WeaponStand', [-5.3, 0, 3.6], Math.PI / 2, 0.9); put('Shield_Wooden', [-5.95, 2.4, -2.5], Math.PI / 2, 0.9);
   put('Cauldron', [-4.7, 0, -4.7], 0.5, 0.7); put('Bucket_Wooden_1', [-4.6, 0, -0.3], 0);
@@ -1676,6 +1810,7 @@ C.buildBar = function (X) {
     { x: X.STAND.x, z: X.STAND.z - 1.15, r: 0.4 }  // Lucien's music stand
   ].concat(stage ? stage.colliders : []);
   tables.forEach((t) => colliders.push({ x: t[0], z: t[1], r: 1.05 }));
+  colliders.push({ x0: -5.7, x1: -4.1, z0: 4.0, z1: 5.5 }, { x0: -4.4, x1: -2.8, z0: 4.9, z1: 5.5 }, { x0: 2.8, x1: 4.4, z0: 4.9, z1: 5.5 });  // chest, bookcases
   [-7.2, -5.9, -4.6, -2.0].forEach((z) => colliders.push({ x: 2.7, z, r: 0.35 }));
 
   return {
@@ -1687,7 +1822,7 @@ C.buildBar = function (X) {
       d20g.material.opacity = 0.4 + 0.15 * Math.sin(ctx.time * 1.7);
       // the back door (behind the stage) swings open when the song's camera flies out through it
       const dA = X.story && X.story.doorAt !== undefined ? X.story.doorAt : 1.5;
-      door.rotation.y = ctx.ride ? 1.5 * ss(dA - 1.5, dA, t) : 0;
+      door.rotation.y = ctx.ride ? 1.5 * ss(dA - 4.5, dA - 2.5, t) : 0;  // fully open before the camera reaches it
       if (stage) stage.update(t, ctx);
       if (ctx.camD < 40) {
         ctx.light(0, -4.75, 0.9, -2.5, 0xff8a3a, 1.8 * f, 22);
@@ -1860,13 +1995,21 @@ SC.push(function (X) {
   const list = [];
   for (let d = 10; d < S.d1 + 6; d += 7) { const a = X.at(d, -3.2, 0), b = X.at(d + 3.5, 3.2, 0); list.push({ x: a.x, z: a.z }, { x: b.x, z: b.z }); }
   const tor = kit.torches(list, { glow: 0xffb060, size: 2.2, op: 0.6, color: 0xffc060 }); g.add(tor.group);
-  return { group: g, d0: S.d0, d1: S.d1, vis: 110, update(t, ctx) { tor.update(ctx.time); } };
+  // the brothers (and Neeris) already on the road, walking ahead of the camera toward the moonwell
+  const ch = C.chars(X), walkers = ch.person ? [['lucien', -0.8, 0], ['cedric', 0.9, 1.2], ['arthas', -0.2, 2.6], ['neeris', 1.4, 4]].map(([k, sd, back]) => {
+    const o = ch[k]({ pose: 'Walk_Loop' }); if (o.userData.blade) { o.userData.blade.visible = false; o.userData.bladeGlow.visible = false; } g.add(o); return { o, sd, back };
+  }) : [];
+  return { group: g, d0: S.d0, d1: S.d1, vis: 110, update(t, ctx) {
+    tor.update(ctx.time);
+    const camD0 = lerp(9, X.distAt(47.8) - 18, clamp((t - 32) / 15.8, 0, 1));  // the intro shot's camera path (L08 shots), walkers stay ahead of it
+    walkers.forEach(({ o, sd, back }) => { const d = Math.max(14 + Math.max(0, t - 30) * 1.25, camD0 + 9) - back; o.visible = t > 28; o.position.copy(X.at(d, sd, 0)); o.rotation.y = X.yawAt(d) + Math.PI; });
+  } };
 });
 
 /* ---- 2. the moonwell: blood, chains, Baphomet ---- */
 SC.push(function (X) {
   const S = X.sec.v1, kit = C.kit(X), g = new THREE.Group();
-  const TB = S.t0 + 6.5;            // chains break
+  const TB = X.line(1, 0.1);        // "Baphomet's chains broke"
   const dw = S.d0 + S.len * 0.55, side = 6.5, wp = X.at(dw, side, 0);
   g.add(kit.trees(S.d0 - 15, S.d1 + 15, { minSide: 8, maxSide: 38, dens: 0.8, deadP: 0.5, tint: 0x8fa0b8 }));
   const well = new THREE.Group(); well.position.set(wp.x, 0, wp.z); g.add(well);
@@ -1925,23 +2068,59 @@ SC.push(function (X) {
   [-0.28, 0.28].forEach((x) => { const e = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.1, 0.08), new THREE.MeshBasicMaterial({ color: 0xff3020 })); e.position.set(x, 6.55, 0.62); bap.add(e); });
   const eg = X.glow(0xff3020, 3.2, 0.9); eg.position.set(0, 6.55, 0.7); bap.add(eg);
   bap.rotation.y = X.yawAt(dw) - Math.PI / 2; bap.position.y = -8; bap.visible = false; well.add(bap);
-  // the real Baphomet: the CC0 demon, 14 m tall, near black with burning eyes (procedural one above is the fallback)
-  const demon = C.creature('demon', { h: 14, tint: 0x8a4a4e, eyes: 0xff2a10, clip: 'Idle' });
-  if (demon) {
-    bap.children.slice(0, 1).forEach((m) => { m.visible = false; });  // keep only the eye glow from the old figure
-    const rp = X.at(dw, 0, 0), face = Math.atan2(rp.x - wp.x, rp.z - wp.z);  // turn toward the rail
-    demon.rotation.y = face - bap.rotation.y; demon.position.y = -2; bap.add(demon); X.anims.push(demon);
-    X.anchors.wellFace = Math.atan2(Math.cos(face), Math.sin(face));  // orbit angle that looks him in the face
-    eg.position.set(0, 12.4, 1.6); eg.scale.setScalar(5);
+  // Baphomet: the rigged goat-headed giant (w3b_chars); the procedural figure above stays only as a fallback
+  const ch = C.chars(X), L = X.line;
+  const baph = ch.baphomet ? ch.baphomet({ h: 14, pose: 'Idle_Loop' }) : null;
+  if (baph) {
+    bap.children.forEach((c) => { c.visible = false; });
+    const rp = X.at(dw, 0, 0), face = Math.atan2(rp.x - wp.x, rp.z - wp.z);  // face the brothers on the path side
+    baph.rotation.y = face - bap.rotation.y; bap.add(baph);
+    X.anchors.wellFace = Math.atan2(Math.cos(face), Math.sin(face));
   }
-  X.anchors.well = well; X.anchors.baphomet = bap;
-  // the brothers at the well: Arthas kneels and bleeds into it, Cedric and Lucien behind him
-  const ch = C.chars(X), yw = X.yawAt(dw);
-  const art = ch.arthas({ pose: 'Fixing_Kneeling' }), ced = ch.cedric({ pose: 'Idle_Loop' }), luc = ch.lucien({ pose: 'Idle_Loop' });
-  const toWell = (o, side, back) => { const p = X.at(dw + back, side, 0); o.position.copy(p); o.lookAt(wp.x, 0, wp.z); g.add(o); return o; };
-  toWell(art, side - 2.6, 0.2); toWell(ced, side - 4.6, -2.2); toWell(luc, side - 4.4, 2.0);
+  X.anchors.well = well; X.anchors.baphomet = baph || bap;
+  // the brothers (and Neeris) reach the well; staged on the lyric lines of verse 1
+  const yw = X.yawAt(dw), wpos = new THREE.Vector3(wp.x, 0, wp.z);
+  const spot = (side, back) => X.at(dw + back, side, 0);
+  const art = ch.arthas({ pose: 'Walk_Loop' }), ced = ch.cedric({ pose: 'Walk_Loop' }), luc = ch.lucien({ pose: 'Walk_Loop' }), ner = ch.neeris({ pose: 'Walk_Loop' });
+  [art, ced, luc, ner].forEach((o) => g.add(o));
   luc.userData.blade.visible = false; luc.userData.bladeGlow.visible = false;
-  X.anchors.arthasWell = art;
+  art.position.copy(spot(side - 8, -4)); ced.position.copy(spot(side - 9, -6)); luc.position.copy(spot(side - 9, -2)); ner.position.copy(spot(side - 10, -8));
+  const TB2 = L(1, 0.1);
+  const actors = [
+    C.act(art, [
+      { t: S.t0, to: spot(side - 3.4, 0.2), move: 1.5, face: wpos },                          // walks to the rim
+      { t: L(0), pose: 'Fixing_Kneeling', face: wpos },                                        // "bled his hand into the well"
+      { t: TB2, to: spot(side - 6, 0.6), move: 0.45, pose: 'Crouch_Idle_Loop', face: wpos },  // thrown back by the blast
+      { t: L(1, 2), pose: 'Sword_Idle', face: wpos },
+      { t: L(3), pose: 'Sword_Idle', face: ner }
+    ]),
+    C.act(ced, [
+      { t: S.t0, to: spot(side - 5, -2.4), move: 2, face: wpos },
+      { t: L(0), pose: 'Idle_Loop', face: wpos },
+      { t: TB2, to: spot(side - 7.5, -3.2), move: 0.6, pose: 'Crouch_Idle_Loop', face: wpos },
+      { t: L(2), pose: 'Idle_Loop', face: wpos }
+    ]),
+    C.act(luc, [
+      { t: S.t0, to: spot(side - 5, 2.2), move: 2, face: wpos },
+      { t: L(0), pose: 'Idle_Loop', face: wpos },
+      { t: TB2, to: spot(side - 7.5, 3), move: 0.6, pose: 'Spell_Simple_Idle_Loop', face: wpos }
+    ]),
+    C.act(ner, [
+      { t: S.t0, to: spot(side - 8, -4.5), move: 3, face: wpos },
+      { t: L(1), pose: 'Idle_Loop', face: wpos },
+      { t: L(3, 2.5), pose: 'Crouch_Idle_Loop', face: wpos }                                   // "the wolf-curse began to grow"
+    ])
+  ];
+  if (baph) actors.push(C.act(baph, [
+    { t: 0, pose: 'Idle_Loop' }, { t: L(2), pose: 'Idle_Talking_Loop' }, { t: L(3), pose: 'Spell_Simple_Idle_Loop' }, { t: L(3, 5), pose: 'Idle_Loop' }
+  ]));
+  // wolf eyes opening in the treeline when the curse grows
+  const tlEyes = [];
+  for (let i = 0; i < 9; i++) {
+    const a = yw + Math.PI / 2 + (i - 4) * 0.25, r = 16 + (i % 3) * 2.5, e = X.glow(0xffa020, 0.45, 0);
+    e.position.set(wp.x + Math.sin(a) * r, 0.8 + (i % 2) * 0.25, wp.z + Math.cos(a) * r); g.add(e); tlEyes.push(e);
+  }
+  X.anchors.arthasWell = art; X.anchors.lucienWell = luc; X.anchors.cedricWell = ced; X.anchors.neerisWell = ner;
 
   // blood falling into the well
   const NDR = 28, dp = new Float32Array(NDR * 3);
@@ -1958,12 +2137,18 @@ SC.push(function (X) {
       col.material.color.copy(disc.material.color); col.material.opacity = 0.14 + 0.1 * red * (0.7 + 0.3 * Math.sin(ctx.time * 3));
       wg.material.color.copy(disc.material.color);
       ring.material.opacity = tau > 0 && tau < 1.6 ? 0.9 * (1 - tau / 1.6) : 0; ring.scale.setScalar(1 + Math.max(0, tau) * 14);
-      bap.visible = tau > 0.4; bap.position.y = -8 + 8 * sm((tau - 0.8) / 6.5);
-      if (demon) demon.userData.pose(tau > 7 && tau < 14 ? 'Yes' : tau >= 14 ? 'Punch' : 'Idle');
-      if (art.userData.pose) art.userData.pose(tau > 1.2 ? 'Sword_Idle' : 'Fixing_Kneeling');
+      bap.visible = tau > 0.4; bap.position.y = -14 + 14 * sm((tau - 0.8) / 6.5);
+      actors.forEach((a) => a.update(t, ctx));
+      if (baph) {
+        const spread = ss(L(2, -1), L(2, 1.5), t), flap = Math.sin(ctx.time * 1.6) * 0.12 * spread;
+        baph.userData.wings.forEach((w, k) => { const sd = k ? 1 : -1; w.rotation.set(0, sd * (0.5 + 0.9 * spread), sd * flap); });
+        const talk = t > L(2) && t < L(3, 6) ? 0.4 + 0.6 * Math.abs(Math.sin(ctx.time * 5)) : 0.35;
+        baph.userData.eyeGlow.material.opacity = 0.6 + 0.4 * talk;
+      }
+      tlEyes.forEach((e, k) => { e.material.opacity = 0.9 * ss(L(3, 2.5 + k * 0.3), L(3, 3.2 + k * 0.3), t) * (Math.sin(ctx.time * 1.3 + k) > 0.95 ? 0.1 : 1); });
       const flash = tau > 0 ? Math.exp(-tau * 2.2) * 6 : 0;
-      ctx.light(1, wp.x, 1.8, wp.z, disc.material.color, 2.6 + flash + 0.3 * Math.sin(ctx.time * 4), 34);
-      const on = (t > S.t0 + 0.8 && t < TB) ? 1 : 0; drips.visible = on > 0;
+      ctx.light(1, wp.x, 1.8 + (tau > 0 ? 4 : 0), wp.z, disc.material.color, 2.6 + flash + 0.3 * Math.sin(ctx.time * 4) + (tau > 0 ? 1.5 : 0), 40);  // the well lights him from below
+      const on = (t > X.line(0, 1.5) && t < TB) ? 1 : 0; drips.visible = on > 0;  // Arthas's blood, from the moment he kneels
       if (on) for (let i = 0; i < NDR; i++) {
         const u = (ctx.time * 1.1 + i * 0.37) % 1, a = i * 2.4;
         dp[i * 3] = Math.cos(a) * 0.9 * (0.3 + u * 0.4); dp[i * 3 + 1] = 7 - u * 6.1; dp[i * 3 + 2] = Math.sin(a) * 0.9 * (0.3 + u * 0.4);
@@ -1987,18 +2172,45 @@ SC.push(function (X) {
   const eyeMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.06, 5, 4), new THREE.MeshBasicMaterial({ color: 0xffb030 }), NE * 2);
   eyeMesh.frustumCulled = false; g.add(eyeMesh);
   const dm = new THREE.Object3D();
-  // Neeris crouched by the path
-  const dn = S1.d0 + S1.len * 0.45, np = X.at(dn, -3.4, 0), ner = ch.neeris({ pose: 'Crouch_Idle_Loop' }); ner.position.copy(np); ner.rotation.y = X.yawAt(dn) + Math.PI / 2; g.add(ner);
-  // the slab with the floating dagger, and Lucien watching
-  const dd = S2.d0 + S2.len * 0.55, sp = X.at(dd, 3.0, 0);
-  const slab = solid([bx(1.5, 0.5, 1.0, 0x6a6e76, [0, 0.25, 0])]); slab.position.copy(sp); slab.rotation.y = X.yawAt(dd); g.add(slab);
+  // one clearing where it all happens: Neeris turning, the pack, Arthas's blade, Lucien, and the blue dagger
+  const L = X.line, dn = S1.d0 + S1.len * 0.55, yaw = X.yawAt(dn), at = (along, side) => X.at(dn + along, side, 0);
+  const np = at(0, -4), ner = ch.neeris({ pose: 'Crouch_Idle_Loop' }); ner.position.copy(np); g.add(ner);
+  const sp = at(3, 1.5);
+  const slab = solid([bx(1.5, 0.5, 1.0, 0x6a6e76, [0, 0.25, 0])]); slab.position.copy(sp); slab.rotation.y = yaw; g.add(slab);
   const dag = new THREE.Group();
   const blade = new THREE.Mesh(new THREE.ConeGeometry(0.1, 1.0, 4), new THREE.MeshBasicMaterial({ color: 0xdff4ff })); blade.rotation.x = Math.PI; blade.scale.z = 0.3; blade.position.y = -0.1; dag.add(blade);
   dag.add(solid([bx(0.36, 0.05, 0.09, 0x8a8e98, [0, 0.42, 0]), cy(0.035, 0.035, 0.3, 5, 0x3a2a22, [0, 0.62, 0]), ic(0.06, 0, 0xa0a4ac, [0, 0.8, 0])]));
-  const dg = X.glow(0x40c8ff, 3.2, 0.9); dg.position.y = 0.2; dag.add(dg); dag.position.copy(sp); g.add(dag);
-  const lu = ch.lucien(); lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false;
-  const lp = X.at(dd - 1.0, 5.0, 0); lu.position.copy(lp); lu.rotation.y = X.yawAt(dd) - Math.PI / 2 + 0.5; g.add(lu);
-  X.anchors.neeris = ner; X.anchors.dagger = dag; X.anchors.lucienWood = lu;
+  const dg = X.glow(0x40c8ff, 3.2, 0.9); dg.position.y = 0.2; dag.add(dg); g.add(dag);
+  const lu = ch.lucien({ pose: 'Spell_Simple_Idle_Loop' }); lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false;
+  lu.position.copy(at(-3, 3.5)); g.add(lu);
+  const art = ch.arthas({ pose: 'Sword_Idle' }); art.position.copy(at(-6, 1)); g.add(art);
+  const ced = ch.cedric({ pose: 'Idle_Loop' }); ced.position.copy(at(-7, -1)); g.add(ced);
+  X.anchors.neeris = ner; X.anchors.dagger = dag; X.anchors.lucienWood = lu; X.anchors.arthasWood = art; X.anchors.cedricWood = ced; X.anchors.clearing = new THREE.Object3D(); X.anchors.clearing.position.copy(at(0, 0)); g.add(X.anchors.clearing);
+  // the barrier that stops Arthas's blade ("it would not land")
+  const ward = X.glow(0x70c8ff, 3, 0); g.add(ward);
+  const strike = L(5), stop = L(6), took = L(8), drove = L(9), calmT = L(11);
+  const actors = [
+    C.act(art, [
+      { t: S1.t0, to: at(-4, -1), move: 3, face: ner, pose: 'Sword_Idle' },
+      { t: strike, to: at(-1.3, -3.4), move: 0.7, face: ner, pose: 'Sprint_Loop' },             // "Arthas struck"
+      { t: strike + 0.7, pose: 'Sword_Idle', face: ner },
+      { t: L(7), to: at(-3, -2), move: 1.2, face: ner, pose: 'Sword_Idle' }
+    ]),
+    C.act(ced, [{ t: S1.t0, to: at(-6, 0), move: 3, face: ner }, { t: L(4), pose: 'Crouch_Idle_Loop', face: ner }, { t: drove + 2, pose: 'Idle_Loop', face: ner }]),
+    C.act(lu, [
+      { t: S1.t0, to: at(-2, 3), move: 3, face: ner, pose: 'Spell_Simple_Idle_Loop' },
+      { t: L(7), pose: 'Idle_Loop', face: ner },                                                  // "I stood there, spellless"
+      { t: took, pose: 'Idle_Loop', face: dag }
+    ]),
+    C.act(ner, [
+      { t: 0, pose: 'Crouch_Idle_Loop', face: at(-3, 0) },
+      { t: L(4), pose: 'Crouch_Idle_Loop', s: 1.12 },                                            // "Neeris turning, teeth and claw"
+      { t: took - 1.2, to: sp.clone().add(new THREE.Vector3(0, 0, 0)).lerp(np, 0.35), move: 1.2, pose: 'Sprint_Loop', s: 1.12 },
+      { t: took, pose: 'Idle_Loop', face: dag, s: 1.12 },                                        // "took my dagger for his own"
+      { t: drove, pose: 'Fixing_Kneeling', s: 1.0 },                                              // "drove it in, and stopped the change"
+      { t: calmT + 1, pose: 'Sitting_Idle_Loop', s: 1.0 }
+    ])
+  ];
   const wolves = [];
   for (let i = 0; i < 7; i++) {
     const w = C.creature('wolf', { h: 0.95, tint: i % 3 ? 0x6a6a72 : 0x3a3a40, clip: 'Gallop', ph: i * 0.37 });
@@ -2006,11 +2218,12 @@ SC.push(function (X) {
     w.userData.side = (i % 2 ? 1 : -1) * (3.5 + (i % 4) * 1.6); w.userData.lead = 3 + i * 2.3; g.add(w); X.anims.push(w); wolves.push(w);
   }
   if (wolves.length) X.anchors.wolf = wolves[0];
+  const nerEyes = ner.userData.eyes;
   return {
     group: g, d0: S1.d0, d1: S2.d1, vis: 90,
     update(t, ctx) {
       for (let i = 0; i < NE; i++) {
-        const e = eyes[i], alive = 1 - ss(e.kill, e.kill + 2.5, t);
+        const e = eyes[i], alive = 1 - ss(drove + i * 0.1, drove + 2 + i * 0.1, t);
         const blink = Math.sin(ctx.time * 1.1 + e.ph) > 0.97 ? 0.1 : 1, s = alive * blink;
         for (let k = 0; k < 2; k++) {
           const o = (k ? 1 : -1) * e.gap;
@@ -2018,27 +2231,37 @@ SC.push(function (X) {
         }
       }
       eyeMesh.instanceMatrix.needsUpdate = true;
-      // the pack: gallops alongside the rail through verse 1b, then rings Neeris and goes still when the curse is pulled out
-      const calm = ss(S2.t0 + 4, S2.t0 + 6, t), dNow = X.distAt(Math.min(t, S2.t0 + 2));
+      actors.forEach((a) => a.update(t, ctx));
+      // the pack: runs with the camera through the wood, then circles Neeris, snarling, until the dagger goes in
+      const arrive = L(4, 1), dNow = X.distAt(Math.min(t, arrive));
       wolves.forEach((w, i) => {
-        w.visible = t > S1.t0 - 2 && t < S2.t1;
+        w.visible = t > S1.t0 - 2 && t < calmT + 4;
         if (!w.visible) return;
-        if (t < S2.t0 + 2) {
+        if (t < arrive) {
           const d = dNow + w.userData.lead + Math.sin(ctx.time * 0.7 + i) * 0.6, p = X.at(d, w.userData.side, 0);
           w.position.copy(p); w.rotation.y = X.yawAt(d) + Math.PI; w.userData.pose('Gallop');
         } else {
-          const a = i / wolves.length * TAU, p = ner.position;
-          w.position.set(p.x + Math.cos(a) * 4.2, 0, p.z + Math.sin(a) * 4.2); w.lookAt(p.x, 0, p.z);
-          w.userData.pose(calm > 0.5 ? 'Idle_2_HeadLow' : 'Idle');
+          const a = i / wolves.length * TAU + (t < drove ? (t - arrive) * 0.5 : (drove - arrive) * 0.5), p = ner.position, r = t < drove ? 4.5 : 5.5;
+          w.position.set(p.x + Math.cos(a) * r, 0, p.z + Math.sin(a) * r);
+          if (t < drove) { w.rotation.y = Math.atan2(-Math.sin(a), Math.cos(a)) + (i % 2 ? 0 : Math.PI); w.userData.pose(i % 3 ? 'Gallop' : 'Attack'); }
+          else { w.lookAt(p.x, 0, p.z); w.userData.pose('Idle_2_HeadLow'); }
+          w.scale.setScalar(1 - 0.999 * ss(calmT + 1, calmT + 4, t));  // the cursed pack fades with the curse
         }
       });
-      const heart = 1 + 0.05 * Math.sin(ctx.time * 15), slump = ss(X.sec.pre.t0 + 1.5, X.sec.pre.t0 + 4, t);
-      if (!ner.userData.mixer) { ner.scale.set(heart, (0.85 - 0.2 * slump) * heart, heart); ner.rotation.x = 0.25 * slump; }
-      else if (ner.userData.pose) ner.userData.pose(slump > 0.5 ? 'Sitting_Idle_Loop' : 'Crouch_Idle_Loop');
-      const rise = ss(S2.t0, S2.t0 + 3, t), stab = ss(S2.t0 + 4, S2.t0 + 4.4, t) * (1 - ss(S2.t0 + 4.4, S2.t0 + 8, t));
-      dag.position.set(sp.x, 0.55 + 1.2 * rise + 0.08 * Math.sin(ctx.time * 1.4), sp.z); dag.rotation.y = ctx.time * 0.6;
-      dg.material.opacity = 0.55 + 0.35 * Math.sin(ctx.time * 3) * 0.5 + stab * 0.8;
-      ctx.light(0, sp.x, 1.6, sp.z, 0x50c8ff, 0.6 + 1.8 * rise + stab * 5, 26);
+      if (nerEyes) nerEyes.material.color.setHex(t > L(4) && t < drove ? 0xff4010 : 0xffb030);
+      // the ward that stops Arthas's blade
+      const wp = new THREE.Vector3().lerpVectors(art.position, ner.position, 0.55); ward.position.set(wp.x, 1.3, wp.z);
+      ward.material.opacity = 0.95 * ss(stop - 0.2, stop + 0.1, t) * (1 - ss(stop + 2.2, stop + 3.2, t));
+      ward.scale.setScalar(3 + 2 * Math.sin(ctx.time * 9) * ward.material.opacity);
+      if (lu.userData.spark) lu.userData.spark.material.opacity = t > L(7) && t < took ? (Math.sin(ctx.time * 23) > 0.6 ? 0.5 : 0) : 0.85;  // "spellless"
+      // the dagger: hovers over the slab, flies to Neeris, goes in with a blue flash
+      const rise = ss(S1.t0, S1.t0 + 3, t), fly = ss(took - 0.6, took + 0.3, t);
+      const hand = new THREE.Vector3(ner.position.x, 1.1, ner.position.z);
+      dag.position.set(lerp(sp.x, hand.x, fly), lerp(0.55 + 1.2 * rise + 0.08 * Math.sin(ctx.time * 1.4), hand.y, fly), lerp(sp.z, hand.z, fly));
+      dag.rotation.set(fly * Math.PI * 0.9, ctx.time * 0.6 * (1 - fly), 0);
+      const flash = t >= drove ? Math.exp(-(t - drove) * 1.8) : 0;
+      dg.material.opacity = 0.55 + 0.35 * Math.sin(ctx.time * 3) * 0.5 + flash * 0.8; dg.scale.setScalar(3.2 + flash * 14);
+      ctx.light(0, dag.position.x, 1.6, dag.position.z, 0x50c8ff, 0.6 + 1.8 * rise + flash * 7, 30);
     }
   };
 });
@@ -2099,7 +2322,7 @@ C.buildDragon = function (pose) {
 function brothers(secId, opt) {
   return function (X) {
     const S = X.sec[secId], kit = C.kit(X), ch = C.chars(X), g = new THREE.Group();
-    g.add(kit.trees(S.d0 - 15, S.d1 + 15, { minSide: 12, maxSide: 44, dens: 0.9, deadP: opt.deadP, tint: opt.tint }));
+    g.add(kit.trees(S.d0 - 15, S.d1 + 15, { minSide: 12, maxSide: 44, dens: 0.9, deadP: opt.deadP, tint: opt.tint, under: false }));  // the avenue is a road: no undergrowth in the shots
     const list = [];
     for (let d = S.d0 + 2; d < S.d1 - 2; d += 6) { const a = X.at(d, -5.5, 0), b = X.at(d + 3, 5.5, 0); list.push({ x: a.x, z: a.z }, { x: b.x, z: b.z }); }
     const tor = kit.torches(list, { glow: 0xffb060, size: 3.0, op: 0.75 }); g.add(tor.group);
@@ -2112,17 +2335,28 @@ function brothers(secId, opt) {
       grp.position.copy(p); kit.placeFacing(grp, d, b[2]); g.add(grp);
       banners.push({ geo, base: geo.attributes.position.array.slice(), ph: R(0, TAU) });
     });
-    // the three of them stand where the avenue ends
-    const dd = S.d1 - 7;
-    [['cedric', -4.2], ['lucien', -5.7], ['arthas', -7.4]].forEach((c, i) => {
-      const f = ch[c[0]](), p = X.at(dd - i * 0.6, c[1], 0); f.position.copy(p); f.rotation.y = X.yawAt(dd) + Math.PI / 2 + 0.3 * i;
-      if (c[0] === 'lucien') { f.userData.blade.visible = true; X.anchors['party_' + secId] = f; }
-      g.add(f);
-    });
+    // the three walk the avenue; on their name line each steps forward and shows who he is
+    const first = S.i === undefined ? 0 : 0, L = X.line, k0 = opt.line0;
+    const who = [['cedric', -1.4, k0 + 1, 'Idle_Torch_Loop'], ['lucien', 0, k0 + 2, 'Spell_Simple_Idle_Loop'], ['arthas', 1.4, k0 + 3, 'Sword_Idle']];
+    const party = who.map(([k, side, line, pose]) => { const f = ch[k]({ pose: 'Walk_Loop' }); if (k === 'lucien') f.userData.blade.visible = true; g.add(f); return { f, side, line, pose }; });
+    party.forEach((p) => { X.anchors[p.f === party[1].f ? 'party_' + secId : (who[party.indexOf(p)][0] + '_' + secId)] = p.f; });
+    const walkD = (t) => S.d0 + 14 + Math.max(0, t - S.t0) * 1.3;
+    const upd = (t) => {
+      party.forEach((p) => {
+        const lt = L(p.line), on = t >= lt - 0.3 && t < lt + 3.2, d = walkD(t) + (on ? 1.8 * ss(lt - 0.3, lt + 0.3, t) : 0);
+        const pos = X.at(d, p.side * (on ? 0.4 : 1), 0); p.f.position.copy(pos);
+        p.f.rotation.y = X.yawAt(d) + (on ? Math.PI : 0);  // walks away from the camera; turns to face it on his line
+        const late = t >= L(k0 + 4) && t < L(k0 + 5);    // "by fire, by fang": all three face the camera
+        if (late) p.f.rotation.y = X.yawAt(d) + Math.PI;
+        if (p.f.userData.pose) p.f.userData.pose(on ? p.pose : late ? 'Sword_Idle' : 'Walk_Loop');
+        const sp = p.f.userData.spark;
+        if (sp) { if (!sp.userData.base) sp.userData.base = sp.scale.x; sp.scale.setScalar(sp.userData.base * (on && p.pose === 'Spell_Simple_Idle_Loop' ? 3.5 + Math.sin(t * 20) : 1)); }
+      });
+    };
     return {
       group: g, d0: S.d0, d1: S.d1, vis: 100,
       update(t, ctx) {
-        tor.update(ctx.time);
+        tor.update(ctx.time); upd(t);
         banners.forEach((b) => {
           const a = b.geo.attributes.position, arr = a.array;
           for (let i = 0; i < arr.length; i += 3) {
@@ -2131,14 +2365,14 @@ function brothers(secId, opt) {
           }
           a.needsUpdate = true; b.geo.computeVertexNormals();
         });
-        const p = X.at(clamp(ctx.camD + 8, S.d0, S.d1), 0, 0);
+        const p = party[1].f.position;
         ctx.light(opt.slot, p.x, 4, p.z, opt.light, 1.8 + 0.3 * Math.sin(ctx.time * 6), 34);
       }
     };
   };
 }
-SC.push(brothers('chorus', { deadP: 0.1, tint: 0xa8a0c8, slot: 0, light: 0xffb868 }));
-SC.push(brothers('chorus2', { deadP: 0.05, tint: 0xd0b0b8, slot: 1, light: 0xffc080 }));
+SC.push(brothers('chorus', { deadP: 0.1, tint: 0xa8a0c8, slot: 0, light: 0xffb868, line0: 12 }));
+SC.push(brothers('chorus2', { deadP: 0.05, tint: 0xd0b0b8, slot: 1, light: 0xffc080, line0: 40 }));
 
 /* ---- the wyrm in the red sky, and the scorched land ---- */
 SC.push(function (X) {
@@ -2148,28 +2382,57 @@ SC.push(function (X) {
   for (let i = 0; i < NC; i++) { const p = X.at(R(S.d0 - 10, Sb.d0 + 40), R(-22, 22), 0); cm.push(M([p.x, 0.03, p.z], [-Math.PI / 2, 0, R(0, TAU)], [R(1.4, 3.6), R(0.15, 0.4), 1])); }
   const cracks = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0xff5a18, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false }), NC);
   cm.forEach((m, i) => cracks.setMatrixAt(i, m)); cracks.frustumCulled = false; g.add(cracks);
-  const flyer = C.creature('dragon', { h: 7, tint: 0x6a5a68, eyes: 0xff7a20, clip: 'Fast_Flying' });  // the black wyrm (CC0 animated dragon)
+  const flyer = C.creature('wyrm', { h: 7, tint: 0x3a3236, clip: 'Flying' });  // the black wyrm (CC0 low-poly dragon, OpenGameArt)
+  if (flyer) [0.09, -0.09].forEach((x) => { const e = X.glow(0xff6a20, 1.2, 0.95); C.attach(flyer, 'head', e, [x, 0.12, 0.6]); });
   const dragon = flyer || C.buildDragon('fly'); if (!flyer) dragon.scale.setScalar(2.2); else X.anims.push(flyer);
   g.add(dragon); X.anchors.wyrm = dragon;
   const jet = []; for (let i = 0; i < 7; i++) { const s = X.glow(0xff7a20, 3, 0); g.add(s); jet.push(s); }
+  // the brothers stand on the scorched land and fight it; Cedric then runs after it
+  const L = X.line, ch = C.chars(X), dF = S.d0 + S.len * 0.45, F = X.at(dF, 0, 0), yF = X.yawAt(dF);
+  const pos = (along, side, h) => X.at(dF + along, side, h || 0);
+  const art = ch.arthas({ pose: 'Sword_Idle' }), luc = ch.lucien({ pose: 'Idle_Loop' }), ced = ch.cedric({ pose: 'Idle_Loop' });
+  art.position.copy(pos(0, -1.6)); luc.position.copy(pos(-1, 1.4)); ced.position.copy(pos(1, 0.2)); [art, luc, ced].forEach((o) => g.add(o));
+  X.anchors.arthasWyrm = art; X.anchors.lucienWyrm = luc; X.anchors.cedricWyrm = ced; X.anchors.fight = new THREE.Object3D(); X.anchors.fight.position.copy(F); g.add(X.anchors.fight);
+  const rose = L(18), struck = L(19), gold = L(20), ran = L(21);
+  const actors = [
+    C.act(art, [{ t: 0, face: pos(40, 0), pose: 'Sword_Idle' }, { t: struck + 0.8, to: pos(2.5, -1.2), move: 0.6, pose: 'Sprint_Loop' }, { t: struck + 1.4, pose: 'Sword_Idle', face: pos(40, 0) }, { t: gold, pose: 'Idle_Talking_Loop', face: luc }]),
+    C.act(luc, [{ t: 0, face: pos(40, 0), pose: 'Idle_Loop' }, { t: rose + 1, pose: 'Spell_Simple_Idle_Loop' }, { t: gold, pose: 'Idle_Loop', face: art }]),
+    C.act(ced, [{ t: 0, face: pos(40, 0), pose: 'Idle_Loop' }, { t: struck, pose: 'Crouch_Idle_Loop' }, { t: ran, to: pos(28, 1), move: 3.5, pose: 'Sprint_Loop' }, { t: ran + 3.5, show: false }])
+  ];
+  const bolt = X.glow(0xb070ff, 2.2, 0); g.add(bolt);
+  // the wyrm's flight as keyframes on song time (rise from the horizon, dive at the brothers, flee), then waiting in the crater
+  const dCr = Sb.d0 + 16, lair = X.at(dCr + 13, -19, 0);
+  const KF = [
+    [rose - 3, pos(90, 25, -14)], [rose + 3.5, pos(55, 8, 24)], [struck - 0.2, pos(22, 3, 14)], [struck + 1.2, pos(0, 0, 5)],
+    [struck + 2.6, pos(-25, -10, 12)], [gold + 2, pos(-10, -70, 45)], [ran + 1, pos(60, -60, 40)],
+    [S2.t0 + 1, X.at(dCr + 40, -30, 20)], [S2.t0 + 6, lair.clone().setY(1.2)]
+  ];
+  const where = (t, out) => {
+    if (t <= KF[0][0]) return out.copy(KF[0][1]);
+    for (let k = 0; k < KF.length - 1; k++) if (t < KF[k + 1][0]) { const u = (t - KF[k][0]) / (KF[k + 1][0] - KF[k][0]); return out.lerpVectors(KF[k][1], KF[k + 1][1], sm(u)); }
+    return out.copy(KF[KF.length - 1][1]);
+  };
+  const P0 = new THREE.Vector3(), P1 = new THREE.Vector3();
   return {
-    group: g, d0: S.d0 - 10, d1: Sb.d0, vis: 100,
+    group: g, d0: S.d0 - 10, d1: Sb.d0, t0: S.t0 - 3, t1: Sb.t0 + 0.05,
     update(t, ctx) {
-      const ud = dragon.userData, f = 0.5 * Math.sin(ctx.time * 3.4) + 0.15;
-      if (ud.wR) { ud.wR.rotation.z = f; ud.wL.rotation.z = -f; }
-      const gone = t > S2.t0 + 4;
-      dragon.visible = !gone;
-      if (!gone) {
-        const c = X.at(X.distAt(t) + 26, 0, 0), a = 1.2 + (t - S.t0) * 0.33, away = ss(S.t0 + 14, S2.t0 + 2, t);
-        const Rr = 30 * (1 + 2.4 * away), y = 14 + 6 * Math.sin(ctx.time * 0.5) - 16 * (1 - ss(S.t0, S.t0 + 5, t)) + 12 * away;
-        dragon.position.set(c.x + Math.cos(a) * Rr, y, c.z + Math.sin(a) * Rr);
-        dragon.rotation.set(0, Math.atan2(Math.sin(a), -Math.cos(a)) + (flyer ? Math.PI : 0), flyer ? -0.3 : 0.3);
-        if (flyer) flyer.userData.pose(t > S.t0 + 4.5 && t < S.t0 + 10 ? 'Headbutt' : 'Fast_Flying');
-        const fw = new THREE.Vector3(0, 0, flyer ? 1 : -1).applyEuler(dragon.rotation), mouth = ud.head ? dragon.localToWorld(ud.head.clone()) : dragon.position.clone().addScaledVector(fw, 3.2).add(new THREE.Vector3(0, 1.2, 0));
-        const br = ss(S.t0 + 5, S.t0 + 6, t) * (1 - ss(S.t0 + 9, S.t0 + 10, t));
-        jet.forEach((s, i) => { s.position.copy(mouth).addScaledVector(fw, 2.5 + i * 3.2); s.scale.setScalar(2 + i * 1.2); s.material.opacity = br * (0.8 - i * 0.08); });
-        ctx.light(1, dragon.position.x, dragon.position.y - 4, dragon.position.z, 0xff7a30, 2.0 * br + 1.4, 70);  // keep the wyrm readable against the red sky
+      actors.forEach((a) => a.update(t, ctx));
+      const landed = t > S2.t0 + 6;
+      dragon.visible = t > rose - 3 && t < Sb.t0;
+      if (dragon.visible) {
+        where(t, P0); where(t + 0.2, P1);
+        dragon.position.copy(P0);
+        if (!landed) { const dx = P1.x - P0.x, dz = P1.z - P0.z; if (dx * dx + dz * dz > 1e-4) dragon.rotation.set(-Math.atan2(P1.y - P0.y, Math.hypot(dx, dz)) * 0.6, Math.atan2(dx, dz), Math.sin(t * 0.8) * 0.2); }
+        else { dragon.rotation.set(0, Math.atan2(X.at(dCr, 0, 0).x - lair.x, X.at(dCr, 0, 0).z - lair.z), 0); }
+        if (flyer) flyer.userData.timeFn = landed ? () => 0.55 : null;  // wings folded when it waits in the crater
+        const fw = new THREE.Vector3(0, 0, 1).applyEuler(dragon.rotation), mouth = dragon.position.clone().addScaledVector(fw, 4.2).add(new THREE.Vector3(0, 1.2, 0));
+        const br = ss(struck - 1, struck - 0.4, t) * (1 - ss(struck + 1, struck + 1.6, t));  // fire on the dive
+        jet.forEach((s, i) => { s.position.copy(mouth).addScaledVector(fw, 2.5 + i * 3.2).y -= i * 0.6; s.scale.setScalar(2 + i * 1.2); s.material.opacity = br * (0.8 - i * 0.08); });
+        ctx.light(1, dragon.position.x, dragon.position.y - 4, dragon.position.z, 0xff7a30, 2.0 * br + 1.4, 70);
       } else jet.forEach((s) => { s.material.opacity = 0; });
+      // Lucien's bolt on "we struck it down"
+      const bu = ss(struck + 0.4, struck + 1.1, t), lh = luc.position.clone().setY(1.5);
+      bolt.position.lerpVectors(lh, dragon.position, bu); bolt.material.opacity = t > struck + 0.4 && t < struck + 1.3 ? 0.95 : 0; bolt.scale.setScalar(2 + bu * 3);
       cracks.material.opacity = 0.55 + 0.25 * Math.sin(ctx.time * 2.3);
     }
   };
@@ -2184,16 +2447,18 @@ SC.push(function (X) {
   for (let i = 0; i < 14; i++) { const d = R(S.d0, dCr + 30), sd = (R(0, 1) < 0.5 ? -1 : 1) * R(6, 24), p = X.at(d, sd, 0); arches.push(M([p.x, 0, p.z], [0, R(0, TAU), 0], R(0.8, 1.8))); }
   g.add(inst(C.merge([part(tg, 0xcfc6b0)]), lamb({ color: 0xffffff }), arches));
   // the carcass
-  const SCL = 2.3, bodyD = dCr + 13, corpse = C.creature('dragon', { h: 7, tint: 0x6a5a68, eyes: 0xff7a20, clip: 'Death' });
+  const SCL = 2.3, bodyD = dCr + 13, corpse = C.creature('wyrm', { h: 7, tint: 0x3a3236, clip: 'Flying' });
   const dragon = corpse || C.buildDragon('dead');
-  const bp = X.at(bodyD, corpse ? -15 : -8.5, corpse ? 0 : 1.1 * SCL * 0.9); dragon.position.copy(bp); if (!corpse) dragon.scale.setScalar(SCL); dragon.rotation.y = X.yawAt(bodyD) + Math.PI; dragon.visible = false; g.add(dragon);
+  const bp = X.at(bodyD, corpse ? -19 : -8.5, corpse ? 0 : 1.1 * SCL * 0.9); dragon.position.copy(bp); if (!corpse) dragon.scale.setScalar(SCL); dragon.rotation.y = X.yawAt(bodyD) + Math.PI; dragon.visible = false; g.add(dragon);
   dragon.updateMatrixWorld(true);
   let headW;
   if (corpse) {
-    // the death clip plays once from the kill and holds its last frame
-    const dur = (C.assets.creatures.dragon.clips.find((c) => c.name === 'Death') || { duration: 1.5 }).duration;
-    corpse.userData.timeFn = (tm) => clamp(tm - TK, 0, dur - 0.02); X.anims.push(corpse);
-    headW = X.at(bodyD - 3, -13, 2.2);
+    // no death clip: freeze a wings-folded frame, roll the body onto its side and settle it on the ground
+    corpse.userData.timeFn = () => 0.55; X.anims.push(corpse); corpse.userData.mixer.setTime(0.55);
+    corpse.rotation.z = 1.35; corpse.updateMatrixWorld(true);
+    const bb = new THREE.Box3().setFromObject(corpse); corpse.position.y -= bb.min.y - 0.1; corpse.updateMatrixWorld(true);
+    headW = corpse.userData.bones.head ? corpse.userData.bones.head.getWorldPosition(new THREE.Vector3()) : X.at(bodyD - 3, -13, 2.2);
+    const top = new THREE.Box3().setFromObject(corpse); headW = new THREE.Vector3((top.min.x + top.max.x) / 2, top.max.y - 0.3, (top.min.z + top.max.z) / 2);  // Cedric stands on the highest point
   } else headW = dragon.localToWorld(dragon.userData.head.clone());
   X.anchors.carcass = dragon;
   // bats over the crater while Cedric hunts
@@ -2218,11 +2483,13 @@ SC.push(function (X) {
       eyeG.forEach((e) => { e.material.opacity = glowK; });
       if (!killed) {
         const dc = Math.min(dCr - 3, X.distAt(Math.max(S.t0, t)) + 26), p = X.at(dc, 1.2, 0);
-        ced.position.set(p.x, ced.userData.mixer ? 0 : Math.abs(Math.sin(ctx.time * 9)) * 0.15, p.z); ced.rotation.y = X.yawAt(dc) + Math.PI; ced.visible = t > S.t0 + 1;
+        ced.position.set(p.x, ced.userData.mixer ? 0 : Math.abs(Math.sin(ctx.time * 9)) * 0.15, p.z); ced.rotation.y = X.yawAt(dc) + Math.PI; ced.visible = t > S.t0 - 0.5;
         if (ced.userData.pose) ced.userData.pose('Sprint_Loop');
+        const jump = ss(TK - 1.4, TK, t);  // "HE KILLED IT": the leap onto the wyrm
+        if (jump > 0) { const from = X.at(dCr - 3, 1.2, 0); ced.position.set(lerp(from.x, headW.x, jump), Math.sin(jump * Math.PI) * 4 + headW.y * jump, lerp(from.z, headW.z, jump)); }
         ctx.light(0, headW.x, 1.6, headW.z, 0xff3a22, 0.8 * glowK, 30);
       } else {
-        ced.visible = true; ced.position.set(headW.x, headW.y + 0.55 * SCL * 0.5, headW.z); ced.rotation.y = X.yawAt(dCr) + Math.PI / 2 + 0.6;
+        ced.visible = true; ced.position.set(headW.x, corpse ? headW.y : headW.y + 0.55 * SCL * 0.5, headW.z); ced.rotation.y = X.yawAt(dCr) + Math.PI / 2 + 0.6;
         if (ced.userData.pose) ced.userData.pose('Idle_Torch_Loop');
         const k = Math.exp(-(t - TK) * 1.5);
         ctx.light(0, headW.x, 3.0, headW.z, 0xffd890, 2.2 + 8 * k, 42);
@@ -2251,13 +2518,26 @@ SC.push(function (X) {
   // Neeris sits opposite, hands bound; Lucien's coat lies on the log nearest the path
   const ner = ch.neeris({ pose: 'Sitting_Idle_Loop' }); const np = X.at(dF, 8.6, 0); ner.position.copy(np); if (!ner.userData.mixer) ner.scale.y = 0.72; ner.rotation.y = X.yawAt(dF) + Math.PI / 2; g.add(ner);
   const lu = ch.lucien({ pose: 'Sitting_Idle_Loop' }); const lp = X.at(dF + 0.5, 1.9, 0); lu.position.copy(lp); lu.rotation.y = X.yawAt(dF) - Math.PI / 2 - 0.4; if (!lu.userData.mixer) lu.scale.y = 0.78; g.add(lu); X.anchors.lucienCamp = lu;
+  // Arthas leaves for Cedric; Lucien is left with the bound druid
+  const L = X.line, fpos = new THREE.Vector3(fp.x, 0, fp.z);
+  const art = ch.arthas({ pose: 'Idle_Loop' }); art.position.copy(X.at(dF - 2, 2.4, 0)); g.add(art); X.anchors.arthasCamp = art;
+  lu.position.copy(X.at(dF - 0.6, 2.2, 0)); ner.position.copy(X.at(dF + 0.4, 7.0, 0));
+  const actors = [
+    C.act(art, [{ t: 0, face: fpos }, { t: L(31), to: X.at(dF + 30, 0, 0), move: 4, pose: 'Sprint_Loop' }, { t: L(31, 4), show: false }]),   // "Arthas ran off to find Cedric's side"
+    C.act(lu, [{ t: 0, pose: 'Sitting_Idle_Loop', face: fpos },
+      { t: L(33), to: X.at(dF + 2.4, 4.2, 0), move: 2.2, face: ner },                                       // "what do I do with a traitor turned tame?"
+      { t: L(33, 2.2), pose: 'Idle_Talking_Loop', face: ner },
+      { t: L(34), pose: 'Crouch_Idle_Loop', face: ner }]),                                                  // "the chains aren't the only thing that changed"
+    C.act(ner, [{ t: 0, pose: 'Sitting_Idle_Loop', face: fpos }, { t: L(34, 1.5), pose: 'Sitting_Idle_Loop', face: lu }])
+  ];
+  X.anchors.neerisCamp = ner;
   // a loose chain on the ground
-  const links = []; for (let i = 0; i < 14; i++) { const a = i * 0.5; links.push(M([fp.x + 2.2 + Math.cos(a) * (0.4 + i * 0.05), 0.06, fp.z + 1.2 + Math.sin(a) * (0.4 + i * 0.05)], [Math.PI / 2, i % 2 ? Math.PI / 2 : 0, a], [1.5, 1, 1])); }
+  const cpz = X.at(dF + 2.6, 6.2, 0), links = []; for (let i = 0; i < 14; i++) { const a = i * 0.5; links.push(M([cpz.x + Math.cos(a) * (0.4 + i * 0.05), 0.06, cpz.z + Math.sin(a) * (0.4 + i * 0.05)], [Math.PI / 2, i % 2 ? Math.PI / 2 : 0, a], [1.5, 1, 1])); }
   g.add(inst(kit.linkGeo, lamb({ color: 0xb8bcc8 }), links));
   return {
     group: g, d0: S.d0, d1: S.d1, vis: 100,
     update(t, ctx) {
-      fire.update(ctx.time);
+      fire.update(ctx.time); actors.forEach((x) => x.update(t, ctx));
       ctx.light(1, fp.x, 1.4, fp.z, 0xff9a40, 2.8 * fire.flicker(ctx.time), 30);
       if (!ner.userData.mixer) ner.rotation.x = 0.12 * Math.sin(ctx.time * 0.6);
     }
@@ -2285,21 +2565,34 @@ SC.push(function (X) {
     const gl = X.glow(colr, 4, 0.9); gl.position.y = 2.7; grp.add(gl); rd.add(grp); return gl;
   };
   const redG = lant(-Math.sin(0.6) * 11 - 1.6, -Math.cos(0.6) * 11, 0xff3a2a), blueG = lant(Math.sin(0.6) * 11 + 1.6, -Math.cos(0.6) * 11, 0x50b8ff);
-  // Cedric and Arthas wait on the red road; Neeris is let go down the blue one
-  [['cedric', -9.2], ['arthas', -10.6]].forEach((c, i) => {
-    const f = ch[c[0]](), a = -0.6; f.position.set(Math.sin(a) * 9 + (i ? 1.5 : -0.5), 0, -Math.cos(a) * 9 - 2.5 * i); f.rotation.y = 0.9 - i * 0.2; rd.add(f);
-  });
-  const ner = ch.neeris(); rd.add(ner); X.anchors.crossroads = rd; X.anchors.neerisCross = ner;
+  // the choice, on the lines (positions in the fork's local frame: -z is ahead, the red road left, the blue road right)
+  const L = X.line, V = (x, z) => new THREE.Vector3(x, 0, z), blue = (k) => V(Math.sin(0.6) * k, -Math.cos(0.6) * k), red = (k) => V(-Math.sin(0.6) * k, -Math.cos(0.6) * k);
+  const lu = ch.lucien({ pose: 'Idle_Loop' }), ner = ch.neeris({ pose: 'Fixing_Kneeling' }), ced = ch.cedric({ pose: 'Idle_Loop' }), art = ch.arthas({ pose: 'Sword_Idle' });
+  lu.position.copy(V(0, -1)); ner.position.copy(V(0.6, -3.4)); ced.position.copy(red(9)); art.position.copy(red(10.5).add(V(1.2, 0)));
+  [lu, ner, ced, art].forEach((o) => rd.add(o));
+  lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false;
+  X.anchors.crossroads = rd; X.anchors.neerisCross = ner; X.anchors.lucienCross = lu; X.anchors.cedricCross = ced; X.anchors.arthasCross = art;
+  const letT = L(38), trackT = L(39);
+  const actors = [
+    C.act(ner, [{ t: 0, pose: 'Fixing_Kneeling', face: V(0, -1) },                                 // "Neeris begs mercy"
+      { t: letT + 0.5, pose: 'Idle_Loop', face: V(0, -1) },
+      { t: letT + 1.6, to: blue(12), move: 5 },                                                        // "I let him go instead"
+      { t: trackT, pose: 'Idle_Loop', face: V(0, -1) },                                                // "track the last moonwell"
+      { t: trackT + 3.5, to: blue(42), move: 12 }]),
+    C.act(lu, [{ t: 0, pose: 'Idle_Loop', face: V(0.6, -3.4) },
+      { t: L(36), pose: 'Idle_Talking_Loop', face: V(0, 4) },                                          // "kick the feelings aside, now what will you do?"
+      { t: L(37, 1.5), pose: 'Spell_Simple_Idle_Loop', face: V(-2.5, -2) },                            // holds the brothers back
+      { t: trackT, pose: 'Spell_Simple_Idle_Loop', face: () => rd.localToWorld(ner.position.clone()).sub(rd.position).applyAxisAngle(new THREE.Vector3(0, 1, 0), -rd.rotation.y) }]),
+    C.act(ced, [{ t: 0, face: V(0, -2) }, { t: L(37), to: V(-2.2, -3.2), move: 2.4, pose: 'Walk_Loop' }, { t: L(37, 2.4), pose: 'Idle_Loop', face: V(0.6, -3.4) }]),   // "Cedric and Arthas want justice"
+    C.act(art, [{ t: 0, face: V(0, -2), pose: 'Sword_Idle' }, { t: L(37), to: V(-3.2, -1.8), move: 2.4, pose: 'Walk_Loop' }, { t: L(37, 2.4), pose: 'Sword_Idle', face: V(0.6, -3.4) }])
+  ];
   return {
     group: g, d0: S.d0, d1: S.d1, vis: 100,
     update(t, ctx) {
-      const letGo = ss(S.t0 + 11, S.t0 + 13, t), walk = ss(S.t0 + 13, S.t1 - 2, t);
-      const redK = 1 - ss(S.t0 + 12.5, S.t0 + 14.5, t) + 0.001;
+      actors.forEach((x) => x.update(t, ctx));
+      const letGo = ss(letT, letT + 2, t);
+      const redK = 1 - ss(letT + 1.5, letT + 3.5, t) + 0.001;
       redG.material.opacity = 0.9 * redK * (0.8 + 0.2 * Math.sin(ctx.time * 11)); blueG.material.opacity = 0.5 + 0.4 * letGo;
-      const a = 0.6, s = 3 + walk * 38;
-      const rigged = !!ner.userData.mixer;
-      if (walk > 0) { ner.position.set(Math.sin(a) * s, 0, -Math.cos(a) * s); ner.rotation.y = Math.PI + a; ner.scale.y = 1; if (rigged) ner.userData.pose('Walk_Loop'); }
-      else { ner.position.set(1.4, 0, -2.2); ner.rotation.y = 0.3; if (rigged) ner.userData.pose(letGo > 0.5 ? 'Idle_Loop' : 'Crouch_Idle_Loop'); else ner.scale.y = 0.62; }
       const cr = X.at(ctx.camD + 8, 0, 0).clone();
       ctx.light(0, cp.x + Math.cos(yaw) * -6, 3, cp.z + Math.sin(yaw) * 2, 0xff4030, 1.9 * redK, 26);
       ctx.light(1, cp.x + Math.cos(yaw) * 6, 3, cp.z - Math.sin(yaw) * 2, 0x60c0ff, 0.8 + 1.5 * letGo, 26);
@@ -2375,6 +2668,7 @@ SC.push(function (X) {
   const dB = dG + (dE - dG) * 0.45, bpos = X.at(dB, 7.0, 0), bon = kit.fire({ scale: 2.0, size: 9 }); bon.group.position.set(bpos.x, 0, bpos.z); g.add(bon.group);
   const dancers = [], ND = 16;
   for (let i = 0; i < ND; i++) { const a = i / ND * TAU; dancers.push({ x: bpos.x + Math.cos(a) * 3.4, z: bpos.z + Math.sin(a) * 3.4, ph: R(0, TAU), a }); }
+  let crowdJump = 0.16;
   const rigDance = chC.person ? dancers.slice(0, X.mobile ? 6 : 8).map((c, i) => { const p = chC.person({ seed: 400 + i * 7, pose: 'Dance_Loop' }); g.add(p); return p; }) : [];
   const dance = rigDance.length ? null : new THREE.InstancedMesh(crowdGeo(), lamb(), ND);
   if (dance) { dance.frustumCulled = false; g.add(dance); dancers.forEach((c, i) => dance.setColorAt(i, new THREE.Color(pick([0xc05a6a, 0x5a8ac0, 0xc0a050, 0x7ac08a])))); }
@@ -2389,6 +2683,25 @@ SC.push(function (X) {
   head.position.set(-1.2, 3.6, 0); head.rotation.y = Math.PI; head.scale.setScalar(0.9); marchers.add(head);
   marchers.add(solid([cy(0.04, 0.04, 3.4, 5, 0x5a3a2a, [-1.2, 1.7, 0])]));
 
+  // the night and the morning after, on the lines (bridge 2)
+  const L = X.line, bp3 = new THREE.Vector3(bpos.x, 0, bpos.z);
+  const fc = ch.cedric({ pose: 'Dance_Loop', noStaff: true }), fl = ch.lucien({ pose: 'Dance_Loop' }), fa = ch.arthas({ pose: 'Dance_Loop' });
+  const suit = ch.cedric ? C.rigChar && ch.cedric({ pose: 'Idle_Talking_Loop', noStaff: true }) : null;  // "a suit stitched from the beasts he'd tamed"
+  if (suit) suit.traverse((m) => { if (m.isMesh) [].concat(m.material).forEach((x) => { if (!/Hair|Eye|Superhero/i.test(x.name)) { x.color.setHex(0x1e2a24); } }); });
+  fl.userData.blade.visible = false; fl.userData.bladeGlow.visible = false;
+  const ring = (a, r) => X.at(dB, 7, 0).add(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r));
+  [fc, fl, fa, suit].forEach((o, i) => { if (o) { o.position.copy(ring(i * 1.9, 2.2)); g.add(o); } });
+  const morning = L(51), suitT = L(52);
+  const feast = [
+    C.act(fc, [{ t: 0, pose: 'Dance_Loop', face: bp3 }, { t: morning, pose: 'Sitting_Idle_Loop', face: bp3 }, { t: suitT, show: false }]),
+    C.act(fl, [{ t: 0, pose: 'Dance_Loop', face: bp3 }, { t: morning, pose: 'Sitting_Idle_Loop', face: bp3 }, { t: suitT, pose: 'Sitting_Idle_Loop', face: fc }]),
+    C.act(fa, [{ t: 0, pose: 'Dance_Loop', face: bp3 }, { t: morning, pose: 'Crouch_Idle_Loop', face: bp3 }]),
+    suit && C.act(suit, [{ t: 0, show: false }, { t: suitT, show: true, pose: 'Idle_Talking_Loop', face: fl }])
+  ];
+  X.anchors.feastCedric = fc; X.anchors.suit = suit || fc; X.anchors.feastLucien = fl;
+  // gold glints around the marchers on "gold in our hands"
+  const coins = []; for (let i = 0; i < 14; i++) { const c = X.glow(0xffd060, 0.35, 0); marchers.add(c); coins.push(c); }
+  const goldT = L(47), singT = L(48), wildT = L(49);
   return {
     group: g, d0: S1.d0, d1: dE, vis: 100,
     update(t, ctx) {
@@ -2399,7 +2712,7 @@ SC.push(function (X) {
       }
       crowdInst.forEach(({ im, idx }) => {
         if (!im) return;
-        idx.forEach((i, k) => { const c = cr[i]; dm.position.set(c.p.x, Math.abs(Math.sin(ctx.time * 5 + c.ph)) * 0.16, c.p.z); dm.rotation.set(0, c.yaw + Math.PI, 0); dm.scale.setScalar(c.s); dm.updateMatrix(); im.children.forEach((m) => m.setMatrixAt(k, dm.matrix)); });
+        idx.forEach((i, k) => { const c = cr[i]; dm.position.set(c.p.x, Math.abs(Math.sin(ctx.time * 5 + c.ph)) * crowdJump, c.p.z); dm.rotation.set(0, c.yaw + Math.PI, 0); dm.scale.setScalar(c.s); dm.updateMatrix(); im.children.forEach((m) => m.setMatrixAt(k, dm.matrix)); });
         im.children.forEach((m) => { m.instanceMatrix.needsUpdate = true; });
       });
       if (dance) {
@@ -2407,7 +2720,12 @@ SC.push(function (X) {
         dance.instanceMatrix.needsUpdate = true;
       }
       rigDance.forEach((p, i) => { const a = i / rigDance.length * TAU + ctx.time * 0.25; p.position.set(bpos.x + Math.cos(a) * 3.6, 0, bpos.z + Math.sin(a) * 3.6); p.rotation.y = -a; });
-      marchers.visible = t < S2.t0 + 9;
+      marchers.visible = t > S1.t0 - 1 && t < S2.t0;  // only during the march; the feast has its own brothers
+      feast.forEach((a) => a && a.update(t, ctx));
+      [fc, fl, fa].forEach((o) => { o.visible = o.visible && t > S2.t0 - 1; });
+      coins.forEach((c, i) => { const u = t - goldT - i * 0.08; c.material.opacity = u > 0 && u < 3 ? 0.9 * (1 - u / 3) : 0; c.position.set(Math.sin(i * 2.4) * (0.5 + u), 2 + u * 2.2 - u * u * 0.8, Math.cos(i * 2.4) * (0.5 + u)); });
+      if (lu.userData.pose) lu.userData.pose(t > singT && t < wildT + 3 ? 'Idle_Talking_Loop' : 'Walk_Loop');  // "I sang of Cedric all the way through the gate"
+      crowdJump = 0.16 + 0.35 * ss(wildT - 0.5, wildT + 0.5, t);                                          // "the whole city rose up wild" 
       if (marchers.visible) {
         const dc = Math.min(X.distAt(t) + 11, dE - 1), p = X.at(dc, 0, 0);
         marchers.position.set(p.x, ced.userData.mixer ? 0 : Math.abs(Math.sin(ctx.time * 3.2)) * 0.06, p.z); marchers.rotation.y = X.yawAt(dc) + Math.PI;
@@ -2422,7 +2740,7 @@ SC.push(function (X) {
 /* ---- iron: the cell at the end of the street ---- */
 SC.push(function (X) {
   const kit = C.kit(X), g = new THREE.Group();
-  const dBars = X.Dend + 2.4, dc = (X.dBack + dBars) / 2, L = dBars - X.dBack, HW = 2.5, H = 3.6;
+  const dBars = X.Dend + 2.4, dc = (X.dBack + dBars) / 2, L = dBars - X.dBack, L0 = L, HW = 2.5, H = 3.6;
   const G = new THREE.Group(); G.position.copy(X.at(dc, 0, 0)); G.rotation.y = X.yawAt(dc); g.add(G);
   const stoneMat = (rx, ry, floor) => {
     // photo brick walls and cobbled floor when loaded (about 2 m per tile), else the procedural stone
@@ -2449,10 +2767,19 @@ SC.push(function (X) {
   const door = new THREE.Group(); door.position.set(-1.2, 0, L / 2 - 0.05);
   door.add(solid([bx(2.4, 3.0, 0.14, 0x2e2a2a, [1.2, 1.5, 0]), bx(2.4, 0.12, 0.18, iron, [1.2, 0.6, 0]), bx(2.4, 0.12, 0.18, iron, [1.2, 2.3, 0]), bx(0.1, 0.34, 0.1, 0x8a8a90, [2.1, 1.4, -0.1])]));
   G.add(door);
-  const tT = X.tCross + 1.1;
+  const tT = X.tCross + 1.1, LN = X.line, chG = C.chars(X);
+  const bc = chG.cedric({ pose: 'Walk_Loop' }), ba = chG.arthas({ pose: 'Walk_Loop' });
+  bc.position.set(-6, 0, -L0 / 2 - 2); ba.position.set(6, 0, -L0 / 2 - 2.6); G.add(bc); G.add(ba);
+  const standT = LN(56);
+  const bros = [
+    C.act(bc, [{ t: 0, show: false }, { t: standT - 2.5, show: true, to: new THREE.Vector3(-0.8, 0, -L0 / 2 - 1.3), move: 2.5 }, { t: standT, pose: 'Idle_Torch_Loop', face: 0 }]),   // "the brothers stand as one"
+    C.act(ba, [{ t: 0, show: false }, { t: standT - 2.2, show: true, to: new THREE.Vector3(0.9, 0, -L0 / 2 - 1.5), move: 2.2 }, { t: standT, pose: 'Sword_Idle', face: 0 }])
+  ];
+  X.anchors.gaolBros = bc;
   return {
-    group: g, d0: X.dBack - 6, d1: X.Dend + 6, vis: 25,
+    group: g, d0: X.dBack - 6, d1: X.Dend + 6, t0: LN(53, -0.6), t1: 1e9,
     update(t, ctx) {
+      bros.forEach((b) => b.update(t, ctx));
       door.rotation.y = 1.6 * (1 - ss(tT, tT + 0.4, t));
       const wp = G.localToWorld(new THREE.Vector3(1.4, 1.0, L / 2 - 2.6));
       ctx.light(0, wp.x, wp.y, wp.z, 0xffa860, 1.3 * (0.85 + 0.15 * Math.sin(ctx.time * 13) * Math.sin(ctx.time * 5)), 14);
@@ -2497,7 +2824,8 @@ SC.push(function (X) {
     group: g, d0: X.dBack - 8, d1: X.Dend + 5, vis: 30,
     update(t, ctx) {
       fires.forEach((f) => f.update(ctx.time));
-      const k = ss(S.t0, X.sec.final.t1 - 12, t), p = X.at(X.Dend + lerp(78, 36, k), lerp(-12, -3, k), lerp(26, 13, k) + Math.sin(ctx.time * 0.5) * 0.8);
+      const k = ss(S.t0, X.sec.final.t1 - 12, t), rise = ss(X.line(54, -1), X.line(54, 5), t);
+      const p = X.at(X.Dend + lerp(70, 40, k), lerp(-10, -3, k), -18 + 18 * rise + 2 * k + Math.sin(ctx.time * 0.5) * 0.4);
       wr.position.copy(p); wr.visible = t > S.t0 - 2;
       strips.forEach((s) => { s.piv.rotation.z = 0.15 * Math.sin(ctx.time * 1.3 + s.ph); s.piv.rotation.x = 0.12 * Math.cos(ctx.time * 1.1 + s.ph); });
       const HT = X.story.hitT, flash = t >= HT ? Math.exp(-(t - HT) * 1.5) : 0;
@@ -2522,8 +2850,8 @@ L.clearings = function (X) {
   const S = X.sec, c = (d, side, r) => { const p = X.at(d, side, 0); return { x: p.x, z: p.z, r }; };
   const dCr = S.brk.d0 + 16;
   return [
-    c(S.v1.d0 + S.v1.len * 0.55, 6.5, 17), c(S.v1b.d0 + S.v1b.len * 0.45, -3.4, 12), c(S.pre.d0 + S.pre.len * 0.55, 3, 10),
-    c(S.chorus.d1 - 7, -5.7, 9), c(S.chorus2.d1 - 7, -5.7, 9), c(dCr + 13, -15, 20), c(dCr, 0, 10),
+    c(S.v1.d0 + S.v1.len * 0.55, 6.5, 19), c(S.v1.d0 + S.v1.len * 0.55, -1, 9), c(S.v1b.d0 + S.v1b.len * 0.55, 0, 13),
+    c(S.chorus.d1 - 7, -5.7, 9), c(S.chorus2.d1 - 7, -5.7, 9), c(dCr + 13, -19, 20), c(S.v2.d0 + S.v2.len * 0.45, 0, 14), c(dCr, 0, 10),
     c(S.v3.d0 + S.v3.len * 0.5, 4.6, 13), c(S.pre2.d0 + S.pre2.len * 0.4, 0, 20)
   ];
 };
@@ -2534,67 +2862,91 @@ L.shots = function (X, D) {
   const wp = (o) => (o ? o.getWorldPosition(new THREE.Vector3()) : X.at(X.distAt(0) + 30, 0, 0));
   const near = (obj, dx, dy, dz) => () => wp(obj).add(V(dx, dy, dz));
   const wellP = () => wp(A.well);
+  // a point `dist` m behind a character (opposite his facing), `h` m up
+  const behind = (o, dist, h) => () => { const p = wp(o), r = o ? o.rotation.y : 0; return p.add(V(-Math.sin(r) * dist, h, -Math.cos(r) * dist)); };
   const lu = H.lucien || V(0, 0.45, -8.55);
   return [
     // intro (instrumental): the tavern performance, then out through the back door into the night
     { t: 0, cam: D.fixed(V(0.4, 2.7, 3.6), V(0, 1.6, -8.6), { push: 0.18, fov: 55 }) },
-    { t: 7.2, cam: D.orbit(lu, { r: 2.8, h: 1.2, a0: 1.2, w: 0.09, t0: 7.2, lookH: 1.4, fov: 50 }) },
+    { t: 7.2, cam: D.orbit(lu, { r: 3.4, h: 1.2, a0: 1.2, w: 0.09, t0: 7.2, lookH: 1.4, fov: 50 }) },
     { t: 14.4, cam: D.orbit(() => (H.cedric ? wp(H.cedric) : V(-2, 0, -4.6)), { r: 2.8, h: 1.1, a0: 0.2, w: 0.12, t0: 14.4, lookH: 1.1, fov: 55 }) },  // the brothers at their table
     { t: 21.6, cam: D.dolly(V(2.8, 1.5, -6.7), V(-2.8, 1.5, -6.7), V(0, 1.6, -9.2), { fov: 55 }) },
-    { t: 27.4, cam: D.dolly(V(0.9, 2.6, -6.6), V(0, 2.4, -11.2), V(0, 2.1, -16), { lookB: P(30, 0, 2), fov: 60, fov1: 75 }) },
+    { t: 27.4, cam: D.dolly(V(0.6, 3.4, -6.4), V(0, 2.1, -11.4), V(0, 2.0, -16), { lookB: P(30, 0, 2), fov: 60, fov1: 75 }) },
     { t: 32.0, blend: 0.8, cam: D.dolly(P(9, 0, 2.6), P(d(47.8) - 18, 0, 3.0), P(30, 0, 2), { lookB: P(d(47.8) + 12, 0, 1.5), linear: true, fov: 72 }) },
-    // verse 1: the moonwell. Arthas bleeds, the chains break (54.3), Baphomet rises
-    { t: 47.8, cam: D.orbit(wellP, { r: 17, r1: 13.5, h: 8, h1: 3, a0: (A.wellFace || 0) - 0.9, w: 0.06, t0: 47.8, lookH: 1.2, fov: 60 }) },
-    { t: 54.2, cam: D.orbit(wellP, { r: 19, h: 0.9, a0: (A.wellFace || 0) + 0.25, w: 0.02, t0: 54.2, lookH: 7, fov: 74 }) },
-    { t: 62.2, cam: D.orbit(wellP, { r: 16, r1: 13, h: 2.5, h1: 12, a0: (A.wellFace || 0) - 0.15, w: 0.03, t0: 62.2, lookH: 10.5, fov: 62 }) },
-    { t: 69.9, cam: D.orbit(wellP, { r: 22, h: 11, a0: 0.4, w: -0.11, t0: 69.9, lookH: 9, fov: 60 }) },
-    { t: 78.9, cam: D.track(A.arthasWell, { offset: [1.0, 1.6, -7], lookOffset: [0, 6, 6], fov: 72 }) },  // behind Arthas, up at Baphomet
-    // verse 1b: the wolves run with us
-    { t: 87.0, cam: D.track(A.wolf, { offset: [2.4, 0.7, -0.6], lookOffset: [0, 0.6, 4], fov: 76 }) },
-    { t: 94.6, cam: D.rail({ h: 0.6, ahead: 10, lookH: 0.8, fov: 80 }) },
-    // pre-chorus: Neeris takes the dagger and stops the change
-    { t: 102.1, cam: D.orbit(A.dagger, { r: 4, h: 0.6, a0: 0, w: 0.35, t0: 102.1, lookH: 0.4, fov: 55 }) },
-    { t: 108.0, cam: D.orbit(A.neeris, { r: 3.2, h: 0.9, a0: 1.5, w: 0.16, t0: 108, lookH: 0.7, fov: 55 }) },
-    { t: 113.4, blend: 0.6, cam: D.orbit(A.neeris, { r: 5, r1: 9, h: 3, h1: 9, a0: 2.4, w: 0.18, t0: 113.4, lookH: 0.5, fov: 60 }) },
-    // chorus: the brothers' avenue
-    { t: 117.9, cam: D.rail({ h: 3.2, ahead: 22, lookH: 2, fov: 72 }) },
-    { t: 126.3, cam: D.orbit(() => (A.party_chorus || A.well).getWorldPosition(new THREE.Vector3()), { r: 6, h: 1.4, a0: 0, w: 0.35, t0: 126.3, lookH: 1.3, fov: 55 }) },
-    { t: 134.0, cam: D.rail({ h: 10, ahead: 34, lookH: 0, fov: 65 }) },
-    { t: 141.6, cam: D.rail({ h: 0.8, side: 3, ahead: 14, lookH: 1.6, fov: 78 }) },
-    // verse 2: the black wyrm in the red sky
-    { t: 150.7, cam: D.orbit(A.wyrm, { r: 22, h: -1, a0: 0, w: 0.3, t0: 150.7, lookH: 3.5, fov: 58 }) },  // under the wyrm, circling
-    { t: 157.0, cam: D.track(A.wyrm, { offset: [8, 4, -14], lookOffset: [0, 3.5, 0], fov: 60 }) },  // chasing it
-    // verse 2b: Cedric alone, bats over the crater
+    // verse 1: the moonwell, staged on the lines
+    { t: 47.8, cam: D.orbit(wellP, { r: 18, r1: 12, h: 9, h1: 3, a0: (A.wellFace || 0) - 1.0, w: 0.08, t0: 47.8, lookH: 1, fov: 60 }) },  // the brothers reach the well
+    { t: X.line(0, 0.6), cam: D.track(A.arthasWell, { offset: [2.0, 2.3, -2.2], lookOffset: [0, 0.6, 1.6], fov: 52 }) },  // behind his shoulder, down at the hand             // "Arthas bled his hand into the well"
+    { t: X.line(1, -0.1), cam: D.orbit(wellP, { r: 8.5, h: 0.8, a0: (A.wellFace || 0) + 0.2, w: 0.02, t0: X.line(1), lookH: 5, fov: 76 }) },  // the chains break, he rises
+    { t: X.line(2, -0.3), cam: D.orbit(wellP, { r: 8, r1: 7, h: 1.5, h1: 3, a0: (A.wellFace || 0) - 0.15, w: 0.025, t0: X.line(2), lookH: 11, fov: 66 }) },  // "the demon spoke" (inside the stone ring, looking up)
+    { t: X.line(3, -0.3), cam: D.track(A.lucienWell, { offset: [0.8, 1.7, -2.2], lookOffset: [0, 6, 10], fov: 70 }) },               // "you freed me, brothers" over Lucien's shoulder
+    { t: X.line(3, 2.6), cam: D.orbit(() => wp(A.neerisWell), { r: 3.5, h: 1.3, a0: 0.4, w: 0.15, t0: X.line(3, 2.6), lookH: 0.9, fov: 52 }) },  // the curse grows in Neeris
+    { t: 75.0, cam: D.orbit(wellP, { r: 22, h: 9, a0: (A.wellFace || 0) - 0.6, w: -0.06, t0: 75, lookH: 8, fov: 60 }) },
+    // verse 1b + pre-chorus: the wolf wood
+    { t: 87.0, cam: D.track(A.wolf, { offset: [2.4, 0.7, -0.6], lookOffset: [0, 0.6, 4], fov: 76 }) },                            // the pack runs with us
+    { t: X.line(4, -0.2), cam: D.orbit(A.neeris, { r: 4, h: 1, a0: 0.5, w: 0.25, t0: X.line(4), lookH: 0.8, fov: 55 }) },              // "Neeris turning, teeth and claw"
+    { t: X.line(5, -0.2), cam: D.track(A.arthasWood, { offset: [2.2, 1.4, -1.8], lookOffset: [0, 1.1, 3], fov: 62 }) },                 // "Arthas struck"
+    { t: X.line(6, -0.2), cam: D.orbit(() => wp(A.arthasWood).lerp(wp(A.neeris), 0.5), { r: 5, h: 1.3, a0: 1.6, w: 0.08, t0: X.line(6), lookH: 1.2, fov: 55 }) },  // "the blade would not land"
+    { t: X.line(7, -0.2), cam: D.orbit(A.lucienWood, { r: 2.4, h: 1.5, a0: 0.2, w: 0.05, t0: X.line(7), lookH: 1.55, fov: 45 }) },      // "I stood there, spellless"
+    { t: X.line(8, -0.6), cam: D.orbit(A.dagger, { r: 4, h: 0.5, a0: 0, w: 0.3, t0: X.line(8), lookH: 0.3, fov: 55 }) },                // "Neeris took my dagger"
+    { t: X.line(9, -0.2), cam: D.orbit(A.neeris, { r: 3.2, h: 0.9, a0: 1.5, w: 0.16, t0: X.line(9), lookH: 0.7, fov: 52 }) },          // "drove it in"
+    { t: X.line(11, -0.2), blend: 0.6, cam: D.orbit(A.clearing, { r: 6, r1: 12, h: 3, h1: 12, a0: 2.4, w: 0.15, t0: X.line(11), lookH: 0.5, fov: 60 }) },  // "calmed the dead"
+    // chorus: the brothers' avenue, one shot per name
+    { t: 117.9, cam: D.dolly(() => X.at(X.distAt(117.9) + 2, 0, 1.2), behind(A.party_chorus, -4.5, 1.8), () => wp(A.party_chorus).add(V(0, 1.3, 0)), { fov: 62 }) },  // up the avenue to the brothers
+    { t: X.line(13, -0.3), cam: D.orbit(() => wp(A.cedric_chorus), { r: 4.2, h: 1.3, a0: 0, w: 0.2, t0: X.line(13), lookH: 1.5, fov: 48 }) },  // "Cedric the devout monk"
+    { t: X.line(14, -0.3), cam: D.orbit(() => wp(A.party_chorus), { r: 3.8, h: 1.4, a0: 0.2, w: -0.12, t0: X.line(14), lookH: 1.5, fov: 48 }) },  // "Lucien the cursed sorcerer"
+    { t: X.line(15, -0.3), cam: D.orbit(() => wp(A.arthas_chorus), { r: 4.2, h: 0.9, a0: 2.9, w: 0.15, t0: X.line(15), lookH: 1.8, fov: 52 }) },  // "Arthas the paladin" (low, heroic)
+    { t: X.line(16, -0.3), cam: D.orbit(() => wp(A.party_chorus), { r: 7, r1: 12, h: 1.5, h1: 7, a0: 0, w: 0.25, t0: X.line(16), lookH: 1.3, fov: 60 }) },  // "by fire, by fang"
+    { t: X.line(17, -0.3), cam: D.rail({ h: 9, ahead: 30, lookH: 0, fov: 64 }) },  // "we walked the road"
+    // verse 2: the black wyrm, on the lines
+    { t: 150.7, cam: D.track(A.arthasWyrm, { offset: [1.2, 1.5, -3], lookOffset: [0, 8, 30], fov: 66 }) },                         // behind the brothers: it rises on the horizon
+    { t: X.line(18, 2.5), cam: D.orbit(A.wyrm, { r: 18, h: -2, a0: 2.6, w: 0.15, t0: X.line(18, 2.5), lookH: 0, fov: 58 }) },     // the wyrm close, the sky red
+    { t: X.line(19, -0.4), cam: D.orbit(A.fight, { r: 9, h: 1.2, a0: 3.4, w: 0.25, t0: X.line(19), lookH: 3, fov: 72 }) },          // "we struck it down": the dive
+    { t: X.line(19, 2.4), cam: D.track(A.wyrm, { offset: [6, 2, -14], lookOffset: [0, 0, 0], fov: 60 }) },                           // "...it fled"
+    { t: X.line(20, -0.2), cam: D.orbit(A.fight, { r: 5, h: 1.6, a0: 0.4, w: 0.12, t0: X.line(20), lookH: 1.4, fov: 55 }) },       // "it wants our gold"
+    { t: X.line(21, -0.2), cam: D.track(A.cedricWyrm, { offset: [-1.8, 1.4, -3.4], lookOffset: [0, 1.2, 6], fov: 70 }) },           // "Cedric just ran"
+    // verse 2b: Cedric alone, bats over the crater, the wyrm waiting
     { t: 164.9, cam: D.track(A.cedricHunt, { offset: [1.6, 1.3, -3.2], lookOffset: [0, 1.3, 6], fov: 74 }) },
-    { t: 172.3, cam: D.rail({ h: 0.5, target: A.cedricHunt, fov: 70 }) },
-    // the break: HE KILLED IT
-    { t: 179.7, cam: D.orbit(A.carcass, { r: 19, h: 5, a0: 0.3, w: 0.35, t0: 179.7, lookH: 2.2, fov: 76 }) },
+    { t: X.line(24, -0.2), cam: D.orbit(A.wyrm, { r: 16, h: 3, a0: 0.4, w: 0.06, t0: X.line(24), lookH: 2, fov: 56 }) },            // "where the wyrm went to ground"
+    { t: X.line(25, -0.2), cam: D.rail({ h: 0.5, target: () => wp(A.cedricHunt).add(V(0, 1.4, 0)), fov: 62 }) },                   // "no spell to save him"
+    { t: X.line(26, -1.6), cam: D.orbit(A.carcass, { r: 17, h: 3, a0: 0.9, w: 0.3, t0: X.line(26), lookH: 3, fov: 70 }) },          // the leap: HE KILLED IT
     // dragon-slayer
-    { t: 184.0, cam: D.rail({ h: 1.2, side: -4, target: () => wp(A.cedricHunt).add(V(0, 1.4, 0)), fov: 48 }) },  // from the road: Cedric on the carcass
-    { t: 192.2, cam: D.rail({ h: 2, ahead: 16, fov: 66 }) },
-    // verse 3: the camp
-    { t: 200.5, cam: D.orbit(A.campfire, { r: 7, h: 2.2, a0: 0.8, w: 0.12, t0: 200.5, lookH: 1, fov: 60 }) },
-    { t: 208.9, cam: D.orbit(A.lucienCamp, { r: 2.6, h: 0.9, a0: 2.4, w: 0.05, t0: 208.9, lookH: 0.9, fov: 50 }) },
+    { t: 184.0, cam: D.rail({ h: 1.2, side: -4, target: () => wp(A.cedricHunt).add(V(0, 1.4, 0)), fov: 48 }) },
+    { t: X.line(28, -0.2), cam: D.orbit(() => wp(A.cedricHunt), { r: 8, h: 0.6, a0: 2, w: 0.2, t0: X.line(28), lookH: 1.6, fov: 56 }) },  // "one man, one blade" (from below)
+    { t: X.line(29, -0.2), cam: D.rail({ h: 2, ahead: 16, fov: 66 }) },
+    // verse 3: the camp, on the lines
+    { t: 200.5, cam: D.orbit(A.campfire, { r: 8, h: 2.4, a0: 0.8, w: 0.1, t0: 200.5, lookH: 1, fov: 60 }) },
+    { t: X.line(31, 0.2), cam: D.track(A.arthasCamp, { offset: [-1.5, 1.6, -3], lookOffset: [0, 1.2, 8], fov: 66 }) },              // "Arthas ran off to find Cedric's side"
+    { t: X.line(32, -0.2), cam: D.orbit(A.campfire, { r: 4.5, h: 1, a0: 2.2, w: 0.06, t0: X.line(32), lookH: 0.8, fov: 52 }) },      // "left me with Neeris, and the fire inside"
+    { t: X.line(33, -0.2), cam: D.orbit(A.lucienCamp, { r: 3, h: 1.3, a0: 0.4, w: 0.12, t0: X.line(33), lookH: 1.4, fov: 50 }) },    // "a traitor turned tame?"
+    { t: X.line(34, -0.2), cam: D.orbit(A.neerisCamp, { r: 2.8, h: 0.8, a0: 3.2, w: -0.08, t0: X.line(34), lookH: 0.8, fov: 48 }) },  // "the chains aren't the only thing that changed"
     // pre-chorus 2: the crossroads, the choice
-    { t: 217.3, cam: D.orbit(A.crossroads, { r: 20, h: 13, h1: 7, a0: 1.4, w: 0.05, t0: 217.3, lookH: 0, fov: 60 }) },
-    { t: 225.9, cam: D.orbit(A.neerisCross, { r: 3.5, h: 1.4, a0: 0.6, w: 0.2, t0: 225.9, lookH: 1, fov: 52 }) },
-    { t: 232.3, cam: D.track(A.neerisCross, { offset: [0.6, 1.8, -4.2], lookOffset: [0, 1.2, 5], fov: 60 }) },
-    // chorus 2: dawn
-    { t: 237.9, cam: D.rail({ h: 3, ahead: 22, lookH: 2, fov: 72 }) },
-    { t: 246.4, cam: D.orbit(() => (A.party_chorus2 || A.campfire).getWorldPosition(new THREE.Vector3()), { r: 7, h: 2, a0: 3, w: -0.3, t0: 246.4, lookH: 1.3, fov: 56 }) },
-    { t: 253.9, cam: D.rail({ h: 12, ahead: 40, lookH: 1, fov: 66 }) },
-    { t: 262.4, cam: D.rail({ h: 1.0, side: -2.5, ahead: 14, lookH: 1.6, fov: 76 }) },
+    { t: 217.3, cam: D.orbit(A.crossroads, { r: 9, h: 3.5, a0: 1.6, w: 0.05, t0: 217.3, lookH: 0.6, fov: 58 }) },                    // "Neeris begs mercy"
+    { t: X.line(36, -0.2), cam: D.orbit(A.lucienCross, { r: 2.8, h: 1.4, a0: 0.2, w: 0.08, t0: X.line(36), lookH: 1.55, fov: 46 }) },  // "now what will you do?"
+    { t: X.line(37, -0.2), cam: D.orbit(A.cedricCross, { r: 5, h: 1.2, a0: 2.4, w: 0.1, t0: X.line(37), lookH: 1.5, fov: 55 }) },     // "Cedric and Arthas want justice"
+    { t: X.line(38, -0.2), cam: D.orbit(A.crossroads, { r: 16, h: 12, a0: 1.6, w: 0.04, t0: X.line(38), lookH: 0, fov: 60 }) },       // "I let him go": the fork from above
+    { t: X.line(39, -0.2), cam: D.track(A.neerisCross, { offset: [0.8, 1.7, 3.6], lookOffset: [0, 1.4, 0], fov: 52 }) },              // "track the last moonwell"
+    // chorus 2: dawn, same staging
+    { t: 237.9, cam: D.dolly(() => X.at(X.distAt(237.9) + 2, 0, 1.2), behind(A.party_chorus2, -4.5, 1.8), () => wp(A.party_chorus2).add(V(0, 1.3, 0)), { fov: 62 }) },  // up the avenue to the brothers
+    { t: X.line(41, -0.3), cam: D.orbit(() => wp(A.cedric_chorus2), { r: 4.2, h: 1.3, a0: 0, w: 0.2, t0: X.line(41), lookH: 1.5, fov: 48 }) },  // "Cedric the devout monk"
+    { t: X.line(42, -0.3), cam: D.orbit(() => wp(A.party_chorus2), { r: 3.8, h: 1.4, a0: 0.2, w: -0.12, t0: X.line(42), lookH: 1.5, fov: 48 }) },  // "Lucien the cursed sorcerer"
+    { t: X.line(43, -0.3), cam: D.orbit(() => wp(A.arthas_chorus2), { r: 4.2, h: 0.9, a0: 2.9, w: 0.15, t0: X.line(43), lookH: 1.8, fov: 52 }) },  // "Arthas the paladin" (low, heroic)
+    { t: X.line(44, -0.3), cam: D.orbit(() => wp(A.party_chorus2), { r: 7, r1: 12, h: 1.5, h1: 7, a0: 0, w: 0.25, t0: X.line(44), lookH: 1.3, fov: 60 }) },  // "by fire, by fang"
+    { t: X.line(45, -0.3), cam: D.rail({ h: 9, ahead: 30, lookH: 0, fov: 64 }) },  // "we walked the road"
     // bridge: the march to Cobh with the wyrm's head, the gate, the city rises
     { t: 271.3, cam: D.track(A.marchers, { offset: [0, 2.2, 7], lookOffset: [0, 1.6, 0], fov: 60 }) },
-    { t: 280.8, cam: D.rail({ h: 5, lead: -8, target: () => wp(A.gate).add(V(0, 7, 0)), fov: 62 }) },  // on the road, the gate ahead
-    { t: 289.7, cam: D.rail({ h: 4, ahead: 18, lookH: 2, fov: 70 }) },
-    // bridge 2: the feast, the morning after
-    { t: 298.7, cam: D.orbit(A.bonfire, { r: 9, h: 3, a0: 0, w: 0.25, t0: 298.7, lookH: 1.2, fov: 62 }) },
-    { t: 307.2, cam: D.rail({ h: 1.6, ahead: 12, fov: 64 }) },
-    // outro and final: the gaol cell, the wraith over the burning city
-    { t: 315.7, cam: D.rail({ h: 1.3, ahead: 10, fov: 64 }) },
-    { t: 326.0, blend: 1.5, cam: D.rail({ h: 1.2, target: A.wraith, fov: 58 }) },
-    { t: 345.0, blend: 3, cam: D.rail({ h: 1.0, lead: 1.5, target: () => A.wraith.getWorldPosition(new THREE.Vector3()).add(V(0, 12, 0)), fov: 50 }) }
+    { t: X.line(47, -0.2), cam: D.track(A.marchers, { offset: [2.5, 2.4, 2.5], lookOffset: [0, 2.2, 0], fov: 55 }) },                // "gold in our hands"
+    { t: X.line(48, -0.2), cam: D.rail({ h: 5, lead: -8, target: () => wp(A.gate).add(V(0, 7, 0)), fov: 62 }) },                    // "through the gate"
+    { t: X.line(48, 4), cam: D.rail({ h: 2.4, lead: 2, target: () => wp(A.marchers).add(V(0, 1.6, 0)), fov: 46 }) },              // Lucien singing, inside the walls
+    { t: X.line(49, -0.2), cam: D.rail({ h: 3.5, ahead: 16, lookH: 1, fov: 72 }) },                                                  // "the whole city rose up wild"
+    // bridge 2: the feast and the morning after
+    { t: 298.7, cam: D.orbit(A.bonfire, { r: 5.5, h: 2.2, a0: 0, w: 0.3, t0: 298.7, lookH: 1.2, fov: 62 }) },                         // "we drank all night"
+    { t: X.line(51, -0.2), cam: D.orbit(A.feastLucien, { r: 3.4, h: 1, a0: 1, w: 0.05, t0: X.line(51), lookH: 0.8, fov: 52 }) },     // "woke up in makeup"
+    { t: X.line(52, -0.2), cam: D.track(A.suit, { offset: [0.6, 1.5, 2.6], lookOffset: [0, 1.4, 0], fov: 50 }) },  // in front of him, away from the fire        // "Cedric in a suit"
+    // "I woke in iron": the cell, then the city burning outside the bars
+    { t: X.line(53, -0.4), cam: D.rail({ h: 1.3, ahead: 10, fov: 60 }) },
+    { t: X.line(54, -0.4), cam: D.rail({ h: 1.25, target: () => wp(A.wraith).add(V(0, 10, 0)), fov: 56 }) },                      // "Cobh burns beneath a wraith's cold call"
+    { t: X.line(56, -2.8), cam: D.rail({ h: 1.2, target: () => wp(A.gaolBros).add(V(0.4, 1.5, 0)), fov: 52 }) },                    // "the brothers stand as one"
+    { t: X.line(57, 2), blend: 3, cam: D.rail({ h: 1.0, lead: 1.5, target: () => wp(A.wraith).add(V(0, 12, 0)), fov: 50 }) }        // "the war's just begun"
   ];
 };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2883,7 +3235,7 @@ function refreshBookUI() {
 let lastNear = null;
 function refreshUI() {
   const walk = mode === 'walk', bk = mode === 'book' && !sitting, ride = mode === 'ride';
-  $('rowBook').hidden = !bk; $('prog').style.display = ride ? 'block' : 'none';
+  $('rowBook').hidden = !bk; $('hud').classList.toggle('book', mode === 'book'); $('prog').style.display = ride ? 'block' : 'none';
   $('bPause').hidden = !ride; $('bSync').hidden = !ride; $('bClose').hidden = walk; $('bCalm').hidden = !ride; $('bBright').hidden = ride;  // top bar fits a phone
   $('bClose').textContent = ride ? (innerWidth < 560 ? 'Book' : 'Back to the book') : 'Stand up';
   pad.style.display = walk && mobile ? 'block' : 'none';

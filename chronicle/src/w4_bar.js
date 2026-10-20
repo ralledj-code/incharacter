@@ -22,7 +22,7 @@ function dressBar(g, tables) {
   put('Barrel', [5.4, 0, -0.2], 0.3); put('Barrel', [5.45, 0, 0.6], 1.2); put('Crate_Wooden', [5.3, 0, 1.7], 0.2);
   // the back wall (behind the player at the start): bookcases, chest, banners, weapons
   put('Bookcase_2', [-3.6, 0, 5.25], Math.PI); put('Bookcase_2', [3.6, 0, 5.25], Math.PI);
-  put('Chest_Wood', [0, 0, 4.9], Math.PI, 0.8);
+  put('Chest_Wood', [-4.9, 0, 4.7], Math.PI / 2, 0.8);  // corner, clear of the player's start spot (z 4.4)
   put('Banner_1', [-5.95, 1.8, 1.4], Math.PI / 2, 0.8); put('Banner_2', [-5.95, 1.8, -6.6], Math.PI / 2, 0.8);
   put('WeaponStand', [-5.3, 0, 3.6], Math.PI / 2, 0.9); put('Shield_Wooden', [-5.95, 2.4, -2.5], Math.PI / 2, 0.9);
   put('Cauldron', [-4.7, 0, -4.7], 0.5, 0.7); put('Bucket_Wooden_1', [-4.6, 0, -0.3], 0);
@@ -205,6 +205,7 @@ C.buildBar = function (X) {
     { x: X.STAND.x, z: X.STAND.z - 1.15, r: 0.4 }  // Lucien's music stand
   ].concat(stage ? stage.colliders : []);
   tables.forEach((t) => colliders.push({ x: t[0], z: t[1], r: 1.05 }));
+  colliders.push({ x0: -5.7, x1: -4.1, z0: 4.0, z1: 5.5 }, { x0: -4.4, x1: -2.8, z0: 4.9, z1: 5.5 }, { x0: 2.8, x1: 4.4, z0: 4.9, z1: 5.5 });  // chest, bookcases
   [-7.2, -5.9, -4.6, -2.0].forEach((z) => colliders.push({ x: 2.7, z, r: 0.35 }));
 
   return {
@@ -216,7 +217,7 @@ C.buildBar = function (X) {
       d20g.material.opacity = 0.4 + 0.15 * Math.sin(ctx.time * 1.7);
       // the back door (behind the stage) swings open when the song's camera flies out through it
       const dA = X.story && X.story.doorAt !== undefined ? X.story.doorAt : 1.5;
-      door.rotation.y = ctx.ride ? 1.5 * ss(dA - 1.5, dA, t) : 0;
+      door.rotation.y = ctx.ride ? 1.5 * ss(dA - 4.5, dA - 2.5, t) : 0;  // fully open before the camera reaches it
       if (stage) stage.update(t, ctx);
       if (ctx.camD < 40) {
         ctx.light(0, -4.75, 0.9, -2.5, 0xff8a3a, 1.8 * f, 22);

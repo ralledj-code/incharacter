@@ -8,7 +8,7 @@ const [out, spec, w = 1280, h = 720] = process.argv.slice(2);
   const errs = []; p.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errs.push(m.text()); }); p.on('pageerror', (e) => errs.push('PAGEERR ' + e.message));
   await p.goto('http://localhost:5173/'); await p.waitForFunction(() => window.__alaron, null, { timeout: 60000 });
   await p.click('#go'); await p.waitForTimeout(200);
-  await p.evaluate(async () => { const A = __alaron, st = window.__cw.stories.find((s) => s.id === (process.env.LEVEL || [...__cw.stories].reverse().find((x) => !x.locked).id)); await __cw.loadPacks(st.packs); A.W.loadStory(st); A.W.beginRide({ x: 0, y: 1.28, z: -3.18, yaw: 0, pitch: -0.33 }); });
+  await p.evaluate(async (level) => { const A = __alaron, st = window.__cw.stories.find((s) => s.id === (level || [...__cw.stories].reverse().find((x) => !x.locked).id)); await __cw.loadPacks(st.packs); A.W.loadStory(st); A.W.beginRide({ x: 0, y: 1.28, z: -3.18, yaw: 0, pitch: -0.33 }); }, process.env.LEVEL || '');
   if (process.env.TM) await p.evaluate((tm) => { const [k, e] = tm.split(':'); const A = __alaron; A.renderer.toneMapping = THREE[k + 'ToneMapping']; A.renderer.toneMappingExposure = +e; A.W.scene.traverse((o) => { if (o.material) [].concat(o.material).forEach((m) => { m.needsUpdate = true; }); }); }, process.env.TM);
   for (const item of spec.split(',')) {
     const [k, lk = '0:0'] = item.split('@'); const [yaw, pitch] = lk.split(':').map(Number);

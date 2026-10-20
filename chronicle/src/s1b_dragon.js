@@ -53,7 +53,7 @@ C.buildDragon = function (pose) {
 function brothers(secId, opt) {
   return function (X) {
     const S = X.sec[secId], kit = C.kit(X), ch = C.chars(X), g = new THREE.Group();
-    g.add(kit.trees(S.d0 - 15, S.d1 + 15, { minSide: 12, maxSide: 44, dens: 0.9, deadP: opt.deadP, tint: opt.tint }));
+    g.add(kit.trees(S.d0 - 15, S.d1 + 15, { minSide: 12, maxSide: 44, dens: 0.9, deadP: opt.deadP, tint: opt.tint, under: false }));  // the avenue is a road: no undergrowth in the shots
     const list = [];
     for (let d = S.d0 + 2; d < S.d1 - 2; d += 6) { const a = X.at(d, -5.5, 0), b = X.at(d + 3, 5.5, 0); list.push({ x: a.x, z: a.z }, { x: b.x, z: b.z }); }
     const tor = kit.torches(list, { glow: 0xffb060, size: 3.0, op: 0.75 }); g.add(tor.group);
@@ -66,17 +66,28 @@ function brothers(secId, opt) {
       grp.position.copy(p); kit.placeFacing(grp, d, b[2]); g.add(grp);
       banners.push({ geo, base: geo.attributes.position.array.slice(), ph: R(0, TAU) });
     });
-    // the three of them stand where the avenue ends
-    const dd = S.d1 - 7;
-    [['cedric', -4.2], ['lucien', -5.7], ['arthas', -7.4]].forEach((c, i) => {
-      const f = ch[c[0]](), p = X.at(dd - i * 0.6, c[1], 0); f.position.copy(p); f.rotation.y = X.yawAt(dd) + Math.PI / 2 + 0.3 * i;
-      if (c[0] === 'lucien') { f.userData.blade.visible = true; X.anchors['party_' + secId] = f; }
-      g.add(f);
-    });
+    // the three walk the avenue; on their name line each steps forward and shows who he is
+    const first = S.i === undefined ? 0 : 0, L = X.line, k0 = opt.line0;
+    const who = [['cedric', -1.4, k0 + 1, 'Idle_Torch_Loop'], ['lucien', 0, k0 + 2, 'Spell_Simple_Idle_Loop'], ['arthas', 1.4, k0 + 3, 'Sword_Idle']];
+    const party = who.map(([k, side, line, pose]) => { const f = ch[k]({ pose: 'Walk_Loop' }); if (k === 'lucien') f.userData.blade.visible = true; g.add(f); return { f, side, line, pose }; });
+    party.forEach((p) => { X.anchors[p.f === party[1].f ? 'party_' + secId : (who[party.indexOf(p)][0] + '_' + secId)] = p.f; });
+    const walkD = (t) => S.d0 + 14 + Math.max(0, t - S.t0) * 1.3;
+    const upd = (t) => {
+      party.forEach((p) => {
+        const lt = L(p.line), on = t >= lt - 0.3 && t < lt + 3.2, d = walkD(t) + (on ? 1.8 * ss(lt - 0.3, lt + 0.3, t) : 0);
+        const pos = X.at(d, p.side * (on ? 0.4 : 1), 0); p.f.position.copy(pos);
+        p.f.rotation.y = X.yawAt(d) + (on ? Math.PI : 0);  // walks away from the camera; turns to face it on his line
+        const late = t >= L(k0 + 4) && t < L(k0 + 5);    // "by fire, by fang": all three face the camera
+        if (late) p.f.rotation.y = X.yawAt(d) + Math.PI;
+        if (p.f.userData.pose) p.f.userData.pose(on ? p.pose : late ? 'Sword_Idle' : 'Walk_Loop');
+        const sp = p.f.userData.spark;
+        if (sp) { if (!sp.userData.base) sp.userData.base = sp.scale.x; sp.scale.setScalar(sp.userData.base * (on && p.pose === 'Spell_Simple_Idle_Loop' ? 3.5 + Math.sin(t * 20) : 1)); }
+      });
+    };
     return {
       group: g, d0: S.d0, d1: S.d1, vis: 100,
       update(t, ctx) {
-        tor.update(ctx.time);
+        tor.update(ctx.time); upd(t);
         banners.forEach((b) => {
           const a = b.geo.attributes.position, arr = a.array;
           for (let i = 0; i < arr.length; i += 3) {
@@ -85,14 +96,14 @@ function brothers(secId, opt) {
           }
           a.needsUpdate = true; b.geo.computeVertexNormals();
         });
-        const p = X.at(clamp(ctx.camD + 8, S.d0, S.d1), 0, 0);
+        const p = party[1].f.position;
         ctx.light(opt.slot, p.x, 4, p.z, opt.light, 1.8 + 0.3 * Math.sin(ctx.time * 6), 34);
       }
     };
   };
 }
-SC.push(brothers('chorus', { deadP: 0.1, tint: 0xa8a0c8, slot: 0, light: 0xffb868 }));
-SC.push(brothers('chorus2', { deadP: 0.05, tint: 0xd0b0b8, slot: 1, light: 0xffc080 }));
+SC.push(brothers('chorus', { deadP: 0.1, tint: 0xa8a0c8, slot: 0, light: 0xffb868, line0: 12 }));
+SC.push(brothers('chorus2', { deadP: 0.05, tint: 0xd0b0b8, slot: 1, light: 0xffc080, line0: 40 }));
 
 /* ---- the wyrm in the red sky, and the scorched land ---- */
 SC.push(function (X) {
@@ -102,28 +113,57 @@ SC.push(function (X) {
   for (let i = 0; i < NC; i++) { const p = X.at(R(S.d0 - 10, Sb.d0 + 40), R(-22, 22), 0); cm.push(M([p.x, 0.03, p.z], [-Math.PI / 2, 0, R(0, TAU)], [R(1.4, 3.6), R(0.15, 0.4), 1])); }
   const cracks = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0xff5a18, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false }), NC);
   cm.forEach((m, i) => cracks.setMatrixAt(i, m)); cracks.frustumCulled = false; g.add(cracks);
-  const flyer = C.creature('dragon', { h: 7, tint: 0x6a5a68, eyes: 0xff7a20, clip: 'Fast_Flying' });  // the black wyrm (CC0 animated dragon)
+  const flyer = C.creature('wyrm', { h: 7, tint: 0x3a3236, clip: 'Flying' });  // the black wyrm (CC0 low-poly dragon, OpenGameArt)
+  if (flyer) [0.09, -0.09].forEach((x) => { const e = X.glow(0xff6a20, 1.2, 0.95); C.attach(flyer, 'head', e, [x, 0.12, 0.6]); });
   const dragon = flyer || C.buildDragon('fly'); if (!flyer) dragon.scale.setScalar(2.2); else X.anims.push(flyer);
   g.add(dragon); X.anchors.wyrm = dragon;
   const jet = []; for (let i = 0; i < 7; i++) { const s = X.glow(0xff7a20, 3, 0); g.add(s); jet.push(s); }
+  // the brothers stand on the scorched land and fight it; Cedric then runs after it
+  const L = X.line, ch = C.chars(X), dF = S.d0 + S.len * 0.45, F = X.at(dF, 0, 0), yF = X.yawAt(dF);
+  const pos = (along, side, h) => X.at(dF + along, side, h || 0);
+  const art = ch.arthas({ pose: 'Sword_Idle' }), luc = ch.lucien({ pose: 'Idle_Loop' }), ced = ch.cedric({ pose: 'Idle_Loop' });
+  art.position.copy(pos(0, -1.6)); luc.position.copy(pos(-1, 1.4)); ced.position.copy(pos(1, 0.2)); [art, luc, ced].forEach((o) => g.add(o));
+  X.anchors.arthasWyrm = art; X.anchors.lucienWyrm = luc; X.anchors.cedricWyrm = ced; X.anchors.fight = new THREE.Object3D(); X.anchors.fight.position.copy(F); g.add(X.anchors.fight);
+  const rose = L(18), struck = L(19), gold = L(20), ran = L(21);
+  const actors = [
+    C.act(art, [{ t: 0, face: pos(40, 0), pose: 'Sword_Idle' }, { t: struck + 0.8, to: pos(2.5, -1.2), move: 0.6, pose: 'Sprint_Loop' }, { t: struck + 1.4, pose: 'Sword_Idle', face: pos(40, 0) }, { t: gold, pose: 'Idle_Talking_Loop', face: luc }]),
+    C.act(luc, [{ t: 0, face: pos(40, 0), pose: 'Idle_Loop' }, { t: rose + 1, pose: 'Spell_Simple_Idle_Loop' }, { t: gold, pose: 'Idle_Loop', face: art }]),
+    C.act(ced, [{ t: 0, face: pos(40, 0), pose: 'Idle_Loop' }, { t: struck, pose: 'Crouch_Idle_Loop' }, { t: ran, to: pos(28, 1), move: 3.5, pose: 'Sprint_Loop' }, { t: ran + 3.5, show: false }])
+  ];
+  const bolt = X.glow(0xb070ff, 2.2, 0); g.add(bolt);
+  // the wyrm's flight as keyframes on song time (rise from the horizon, dive at the brothers, flee), then waiting in the crater
+  const dCr = Sb.d0 + 16, lair = X.at(dCr + 13, -19, 0);
+  const KF = [
+    [rose - 3, pos(90, 25, -14)], [rose + 3.5, pos(55, 8, 24)], [struck - 0.2, pos(22, 3, 14)], [struck + 1.2, pos(0, 0, 5)],
+    [struck + 2.6, pos(-25, -10, 12)], [gold + 2, pos(-10, -70, 45)], [ran + 1, pos(60, -60, 40)],
+    [S2.t0 + 1, X.at(dCr + 40, -30, 20)], [S2.t0 + 6, lair.clone().setY(1.2)]
+  ];
+  const where = (t, out) => {
+    if (t <= KF[0][0]) return out.copy(KF[0][1]);
+    for (let k = 0; k < KF.length - 1; k++) if (t < KF[k + 1][0]) { const u = (t - KF[k][0]) / (KF[k + 1][0] - KF[k][0]); return out.lerpVectors(KF[k][1], KF[k + 1][1], sm(u)); }
+    return out.copy(KF[KF.length - 1][1]);
+  };
+  const P0 = new THREE.Vector3(), P1 = new THREE.Vector3();
   return {
-    group: g, d0: S.d0 - 10, d1: Sb.d0, vis: 100,
+    group: g, d0: S.d0 - 10, d1: Sb.d0, t0: S.t0 - 3, t1: Sb.t0 + 0.05,
     update(t, ctx) {
-      const ud = dragon.userData, f = 0.5 * Math.sin(ctx.time * 3.4) + 0.15;
-      if (ud.wR) { ud.wR.rotation.z = f; ud.wL.rotation.z = -f; }
-      const gone = t > S2.t0 + 4;
-      dragon.visible = !gone;
-      if (!gone) {
-        const c = X.at(X.distAt(t) + 26, 0, 0), a = 1.2 + (t - S.t0) * 0.33, away = ss(S.t0 + 14, S2.t0 + 2, t);
-        const Rr = 30 * (1 + 2.4 * away), y = 14 + 6 * Math.sin(ctx.time * 0.5) - 16 * (1 - ss(S.t0, S.t0 + 5, t)) + 12 * away;
-        dragon.position.set(c.x + Math.cos(a) * Rr, y, c.z + Math.sin(a) * Rr);
-        dragon.rotation.set(0, Math.atan2(Math.sin(a), -Math.cos(a)) + (flyer ? Math.PI : 0), flyer ? -0.3 : 0.3);
-        if (flyer) flyer.userData.pose(t > S.t0 + 4.5 && t < S.t0 + 10 ? 'Headbutt' : 'Fast_Flying');
-        const fw = new THREE.Vector3(0, 0, flyer ? 1 : -1).applyEuler(dragon.rotation), mouth = ud.head ? dragon.localToWorld(ud.head.clone()) : dragon.position.clone().addScaledVector(fw, 3.2).add(new THREE.Vector3(0, 1.2, 0));
-        const br = ss(S.t0 + 5, S.t0 + 6, t) * (1 - ss(S.t0 + 9, S.t0 + 10, t));
-        jet.forEach((s, i) => { s.position.copy(mouth).addScaledVector(fw, 2.5 + i * 3.2); s.scale.setScalar(2 + i * 1.2); s.material.opacity = br * (0.8 - i * 0.08); });
-        ctx.light(1, dragon.position.x, dragon.position.y - 4, dragon.position.z, 0xff7a30, 2.0 * br + 1.4, 70);  // keep the wyrm readable against the red sky
+      actors.forEach((a) => a.update(t, ctx));
+      const landed = t > S2.t0 + 6;
+      dragon.visible = t > rose - 3 && t < Sb.t0;
+      if (dragon.visible) {
+        where(t, P0); where(t + 0.2, P1);
+        dragon.position.copy(P0);
+        if (!landed) { const dx = P1.x - P0.x, dz = P1.z - P0.z; if (dx * dx + dz * dz > 1e-4) dragon.rotation.set(-Math.atan2(P1.y - P0.y, Math.hypot(dx, dz)) * 0.6, Math.atan2(dx, dz), Math.sin(t * 0.8) * 0.2); }
+        else { dragon.rotation.set(0, Math.atan2(X.at(dCr, 0, 0).x - lair.x, X.at(dCr, 0, 0).z - lair.z), 0); }
+        if (flyer) flyer.userData.timeFn = landed ? () => 0.55 : null;  // wings folded when it waits in the crater
+        const fw = new THREE.Vector3(0, 0, 1).applyEuler(dragon.rotation), mouth = dragon.position.clone().addScaledVector(fw, 4.2).add(new THREE.Vector3(0, 1.2, 0));
+        const br = ss(struck - 1, struck - 0.4, t) * (1 - ss(struck + 1, struck + 1.6, t));  // fire on the dive
+        jet.forEach((s, i) => { s.position.copy(mouth).addScaledVector(fw, 2.5 + i * 3.2).y -= i * 0.6; s.scale.setScalar(2 + i * 1.2); s.material.opacity = br * (0.8 - i * 0.08); });
+        ctx.light(1, dragon.position.x, dragon.position.y - 4, dragon.position.z, 0xff7a30, 2.0 * br + 1.4, 70);
       } else jet.forEach((s) => { s.material.opacity = 0; });
+      // Lucien's bolt on "we struck it down"
+      const bu = ss(struck + 0.4, struck + 1.1, t), lh = luc.position.clone().setY(1.5);
+      bolt.position.lerpVectors(lh, dragon.position, bu); bolt.material.opacity = t > struck + 0.4 && t < struck + 1.3 ? 0.95 : 0; bolt.scale.setScalar(2 + bu * 3);
       cracks.material.opacity = 0.55 + 0.25 * Math.sin(ctx.time * 2.3);
     }
   };
@@ -138,16 +178,18 @@ SC.push(function (X) {
   for (let i = 0; i < 14; i++) { const d = R(S.d0, dCr + 30), sd = (R(0, 1) < 0.5 ? -1 : 1) * R(6, 24), p = X.at(d, sd, 0); arches.push(M([p.x, 0, p.z], [0, R(0, TAU), 0], R(0.8, 1.8))); }
   g.add(inst(C.merge([part(tg, 0xcfc6b0)]), lamb({ color: 0xffffff }), arches));
   // the carcass
-  const SCL = 2.3, bodyD = dCr + 13, corpse = C.creature('dragon', { h: 7, tint: 0x6a5a68, eyes: 0xff7a20, clip: 'Death' });
+  const SCL = 2.3, bodyD = dCr + 13, corpse = C.creature('wyrm', { h: 7, tint: 0x3a3236, clip: 'Flying' });
   const dragon = corpse || C.buildDragon('dead');
-  const bp = X.at(bodyD, corpse ? -15 : -8.5, corpse ? 0 : 1.1 * SCL * 0.9); dragon.position.copy(bp); if (!corpse) dragon.scale.setScalar(SCL); dragon.rotation.y = X.yawAt(bodyD) + Math.PI; dragon.visible = false; g.add(dragon);
+  const bp = X.at(bodyD, corpse ? -19 : -8.5, corpse ? 0 : 1.1 * SCL * 0.9); dragon.position.copy(bp); if (!corpse) dragon.scale.setScalar(SCL); dragon.rotation.y = X.yawAt(bodyD) + Math.PI; dragon.visible = false; g.add(dragon);
   dragon.updateMatrixWorld(true);
   let headW;
   if (corpse) {
-    // the death clip plays once from the kill and holds its last frame
-    const dur = (C.assets.creatures.dragon.clips.find((c) => c.name === 'Death') || { duration: 1.5 }).duration;
-    corpse.userData.timeFn = (tm) => clamp(tm - TK, 0, dur - 0.02); X.anims.push(corpse);
-    headW = X.at(bodyD - 3, -13, 2.2);
+    // no death clip: freeze a wings-folded frame, roll the body onto its side and settle it on the ground
+    corpse.userData.timeFn = () => 0.55; X.anims.push(corpse); corpse.userData.mixer.setTime(0.55);
+    corpse.rotation.z = 1.35; corpse.updateMatrixWorld(true);
+    const bb = new THREE.Box3().setFromObject(corpse); corpse.position.y -= bb.min.y - 0.1; corpse.updateMatrixWorld(true);
+    headW = corpse.userData.bones.head ? corpse.userData.bones.head.getWorldPosition(new THREE.Vector3()) : X.at(bodyD - 3, -13, 2.2);
+    const top = new THREE.Box3().setFromObject(corpse); headW = new THREE.Vector3((top.min.x + top.max.x) / 2, top.max.y - 0.3, (top.min.z + top.max.z) / 2);  // Cedric stands on the highest point
   } else headW = dragon.localToWorld(dragon.userData.head.clone());
   X.anchors.carcass = dragon;
   // bats over the crater while Cedric hunts
@@ -172,11 +214,13 @@ SC.push(function (X) {
       eyeG.forEach((e) => { e.material.opacity = glowK; });
       if (!killed) {
         const dc = Math.min(dCr - 3, X.distAt(Math.max(S.t0, t)) + 26), p = X.at(dc, 1.2, 0);
-        ced.position.set(p.x, ced.userData.mixer ? 0 : Math.abs(Math.sin(ctx.time * 9)) * 0.15, p.z); ced.rotation.y = X.yawAt(dc) + Math.PI; ced.visible = t > S.t0 + 1;
+        ced.position.set(p.x, ced.userData.mixer ? 0 : Math.abs(Math.sin(ctx.time * 9)) * 0.15, p.z); ced.rotation.y = X.yawAt(dc) + Math.PI; ced.visible = t > S.t0 - 0.5;
         if (ced.userData.pose) ced.userData.pose('Sprint_Loop');
+        const jump = ss(TK - 1.4, TK, t);  // "HE KILLED IT": the leap onto the wyrm
+        if (jump > 0) { const from = X.at(dCr - 3, 1.2, 0); ced.position.set(lerp(from.x, headW.x, jump), Math.sin(jump * Math.PI) * 4 + headW.y * jump, lerp(from.z, headW.z, jump)); }
         ctx.light(0, headW.x, 1.6, headW.z, 0xff3a22, 0.8 * glowK, 30);
       } else {
-        ced.visible = true; ced.position.set(headW.x, headW.y + 0.55 * SCL * 0.5, headW.z); ced.rotation.y = X.yawAt(dCr) + Math.PI / 2 + 0.6;
+        ced.visible = true; ced.position.set(headW.x, corpse ? headW.y : headW.y + 0.55 * SCL * 0.5, headW.z); ced.rotation.y = X.yawAt(dCr) + Math.PI / 2 + 0.6;
         if (ced.userData.pose) ced.userData.pose('Idle_Torch_Loop');
         const k = Math.exp(-(t - TK) * 1.5);
         ctx.light(0, headW.x, 3.0, headW.z, 0xffd890, 2.2 + 8 * k, 42);

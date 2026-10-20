@@ -17,13 +17,26 @@ SC.push(function (X) {
   // Neeris sits opposite, hands bound; Lucien's coat lies on the log nearest the path
   const ner = ch.neeris({ pose: 'Sitting_Idle_Loop' }); const np = X.at(dF, 8.6, 0); ner.position.copy(np); if (!ner.userData.mixer) ner.scale.y = 0.72; ner.rotation.y = X.yawAt(dF) + Math.PI / 2; g.add(ner);
   const lu = ch.lucien({ pose: 'Sitting_Idle_Loop' }); const lp = X.at(dF + 0.5, 1.9, 0); lu.position.copy(lp); lu.rotation.y = X.yawAt(dF) - Math.PI / 2 - 0.4; if (!lu.userData.mixer) lu.scale.y = 0.78; g.add(lu); X.anchors.lucienCamp = lu;
+  // Arthas leaves for Cedric; Lucien is left with the bound druid
+  const L = X.line, fpos = new THREE.Vector3(fp.x, 0, fp.z);
+  const art = ch.arthas({ pose: 'Idle_Loop' }); art.position.copy(X.at(dF - 2, 2.4, 0)); g.add(art); X.anchors.arthasCamp = art;
+  lu.position.copy(X.at(dF - 0.6, 2.2, 0)); ner.position.copy(X.at(dF + 0.4, 7.0, 0));
+  const actors = [
+    C.act(art, [{ t: 0, face: fpos }, { t: L(31), to: X.at(dF + 30, 0, 0), move: 4, pose: 'Sprint_Loop' }, { t: L(31, 4), show: false }]),   // "Arthas ran off to find Cedric's side"
+    C.act(lu, [{ t: 0, pose: 'Sitting_Idle_Loop', face: fpos },
+      { t: L(33), to: X.at(dF + 2.4, 4.2, 0), move: 2.2, face: ner },                                       // "what do I do with a traitor turned tame?"
+      { t: L(33, 2.2), pose: 'Idle_Talking_Loop', face: ner },
+      { t: L(34), pose: 'Crouch_Idle_Loop', face: ner }]),                                                  // "the chains aren't the only thing that changed"
+    C.act(ner, [{ t: 0, pose: 'Sitting_Idle_Loop', face: fpos }, { t: L(34, 1.5), pose: 'Sitting_Idle_Loop', face: lu }])
+  ];
+  X.anchors.neerisCamp = ner;
   // a loose chain on the ground
-  const links = []; for (let i = 0; i < 14; i++) { const a = i * 0.5; links.push(M([fp.x + 2.2 + Math.cos(a) * (0.4 + i * 0.05), 0.06, fp.z + 1.2 + Math.sin(a) * (0.4 + i * 0.05)], [Math.PI / 2, i % 2 ? Math.PI / 2 : 0, a], [1.5, 1, 1])); }
+  const cpz = X.at(dF + 2.6, 6.2, 0), links = []; for (let i = 0; i < 14; i++) { const a = i * 0.5; links.push(M([cpz.x + Math.cos(a) * (0.4 + i * 0.05), 0.06, cpz.z + Math.sin(a) * (0.4 + i * 0.05)], [Math.PI / 2, i % 2 ? Math.PI / 2 : 0, a], [1.5, 1, 1])); }
   g.add(inst(kit.linkGeo, lamb({ color: 0xb8bcc8 }), links));
   return {
     group: g, d0: S.d0, d1: S.d1, vis: 100,
     update(t, ctx) {
-      fire.update(ctx.time);
+      fire.update(ctx.time); actors.forEach((x) => x.update(t, ctx));
       ctx.light(1, fp.x, 1.4, fp.z, 0xff9a40, 2.8 * fire.flicker(ctx.time), 30);
       if (!ner.userData.mixer) ner.rotation.x = 0.12 * Math.sin(ctx.time * 0.6);
     }
@@ -51,21 +64,34 @@ SC.push(function (X) {
     const gl = X.glow(colr, 4, 0.9); gl.position.y = 2.7; grp.add(gl); rd.add(grp); return gl;
   };
   const redG = lant(-Math.sin(0.6) * 11 - 1.6, -Math.cos(0.6) * 11, 0xff3a2a), blueG = lant(Math.sin(0.6) * 11 + 1.6, -Math.cos(0.6) * 11, 0x50b8ff);
-  // Cedric and Arthas wait on the red road; Neeris is let go down the blue one
-  [['cedric', -9.2], ['arthas', -10.6]].forEach((c, i) => {
-    const f = ch[c[0]](), a = -0.6; f.position.set(Math.sin(a) * 9 + (i ? 1.5 : -0.5), 0, -Math.cos(a) * 9 - 2.5 * i); f.rotation.y = 0.9 - i * 0.2; rd.add(f);
-  });
-  const ner = ch.neeris(); rd.add(ner); X.anchors.crossroads = rd; X.anchors.neerisCross = ner;
+  // the choice, on the lines (positions in the fork's local frame: -z is ahead, the red road left, the blue road right)
+  const L = X.line, V = (x, z) => new THREE.Vector3(x, 0, z), blue = (k) => V(Math.sin(0.6) * k, -Math.cos(0.6) * k), red = (k) => V(-Math.sin(0.6) * k, -Math.cos(0.6) * k);
+  const lu = ch.lucien({ pose: 'Idle_Loop' }), ner = ch.neeris({ pose: 'Fixing_Kneeling' }), ced = ch.cedric({ pose: 'Idle_Loop' }), art = ch.arthas({ pose: 'Sword_Idle' });
+  lu.position.copy(V(0, -1)); ner.position.copy(V(0.6, -3.4)); ced.position.copy(red(9)); art.position.copy(red(10.5).add(V(1.2, 0)));
+  [lu, ner, ced, art].forEach((o) => rd.add(o));
+  lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false;
+  X.anchors.crossroads = rd; X.anchors.neerisCross = ner; X.anchors.lucienCross = lu; X.anchors.cedricCross = ced; X.anchors.arthasCross = art;
+  const letT = L(38), trackT = L(39);
+  const actors = [
+    C.act(ner, [{ t: 0, pose: 'Fixing_Kneeling', face: V(0, -1) },                                 // "Neeris begs mercy"
+      { t: letT + 0.5, pose: 'Idle_Loop', face: V(0, -1) },
+      { t: letT + 1.6, to: blue(12), move: 5 },                                                        // "I let him go instead"
+      { t: trackT, pose: 'Idle_Loop', face: V(0, -1) },                                                // "track the last moonwell"
+      { t: trackT + 3.5, to: blue(42), move: 12 }]),
+    C.act(lu, [{ t: 0, pose: 'Idle_Loop', face: V(0.6, -3.4) },
+      { t: L(36), pose: 'Idle_Talking_Loop', face: V(0, 4) },                                          // "kick the feelings aside, now what will you do?"
+      { t: L(37, 1.5), pose: 'Spell_Simple_Idle_Loop', face: V(-2.5, -2) },                            // holds the brothers back
+      { t: trackT, pose: 'Spell_Simple_Idle_Loop', face: () => rd.localToWorld(ner.position.clone()).sub(rd.position).applyAxisAngle(new THREE.Vector3(0, 1, 0), -rd.rotation.y) }]),
+    C.act(ced, [{ t: 0, face: V(0, -2) }, { t: L(37), to: V(-2.2, -3.2), move: 2.4, pose: 'Walk_Loop' }, { t: L(37, 2.4), pose: 'Idle_Loop', face: V(0.6, -3.4) }]),   // "Cedric and Arthas want justice"
+    C.act(art, [{ t: 0, face: V(0, -2), pose: 'Sword_Idle' }, { t: L(37), to: V(-3.2, -1.8), move: 2.4, pose: 'Walk_Loop' }, { t: L(37, 2.4), pose: 'Sword_Idle', face: V(0.6, -3.4) }])
+  ];
   return {
     group: g, d0: S.d0, d1: S.d1, vis: 100,
     update(t, ctx) {
-      const letGo = ss(S.t0 + 11, S.t0 + 13, t), walk = ss(S.t0 + 13, S.t1 - 2, t);
-      const redK = 1 - ss(S.t0 + 12.5, S.t0 + 14.5, t) + 0.001;
+      actors.forEach((x) => x.update(t, ctx));
+      const letGo = ss(letT, letT + 2, t);
+      const redK = 1 - ss(letT + 1.5, letT + 3.5, t) + 0.001;
       redG.material.opacity = 0.9 * redK * (0.8 + 0.2 * Math.sin(ctx.time * 11)); blueG.material.opacity = 0.5 + 0.4 * letGo;
-      const a = 0.6, s = 3 + walk * 38;
-      const rigged = !!ner.userData.mixer;
-      if (walk > 0) { ner.position.set(Math.sin(a) * s, 0, -Math.cos(a) * s); ner.rotation.y = Math.PI + a; ner.scale.y = 1; if (rigged) ner.userData.pose('Walk_Loop'); }
-      else { ner.position.set(1.4, 0, -2.2); ner.rotation.y = 0.3; if (rigged) ner.userData.pose(letGo > 0.5 ? 'Idle_Loop' : 'Crouch_Idle_Loop'); else ner.scale.y = 0.62; }
       const cr = X.at(ctx.camD + 8, 0, 0).clone();
       ctx.light(0, cp.x + Math.cos(yaw) * -6, 3, cp.z + Math.sin(yaw) * 2, 0xff4030, 1.9 * redK, 26);
       ctx.light(1, cp.x + Math.cos(yaw) * 6, 3, cp.z - Math.sin(yaw) * 2, 0x60c0ff, 0.8 + 1.5 * letGo, 26);

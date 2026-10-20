@@ -217,7 +217,7 @@ C.create = function (opts) {
   const BAR_KEYS = [{ t: -1e6, m: 'bar', b: 0 }];
   const from = { x: 0, y: 1.28, z: Z0, yaw: 0, pitch: 0 };
   let riding = false;
-  const SEAT = { x: 0, y: 1.28, z: Z0 + 0.02 }, BOOK_PITCH = -0.2;
+  const SEAT = { x: 0, y: 1.28, z: Z0 + 0.02 }, BOOK_PITCH = -0.36;
   const angDiff = (a, b) => { let d = (b - a) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU; return d; };
   const ctx = {
     t: -1, dt: 0, time: 0, camD: -50, cam: camPos, mood: Mo, mode: 'walk',
@@ -254,6 +254,13 @@ C.create = function (opts) {
       story = st; X.story = st;
       buildTimeline(st); buildPath();
       X.sec = sec; X.Dend = Dend; X.dBack = dBack; X.tCross = tCross;
+      // X.line(k, dt): start of lyric line k (0-based over the song); falls back to even spacing inside sections
+      const flat = []; (st.cues || []).forEach((c, ci) => (c.lines || []).forEach((tx, j) => flat.push({ ci, j, n: c.lines.length })));
+      X.line = (k, dt) => {
+        const lt = st.lineTimes; if (lt && lt[k] != null) return lt[k] + (dt || 0);
+        const f = flat[k]; if (!f) return 1e9; const c = st.cues[f.ci], nx = st.cues[f.ci + 1], t1 = nx ? nx.t : st.duration;
+        return c.t + 0.4 + (t1 - c.t - 0.8) * f.j / f.n + (dt || 0);
+      };
       X.clearings = typeof st.clearings === 'function' ? st.clearings(X) : [];  // [{ x, z, r }] kept free of trees for the camera
       const list = (typeof st.build === 'function') ? st.build(X) : [];
       list.forEach((d) => { if (d) { storyRoot.add(d.group); defs.push(d); } });
@@ -292,7 +299,7 @@ C.create = function (opts) {
         chair.position.set(0, 0, Z0); chair.rotation.y = 0;
       } else if (director && director.active) {
         director.pose(t, camera, st.calm);
-        camD = nearRail(camera.position, distAt(t));
+        camD = distAt(t);  // scene visibility follows song time, not the camera (no popping when shots orbit far off the path)
       } else {
         camD = distAt(t);
         const f = frame(camD), yawP = Math.atan2(-f.tx, -f.tz);
@@ -312,11 +319,13 @@ C.create = function (opts) {
 
       ctx.t = t; ctx.dt = dt; ctx.time = time; ctx.camD = camD; ctx.ride = ride; ctx.mode = mode;
       fx[0].intensity = 0; fx[1].intensity = 0;
-      hub.group.visible = camD < 70;
+      const dA = story && story.doorAt !== undefined ? story.doorAt : 30;
+      hub.group.visible = !ride || t < dA + 6 || camD < 25;  // the tavern stays up while the intro films it
       if (hub.group.visible) hub.update(t, ctx);
       for (let i = 0; i < defs.length; i++) {
         const s = defs[i];
-        const vis = ride && camD > s.d0 - (s.vis || 120) && camD < s.d1 + (s.vis || 120);
+        // shown while the song is at this scene (path distance from song time), or inside its explicit time window [t0, t1]
+        const vis = ride && (s.t0 !== undefined ? t >= s.t0 && t <= s.t1 : camD > s.d0 - (s.vis || 120) && camD < s.d1 + (s.vis || 120));
         s.group.visible = vis;
         if (vis && s.update) s.update(t, ctx);
       }

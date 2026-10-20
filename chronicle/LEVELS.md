@@ -62,14 +62,23 @@ node scripts/align-lyrics.mjs <scratch>/words.json <scratch>/lyrics.json <scratc
 | Neeris | druid of the forest (wolf-cursed in level 8): moss-green hooded ranger, gnarled staff, amber eyes | `ch.neeris({ pose })` |
 | Anyone else | patrons, crowds, villagers, soldiers | `ch.person({ seed, female, outfit: 'peasant'|'ranger', tint, pose })` |
 | Big hooded spirit | `ch.wraith({ h })` |
+| Baphomet | goat-skull, horned, winged giant on the rigged body | `ch.baphomet({ h, pose })`, `userData.wings` (rotate to spread/flap), `eyeGlow` |
 Poses (`anims.glb`): Idle_Loop, Idle_Talking_Loop, Walk_Loop, Walk_Formal_Loop, Jog_Fwd_Loop, Sprint_Loop, Sitting_Idle_Loop, Crouch_Idle_Loop, Dance_Loop, Spell_Simple_Idle_Loop, Sword_Idle, Idle_Torch_Loop, Fixing_Kneeling. Switch with `g.userData.pose(name)` in `update`.
 Big crowds: `C.bakeRig(ch.person({ bake: true, seed }), clip, time)` → `C.instObject(baked, matrices)` (see `s1d_city.js`).
+
+### Make what is sung happen (most important)
+Every lyric line should show its action. Tools:
+- `X.line(k, dt)` = start time of lyric line k (0-based over the whole song) + dt. Use it for every story event and every cut.
+- `C.act(obj, [{ t, pose, to, move, face, y, s, show, fn }])` (w3c_action.js): a character's beats on song time. `to` walks/runs there (pose picked from speed unless given), `face` turns to a point/object/angle, `show` hides/shows, `fn(u, t)` for custom effects. Build the list in the scene, call `.update(t, ctx)` from the scene's `update`.
+- Cut the camera on the lines too: one shot per line or two (`{ t: X.line(k, -0.2), cam: ... }`), framed on whoever the line is about.
+- Level 8 is the reference: the well (Arthas kneels on "bled his hand", Baphomet rises on "chains broke", wings spread on "the demon spoke"), the wood (the blade stops on "would not land"), the choruses (each brother steps forward on his name), the wyrm (rises, dives, flees, waits in the crater), the camp, the crossroads, the feast, the gaol.
+- Scenes can set `t0`/`t1` (song-time window) instead of path-distance visibility when they overlap other places (e.g. the gaol inside the street).
+- No camera kicks or shake: Rasmus found them jittery. Keep moves smooth; cut instead.
 
 ### Creatures (`C.creature(key, { h, tint, eyes, clip })`, pack `beasts`)
 | key | clips |
 |---|---|
-| demon (Baphomet) | Idle, Walk, Run, Punch, Weapon, Yes, No, Wave, Death, HitReact, Jump… |
-| dragon (black wyrm) | Fast_Flying, Flying_Idle, Headbutt, Punch, HitReact, Death, Yes, No |
+| wyrm (black dragon, CC0 OpenGameArt) | Flying (no death clip: freeze a frame with `timeFn` and roll it onto its side, see s1b_dragon corpse) |
 | wolf | Gallop, Gallop_Jump, Walk, Idle, Idle_2, Idle_2_HeadLow, Attack, Eating, Death |
 | bat | Bat_Flying, Bat_Attack, Bat_Attack2, Bat_Hit, Bat_Death |
 `eyes: 0xff2a10` turns the cartoon eyes into glowing slits (do it for every monster). Story creatures must be pushed to `X.anims` (they then follow song time). A one-shot clip that should hold its last frame: `g.userData.timeFn = (tm) => clamp(tm - startT, 0, dur - 0.02)`.
@@ -101,6 +110,7 @@ Then render screenshots (scripts from previous sessions live in the scratchpad; 
 - Headless Chrome via playwright-core (`channel: 'chrome'`, `--use-angle=d3d11 --enable-gpu --ignore-gpu-blocklist`; the Browser pane is throttled when hidden, don't use it for frames).
 - Before rendering a level: `await __cw.loadPacks(story.packs)`, `W.loadStory(story)`, then `__alaron.dev.hold = { mode: 'ride', t, dt: 0.016, time: t, player: {x:0,z:0,yaw:0,pitch:0}, look: {yaw:0,pitch:0} }`.
 - Shoot every ~6–8 s of the song plus every section start; build a contact sheet (sharp) and look at all of it. Fix: camera inside geometry, empty frames (target out of shot), blown-out light, characters clipping props, models facing the wrong way (models face +z; turn with `lookAt`).
+- `node tools/clipcheck.cjs 0.5 0.3`: lists every moment the camera touches geometry (raycasts). Must end with "no camera clipping".
 - Full UI flow (desktop 1280×720 and phone 390×844): start → walk to stage → book → page to the level → "Ask for this song" → ride → seek → end card. Check lyrics against the audio at a few points (`__alaron.seek(t)`).
 
 ## 6. Ship
@@ -116,4 +126,5 @@ Final report for Rasmus (short): what the level shows, shot highlights, lyric li
 | nature | trees/rocks/plants, forest ground |
 | village | modular house kit, cobblestone, castle brick |
 | beasts | wolf, dragon, bat, demon |
-Adding art: download CC0 (Quaternius on itch.io via headless Chrome; Poly Pizza `static.poly.pizza/*.glb` for single Quaternius models; Google Drive links rate-limit, avoid), extract to the scratchpad, add keys to `scripts/pack-assets.mjs` (PACKS / CHARS / CREATURES), run `node scripts/pack-assets.mjs <packsDir> [pack]`, add the file to a `C.PACKS` entry, credit in `public/chronicle/assets/CREDITS.txt`. FBX-only packs: convert with three r128 FBXLoader → GLTFExporter in headless Chrome first.
+Adding art: download CC0 (Quaternius on itch.io via headless Chrome; Poly Pizza `static.poly.pizza/*.glb` for single Quaternius models; Google Drive links rate-limit, avoid), extract to the scratchpad, add keys to `scripts/pack-assets.mjs` (PACKS / CHARS / CREATURES), run `node scripts/pack-assets.mjs <packsDir> [pack]`, add the file to a `C.PACKS` entry, credit in `public/chronicle/assets/CREDITS.txt`. FBX-only packs: convert with three r128 FBXLoader → GLTFExporter in headless Chrome first (`tools/fbx2glb.cjs`). `.blend` files: Blender 4.2 LTS portable from download.blender.org (verify the sha256), unzipped to a SHORT path (e.g. `%TEMP%l42`; deep paths break its glTF exporter), `blender.exe -b --factory-startup --python b2glb.py -- in.blend out.glb` with `export_apply=True` (applies mirror modifiers).
+Avoid cute/chibi models for threats (the Quaternius Demon/Dragon were rejected): build big villains on the rigged body (like Baphomet) or find low-poly realistic ones.

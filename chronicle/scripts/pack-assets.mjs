@@ -124,7 +124,7 @@ if (!only || only === 'chars') {
 
 // Creatures and single props from other CC0 sources (Poly Pizza Quaternius glbs; FBX packs converted with three's
 // FBXLoader -> GLTFExporter, see LEVELS.md). One glb each; clip names lose their "Armature|" prefix, duplicates dropped.
-const CREATURES = { wolf: 'pp/wolf_a.glb', dragon: 'pp/dragon.glb', bat: 'pp/bat.glb', lute: 'pp/lute.glb', demon: 'pp/demon.glb' };
+const CREATURES = { wolf: 'pp/wolf_a.glb', bat: 'pp/bat.glb', lute: 'pp/lute.glb', wyrm: 'pp/ice_dragon.glb' };  // wyrm: OpenGameArt low-poly-ice-dragon (CC0), .blend converted with Blender 4.2 portable
 if (!only || only === 'creatures') {
   fs.mkdirSync(`${OUT}/creatures`, { recursive: true });
   for (const [key, file] of Object.entries(CREATURES)) {

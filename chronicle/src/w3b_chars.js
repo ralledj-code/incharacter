@@ -1,7 +1,7 @@
 (function (root) {
 'use strict';
 const C = root.__cw, THREE = C.THREE;
-const { TAU, M, bx, cy, cn, ic, solid } = C;
+const { TAU, lerp, M, bx, cy, cn, ic, solid } = C;
 
 /* The party, built from the reference portraits. Detail level: readable at 5-15 m in fog. */
 C.chars = function (X) {
@@ -139,6 +139,56 @@ C.chars = function (X) {
       const parts = [[outfit, o.tint || pk(CLOTH), rnd() < 0.7 ? /Hood|Pauldron/ : null], [hair, o.hairTint || pk(HAIRC)]];
       if (!f && hair !== 'hair_beard' && rnd() < 0.35) parts.push(['hair_beard', o.hairTint || pk(HAIRC)]);
       return rig({ base: f ? 'body_f' : 'body_m', parts, pose: o.pose || 'Idle_Loop', h: o.h || (f ? 1.68 : 1.8) }, o);
+    };
+
+    /* Baphomet: a winged, goat-headed giant on the rigged body. Built at human scale (1.8 m) and scaled to o.h.
+       userData: wings [L, R] pivots (flap in update), eyes, pose(). */
+    const tube = (pts, r0, r1, color) => {  // tapered horn/bone along points (human-scale metres, bone space)
+      const parts = [];
+      for (let i = 0; i < pts.length - 1; i++) {
+        const a = pts[i], b = pts[i + 1], dir = new THREE.Vector3().subVectors(b, a), len = dir.length();
+        const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+        const r = (k) => lerp(r0, r1, k / (pts.length - 1)), g = new THREE.CylinderGeometry(r(i + 1), r(i), len * 1.08, 7);
+        g.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(q)); g.translate((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);  // r128: no applyQuaternion on geometry
+        parts.push(C.part(g, color));
+      }
+      return parts;
+    };
+    K.baphomet = function (o) {
+      o = o || {};
+      const H = o.h || 14, k = H / 1.8;
+      const g = rig({ parts: [['ranger_m', { color: 0x3a2628 }, /Hood/], ['peasant_m', { color: 0x4a2a2a }, /Body|Arms/]], body: 0x4a2c2c, pose: o.pose || 'Idle_Loop', h: H }, o);
+      const bone = 0x8a7c6a, horn = 0x4a4038, V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+      // goat skull over the human head: long muzzle, heavy brow, beard, ears, two great back-swept horns
+      const P = [
+        ic(0.13, 1, bone, [0, 0.1, 0.0], [1, 1.05, 1.15]),
+        cy(0.045, 0.07, 0.22, 7, bone, [0, 0.04, 0.16], [Math.PI / 2 + 0.35, 0, 0]),
+        bx(0.2, 0.05, 0.08, 0x1a1416, [0, 0.13, 0.1]),
+        cn(0.05, 0.22, 6, 0x1a1214, [0, -0.1, 0.17], [Math.PI, 0, 0]),
+        cn(0.03, 0.14, 4, bone, [-0.15, 0.12, -0.02], [0, 0, 1.3]), cn(0.03, 0.14, 4, bone, [0.15, 0.12, -0.02], [0, 0, -1.3])
+      ];
+      [-1, 1].forEach((sd) => {
+        const pts = []; for (let i = 0; i <= 8; i++) { const u = i / 8; pts.push(V3(sd * (0.06 + 0.1 * u + 0.05 * Math.sin(u * 3)), 0.2 + 0.32 * Math.sin(u * 1.9), -0.02 - 0.28 * u * u)); }
+        P.push(...tube(pts, 0.045, 0.008, horn));
+      });
+      const skull = solid(P); C.attach(g, 'Head', skull, [0, 0, 0.02 * k], null, k);
+      const eyes = [-0.055, 0.055].map((x) => { const e = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.014, 0.02), new THREE.MeshBasicMaterial({ color: 0xff3a10 })); C.attach(g, 'Head', e, [x * k, 0.12 * k, 0.17 * k], null, k); return e; });
+      const eg = X.glow(0xff3010, 0.5 * k, 0.9); C.attach(g, 'Head', eg, [0, 0.12 * k, 0.2 * k]);
+      // bat wings from the shoulder blades: finger bones + membrane
+      const wings = [-1, 1].map((sd) => {
+        const piv = new THREE.Group(), span = 1.5, fingers = [[1.0, 0.75], [1.45, 0.25], [1.25, -0.3], [0.8, -0.65]];
+        const Wp = [];
+        fingers.forEach(([x, y]) => Wp.push(...tube([V3(0, 0, 0), V3(sd * x * 0.45, y * 0.6 + 0.35, -0.05), V3(sd * x * span * 0.62, y * span * 0.45 + 0.3, -0.1)], 0.02, 0.006, bone)));
+        const sh = new THREE.Shape(); sh.moveTo(0, 0);
+        fingers.forEach(([x, y], i) => { const tx = sd * x * span * 0.62, ty = y * span * 0.45 + 0.3; sh.lineTo(tx, ty); if (i < fingers.length - 1) { const [nx, ny] = fingers[i + 1]; sh.quadraticCurveTo(sd * (x + nx) * span * 0.22, (y + ny) * span * 0.16 + 0.2, sd * nx * span * 0.62, ny * span * 0.45 + 0.3); } });
+        sh.lineTo(0, -0.2); sh.lineTo(0, 0);
+        const mem = new THREE.Mesh(new THREE.ShapeGeometry(sh, 6), new THREE.MeshLambertMaterial({ color: 0x4a1a20, side: THREE.DoubleSide }));
+        mem.position.z = -0.08; piv.add(mem); piv.add(solid(Wp));
+        C.attach(g, 'spine_03', piv, [sd * 0.09 * k, 0.12 * k, -0.12 * k], [0, sd * 0.5, 0], k);
+        return piv;
+      });
+      g.userData.wings = wings; g.userData.eyes = eyes; g.userData.eyeGlow = eg;
+      return g;
     };
 
     // The wraith over Cobh: a giant hooded figure, nearly black, eyes burning cold.

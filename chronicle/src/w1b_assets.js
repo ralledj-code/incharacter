@@ -12,7 +12,7 @@ const PACKS = {
   tavern: { glb: ['props'], tex: ['old_wood_floor', 'wood_plank_wall', 'rustic_stone_wall'], creatures: ['lute'],
     chars: ['body_m', 'body_f', 'ranger_m', 'peasant_m', 'ranger_f', 'peasant_f', 'hair_long', 'hair_beard', 'hair_buns', 'hair_parted', 'hair_buzzed', 'hair_buzzed_f'] },
   nature: { glb: ['nature'], tex: ['forest_ground_04'] },
-  beasts: { creatures: ['wolf', 'dragon', 'bat', 'demon'] },
+  beasts: { creatures: ['wolf', 'wyrm', 'bat'] },
   village: { glb: ['village'], tex: ['cobblestone_floor_04', 'castle_brick_07'] }
 };
 C.PACKS = PACKS;
