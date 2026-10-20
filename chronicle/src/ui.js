@@ -179,7 +179,7 @@ function begin() {
 }
 function backToBook() {
   audio.pause(); W.endRide(); tavernMusic(true); mode = 'book'; sitting = false; sitT = 1; ended = false; look.yaw = 0; look.pitch = 0;
-  $('fade').style.opacity = 0; $('end').hidden = true; $('lyric').classList.remove('on'); $('stamp').classList.remove('on'); refreshUI();
+  $('fade').style.opacity = 0; $('end').hidden = true; $('lyric').classList.remove('on'); $('stamp').classList.remove('on'); $('title').classList.remove('on'); lastTitle = null; refreshUI();
 }
 function togglePause() { if (mode !== 'ride' || ended) return; paused = !paused; if (paused) audio.pause(); else audio.play(); $('bPause').textContent = paused ? 'Resume' : 'Pause'; }
 let muted = false;
@@ -254,7 +254,7 @@ function refreshUI() {
 }
 
 /* ---------- lyrics ---------- */
-let lastLine = '', lastStamp = '';
+let lastLine = '', lastStamp = '', lastTitle = null;
 function flatLines(s) { const a = []; s.cues.forEach((c, ci) => (c.lines || []).forEach((tx, k) => a.push({ ci, k, tx }))); return a; }
 function loadTimes(s) {
   s.flat = flatLines(s);
@@ -266,6 +266,9 @@ function lyricsAt(t) {
   const cues = story.cues, i = W.cueIndexAt(Math.max(0, t)), c = cues[i], nx = cues[i + 1], end = nx ? nx.t : story.duration;
   const st = c.stamp && t - c.t < 7 && t >= c.t ? c.stamp : '';
   if (st !== lastStamp) { lastStamp = st; if (st) $('stamp').textContent = st; $('stamp').classList.toggle('on', !!st); }
+  // name cards: who someone is, the first time they appear (level `titles: [{ t, name, sub, dur }]`)
+  const tc = (story.titles || []).find((x) => t >= x.t && t < x.t + (x.dur || 4.5)) || null;
+  if (tc !== lastTitle) { lastTitle = tc; if (tc) { $('title').firstChild.textContent = tc.name; $('title').lastChild.textContent = tc.sub || ''; } $('title').classList.toggle('on', !!tc); }
   let line = '';
   if (story.times && !syncing) {
     const tm = story.times; let k = -1;
