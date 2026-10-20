@@ -18,7 +18,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2))
 renderer.toneMapping = THREE.LinearToneMapping;
 const EXPOS = [1.0, 1.35, 1.8, 0.8]; let expI = 0; renderer.toneMappingExposure = EXPOS[0];
 const W = C.create({ mobile });
-W.book.setStories(C.stories);
+W.book.setStories(C.stories); W.book.setIndex(C.firstStory || 0, true);
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); W.resize(w, h); }
 addEventListener('resize', resize); resize();
 
@@ -31,16 +31,22 @@ const keys = {}; let padHeld = false;
 
 /* ---------- audio ---------- */
 const audio = new Audio(); audio.preload = 'auto';
-let audioReady = false, audioErr = false;
-function setAudioSrc(url) { audio.src = url; audio.load(); audioReady = true; audioErr = false; refreshBookUI(); }
-const BASE = C.BASE();
-fetch(new URL('song.mp3', BASE)).then((r) => { if (!r.ok) throw 0; return r.blob(); }).then((b) => setAudioSrc(URL.createObjectURL(b))).catch(() => {
-  audioErr = true;
-  const l = document.createElement('label'); l.style.cssText = 'color:var(--dim);font-size:.95rem';
+// each level's song is fetched when its page is first shown (story.audio, relative to the page)
+const BASE = C.BASE(), songs = {};
+function wantSong(s) {
+  if (!s || s.locked || songs[s.id]) return;
+  const e = songs[s.id] = { state: 'loading', url: null };
+  fetch(new URL(s.audio, BASE)).then((r) => { if (!r.ok) throw 0; return r.blob(); })
+    .then((b) => { e.url = URL.createObjectURL(b); e.state = 'ready'; refreshBookUI(); })
+    .catch(() => { e.state = 'err'; refreshBookUI(); });
+}
+const songState = (s) => (songs[s.id] ? songs[s.id].state : 'loading');
+function pickSong(s) {  // fallback when the file is missing: let the player choose the mp3
+  const l = document.createElement('label'); l.style.cssText = 'color:var(--dim);font-size:.95rem;pointer-events:auto';
   l.innerHTML = 'The song did not load. Pick the mp3: <input type="file" accept="audio/*">';
-  l.querySelector('input').onchange = (e) => { const f = e.target.files[0]; if (f) { setAudioSrc(URL.createObjectURL(f)); l.remove(); } };
-  $('start').appendChild(l); refreshBookUI();
-});
+  l.querySelector('input').onchange = (ev) => { const f = ev.target.files[0]; if (f) { songs[s.id] = { state: 'ready', url: URL.createObjectURL(f) }; l.remove(); refreshBookUI(); } };
+  $('hint').appendChild(l);
+}
 audio.addEventListener('ended', () => { if (mode === 'ride') finish(); });
 
 /* ---------- start ---------- */
@@ -95,8 +101,9 @@ function flip(d) { const before = W.book.index; if (d > 0) W.book.next(); else W
 function curStory() { return C.stories[W.book.index]; }
 function begin() {
   const s = curStory(); if (!s || s.locked || mode !== 'book' || sitting) return;
-  if (!audioReady) return;
+  if (songState(s) !== 'ready') return;
   story = s; loadTimes(s); W.loadStory(s);
+  if (audio.src !== songs[s.id].url) { audio.src = songs[s.id].url; audio.load(); }
   mode = 'ride'; ended = false; paused = false;
   W.beginRide({ x: W.SEAT.x, y: W.SEAT.y, z: W.SEAT.z, yaw: look.yaw * 0.6, pitch: -0.33 + look.pitch * 0.6 });
   look.yaw = 0; look.pitch = 0;
@@ -156,10 +163,12 @@ addEventListener('keydown', (e) => { if (syncing && e.code === 'Space') { e.prev
 function refreshBookUI() {
   if (mode !== 'book') return;
   const s = curStory(); if (!s) return;
-  const meta = s.locked ? '' : s.session + ' · ' + s.length + (audioReady ? '' : audioErr ? ' · song missing' : ' · loading the song…');
+  wantSong(s);
+  const st = songState(s), meta = s.session + ' · ' + s.length + (s.locked || st === 'ready' ? '' : st === 'err' ? ' · song missing' : ' · loading the song…');
   $('hint').innerHTML = '<b style="font-family:var(--head);letter-spacing:.1em;font-size:1.25rem">' + s.title + '</b><br><span style="color:var(--ember);font-size:.9rem">' + meta + '</span><br>' + s.blurb;
-  $('bBegin').disabled = !!s.locked || !audioReady;
-  $('bBegin').textContent = s.locked ? 'Not yet written' : 'Begin this story';
+  if (!s.locked && st === 'err' && !songs[s.id].asked) { songs[s.id].asked = true; pickSong(s); }
+  $('bBegin').disabled = !!s.locked || st !== 'ready';
+  $('bBegin').textContent = s.locked ? 'Coming soon' : 'Begin this story';
   $('bPrev').disabled = W.book.index === 0; $('bNext').disabled = W.book.index >= W.book.count - 1;
 }
 let lastNear = null;

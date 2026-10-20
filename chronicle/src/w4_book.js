@@ -28,7 +28,10 @@ function artPage(story, mirror) {
   x.strokeStyle = INK; x.lineWidth = 3; x.strokeRect(34, 34, 444, 632);
   x.lineWidth = 1; x.strokeRect(44, 44, 424, 612);
   if (story.locked) {
-    x.fillStyle = 'rgba(42,26,16,0.55)'; x.font = '120px ' + FONT_HEAD; x.textAlign = 'center'; x.fillText('?', 256, 400);
+    const ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV'];
+    x.fillStyle = 'rgba(42,26,16,0.55)'; x.textAlign = 'center';
+    x.font = '110px ' + FONT_HEAD; x.fillText(ROM[(story.level || 1) - 1] || String(story.level), 256, 380);
+    x.font = '26px ' + FONT_BODY; x.fillText('the ink is not dry yet', 256, 470);
   } else {
     // the moonwell and its chains
     x.strokeStyle = INK; x.fillStyle = INK; x.lineWidth = 3;
@@ -47,7 +50,7 @@ function artPage(story, mirror) {
 function textPage(story, idx, total, mirror) {
   const { c, x } = paper(512, 700, mirror);
   x.fillStyle = INK; x.textAlign = 'center';
-  x.font = '20px ' + FONT_HEAD; x.fillText(story.locked ? 'A page not yet written' : story.session, 256, 92);
+  x.font = '20px ' + FONT_HEAD; x.fillText(story.session, 256, 92);
   x.font = '44px ' + FONT_HEAD;
   let y = wrap(x, story.title, 256, 170, 400, 52);
   x.strokeStyle = INK; x.lineWidth = 1.5; x.beginPath(); x.moveTo(176, y - 20); x.lineTo(336, y - 20); x.stroke();
@@ -55,7 +58,7 @@ function textPage(story, idx, total, mirror) {
   y = wrap(x, story.blurb, 70, y + 30, 372, 31);
   x.textAlign = 'center'; x.font = '21px ' + FONT_HEAD;
   if (!story.locked) { x.fillText(story.length + '  ·  a song in one sitting', 256, 590); x.font = '24px ' + FONT_HEAD; x.fillText('— turn to hear it —', 256, 628); }
-  else { x.fillText('drop a song here', 256, 610); }
+  else { x.font = '30px ' + FONT_HEAD; x.fillText('— coming soon —', 256, 610); }
   x.font = '18px ' + FONT_BODY; x.fillText((idx + 1) + ' / ' + total, 256, 664);
   return c;
 }
@@ -104,16 +107,16 @@ C.buildBook = function (X) {
       const front = new THREE.Mesh(leafGeoF, new THREE.MeshLambertMaterial({ map: right[j], color: 0xb8ae9a }));
       const backTex = j + 1 < N ? tex(artPage(list[j + 1], 'hv')) : null;
       const back = new THREE.Mesh(leafGeoB, new THREE.MeshLambertMaterial(backTex ? { map: backTex, color: 0xb8ae9a } : { color: 0xa89c80 }));
-      const off = 0.0012 * (N - j);
-      front.position.y = off; back.position.y = off - 0.0006;
+      // both faces hug the pivot; the pivot's height (set in update) keeps the stacks in order on both sides
+      front.position.y = 0.0003; back.position.y = -0.0003;
       pivot.add(front); pivot.add(back);
       // text of the next spread's right page sits on the following leaf; the left text page is on the back, so overlay is art only
       book.add(pivot);
-      leaves.push({ pivot, ang: 0 });
+      leaves.push({ pivot, ang: 0, yR: pivotY + 0.0012 * (N - j), yL: pivotY + 0.0012 * (j + 1) });
     }
     texCache = { right };
   }
-  function setIndex(i) { cur = clamp(i, 0, stories.length - 1); }
+  function setIndex(i, snap) { cur = clamp(i, 0, stories.length - 1); if (snap) leaves.forEach((l, j) => { l.ang = j < cur ? Math.PI : 0; l.pivot.rotation.z = l.ang; l.pivot.position.y = j < cur ? l.yL : l.yR; }); }
   return {
     group: g, W, H, setStories,
     get index() { return cur; }, get count() { return stories.length; },
@@ -125,6 +128,8 @@ C.buildBook = function (X) {
         const target = j < cur ? Math.PI : 0;
         l.ang += (target - l.ang) * (1 - Math.exp(-dt * 7));
         l.pivot.rotation.z = l.ang;
+        // unturned leaves: lower index on top; turned leaves: higher index on top
+        l.pivot.position.y = lerp(l.yR, l.yL, l.ang / Math.PI) + Math.sin(l.ang) * 0.02;
       });
     }
   };

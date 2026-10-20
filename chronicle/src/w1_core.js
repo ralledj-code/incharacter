@@ -243,5 +243,7 @@ function bannerTexture(kind) {
   }
   return new THREE.CanvasTexture(c);
 }
-root.__cw = { THREE, TAU, clamp, lerp, sm, ss, mkRng, R, RP, pick, MOODS, newMood, moodAt, storyData: { baphomet: { cues: CUES, keys: KEYS, duration: DURATION, hitT: HIT_T, silenceT: SILENCE_T } }, scenes: { baphomet: [] }, M, part, bx, cy, cn, ic, tri, merge, lamb, solid, emis, inst, cv, glowTexture, groundTexture, plankTexture, stoneTexture, bannerTexture, getRnd: () => rnd };
+// levels can add their own moods: defineMood(name, fog, fogDensity, skyTop, skyHorizon, hemiSky, hemiGround, hemiI, dirColor, dirI, lampColor, lampI, ground, stars, moon, aurora, auroraA, auroraB)
+function defineMood(name, ...args) { const s = mood(...args), o = {}; CF.forEach((f) => { o[f] = new THREE.Color(s[f]); }); NF.forEach((f) => { o[f] = s[f]; }); MOODS[name] = o; }
+root.__cw = { THREE, TAU, defineMood, levels: {}, clamp, lerp, sm, ss, mkRng, R, RP, pick, MOODS, newMood, moodAt, storyData: { baphomet: { cues: CUES, keys: KEYS, duration: DURATION, hitT: HIT_T, silenceT: SILENCE_T } }, scenes: { baphomet: [] }, M, part, bx, cy, cn, ic, tri, merge, lamb, solid, emis, inst, cv, glowTexture, groundTexture, plankTexture, stoneTexture, bannerTexture, getRnd: () => rnd };
 })(typeof window !== 'undefined' ? window : globalThis);

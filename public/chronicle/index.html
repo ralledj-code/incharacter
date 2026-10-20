@@ -339,7 +339,9 @@ function bannerTexture(kind) {
   }
   return new THREE.CanvasTexture(c);
 }
-root.__cw = { THREE, TAU, clamp, lerp, sm, ss, mkRng, R, RP, pick, MOODS, newMood, moodAt, storyData: { baphomet: { cues: CUES, keys: KEYS, duration: DURATION, hitT: HIT_T, silenceT: SILENCE_T } }, scenes: { baphomet: [] }, M, part, bx, cy, cn, ic, tri, merge, lamb, solid, emis, inst, cv, glowTexture, groundTexture, plankTexture, stoneTexture, bannerTexture, getRnd: () => rnd };
+// levels can add their own moods: defineMood(name, fog, fogDensity, skyTop, skyHorizon, hemiSky, hemiGround, hemiI, dirColor, dirI, lampColor, lampI, ground, stars, moon, aurora, auroraA, auroraB)
+function defineMood(name, ...args) { const s = mood(...args), o = {}; CF.forEach((f) => { o[f] = new THREE.Color(s[f]); }); NF.forEach((f) => { o[f] = s[f]; }); MOODS[name] = o; }
+root.__cw = { THREE, TAU, defineMood, levels: {}, clamp, lerp, sm, ss, mkRng, R, RP, pick, MOODS, newMood, moodAt, storyData: { baphomet: { cues: CUES, keys: KEYS, duration: DURATION, hitT: HIT_T, silenceT: SILENCE_T } }, scenes: { baphomet: [] }, M, part, bx, cy, cn, ic, tri, merge, lamb, solid, emis, inst, cv, glowTexture, groundTexture, plankTexture, stoneTexture, bannerTexture, getRnd: () => rnd };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 (function (root) {
@@ -1377,7 +1379,10 @@ function artPage(story, mirror) {
   x.strokeStyle = INK; x.lineWidth = 3; x.strokeRect(34, 34, 444, 632);
   x.lineWidth = 1; x.strokeRect(44, 44, 424, 612);
   if (story.locked) {
-    x.fillStyle = 'rgba(42,26,16,0.55)'; x.font = '120px ' + FONT_HEAD; x.textAlign = 'center'; x.fillText('?', 256, 400);
+    const ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV'];
+    x.fillStyle = 'rgba(42,26,16,0.55)'; x.textAlign = 'center';
+    x.font = '110px ' + FONT_HEAD; x.fillText(ROM[(story.level || 1) - 1] || String(story.level), 256, 380);
+    x.font = '26px ' + FONT_BODY; x.fillText('the ink is not dry yet', 256, 470);
   } else {
     // the moonwell and its chains
     x.strokeStyle = INK; x.fillStyle = INK; x.lineWidth = 3;
@@ -1396,7 +1401,7 @@ function artPage(story, mirror) {
 function textPage(story, idx, total, mirror) {
   const { c, x } = paper(512, 700, mirror);
   x.fillStyle = INK; x.textAlign = 'center';
-  x.font = '20px ' + FONT_HEAD; x.fillText(story.locked ? 'A page not yet written' : story.session, 256, 92);
+  x.font = '20px ' + FONT_HEAD; x.fillText(story.session, 256, 92);
   x.font = '44px ' + FONT_HEAD;
   let y = wrap(x, story.title, 256, 170, 400, 52);
   x.strokeStyle = INK; x.lineWidth = 1.5; x.beginPath(); x.moveTo(176, y - 20); x.lineTo(336, y - 20); x.stroke();
@@ -1404,7 +1409,7 @@ function textPage(story, idx, total, mirror) {
   y = wrap(x, story.blurb, 70, y + 30, 372, 31);
   x.textAlign = 'center'; x.font = '21px ' + FONT_HEAD;
   if (!story.locked) { x.fillText(story.length + '  ·  a song in one sitting', 256, 590); x.font = '24px ' + FONT_HEAD; x.fillText('— turn to hear it —', 256, 628); }
-  else { x.fillText('drop a song here', 256, 610); }
+  else { x.font = '30px ' + FONT_HEAD; x.fillText('— coming soon —', 256, 610); }
   x.font = '18px ' + FONT_BODY; x.fillText((idx + 1) + ' / ' + total, 256, 664);
   return c;
 }
@@ -1453,16 +1458,16 @@ C.buildBook = function (X) {
       const front = new THREE.Mesh(leafGeoF, new THREE.MeshLambertMaterial({ map: right[j], color: 0xb8ae9a }));
       const backTex = j + 1 < N ? tex(artPage(list[j + 1], 'hv')) : null;
       const back = new THREE.Mesh(leafGeoB, new THREE.MeshLambertMaterial(backTex ? { map: backTex, color: 0xb8ae9a } : { color: 0xa89c80 }));
-      const off = 0.0012 * (N - j);
-      front.position.y = off; back.position.y = off - 0.0006;
+      // both faces hug the pivot; the pivot's height (set in update) keeps the stacks in order on both sides
+      front.position.y = 0.0003; back.position.y = -0.0003;
       pivot.add(front); pivot.add(back);
       // text of the next spread's right page sits on the following leaf; the left text page is on the back, so overlay is art only
       book.add(pivot);
-      leaves.push({ pivot, ang: 0 });
+      leaves.push({ pivot, ang: 0, yR: pivotY + 0.0012 * (N - j), yL: pivotY + 0.0012 * (j + 1) });
     }
     texCache = { right };
   }
-  function setIndex(i) { cur = clamp(i, 0, stories.length - 1); }
+  function setIndex(i, snap) { cur = clamp(i, 0, stories.length - 1); if (snap) leaves.forEach((l, j) => { l.ang = j < cur ? Math.PI : 0; l.pivot.rotation.z = l.ang; l.pivot.position.y = j < cur ? l.yL : l.yR; }); }
   return {
     group: g, W, H, setStories,
     get index() { return cur; }, get count() { return stories.length; },
@@ -1474,6 +1479,8 @@ C.buildBook = function (X) {
         const target = j < cur ? Math.PI : 0;
         l.ang += (target - l.ang) * (1 - Math.exp(-dt * 7));
         l.pivot.rotation.z = l.ang;
+        // unturned leaves: lower index on top; turned leaves: higher index on top
+        l.pivot.position.y = lerp(l.yR, l.yL, l.ang / Math.PI) + Math.sin(l.ang) * 0.02;
       });
     }
   };
@@ -2073,17 +2080,39 @@ SC.push(function (X) {
 (function (root) {
 'use strict';
 const C = root.__cw;
-/* Story registry: each page of the book is one story module (audio + timeline + scene builders). */
-C.stories = [
-  Object.assign({
-    id: 'baphomet', title: 'Baphomet’s Chains', session: 'Session recap · 7:48 – 10:43 PM',
-    blurb: 'Arthas bleeds into a moonwell and Baphomet’s chains break. Cedric kills a black wyrm alone, Cobh throws a feast, and Lucien wakes up in irons with a wraith over the city.',
-    length: '6 min', audio: 'song.mp3', flashAt: 177.0, gaolCue: 'outro',
-    build(X) { return C.scenes.baphomet.map((f) => f(X)).filter(Boolean); }
-  }, C.storyData.baphomet),
-  { id: 'locked-2', locked: true, title: 'Chapter II', session: '', blurb: 'This page is waiting for a song. Turn the next session recap into a track and it can become a ride like this one.' },
-  { id: 'locked-3', locked: true, title: 'Chapter III', session: '', blurb: 'Unwritten. Every story is a small module: an audio file, a list of section times, and the scenes that play along.' }
+/* Story registry: each page of the book is one level (one song = one ride), in campaign order.
+   A playable level is a module: audio + timeline (storyData) + scene builders (C.scenes[id]).
+   The others are "coming soon" pages until their song is turned into a level (see chronicle/LEVELS.md). */
+const SOON = 'Coming soon. This chapter’s song is waiting to become a ride.';
+const PLAYLIST = [
+  // [level, id, title, session date, song length]
+  [1, 'first-steps', 'Alaron, the First Steps', '', '4:48'],
+  [2, 'finding-silas', 'Finding Silas', '14/05/2026', '5:57'],
+  [3, 'first-moonwell', 'Finding the First Moonwell', '24/05/2026', '4:57'],
+  [4, 'cleansing-well', 'Cleansing the First Well', '14/06/2026', '4:47'],
+  [5, 'hunt-pig', 'The Hunt for the Pig', '21/06/2026', '5:07'],
+  [6, 'slaying-pig', 'Slaying the Pig', '06/07/2026', '5:43'],
+  [7, 'journey-cobh', 'The Journey to Cobh', '21/07/2026', '4:58'],
+  [8, 'baphomet', 'Baphomet’s Chains', '15/08/2026', '6:06'],
+  [9, 'saving-cobh', 'Saving Cobh', '07/09/2026', '5:03'],
+  [10, 'ahm-dynasty', 'The Ahm Dynasty Mystery', '15/09/2026', '5:29'],
+  [11, 'hunger-grows', 'The Hunger Grows', '23/09/2026', '4:57'],
+  [12, 'fall-duncastle', 'The Fall of Duncastle', '28/09/2026', '6:52']
 ];
+const LEVELS = {
+  baphomet: Object.assign({
+    session: 'Level 8 · Session recap · 7:48 – 10:43 PM',
+    blurb: 'Arthas bleeds into a moonwell and Baphomet’s chains break. Cedric kills a black wyrm alone, Cobh throws a feast, and Lucien wakes up in irons with a wraith over the city.',
+    length: '6 min', audio: 'levels/08-baphomet.mp3', flashAt: 177.0, gaolCue: 'outro',
+    build(X) { return C.scenes.baphomet.map((f) => f(X)).filter(Boolean); }
+  }, C.storyData.baphomet)
+};
+C.stories = PLAYLIST.map(([level, id, title, date, len]) => Object.assign(
+  { id, level, title, date, length: len },
+  LEVELS[id] || (C.levels && C.levels[id]) || { locked: true, session: 'Level ' + level + (date ? ' · ' + date : ''), blurb: SOON }
+));
+// the page the book opens on: the latest playable level
+C.firstStory = C.stories.reduce((k, s, i) => (s.locked ? k : i), 0);
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -2108,7 +2137,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2))
 renderer.toneMapping = THREE.LinearToneMapping;
 const EXPOS = [1.0, 1.35, 1.8, 0.8]; let expI = 0; renderer.toneMappingExposure = EXPOS[0];
 const W = C.create({ mobile });
-W.book.setStories(C.stories);
+W.book.setStories(C.stories); W.book.setIndex(C.firstStory || 0, true);
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); W.resize(w, h); }
 addEventListener('resize', resize); resize();
 
@@ -2121,16 +2150,22 @@ const keys = {}; let padHeld = false;
 
 /* ---------- audio ---------- */
 const audio = new Audio(); audio.preload = 'auto';
-let audioReady = false, audioErr = false;
-function setAudioSrc(url) { audio.src = url; audio.load(); audioReady = true; audioErr = false; refreshBookUI(); }
-const BASE = C.BASE();
-fetch(new URL('song.mp3', BASE)).then((r) => { if (!r.ok) throw 0; return r.blob(); }).then((b) => setAudioSrc(URL.createObjectURL(b))).catch(() => {
-  audioErr = true;
-  const l = document.createElement('label'); l.style.cssText = 'color:var(--dim);font-size:.95rem';
+// each level's song is fetched when its page is first shown (story.audio, relative to the page)
+const BASE = C.BASE(), songs = {};
+function wantSong(s) {
+  if (!s || s.locked || songs[s.id]) return;
+  const e = songs[s.id] = { state: 'loading', url: null };
+  fetch(new URL(s.audio, BASE)).then((r) => { if (!r.ok) throw 0; return r.blob(); })
+    .then((b) => { e.url = URL.createObjectURL(b); e.state = 'ready'; refreshBookUI(); })
+    .catch(() => { e.state = 'err'; refreshBookUI(); });
+}
+const songState = (s) => (songs[s.id] ? songs[s.id].state : 'loading');
+function pickSong(s) {  // fallback when the file is missing: let the player choose the mp3
+  const l = document.createElement('label'); l.style.cssText = 'color:var(--dim);font-size:.95rem;pointer-events:auto';
   l.innerHTML = 'The song did not load. Pick the mp3: <input type="file" accept="audio/*">';
-  l.querySelector('input').onchange = (e) => { const f = e.target.files[0]; if (f) { setAudioSrc(URL.createObjectURL(f)); l.remove(); } };
-  $('start').appendChild(l); refreshBookUI();
-});
+  l.querySelector('input').onchange = (ev) => { const f = ev.target.files[0]; if (f) { songs[s.id] = { state: 'ready', url: URL.createObjectURL(f) }; l.remove(); refreshBookUI(); } };
+  $('hint').appendChild(l);
+}
 audio.addEventListener('ended', () => { if (mode === 'ride') finish(); });
 
 /* ---------- start ---------- */
@@ -2185,8 +2220,9 @@ function flip(d) { const before = W.book.index; if (d > 0) W.book.next(); else W
 function curStory() { return C.stories[W.book.index]; }
 function begin() {
   const s = curStory(); if (!s || s.locked || mode !== 'book' || sitting) return;
-  if (!audioReady) return;
+  if (songState(s) !== 'ready') return;
   story = s; loadTimes(s); W.loadStory(s);
+  if (audio.src !== songs[s.id].url) { audio.src = songs[s.id].url; audio.load(); }
   mode = 'ride'; ended = false; paused = false;
   W.beginRide({ x: W.SEAT.x, y: W.SEAT.y, z: W.SEAT.z, yaw: look.yaw * 0.6, pitch: -0.33 + look.pitch * 0.6 });
   look.yaw = 0; look.pitch = 0;
@@ -2246,10 +2282,12 @@ addEventListener('keydown', (e) => { if (syncing && e.code === 'Space') { e.prev
 function refreshBookUI() {
   if (mode !== 'book') return;
   const s = curStory(); if (!s) return;
-  const meta = s.locked ? '' : s.session + ' · ' + s.length + (audioReady ? '' : audioErr ? ' · song missing' : ' · loading the song…');
+  wantSong(s);
+  const st = songState(s), meta = s.session + ' · ' + s.length + (s.locked || st === 'ready' ? '' : st === 'err' ? ' · song missing' : ' · loading the song…');
   $('hint').innerHTML = '<b style="font-family:var(--head);letter-spacing:.1em;font-size:1.25rem">' + s.title + '</b><br><span style="color:var(--ember);font-size:.9rem">' + meta + '</span><br>' + s.blurb;
-  $('bBegin').disabled = !!s.locked || !audioReady;
-  $('bBegin').textContent = s.locked ? 'Not yet written' : 'Begin this story';
+  if (!s.locked && st === 'err' && !songs[s.id].asked) { songs[s.id].asked = true; pickSong(s); }
+  $('bBegin').disabled = !!s.locked || st !== 'ready';
+  $('bBegin').textContent = s.locked ? 'Coming soon' : 'Begin this story';
   $('bPrev').disabled = W.book.index === 0; $('bNext').disabled = W.book.index >= W.book.count - 1;
 }
 let lastNear = null;
