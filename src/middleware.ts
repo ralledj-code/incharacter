@@ -18,6 +18,8 @@ const PUBLIC_PATHS = [
 ]
 
 function isPublic(pathname: string): boolean {
+  // Alaron Chronicle (static page, models, songs) is open to everyone
+  if (pathname === '/chronicle' || pathname.startsWith('/chronicle/')) return true
   return PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith('/auth/'))
 }
 
@@ -27,6 +29,8 @@ export async function middleware(request: NextRequest) {
   // Skip auth-related paths before touching Supabase — prevents refresh storms
   // on the login/reset/callback pages which don't need session checks.
   if (pathname.startsWith('/api/') || pathname.startsWith('/auth/')) return NextResponse.next()
+  // public static Chronicle files never need a session check
+  if (pathname === '/chronicle' || pathname.startsWith('/chronicle/')) return NextResponse.next()
 
   let response = NextResponse.next({ request })
 

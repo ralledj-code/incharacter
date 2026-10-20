@@ -11,8 +11,9 @@ interface BurgerMenuProps {
   theme?: 'light' | 'dark'
 }
 
-const LOGGED_OUT_LINKS = [
+const LOGGED_OUT_LINKS: { href: string; label: string; static?: boolean }[] = [
   { href: '/', label: 'Home' },
+  { href: '/chronicle', label: 'Chronicle', static: true },
   { href: '/#how-it-works', label: 'How It Works' },
   { href: '/about', label: 'About' },
   { href: '/faq', label: 'FAQ' },
