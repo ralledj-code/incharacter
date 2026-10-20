@@ -149,7 +149,7 @@ SC.push(function (X) {
       const killed = t >= TK;
       dragon.visible = killed;
       if (killed) dragon.scale.setScalar(SCL * (0.92 + 0.08 * sm((t - TK) / 0.4)));
-      const glowK = killed ? 0 : ss(150, 176, t) * (0.8 + 0.2 * Math.sin(ctx.time * 5));
+      const glowK = killed ? 0 : ss(X.sec.v2b.t0, X.sec.brk.t0 - 1, t) * (0.8 + 0.2 * Math.sin(ctx.time * 5));
       eyeG.forEach((e) => { e.material.opacity = glowK; });
       if (!killed) {
         const dc = Math.min(dCr - 3, X.distAt(Math.max(S.t0, t)) + 26), p = X.at(dc, 1.2, 0);

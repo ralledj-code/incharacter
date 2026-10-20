@@ -24,7 +24,7 @@ const LEVELS = {
   baphomet: Object.assign({
     session: 'Level 8 · Session recap · 7:48 – 10:43 PM',
     blurb: 'Arthas bleeds into a moonwell and Baphomet’s chains break. Cedric kills a black wyrm alone, Cobh throws a feast, and Lucien wakes up in irons with a wraith over the city.',
-    length: '6 min', audio: 'levels/08-baphomet.mp3', flashAt: 177.0, gaolCue: 'outro',
+    length: '6 min', audio: 'levels/08-baphomet.mp3', flashAt: 180.1, gaolCue: 'outro',
     build(X) { return C.scenes.baphomet.map((f) => f(X)).filter(Boolean); }
   }, C.storyData.baphomet)
 };

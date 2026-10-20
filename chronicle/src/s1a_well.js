@@ -114,7 +114,7 @@ SC.push(function (X) {
   for (let i = 0; i < NE; i++) {
     const d = R(S1.d0 - 6, S2.d1 + 6), sd = (R(0, 1) < 0.5 ? -1 : 1) * R(3.8, 17), p = X.at(d, sd, 0), y = R(0.45, 1.6), gap = 0.2;
     const f = X.at(d, sd, 0), tg = X.frame(d), sx = -tg.tz, sz = tg.tx;
-    eyes.push({ p, y, gap, sx, sz, ph: R(0, TAU), kill: 66 + R(0, 10) });
+    eyes.push({ p, y, gap, sx, sz, ph: R(0, TAU), kill: X.sec.pre.t0 + 1 + R(0, 10) });
   }
   const eyeMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.06, 5, 4), new THREE.MeshBasicMaterial({ color: 0xffb030 }), NE * 2);
   eyeMesh.frustumCulled = false; g.add(eyeMesh);
@@ -142,7 +142,7 @@ SC.push(function (X) {
         }
       }
       eyeMesh.instanceMatrix.needsUpdate = true;
-      const heart = 1 + 0.05 * Math.sin(ctx.time * 15), slump = ss(66.5, 69, t);
+      const heart = 1 + 0.05 * Math.sin(ctx.time * 15), slump = ss(X.sec.pre.t0 + 1.5, X.sec.pre.t0 + 4, t);
       ner.scale.set(heart, (0.85 - 0.2 * slump) * heart, heart); ner.rotation.x = 0.25 * slump;
       const rise = ss(S2.t0, S2.t0 + 3, t), stab = ss(S2.t0 + 4, S2.t0 + 4.4, t) * (1 - ss(S2.t0 + 4.4, S2.t0 + 8, t));
       dag.position.set(sp.x, 0.55 + 1.2 * rise + 0.08 * Math.sin(ctx.time * 1.4), sp.z); dag.rotation.y = ctx.time * 0.6;

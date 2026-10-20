@@ -170,9 +170,9 @@ SC.push(function (X) {
       const k = ss(S.t0, X.sec.final.t1 - 12, t), p = X.at(X.Dend + lerp(78, 36, k), lerp(-12, -3, k), lerp(26, 13, k) + Math.sin(ctx.time * 0.5) * 0.8);
       wr.position.copy(p); wr.visible = t > S.t0 - 2;
       strips.forEach((s) => { s.piv.rotation.z = 0.15 * Math.sin(ctx.time * 1.3 + s.ph); s.piv.rotation.x = 0.12 * Math.cos(ctx.time * 1.1 + s.ph); });
-      const flash = t >= 357 ? Math.exp(-(t - 357) * 1.5) : 0;
+      const HT = X.story.hitT, flash = t >= HT ? Math.exp(-(t - HT) * 1.5) : 0;
       eg.material.opacity = 0.7 + 0.2 * Math.sin(ctx.time * 2) + flash * 0.5;
-      ctx.light(1, p.x, p.y - 4, p.z + 4, 0x80b0ff, (0.8 + 0.8 * k) * (1 - ss(356.5, 357.2, t)), 70);
+      ctx.light(1, p.x, p.y - 4, p.z + 4, 0x80b0ff, (0.8 + 0.8 * k) * (1 - ss(HT - 0.5, HT + 0.2, t)), 70);
     }
   };
 });

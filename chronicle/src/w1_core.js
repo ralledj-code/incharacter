@@ -13,7 +13,7 @@ const R = (a, b) => a + (b - a) * rnd();
 const RP = (a, b) => R(a, b) * (rnd() < 0.5 ? -1 : 1);
 const pick = (a) => a[Math.floor(rnd() * a.length)];
 
-/* ---------- song timeline (section starts estimated from the audio) ---------- */
+/* ---------- song timeline (section starts = first sung line - 0.5 s, measured with Whisper on the mp3) ---------- */
 const CHORUS = [
   'Sing of the brothers, half of one blood,',
   'Cedric the devout monk, faith like a flood,',
@@ -23,48 +23,51 @@ const CHORUS = [
   'We walked the road through the demon’s hell!'];
 const DURATION = 366.8;
 const CUES = [
-  { id: 'intro', t: 0, v: 2.3, motes: 'dust', stamp: '', lines: [] },
-  { id: 'v1', t: 22, v: 1.7, motes: 'dust', stamp: '7:48 PM', lines: [
+  { id: 'intro', t: 0, v: 1.5, motes: 'dust', stamp: '', lines: [] },
+  { id: 'v1', t: 47.8, v: 1.7, motes: 'dust', stamp: '7:48 PM', lines: [
     'Arthas bled his hand into the well,', 'Baphomet’s chains broke, and he rose from hell,',
     'The demon spoke, and his voice was low,', '“You freed me, brothers” — the wolf-curse began to grow'] },
-  { id: 'v1b', t: 47, v: 1.9, motes: 'ash', stamp: '7:57 PM', lines: [
+  { id: 'v1b', t: 87, v: 1.9, motes: 'ash', stamp: '7:57 PM', lines: [
     'Neeris turning, teeth and claw,', 'Arthas struck to take the hand that broke the law,',
     'The blade came down but it would not land,', 'I stood there, spellless, watching a brother’s failed command'] },
-  { id: 'pre', t: 65, v: 1.8, motes: 'fireflies', stamp: '8:14 PM', lines: [
+  { id: 'pre', t: 102.1, v: 1.8, motes: 'fireflies', stamp: '8:14 PM', lines: [
     'Then Neeris took my dagger for his own,', 'Drove it in — and stopped the change alone,',
     'The blade that nearly took my life instead', 'Pulled the wolf-curse out and calmed the dead'] },
-  { id: 'chorus', t: 81, v: 3.0, motes: 'embers', stamp: '', lines: CHORUS },
-  { id: 'v2', t: 116, v: 2.3, motes: 'embers', stamp: '9:22 PM', lines: [
+  { id: 'chorus', t: 117.9, v: 3.0, motes: 'embers', stamp: '', lines: CHORUS },
+  { id: 'v2', t: 150.7, v: 2.3, motes: 'embers', stamp: '9:22 PM', lines: [
     'A black wyrm rose, and the sky went red,', 'We struck it down, or so we thought — it fled,',
     '“It wants our gold, it will come again,”', 'Cedric said nothing. Cedric just ran'] },
-  { id: 'v2b', t: 140, v: 1.9, motes: 'ash', stamp: '9:29 PM', lines: [
+  { id: 'v2b', t: 164.9, v: 1.9, motes: 'ash', stamp: '9:29 PM', lines: [
     'He left us behind, no shield, no plan,', 'Just rage and a blade in one brother’s hand,',
     'Alone in the dark where the wyrm went to ground,', 'No spell to save him, no brother around'] },
-  { id: 'brk', t: 177, v: 1.5, motes: 'sparks', stamp: '9:38 PM', lines: ['HE KILLED IT! HE KILLED IT ALONE!'] },
-  { id: 'v2c', t: 182, v: 2.2, motes: 'sparks', stamp: '', lines: [
+  { id: 'brk', t: 179.7, v: 1.5, motes: 'sparks', stamp: '9:38 PM', lines: ['HE KILLED IT! HE KILLED IT ALONE!'] },
+  { id: 'v2c', t: 184, v: 2.2, motes: 'sparks', stamp: '', lines: [
     'Cedric the dragon-slayer, they’ll sing that name,', 'One man, one blade, and a black wyrm’s flame,',
     'He walked back to Cobh with the beast’s head in hand,', 'And the whole damn city rose up to stand'] },
-  { id: 'v3', t: 202, v: 1.35, motes: 'ash', stamp: '9:46 PM', lines: [
+  { id: 'v3', t: 200.5, v: 1.35, motes: 'ash', stamp: '9:46 PM', lines: [
     'Arthas ran off to find Cedric’s side,', 'Left me with Neeris, and the fire inside,',
     'What do I do with a traitor turned tame?', 'The chains aren’t the only thing that changed that day'] },
-  { id: 'pre2', t: 228, v: 1.5, motes: 'dust', stamp: '10:19 PM', lines: [
+  { id: 'pre2', t: 217.3, v: 1.5, motes: 'dust', stamp: '10:19 PM', lines: [
     'Neeris begs mercy, says he was betrayed too,', '“Kick the feelings aside — now what will you do?”',
     'Cedric and Arthas want justice, want blood,', 'I let him go instead — my choice, not their flood',
     '“Track the last moonwell, bring its chain to me”'] },
-  { id: 'chorus2', t: 247, v: 3.0, motes: 'fireflies', stamp: '', lines: CHORUS },
-  { id: 'bridge', t: 276, v: 2.4, motes: 'sparks', stamp: '10:30 PM', lines: [
+  { id: 'chorus2', t: 237.9, v: 3.0, motes: 'fireflies', stamp: '', lines: CHORUS },
+  { id: 'bridge', t: 271.3, v: 2.4, motes: 'sparks', stamp: '10:30 PM', lines: [
     'We marched to Cobh with a dragon’s head held high,', 'Gold in our hands, two-fifty each and the flames climbed high,',
     'I sang of Cedric all the way through the gate,', 'The whole city rose up wild, drunk on fate'] },
-  { id: 'bridge2', t: 298, v: 1.7, motes: 'confetti', stamp: '10:43 PM', lines: [
+  { id: 'bridge2', t: 298.7, v: 1.7, motes: 'confetti', stamp: '10:43 PM', lines: [
     'We drank all night till the dawn came grey,', 'Woke up in makeup, don’t ask, don’t say,',
     'Cedric in a suit stitched from the beasts he’d tamed,', 'And I woke in iron — a thief, they claimed'] },
-  { id: 'outro', t: 314, v: 0.22, motes: 'smoke', stamp: 'the morning after', lines: [
+  { id: 'outro', t: 315.7, v: 0.22, motes: 'smoke', stamp: 'the morning after', lines: [
     'Now Cobh burns beneath a wraith’s cold call,', 'They hunt our blood to feed something that crawls,',
     'Ragnar wakes, and the brothers stand as one,', 'The song’s not over — the war’s just begun...'] },
-  { id: 'final', t: 340, v: 0.12, motes: 'ash', stamp: '', lines: [] }
+  { id: 'final', t: 333.5, v: 0.12, motes: 'ash', stamp: '', lines: [] }
 ];
-const HIT_T = 357;      // last war-drum hit
-const SILENCE_T = 363;  // after this: black
+const HIT_T = 361.0;      // last war-drum hit
+const SILENCE_T = 364.0;  // after this: black
+
+/* Lyric line starts, aligned to the vocals with Whisper (scripts/transcribe.py + align-lyrics.mjs); all 58 lines matched. */
+const LINE_TIMES = [48.28,54.16,59.04,65.64,87.53,90.47,93.32,96.7,102.56,106.9,110.06,113.28,118.36,121.9,125.22,128.66,131.94,135.28,151.24,155.34,158.62,162.06,165.44,168.76,172.16,175.52,180.2,184.5,187.3,190.6,194.06,201.02,204.04,207.2,211.1,217.82,221.02,224.96,228.1,232.52,238.36,241.82,245.18,248.66,251.94,255.26,271.84,278.18,283.48,291.02,299.18,302.84,306.34,309.88,316.24,319.94,323.6,326.8];
 
 /* ---------- moods ---------- */
 const CF = ['fog', 'skyT', 'skyH', 'hs', 'hg', 'dc', 'lc', 'gr', 'aA', 'aB'];
@@ -101,13 +104,13 @@ Object.keys(MOOD_SRC).forEach((k) => {
   MOODS[k] = o;
 });
 const KEYS = [
-  { t: -1e6, m: 'bar', b: 0 }, { t: 4, m: 'outside', b: 4 }, { t: 22, m: 'well', b: 4 },
-  { t: 29.5, m: 'wellRed', b: 1.6 }, { t: 47, m: 'wolves', b: 4 }, { t: 65, m: 'dagger', b: 4 },
-  { t: 81, m: 'chorus', b: 4 }, { t: 116, m: 'wyrm', b: 4 }, { t: 140, m: 'crater', b: 5 },
-  { t: 177.1, m: 'flash', b: 0.2 }, { t: 180.5, m: 'glory', b: 3.2 }, { t: 202, m: 'camp', b: 4 },
-  { t: 228, m: 'cross', b: 4 }, { t: 247, m: 'dawn', b: 4 }, { t: 276, m: 'march', b: 4 },
-  { t: 298, m: 'party', b: 3 }, { t: 313, m: 'gaol', b: 2.5 }, { t: 318, m: 'burn', b: 4 },
-  { t: 356.7, m: 'black', b: 0.3 }
+  { t: -1e6, m: 'bar', b: 0 }, { t: 4, m: 'outside', b: 4 }, { t: 47.8, m: 'well', b: 4 },
+  { t: 54.2, m: 'wellRed', b: 1.6 }, { t: 87.0, m: 'wolves', b: 4 }, { t: 102.1, m: 'dagger', b: 4 },
+  { t: 117.9, m: 'chorus', b: 4 }, { t: 150.7, m: 'wyrm', b: 4 }, { t: 164.9, m: 'crater', b: 5 },
+  { t: 180.1, m: 'flash', b: 0.2 }, { t: 183.5, m: 'glory', b: 3.2 }, { t: 200.5, m: 'camp', b: 4 },
+  { t: 217.3, m: 'cross', b: 4 }, { t: 237.9, m: 'dawn', b: 4 }, { t: 271.3, m: 'march', b: 4 },
+  { t: 298.7, m: 'party', b: 3 }, { t: 315.2, m: 'gaol', b: 2.5 }, { t: 319.7, m: 'burn', b: 4 },
+  { t: 363.0, m: 'black', b: 0.3 }
 ];
 function newMood() {
   const o = {};
@@ -245,5 +248,5 @@ function bannerTexture(kind) {
 }
 // levels can add their own moods: defineMood(name, fog, fogDensity, skyTop, skyHorizon, hemiSky, hemiGround, hemiI, dirColor, dirI, lampColor, lampI, ground, stars, moon, aurora, auroraA, auroraB)
 function defineMood(name, ...args) { const s = mood(...args), o = {}; CF.forEach((f) => { o[f] = new THREE.Color(s[f]); }); NF.forEach((f) => { o[f] = s[f]; }); MOODS[name] = o; }
-root.__cw = { THREE, TAU, defineMood, levels: {}, clamp, lerp, sm, ss, mkRng, R, RP, pick, MOODS, newMood, moodAt, storyData: { baphomet: { cues: CUES, keys: KEYS, duration: DURATION, hitT: HIT_T, silenceT: SILENCE_T } }, scenes: { baphomet: [] }, M, part, bx, cy, cn, ic, tri, merge, lamb, solid, emis, inst, cv, glowTexture, groundTexture, plankTexture, stoneTexture, bannerTexture, getRnd: () => rnd };
+root.__cw = { THREE, TAU, defineMood, levels: {}, clamp, lerp, sm, ss, mkRng, R, RP, pick, MOODS, newMood, moodAt, storyData: { baphomet: { cues: CUES, keys: KEYS, duration: DURATION, hitT: HIT_T, silenceT: SILENCE_T, lineTimes: LINE_TIMES } }, scenes: { baphomet: [] }, M, part, bx, cy, cn, ic, tri, merge, lamb, solid, emis, inst, cv, glowTexture, groundTexture, plankTexture, stoneTexture, bannerTexture, getRnd: () => rnd };
 })(typeof window !== 'undefined' ? window : globalThis);
