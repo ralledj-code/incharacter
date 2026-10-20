@@ -4,12 +4,18 @@ const C = root.__cw, THREE = C.THREE;
 
 /* Loaded art (CC0 Quaternius models + Poly Haven textures, packed by scripts/pack-assets.mjs).
    Everything here is optional: builders ask for a model/texture and fall back to procedural shapes when it is missing. */
-const A = C.assets = { models: {}, tex: {}, chars: {}, clips: {}, ready: false };
-const GLB = ['nature', 'props', 'village'];
-const DIM = { props: 0.68, village: 0.8 };  // colour scale per pack
-const CHARS = ['body_m', 'ranger_m', 'peasant_m', 'hair_long', 'hair_beard'];  // + chars/anims.glb (clips only)
-const TEX = ['old_wood_floor', 'wood_plank_wall', 'rustic_stone_wall', 'forest_ground_04', 'cobblestone_floor_04', 'castle_brick_07'];
-
+const A = C.assets = { models: {}, tex: {}, chars: {}, clips: {}, creatures: {}, ready: false };
+const DIM = { props: 0.68, village: 0.8 };  // colour scale per glb pack
+/* Packs load on demand and every file only once: the tavern pack at start, a level's packs when its song is requested.
+   A level lists what it needs in `packs` (s0_stories / level modules). */
+const PACKS = {
+  tavern: { glb: ['props'], tex: ['old_wood_floor', 'wood_plank_wall', 'rustic_stone_wall'], creatures: ['lute'],
+    chars: ['body_m', 'body_f', 'ranger_m', 'peasant_m', 'ranger_f', 'peasant_f', 'hair_long', 'hair_beard', 'hair_buns', 'hair_parted', 'hair_buzzed', 'hair_buzzed_f'] },
+  nature: { glb: ['nature'], tex: ['forest_ground_04'] },
+  beasts: { creatures: ['wolf', 'dragon', 'bat', 'demon'] },
+  village: { glb: ['village'], tex: ['cobblestone_floor_04', 'castle_brick_07'] }
+};
+C.PACKS = PACKS;
 // asset base: next to the page, also when served as /chronicle (no trailing slash)
 C.BASE = function () {
   if (typeof location === 'undefined') return '';
@@ -52,27 +58,41 @@ function headOnly(root) {
   });
 }
 
-C.loadAssets = function (onProgress) {
-  if (!THREE.GLTFLoader || typeof document === 'undefined') return Promise.resolve();
-  const base = C.BASE(), jobs = [];
-  let done = 0, total = GLB.length + TEX.length + (THREE.SkeletonUtils ? CHARS.length + 1 : 0);
-  const tick = () => { done++; if (onProgress) onProgress(done / total); };
-  const safe = (fn, res) => (x) => { try { fn(x); } catch (e) { console.warn('asset', e); } tick(); res(); };
+const once = {};  // url -> Promise, so shared files download once
+function loadFile(kind, name) {
+  const base = C.BASE(), key = kind + ':' + name;
+  if (once[key]) return once[key];
   const gl = new THREE.GLTFLoader(), tl = new THREE.TextureLoader();
-  GLB.forEach((n) => jobs.push(new Promise((res) => gl.load(new URL('assets/' + n + '.glb', base).href,
-    safe((g) => { g.scene.children.slice().forEach((c) => { A.models[c.name] = prep(c, DIM[n]); }); }, res),
-    undefined, () => { tick(); res(); }))));
-  TEX.forEach((n) => jobs.push(new Promise((res) => tl.load(new URL('assets/tex/' + n + '_diff.jpg', base).href,
-    safe((t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; A.tex[n + '_diff'] = t; }, res),
-    undefined, () => { tick(); res(); }))));
-  if (THREE.SkeletonUtils) {
-    CHARS.forEach((n) => jobs.push(new Promise((res) => gl.load(new URL('assets/chars/' + n + '.glb', base).href,
-      safe((g) => { A.chars[n] = prep(g.scene, 0.85); if (n === 'body_m') headOnly(A.chars[n]); }, res), undefined, () => { tick(); res(); }))));
-    jobs.push(new Promise((res) => gl.load(new URL('assets/chars/anims.glb', base).href,
-      safe((g) => { g.animations.forEach((c) => { A.clips[c.name] = c; }); }, res), undefined, () => { tick(); res(); })));
-  }
-  return Promise.all(jobs).then(() => { A.ready = true; });
+  const safe = (fn, res) => (x) => { try { fn(x); } catch (e) { console.warn('asset', name, e); } res(); };
+  return (once[key] = new Promise((res) => {
+    if (kind === 'glb') gl.load(new URL('assets/' + name + '.glb', base).href,
+      safe((g) => { g.scene.children.slice().forEach((c) => { A.models[c.name] = prep(c, DIM[name]); }); }, res), undefined, () => res());
+    else if (kind === 'tex') tl.load(new URL('assets/tex/' + name + '_diff.jpg', base).href,
+      safe((t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; A.tex[name + '_diff'] = t; }, res), undefined, () => res());
+    else if (kind === 'char') gl.load(new URL('assets/chars/' + name + '.glb', base).href,
+      safe((g) => { A.chars[name] = prep(g.scene, 0.85); if (/^body_/.test(name)) headOnly(A.chars[name]); }, res), undefined, () => res());
+    else if (kind === 'creature') gl.load(new URL('assets/creatures/' + name + '.glb', base).href,
+      safe((g) => { A.creatures[name] = { scene: prep(g.scene), clips: g.animations }; }, res), undefined, () => res());
+    else if (kind === 'anims') gl.load(new URL('assets/chars/anims.glb', base).href,
+      safe((g) => { g.animations.forEach((c) => { A.clips[c.name] = c; }); }, res), undefined, () => res());
+  }));
+}
+/* load packs by name; onProgress(0..1). Resolves even if files fail (builders fall back). */
+C.loadPacks = function (names, onProgress) {
+  if (!THREE.GLTFLoader || typeof document === 'undefined') return Promise.resolve();
+  const files = [];
+  [].concat(names || []).forEach((n) => {
+    const p = PACKS[n]; if (!p) return;
+    (p.glb || []).forEach((f) => files.push(['glb', f]));
+    (p.tex || []).forEach((f) => files.push(['tex', f]));
+    (p.creatures || []).forEach((f) => files.push(['creature', f]));
+    if (THREE.SkeletonUtils && p.chars) { p.chars.forEach((f) => files.push(['char', f])); files.push(['anims', 'anims']); }
+  });
+  let done = 0; const tick = () => { done++; if (onProgress) onProgress(done / Math.max(1, files.length)); };
+  if (!files.length && onProgress) onProgress(1);
+  return Promise.all(files.map(([k, f]) => loadFile(k, f).then(tick)));
 };
+C.loadAssets = (onProgress) => C.loadPacks(['tavern'], onProgress).then(() => { A.ready = true; });
 
 /* a cloned texture with its own repeat, or null */
 C.tex = function (name, rx, ry) {
@@ -86,8 +106,10 @@ C.modelSize = function (key) { const m = A.models[key]; if (!m) return null; con
 
 /* Many copies of one model as InstancedMeshes (one per mesh part). mats: Matrix4 list in world space.
    o.tint multiplies material colours (cloned per call); o.norm scales the model so its height is 1 (then mats scale to metres). */
-C.instModel = function (key, mats, o) {
-  const src = A.models[key]; if (!src || !mats.length) return null;
+C.instModel = function (key, mats, o) { return A.models[key] ? C.instObject(A.models[key], mats, o) : null; };
+C.instObject = function (src, mats, o) {
+  if (!src || !mats.length) return null;
+  if (!src.userData.box) src.userData.box = new THREE.Box3().setFromObject(src);
   o = o || {};
   const g = new THREE.Group(), tint = o.tint !== undefined ? new THREE.Color(o.tint) : null;
   const h = o.norm ? Math.max(1e-3, src.userData.box.max.y - src.userData.box.min.y) : 1;
@@ -117,6 +139,7 @@ C.place = function (key, p, yaw, s) {
    tint: hex (multiplies the texture) or { color, only: materialNameRegex } (solid colour, texture dropped)
    Returns a Group (front +z) with userData.mixer, or null when the character files are missing. */
 C.hasChars = () => !!(A.chars.body_m && THREE.SkeletonUtils);
+const HEIGHT = {};  // body key -> model height
 C.rigChar = function (spec) {
   if (!C.hasChars()) return null;
   const tinted = (mesh, tint) => {
@@ -129,7 +152,8 @@ C.rigChar = function (spec) {
     });
     if (mesh.material.length === 1) mesh.material = mesh.material[0];
   };
-  const body = THREE.SkeletonUtils.clone(A.chars.body_m), bones = {};
+  const bodyKey = spec.base || 'body_m', src = A.chars[bodyKey] || A.chars.body_m;
+  const body = THREE.SkeletonUtils.clone(src), bones = {};
   let arm = null;
   body.traverse((o) => { if (o.isBone) bones[o.name] = o; if (o.isSkinnedMesh) { arm = arm || o.parent; tinted(o, spec.body); } });
   (spec.parts || []).forEach(([key, tint, skip, only]) => {
@@ -144,7 +168,8 @@ C.rigChar = function (spec) {
   });
   body.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
   const g = new THREE.Group(); g.add(body);
-  const box = new THREE.Box3().setFromObject(A.chars.body_m), hh = box.max.y - box.min.y;
+  if (!HEIGHT[bodyKey]) { const box = new THREE.Box3().setFromObject(src); HEIGHT[bodyKey] = box.max.y - box.min.y; }  // full-body bounds (the index cut does not change them)
+  const hh = HEIGHT[bodyKey];
   body.scale.setScalar((spec.h || 1.8) / hh);
   const mixer = new THREE.AnimationMixer(body);
   let cur = null;
@@ -157,6 +182,63 @@ C.rigChar = function (spec) {
   g.updateMatrixWorld(true);
   return g;
 };
+/* An animated creature or prop from creatures/*.glb. o: { clip, h (height in m) or scale, tint, ph }.
+   Returns a Group (+z front) with userData.mixer/pose like rigChar (register it in X.anims to animate), or null. */
+C.hasCreature = (key) => !!A.creatures[key];
+C.creature = function (key, o) {
+  const src = A.creatures[key]; if (!src || !THREE.SkeletonUtils) return null;
+  o = o || {};
+  const body = THREE.SkeletonUtils.clone(src.scene), g = new THREE.Group(), bones = {};
+  body.traverse((m) => {
+    if (m.isBone) bones[m.name] = m;
+    if (!m.isMesh) return;
+    m.frustumCulled = false;
+    if (o.tint !== undefined || o.eyes !== undefined) {
+      const c = new THREE.Color(o.tint === undefined ? 0xffffff : o.tint);
+      m.material = [].concat(m.material).map((x) => {
+        // o.eyes: the cartoon eyes of the CC0 monsters become glowing slits (menace instead of cute)
+        if (o.eyes !== undefined && /Eye_White/i.test(x.name)) return new THREE.MeshBasicMaterial({ color: o.eyes, skinning: x.skinning });
+        if (o.eyes !== undefined && /Eye_Black/i.test(x.name)) return new THREE.MeshBasicMaterial({ color: 0x000000, skinning: x.skinning });
+        const y = x.clone(); y.color.multiply(c); return y;
+      });
+      if (m.material.length === 1) m.material = m.material[0];
+    }
+  });
+  const box = new THREE.Box3().setFromObject(src.scene), hh = Math.max(1e-3, box.max.y - box.min.y);
+  body.scale.multiplyScalar(o.h ? o.h / hh : (o.scale || 1));
+  g.add(body);
+  const mixer = new THREE.AnimationMixer(body); let cur = null;
+  g.userData.pose = (name) => {
+    const clip = src.clips.find((c) => c.name === name) || src.clips[0]; if (!clip || cur === clip.name) return;
+    mixer.stopAllAction(); mixer.clipAction(clip).play(); cur = clip.name;
+  };
+  if (src.clips.length) g.userData.pose(o.clip);
+  g.userData.mixer = mixer; g.userData.bones = bones; g.userData.ph = o.ph === undefined ? Math.random() * 3 : o.ph;
+  return g;
+};
+
+/* Freeze a rigged character in one frame of a clip into plain static meshes (for big instanced crowds).
+   spec as rigChar; returns an Object3D whose meshes can go through C.instObject. */
+C.bakeRig = function (rig, clip, time) {
+  if (!rig) return null;
+  if (clip) rig.userData.pose(clip);
+  rig.userData.mixer.setTime(time || 0); rig.updateMatrixWorld(true);
+  const out = new THREE.Group(), v = new THREE.Vector3(), inv = new THREE.Matrix4().copy(rig.matrixWorld).invert();
+  rig.traverse((m) => {
+    if (!m.isSkinnedMesh || !m.visible) return;
+    const g = m.geometry, n = g.attributes.position.count, pos = new Float32Array(n * 3), mw = new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld);
+    m.skeleton.update();
+    for (let i = 0; i < n; i++) { v.fromBufferAttribute(g.attributes.position, i); m.boneTransform(i, v); v.applyMatrix4(mw); pos[i * 3] = v.x; pos[i * 3 + 1] = v.y; pos[i * 3 + 2] = v.z; }
+    const ng = new THREE.BufferGeometry(); ng.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    if (g.attributes.uv) ng.setAttribute('uv', g.attributes.uv);
+    if (g.index) ng.setIndex(g.index);
+    ng.computeVertexNormals();
+    const mat = [].concat(m.material).map((x) => { const y = x.clone(); y.skinning = false; return y; });
+    out.add(new THREE.Mesh(ng, mat.length === 1 ? mat[0] : mat));
+  });
+  return out;
+};
+
 /* attach an object to a bone of a rigged character (bone space is scaled with the body) */
 C.attach = function (ch, bone, obj, p, r, s) {
   const b = ch.userData.bones && ch.userData.bones[bone]; if (!b) return null;

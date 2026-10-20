@@ -130,7 +130,7 @@ C.create = function (opts) {
   /* ---- ground that follows the rider, snapped to its texture period ---- */
   const PERIOD = 8, GSIZE = 480;
   // photo ground texture when loaded (darker than the procedural one, so its mood colour is boosted)
-  const gReal = C.tex('forest_ground_04_diff'), gtex = gReal || TEX.ground, gBoost = gReal ? 2.2 : 1;
+  let gReal = C.tex('forest_ground_04_diff'), gtex = gReal || TEX.ground, gBoost = gReal ? 2.2 : 1;
   gtex.repeat.set(GSIZE / PERIOD, GSIZE / PERIOD);
   const groundMat = new THREE.MeshLambertMaterial({ map: gtex, color: 0x1a2430 });
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(GSIZE, GSIZE), groundMat);
@@ -191,21 +191,23 @@ C.create = function (opts) {
     lantern.position.set(0.18, 1.76, 0.5); chair.add(lantern);
     const lg = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.glow, color: 0xffb060, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0.8 }));
     lg.scale.set(0.5, 0.5, 1); lg.position.copy(lantern.position); chair.add(lg);
-    lamp.position.set(0.18, 1.7, 0.5); chair.add(lamp);
+    scene.add(lamp);
   })();
-  scene.add(chair);
+  scene.add(chair); chair.visible = false;  // the ride chair is retired: the camera director films the song
 
   /* ---- shared kit passed to scene builders ---- */
   const storyRoot = new THREE.Group(); scene.add(storyRoot);
   const X = {
     THREE, C, scene, camera, TEX, at, yawAt, frame, distAt, tAtDist, fx, mobile, root: storyRoot,
-    sec: sec, Dend: Dend, dBack: dBack, tCross: tCross, Z0: Z0, story: null, anims: [],
+    sec: sec, Dend: Dend, dBack: dBack, tCross: tCross, Z0: Z0, story: null, anims: [], hubAnims: [], anchors: {}, hubAnchors: {},
+    STAND: { x: 0, y: 1.62, z: -5.95 },  // where the player stands to read Lucien's songbook (set by the hub)
     glow(color, size, op) {
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.glow, color, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: op === undefined ? 1 : op }));
       s.scale.set(size, size, 1); return s;
     }
   };
   const hub = C.buildHub(X);
+  const director = C.makeDirector ? C.makeDirector(X) : null;
   scene.add(hub.group);
   let defs = [];
 
@@ -215,7 +217,7 @@ C.create = function (opts) {
   const BAR_KEYS = [{ t: -1e6, m: 'bar', b: 0 }];
   const from = { x: 0, y: 1.28, z: Z0, yaw: 0, pitch: 0 };
   let riding = false;
-  const SEAT = { x: 0, y: 1.28, z: Z0 + 0.02 }, BOOK_PITCH = -0.33;
+  const SEAT = { x: 0, y: 1.28, z: Z0 + 0.02 }, BOOK_PITCH = -0.2;
   const angDiff = (a, b) => { let d = (b - a) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU; return d; };
   const ctx = {
     t: -1, dt: 0, time: 0, camD: -50, cam: camPos, mood: Mo, mode: 'walk',
@@ -230,8 +232,14 @@ C.create = function (opts) {
     });
     while (storyRoot.children.length) storyRoot.remove(storyRoot.children[0]);
   }
+  // rail distance nearest to a point (scene visibility follows wherever the director puts the camera)
+  function nearRail(p, guess) {
+    let best = guess, bd = 1e9;
+    for (let d = Math.max(0, guess - 90); d <= guess + 90; d += 1.5) { const f = frame(d), q = (f.x - p.x) ** 2 + (f.z - p.z) ** 2; if (q < bd) { bd = q; best = d; } }
+    return best;
+  }
   const W = {
-    scene, camera, flash: 0, nearChair: false, colliders: hub.colliders || [], camD: 0, chair, book: hub.book, SEAT,
+    scene, camera, get director() { return director; }, STAND: X.STAND, flash: 0, nearChair: false, colliders: hub.colliders || [], camD: 0, chair, book: hub.book, SEAT,
     get story() { return story; }, get sec() { return sec; }, get duration() { return DURATION; },
     resize(w, h) {
       camera.aspect = w / h;
@@ -240,12 +248,16 @@ C.create = function (opts) {
       camera.updateProjectionMatrix();
     },
     loadStory(st) {
-      disposeRoot(); defs = []; X.anims.length = 0;
+      // the photo ground arrives with a level pack (loaded on request), swap it in once
+      if (!gReal && (gReal = C.tex('forest_ground_04_diff'))) { gReal.repeat.set(GSIZE / PERIOD, GSIZE / PERIOD); groundMat.map = gReal; groundMat.needsUpdate = true; gBoost = 2.2; }
+      disposeRoot(); defs = []; X.anims.length = 0; X.anchors = {};
       story = st; X.story = st;
       buildTimeline(st); buildPath();
       X.sec = sec; X.Dend = Dend; X.dBack = dBack; X.tCross = tCross;
+      X.clearings = typeof st.clearings === 'function' ? st.clearings(X) : [];  // [{ x, z, r }] kept free of trees for the camera
       const list = (typeof st.build === 'function') ? st.build(X) : [];
       list.forEach((d) => { if (d) { storyRoot.add(d.group); defs.push(d); } });
+      if (director) director.set(st);  // after the scenes, so shots can see their anchors
       W.info = { Dend, dBack, tCross, Z0 };
     },
     beginRide(pose) { from.x = pose.x; from.y = pose.y; from.z = pose.z; from.yaw = pose.yaw; from.pitch = pose.pitch; riding = true; },
@@ -270,14 +282,17 @@ C.create = function (opts) {
         const p = st.player;
         camera.position.set(p.x, 1.65, p.z); camera.rotation.set(p.pitch, p.yaw, 0);
         chair.position.set(0, 0, Z0); chair.rotation.y = 0;
-        W.nearChair = Math.hypot(p.x, p.z - Z0) < 2.1;
+        W.nearChair = Math.hypot(p.x - X.STAND.x, p.z - X.STAND.z) < 2.2;
       } else if (mode === 'book') {
         // seated at the lectern: ease from the player's last pose to the seat
         const b = 1 - sm(st.sit === undefined ? 1 : st.sit), p = st.player, lk = st.look || { yaw: 0, pitch: 0 };
-        const yaw = lk.yaw * 0.6, pitch = BOOK_PITCH + lk.pitch * 0.6;
-        camera.position.set(lerp(SEAT.x, p.x, b), lerp(SEAT.y, 1.65, b), lerp(SEAT.z, p.z, b));
+        const yaw = lk.yaw * 0.6, pitch = BOOK_PITCH + lk.pitch * 0.6, SP = X.STAND;
+        camera.position.set(lerp(SP.x, p.x, b), lerp(SP.y, 1.65, b), lerp(SP.z, p.z, b));
         camera.rotation.set(lerp(pitch, p.pitch, b), yaw + angDiff(yaw, p.yaw) * b, 0);
         chair.position.set(0, 0, Z0); chair.rotation.y = 0;
+      } else if (director && director.active) {
+        director.pose(t, camera, st.calm);
+        camD = nearRail(camera.position, distAt(t));
       } else {
         camD = distAt(t);
         const f = frame(camD), yawP = Math.atan2(-f.tx, -f.tz);
@@ -291,6 +306,7 @@ C.create = function (opts) {
         chair.position.set(f.x, 0, f.z); chair.rotation.y = yawP;
       }
       camPos.copy(camera.position);
+      lamp.position.set(camPos.x, camPos.y + 0.7, camPos.z);
       sky.position.copy(camPos);
       ground.position.x = Math.round(camPos.x / PERIOD) * PERIOD; ground.position.z = Math.round(camPos.z / PERIOD) * PERIOD;
 
@@ -304,12 +320,15 @@ C.create = function (opts) {
         s.group.visible = vis;
         if (vis && s.update) s.update(t, ctx);
       }
-      // rigged characters: pose from song time (deterministic, so seeking works); skip hidden ones
-      for (let i = 0; i < X.anims.length; i++) {
-        const a = X.anims[i]; let o = a, vis = true;
-        while (o) { if (!o.visible) { vis = false; break; } o = o.parent; }
-        if (vis) a.userData.mixer.setTime(Math.max(0, t) + a.userData.ph);
-      }
+      // rigged characters/creatures: story ones follow song time (seek-safe), tavern ones wall time; skip hidden ones
+      const animate = (list, tm) => {
+        for (let i = 0; i < list.length; i++) {
+          const a = list[i]; let o = a, vis = true;
+          while (o) { if (!o.visible) { vis = false; break; } o = o.parent; }
+          if (vis) a.userData.mixer.setTime(a.userData.timeFn ? a.userData.timeFn(tm) : tm + a.userData.ph);
+        }
+      };
+      animate(X.anims, ride ? Math.max(0, t) : time); animate(X.hubAnims, time);
       const fT = story && story.flashAt;
       W.flash = (!ride || fT === undefined) ? 0 : (t < fT - 0.2 ? 0 : (t < fT ? (t - (fT - 0.2)) / 0.2 : Math.exp(-(t - fT) * 2.6)));
       W.camD = camD;

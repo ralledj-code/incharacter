@@ -76,6 +76,23 @@ SC.push(function (X) {
   [-0.28, 0.28].forEach((x) => { const e = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.1, 0.08), new THREE.MeshBasicMaterial({ color: 0xff3020 })); e.position.set(x, 6.55, 0.62); bap.add(e); });
   const eg = X.glow(0xff3020, 3.2, 0.9); eg.position.set(0, 6.55, 0.7); bap.add(eg);
   bap.rotation.y = X.yawAt(dw) - Math.PI / 2; bap.position.y = -8; bap.visible = false; well.add(bap);
+  // the real Baphomet: the CC0 demon, 14 m tall, near black with burning eyes (procedural one above is the fallback)
+  const demon = C.creature('demon', { h: 14, tint: 0x8a4a4e, eyes: 0xff2a10, clip: 'Idle' });
+  if (demon) {
+    bap.children.slice(0, 1).forEach((m) => { m.visible = false; });  // keep only the eye glow from the old figure
+    const rp = X.at(dw, 0, 0), face = Math.atan2(rp.x - wp.x, rp.z - wp.z);  // turn toward the rail
+    demon.rotation.y = face - bap.rotation.y; demon.position.y = -2; bap.add(demon); X.anims.push(demon);
+    X.anchors.wellFace = Math.atan2(Math.cos(face), Math.sin(face));  // orbit angle that looks him in the face
+    eg.position.set(0, 12.4, 1.6); eg.scale.setScalar(5);
+  }
+  X.anchors.well = well; X.anchors.baphomet = bap;
+  // the brothers at the well: Arthas kneels and bleeds into it, Cedric and Lucien behind him
+  const ch = C.chars(X), yw = X.yawAt(dw);
+  const art = ch.arthas({ pose: 'Fixing_Kneeling' }), ced = ch.cedric({ pose: 'Idle_Loop' }), luc = ch.lucien({ pose: 'Idle_Loop' });
+  const toWell = (o, side, back) => { const p = X.at(dw + back, side, 0); o.position.copy(p); o.lookAt(wp.x, 0, wp.z); g.add(o); return o; };
+  toWell(art, side - 2.6, 0.2); toWell(ced, side - 4.6, -2.2); toWell(luc, side - 4.4, 2.0);
+  luc.userData.blade.visible = false; luc.userData.bladeGlow.visible = false;
+  X.anchors.arthasWell = art;
 
   // blood falling into the well
   const NDR = 28, dp = new Float32Array(NDR * 3);
@@ -93,6 +110,8 @@ SC.push(function (X) {
       wg.material.color.copy(disc.material.color);
       ring.material.opacity = tau > 0 && tau < 1.6 ? 0.9 * (1 - tau / 1.6) : 0; ring.scale.setScalar(1 + Math.max(0, tau) * 14);
       bap.visible = tau > 0.4; bap.position.y = -8 + 8 * sm((tau - 0.8) / 6.5);
+      if (demon) demon.userData.pose(tau > 7 && tau < 14 ? 'Yes' : tau >= 14 ? 'Punch' : 'Idle');
+      if (art.userData.pose) art.userData.pose(tau > 1.2 ? 'Sword_Idle' : 'Fixing_Kneeling');
       const flash = tau > 0 ? Math.exp(-tau * 2.2) * 6 : 0;
       ctx.light(1, wp.x, 1.8, wp.z, disc.material.color, 2.6 + flash + 0.3 * Math.sin(ctx.time * 4), 34);
       const on = (t > S.t0 + 0.8 && t < TB) ? 1 : 0; drips.visible = on > 0;
@@ -120,7 +139,7 @@ SC.push(function (X) {
   eyeMesh.frustumCulled = false; g.add(eyeMesh);
   const dm = new THREE.Object3D();
   // Neeris crouched by the path
-  const dn = S1.d0 + S1.len * 0.45, np = X.at(dn, -3.4, 0), ner = ch.neeris(); ner.position.copy(np); ner.rotation.y = X.yawAt(dn) + Math.PI / 2; g.add(ner);
+  const dn = S1.d0 + S1.len * 0.45, np = X.at(dn, -3.4, 0), ner = ch.neeris({ pose: 'Crouch_Idle_Loop' }); ner.position.copy(np); ner.rotation.y = X.yawAt(dn) + Math.PI / 2; g.add(ner);
   // the slab with the floating dagger, and Lucien watching
   const dd = S2.d0 + S2.len * 0.55, sp = X.at(dd, 3.0, 0);
   const slab = solid([bx(1.5, 0.5, 1.0, 0x6a6e76, [0, 0.25, 0])]); slab.position.copy(sp); slab.rotation.y = X.yawAt(dd); g.add(slab);
@@ -130,6 +149,14 @@ SC.push(function (X) {
   const dg = X.glow(0x40c8ff, 3.2, 0.9); dg.position.y = 0.2; dag.add(dg); dag.position.copy(sp); g.add(dag);
   const lu = ch.lucien(); lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false;
   const lp = X.at(dd - 1.0, 5.0, 0); lu.position.copy(lp); lu.rotation.y = X.yawAt(dd) - Math.PI / 2 + 0.5; g.add(lu);
+  X.anchors.neeris = ner; X.anchors.dagger = dag; X.anchors.lucienWood = lu;
+  const wolves = [];
+  for (let i = 0; i < 7; i++) {
+    const w = C.creature('wolf', { h: 0.95, tint: i % 3 ? 0x6a6a72 : 0x3a3a40, clip: 'Gallop', ph: i * 0.37 });
+    if (!w) break;
+    w.userData.side = (i % 2 ? 1 : -1) * (3.5 + (i % 4) * 1.6); w.userData.lead = 3 + i * 2.3; g.add(w); X.anims.push(w); wolves.push(w);
+  }
+  if (wolves.length) X.anchors.wolf = wolves[0];
   return {
     group: g, d0: S1.d0, d1: S2.d1, vis: 90,
     update(t, ctx) {
@@ -142,8 +169,23 @@ SC.push(function (X) {
         }
       }
       eyeMesh.instanceMatrix.needsUpdate = true;
+      // the pack: gallops alongside the rail through verse 1b, then rings Neeris and goes still when the curse is pulled out
+      const calm = ss(S2.t0 + 4, S2.t0 + 6, t), dNow = X.distAt(Math.min(t, S2.t0 + 2));
+      wolves.forEach((w, i) => {
+        w.visible = t > S1.t0 - 2 && t < S2.t1;
+        if (!w.visible) return;
+        if (t < S2.t0 + 2) {
+          const d = dNow + w.userData.lead + Math.sin(ctx.time * 0.7 + i) * 0.6, p = X.at(d, w.userData.side, 0);
+          w.position.copy(p); w.rotation.y = X.yawAt(d) + Math.PI; w.userData.pose('Gallop');
+        } else {
+          const a = i / wolves.length * TAU, p = ner.position;
+          w.position.set(p.x + Math.cos(a) * 4.2, 0, p.z + Math.sin(a) * 4.2); w.lookAt(p.x, 0, p.z);
+          w.userData.pose(calm > 0.5 ? 'Idle_2_HeadLow' : 'Idle');
+        }
+      });
       const heart = 1 + 0.05 * Math.sin(ctx.time * 15), slump = ss(X.sec.pre.t0 + 1.5, X.sec.pre.t0 + 4, t);
-      ner.scale.set(heart, (0.85 - 0.2 * slump) * heart, heart); ner.rotation.x = 0.25 * slump;
+      if (!ner.userData.mixer) { ner.scale.set(heart, (0.85 - 0.2 * slump) * heart, heart); ner.rotation.x = 0.25 * slump; }
+      else if (ner.userData.pose) ner.userData.pose(slump > 0.5 ? 'Sitting_Idle_Loop' : 'Crouch_Idle_Loop');
       const rise = ss(S2.t0, S2.t0 + 3, t), stab = ss(S2.t0 + 4, S2.t0 + 4.4, t) * (1 - ss(S2.t0 + 4.4, S2.t0 + 8, t));
       dag.position.set(sp.x, 0.55 + 1.2 * rise + 0.08 * Math.sin(ctx.time * 1.4), sp.z); dag.rotation.y = ctx.time * 0.6;
       dg.material.opacity = 0.55 + 0.35 * Math.sin(ctx.time * 3) * 0.5 + stab * 0.8;

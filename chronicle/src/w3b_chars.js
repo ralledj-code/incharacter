@@ -82,12 +82,14 @@ C.chars = function (X) {
   /* Rigged CC0 versions of the party (Neeris stays procedural). o.pose = animation clip name.
      Their mixers are registered in X.anims; the engine sets them from song time each frame. */
   if (C.hasChars()) {
-    const rig = (spec) => { const g = C.rigChar(spec); X.anims.push(g); return g; };
+    // o.hub: lives in the tavern (animated on wall time, survives level loads); else a story character (song time)
+    const reg = (g, o) => { if (!(o && o.bake)) (o && o.hub ? X.hubAnims : X.anims).push(g); return g; };  // o.bake: not animated (C.bakeRig)
+    const rig = (spec, o) => reg(C.rigChar(spec), o);
     const ear = (g, side) => C.attach(g, 'Head', solid([cn(0.025, 0.11, 4, 0xe0b898, [0, 0, 0])]), [side * 0.085, 0.1, 0.0], [0, 0, -side * 1.15]);
     // Lucien Vale: half-elf wild magic sorcerer. Burgundy coat, long blond hair, pointed ears, crackling hand, glowing blue dagger.
     K.lucien = function (o) {
       o = o || {};
-      const g = rig({ parts: [['ranger_m', 0xb04060, /Hood|Pauldron/], ['hair_long', 0xfff2b8]], pose: o.pose || 'Spell_Simple_Idle_Loop', h: 1.8 });
+      const g = rig({ parts: [['ranger_m', 0xb04060, /Hood|Pauldron/], ['hair_long', 0xfff2b8]], pose: o.pose || 'Spell_Simple_Idle_Loop', h: 1.8 }, o);
       ear(g, -1); ear(g, 1);
       const spark = X.glow(0xb070ff, 0.7, 0.85); C.attach(g, 'hand_r', spark, [0, 0.1, 0]); g.userData.spark = spark;
       const dag = new THREE.Group();
@@ -100,18 +102,51 @@ C.chars = function (X) {
     // Cedric: human monk. Red leather, green tunic, bronze dragon pauldrons, beard, wooden staff.
     K.cedric = function (o) {
       o = o || {};
-      const g = rig({ parts: [['peasant_m', 0xd07a60], ['ranger_m', { color: 0xb08440 }, null, /Pauldron/], ['hair_beard', 0x6a4430]], pose: o.pose || 'Idle_Loop', h: 1.85 });
+      const g = rig({ parts: [['peasant_m', 0xd07a60], ['ranger_m', { color: 0xb08440 }, null, /Pauldron/], ['hair_beard', 0x6a4430]], pose: o.pose || 'Idle_Loop', h: 1.85 }, o);
       if (!o.noStaff) C.attach(g, 'hand_r', solid([cy(0.022, 0.022, 2.0, 5, 0x5a3a2a, [0, 0, 0]), cy(0.032, 0.032, 0.1, 5, 0xa0a4ac, [0, 0.98, 0])]), [0, 0.05, 0], [0, 0, 0]);
       return g;
     };
     // Arthas: devout human paladin. Steel plate, dark helm-hood with a glowing visor slit, sword.
     K.arthas = function (o) {
       o = o || {};
-      const g = rig({ parts: [['ranger_m', { color: 0x747a86, only: /Ranger/ }]], pose: o.pose || 'Sword_Idle', h: 1.95 });
+      const g = rig({ parts: [['ranger_m', { color: 0x747a86, only: /Ranger/ }]], pose: o.pose || 'Sword_Idle', h: 1.95 }, o);
       g.traverse((m) => { if (m.isMesh && /Hood/.test(m.name)) [].concat(m.material).forEach((x) => x.color.setHex(0x2a2c34)); });
       const v = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.018, 0.02), new THREE.MeshBasicMaterial({ color: 0xff7a30 }));
       C.attach(g, 'Head', v, [0, 0.1, 0.1]); g.userData.visor = v;
       const sw = C.model('Sword_Bronze'); if (sw) C.attach(g, 'hand_r', sw, [0, 0.05, 0], [0, 0, -Math.PI / 2], 1.1);
+      return g;
+    };
+    // Neeris: druid of the forest (wolf-cursed in this story). Moss-green hooded ranger, gnarled staff, amber eyes.
+    K.neeris = function (o) {
+      o = o || {};
+      const g = rig({ parts: [['ranger_m', 0x6a8a58], ['hair_beard', 0x4a3a2a]], body: 0xc8b8a8, pose: o.pose || 'Idle_Loop', h: 1.78 }, o);
+      g.traverse((m) => { if (m.isMesh && /Hood/.test(m.name)) [].concat(m.material).forEach((x) => x.color.setHex(0x3a5a34)); });
+      C.attach(g, 'hand_r', solid([cy(0.025, 0.035, 1.9, 5, 0x4a3420, [0, 0, 0]), ic(0.07, 0, 0x5a8a3a, [0, 0.95, 0])]), [0, 0.05, 0]);
+      const e = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.014, 0.02), new THREE.MeshBasicMaterial({ color: 0xffb030 }));
+      C.attach(g, 'Head', e, [0, 0.085, 0.1]); g.userData.eyes = e;
+      return g;
+    };
+
+    /* Anyone else: a tavern patron, musician or crowd member. o: { female, outfit: 'peasant'|'ranger', tint, hair, hairTint, pose, hub, seed } */
+    const HAIR_M = ['hair_parted', 'hair_buzzed', 'hair_beard', 'hair_long'], HAIR_F = ['hair_buns', 'hair_buzzed_f', 'hair_long'];
+    const CLOTH = [0x9a6a4a, 0x6a7a9a, 0x8a5a6a, 0x5a7a5a, 0xa08a5a, 0x7a5a8a, 0xb07050, 0x5a6a6a];
+    const HAIRC = [0x2a1c14, 0x5a3a22, 0x8a6a3a, 0xd8c080, 0x1a1a1a, 0x9a4a2a];
+    K.person = function (o) {
+      o = o || {};
+      const rnd = C.mkRng(o.seed || 1), pk = (a) => a[Math.floor(rnd() * a.length)];
+      const f = o.female === undefined ? rnd() < 0.45 : o.female, outfit = (o.outfit || (rnd() < 0.6 ? 'peasant' : 'ranger')) + (f ? '_f' : '_m');
+      const hair = o.hair || pk(f ? HAIR_F : HAIR_M);
+      const parts = [[outfit, o.tint || pk(CLOTH), rnd() < 0.7 ? /Hood|Pauldron/ : null], [hair, o.hairTint || pk(HAIRC)]];
+      if (!f && hair !== 'hair_beard' && rnd() < 0.35) parts.push(['hair_beard', o.hairTint || pk(HAIRC)]);
+      return rig({ base: f ? 'body_f' : 'body_m', parts, pose: o.pose || 'Idle_Loop', h: o.h || (f ? 1.68 : 1.8) }, o);
+    };
+
+    // The wraith over Cobh: a giant hooded figure, nearly black, eyes burning cold.
+    K.wraith = function (o) {
+      o = o || {};
+      const g = rig({ parts: [['ranger_m', { color: 0x0c0e16 }]], body: 0x10121a, pose: o.pose || 'Spell_Simple_Idle_Loop', h: o.h || 16 }, o);
+      const e = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.02, 0.03), new THREE.MeshBasicMaterial({ color: 0xcfe8ff }));
+      C.attach(g, 'Head', e, [0, 0.09 * (o.h || 16) / 1.8, 0.11 * (o.h || 16) / 1.8], null, (o.h || 16) / 1.8); g.userData.eyes = e;
       return g;
     };
   }

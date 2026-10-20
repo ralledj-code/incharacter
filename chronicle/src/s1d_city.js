@@ -21,8 +21,12 @@ SC.push(function (X) {
   // cheering crowd lining the road
   const cr = [], NCR = X.mobile ? 36 : 60;
   for (let i = 0; i < NCR; i++) { const d = R(S1.d0 + 4, dG - 10), sd = (i % 2 ? 1 : -1) * R(6.2, 9.5), p = X.at(d, sd, 0); cr.push({ p, ph: R(0, TAU), yaw: X.yawAt(d) + (sd > 0 ? -Math.PI / 2 : Math.PI / 2) + R(-0.4, 0.4), s: R(0.85, 1.1) }); }
-  const crowd = new THREE.InstancedMesh(crowdGeo(), lamb(), NCR); crowd.frustumCulled = false; g.add(crowd);
-  cr.forEach((c, i) => crowd.setColorAt(i, new THREE.Color(pick(TONES))));
+  // the crowd: real people frozen mid-cheer (baked from rigged models) and instanced; capsules if models are missing
+  const chC = C.chars(X), VAR = chC.person ? 5 : 0, baked = [];
+  for (let k = 0; k < VAR; k++) baked.push(C.bakeRig(chC.person({ bake: true, seed: 300 + k * 13 }), k % 2 ? 'Idle_Torch_Loop' : 'Dance_Loop', 0.3 + k * 0.17));
+  const crowd = VAR ? null : new THREE.InstancedMesh(crowdGeo(), lamb(), NCR);
+  if (crowd) { crowd.frustumCulled = false; g.add(crowd); cr.forEach((c, i) => crowd.setColorAt(i, new THREE.Color(pick(TONES)))); }
+  const crowdInst = baked.map((b, k) => { const idx = cr.map((c, i) => i).filter((i) => i % VAR === k); const im = C.instObject(b, idx.map(() => new THREE.Matrix4())); if (im) g.add(im); return { im, idx }; });
   const dm = new THREE.Object3D();
 
   // the gate
@@ -61,11 +65,13 @@ SC.push(function (X) {
   const dB = dG + (dE - dG) * 0.45, bpos = X.at(dB, 7.0, 0), bon = kit.fire({ scale: 2.0, size: 9 }); bon.group.position.set(bpos.x, 0, bpos.z); g.add(bon.group);
   const dancers = [], ND = 16;
   for (let i = 0; i < ND; i++) { const a = i / ND * TAU; dancers.push({ x: bpos.x + Math.cos(a) * 3.4, z: bpos.z + Math.sin(a) * 3.4, ph: R(0, TAU), a }); }
-  const dance = new THREE.InstancedMesh(crowdGeo(), lamb(), ND); dance.frustumCulled = false; g.add(dance);
-  dancers.forEach((c, i) => dance.setColorAt(i, new THREE.Color(pick([0xc05a6a, 0x5a8ac0, 0xc0a050, 0x7ac08a]))));
+  const rigDance = chC.person ? dancers.slice(0, X.mobile ? 6 : 8).map((c, i) => { const p = chC.person({ seed: 400 + i * 7, pose: 'Dance_Loop' }); g.add(p); return p; }) : [];
+  const dance = rigDance.length ? null : new THREE.InstancedMesh(crowdGeo(), lamb(), ND);
+  if (dance) { dance.frustumCulled = false; g.add(dance); dancers.forEach((c, i) => dance.setColorAt(i, new THREE.Color(pick([0xc05a6a, 0x5a8ac0, 0xc0a050, 0x7ac08a])))); }
+  X.anchors.bonfire = bon.group;
 
   // the three of them walk ahead, carrying the wyrm's head
-  const marchers = new THREE.Group(); g.add(marchers);
+  const marchers = new THREE.Group(); g.add(marchers); X.anchors.marchers = marchers; X.anchors.gate = G;
   const ced = ch.cedric({ pose: 'Walk_Loop' }), lu = ch.lucien({ pose: 'Walk_Loop' }), art = ch.arthas({ pose: 'Walk_Formal_Loop' });
   ced.position.set(-1.7, 0, 0); lu.position.set(0, 0, -0.6); art.position.set(1.8, 0, 0); marchers.add(ced); marchers.add(lu); marchers.add(art);
   lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false;
@@ -77,13 +83,23 @@ SC.push(function (X) {
     group: g, d0: S1.d0, d1: dE, vis: 100,
     update(t, ctx) {
       tor.update(ctx.time); gtor.update(ctx.time); bon.update(ctx.time);
-      for (let i = 0; i < NCR; i++) { const c = cr[i]; dm.position.set(c.p.x, Math.abs(Math.sin(ctx.time * 5 + c.ph)) * 0.18, c.p.z); dm.rotation.set(0, c.yaw, 0); dm.scale.setScalar(c.s); dm.updateMatrix(); crowd.setMatrixAt(i, dm.matrix); }
-      crowd.instanceMatrix.needsUpdate = true;
-      for (let i = 0; i < ND; i++) { const c = dancers[i]; dm.position.set(c.x, Math.abs(Math.sin(ctx.time * 6 + c.ph)) * 0.3, c.z); dm.rotation.set(0, c.a + ctx.time * 0.8, 0.12 * Math.sin(ctx.time * 6 + c.ph)); dm.scale.setScalar(1); dm.updateMatrix(); dance.setMatrixAt(i, dm.matrix); }
-      dance.instanceMatrix.needsUpdate = true;
+      if (crowd) {
+        for (let i = 0; i < NCR; i++) { const c = cr[i]; dm.position.set(c.p.x, Math.abs(Math.sin(ctx.time * 5 + c.ph)) * 0.18, c.p.z); dm.rotation.set(0, c.yaw, 0); dm.scale.setScalar(c.s); dm.updateMatrix(); crowd.setMatrixAt(i, dm.matrix); }
+        crowd.instanceMatrix.needsUpdate = true;
+      }
+      crowdInst.forEach(({ im, idx }) => {
+        if (!im) return;
+        idx.forEach((i, k) => { const c = cr[i]; dm.position.set(c.p.x, Math.abs(Math.sin(ctx.time * 5 + c.ph)) * 0.16, c.p.z); dm.rotation.set(0, c.yaw + Math.PI, 0); dm.scale.setScalar(c.s); dm.updateMatrix(); im.children.forEach((m) => m.setMatrixAt(k, dm.matrix)); });
+        im.children.forEach((m) => { m.instanceMatrix.needsUpdate = true; });
+      });
+      if (dance) {
+        for (let i = 0; i < ND; i++) { const c = dancers[i]; dm.position.set(c.x, Math.abs(Math.sin(ctx.time * 6 + c.ph)) * 0.3, c.z); dm.rotation.set(0, c.a + ctx.time * 0.8, 0.12 * Math.sin(ctx.time * 6 + c.ph)); dm.scale.setScalar(1); dm.updateMatrix(); dance.setMatrixAt(i, dm.matrix); }
+        dance.instanceMatrix.needsUpdate = true;
+      }
+      rigDance.forEach((p, i) => { const a = i / rigDance.length * TAU + ctx.time * 0.25; p.position.set(bpos.x + Math.cos(a) * 3.6, 0, bpos.z + Math.sin(a) * 3.6); p.rotation.y = -a; });
       marchers.visible = t < S2.t0 + 9;
       if (marchers.visible) {
-        const dc = Math.min(ctx.camD + 11, dE - 1), p = X.at(dc, 0, 0);
+        const dc = Math.min(X.distAt(t) + 11, dE - 1), p = X.at(dc, 0, 0);
         marchers.position.set(p.x, ced.userData.mixer ? 0 : Math.abs(Math.sin(ctx.time * 3.2)) * 0.06, p.z); marchers.rotation.y = X.yawAt(dc) + Math.PI;
       }
       const gp = X.at(clamp(ctx.camD + 6, dG - 30, dE), 0, 5);
@@ -163,6 +179,10 @@ SC.push(function (X) {
   const eg = X.glow(0x9cc8ff, 7, 0.9); eg.position.set(0, 15.5, 1.9); wr.add(eg);
   const halo = X.glow(0x6a90d0, 24, 0.28); halo.position.set(0, 15.2, 0.4); wr.add(halo);
   wr.rotation.y = X.yawAt(X.Dend); g.add(wr);
+  // the real wraith: a 16 m hooded figure (rigged CC0 body), casting over the city; the cone figure stays as fallback
+  const wraith = C.chars(X).wraith ? C.chars(X).wraith({ h: 16 }) : null;
+  if (wraith) { wr.children.forEach((c) => { if (c !== eg && c !== halo) c.visible = false; }); wraith.rotation.y = Math.PI; wr.add(wraith); eg.position.set(0, 14.6, 1.2); halo.position.set(0, 14.2, 0); }
+  X.anchors.wraith = wr;
   return {
     group: g, d0: X.dBack - 8, d1: X.Dend + 5, vis: 30,
     update(t, ctx) {

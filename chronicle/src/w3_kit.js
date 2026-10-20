@@ -29,6 +29,7 @@ C.kit = function (X) {
         const side = (rnd01() < 0.5 ? -1 : 1) * (minS + rnd01() * (maxS - minS));
         const p = at(d + (rnd01() - 0.5) * step, side, 0);
         const roll = rnd01(), s = sc[0] + rnd01() * (sc[1] - sc[0]);
+        if (cleared(p, 1)) continue;
         if (roll < rockP) rocks.push(M([p.x, 0, p.z], [0, rnd01() * TAU, 0], [s * 0.9, s * 0.8, s * 1.1]));
         else if (roll < rockP + deadP) deads.push(M([p.x, 0, p.z], [0, rnd01() * TAU, 0], s));
         else pines.push(M([p.x, 0, p.z], [0, rnd01() * TAU, 0], s));
@@ -50,6 +51,7 @@ C.kit = function (X) {
           for (let k = 0; k < 2; k++) {
             const side = (rnd01() < 0.5 ? -1 : 1) * (2.6 + rnd01() * 9), p = at(d + (rnd01() - 0.5) * uStep, side, 0);
             const r = rnd01(), i = r < 0.3 ? 0 : r < 0.6 ? 1 : r < 0.8 ? 2 : r < 0.96 ? 3 : 4;
+            if (cleared(p, 0.6)) continue;
             lists[i].push(M([p.x, 0, p.z], [0, rnd01() * TAU, 0], U[i][1] * (0.7 + rnd01() * 0.6)));
           }
         }
@@ -69,6 +71,7 @@ C.kit = function (X) {
     keys.forEach((key, i) => { const m = C.instModel(key, lists[i], { tint }); if (m) g.add(m); });
   }
   function rnd01() { return R(0, 1); }
+  const cleared = (p, k) => (X.clearings || []).some((c) => (p.x - c.x) ** 2 + (p.z - c.z) ** 2 < (c.r * k) ** 2);
 
   /* ---- torches with flickering flames ---- */
   K.torches = function (list, o) {

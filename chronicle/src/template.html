@@ -53,9 +53,9 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
 
 <div id="start">
   <h1>Alaron Chronicle</h1>
-  <p>A tavern with one chair. A book on the lectern. Each page is a song, and each song is a ride through the story it tells.</p>
+  <p>A crowded tavern on Alaron. Lucien Vale is on stage. Ask him for a song, and watch the story it tells.</p>
   <button id="go" class="primary" disabled>Loading the world…</button>
-  <small>Headphones help. Drag to look around. Keys: W A S D to walk, E to sit, arrow keys to turn pages.</small>
+  <small>Headphones help. Drag to look around. Keys: W A S D to walk, E at the stage, arrow keys to turn pages.</small>
 </div>
 
 <div class="layer" id="top" hidden>
@@ -63,12 +63,13 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
   <button id="bMute" title="Mute (M)">Sound on</button>
   <button id="bPause" title="Pause (Space)" hidden>Pause</button>
   <button id="bSync" title="Tap lyrics to the real vocals" hidden>Sync lyrics</button>
+  <button id="bCalm" title="Camera kicks and shake on the beat">Wild camera</button>
   <button id="bClose" title="Close the book" hidden>Close the book</button>
 </div>
 
 <div class="layer" id="hud" hidden>
   <div id="hint"></div>
-  <div class="row" id="rowSit" hidden><button id="bSit" class="primary">Take the chair</button><button id="bAuto">Walk me there</button></div>
+  <div class="row" id="rowSit" hidden><button id="bSit" class="primary">Ask Lucien for a song</button><button id="bAuto">Walk me there</button></div>
   <div class="row" id="rowBook" hidden><button id="bPrev" aria-label="Previous page">◀</button><button id="bBegin" class="primary">Begin this story</button><button id="bNext" aria-label="Next page">▶</button></div>
   <div id="sync" hidden>
     <div id="syncLine"></div>
@@ -82,9 +83,9 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
 <div id="prog"><i></i></div>
 
 <div id="end" hidden>
-  <h2>The song’s not over.</h2>
-  <p>The war’s just begun…</p>
-  <div id="endbtns"><button id="bBack" class="primary">Back to the book</button><button id="bAgain">Ride again</button></div>
+  <h2>Lucien takes a bow.</h2>
+  <p>The tavern roars for another.</p>
+  <div id="endbtns"><button id="bBack" class="primary">Back to the tavern</button><button id="bAgain">Play it again</button></div>
 </div>
 <div id="dev"></div>
 

@@ -52,7 +52,10 @@ const HAIR = `${UBC}/Hairstyles/Rigged to Head Bone/glTF (Godot -Unreal)`;
 const CHARS = {
   body_m: `${UBC}/Base Characters/Godot - UE/Superhero_Male_FullBody.gltf`,
   ranger_m: `${OUTF}/Male_Ranger.gltf`, peasant_m: `${OUTF}/Male_Peasant.gltf`,
-  hair_long: `${HAIR}/Hair_Long.gltf`, hair_beard: `${HAIR}/Hair_Beard.gltf`, brows: `${HAIR}/Eyebrows_Regular.gltf`
+  hair_long: `${HAIR}/Hair_Long.gltf`, hair_beard: `${HAIR}/Hair_Beard.gltf`,
+  body_f: `${UBC}/Base Characters/Godot - UE/Superhero_Female_FullBody.gltf`,
+  ranger_f: `${OUTF}/Female_Ranger.gltf`, peasant_f: `${OUTF}/Female_Peasant.gltf`,
+  hair_buns: `${HAIR}/Hair_Buns.gltf`, hair_parted: `${HAIR}/Hair_SimpleParted.gltf`, hair_buzzed: `${HAIR}/Hair_Buzzed.gltf`, hair_buzzed_f: `${HAIR}/Hair_BuzzedFemale.gltf`
 };
 const ANIMS = { file: 'Universal Animation Library/Universal Animation Library[Standard]/Unreal-Godot/UAL1_Standard.glb',
   keep: ['Idle_Loop', 'Walk_Loop', 'Sitting_Idle_Loop', 'Crouch_Idle_Loop', 'Dance_Loop',
@@ -117,4 +120,21 @@ if (!only || only === 'chars') {
   const used = new Set(); root.listAnimations().forEach((a) => a.listSamplers().forEach((smp) => { used.add(smp.getInput()); used.add(smp.getOutput()); }));
   root.listAccessors().forEach((acc) => { if (!used.has(acc)) acc.dispose(); });
   const f = `${OUT}/chars/anims.glb`; await io.write(f, doc); console.log('anims', (fs.statSync(f).size / 1024).toFixed(0) + ' KB', root.listAnimations().length + ' clips');
+}
+
+// Creatures and single props from other CC0 sources (Poly Pizza Quaternius glbs; FBX packs converted with three's
+// FBXLoader -> GLTFExporter, see LEVELS.md). One glb each; clip names lose their "Armature|" prefix, duplicates dropped.
+const CREATURES = { wolf: 'pp/wolf_a.glb', dragon: 'pp/dragon.glb', bat: 'pp/bat.glb', lute: 'pp/lute.glb', demon: 'pp/demon.glb' };
+if (!only || only === 'creatures') {
+  fs.mkdirSync(`${OUT}/creatures`, { recursive: true });
+  for (const [key, file] of Object.entries(CREATURES)) {
+    const doc = await io.read(path.join(SRC, '..', file)), root = doc.getRoot(), seen = new Set();
+    root.listAnimations().forEach((a) => { const n = a.getName().split('|').pop(); if (seen.has(n)) a.dispose(); else { seen.add(n); a.setName(n); } });
+    root.listMaterials().forEach((m) => { m.setNormalTexture(null); m.setOcclusionTexture(null); m.setMetallicRoughnessTexture(null); m.setMetallicFactor(0); m.setRoughnessFactor(1); });
+    await doc.transform(resample({ tolerance: 2e-3 }), prune(), dedup(), textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [512, 512], quality: 80 }));
+    const used = new Set(); root.listAccessors().forEach((acc) => { if (acc.listParents().some((p) => p.propertyType !== 'Root')) used.add(acc); });
+    root.listAccessors().forEach((acc) => { if (!used.has(acc)) acc.dispose(); });
+    const f = `${OUT}/creatures/${key}.glb`; await io.write(f, doc);
+    console.log(key, (fs.statSync(f).size / 1024).toFixed(0) + ' KB', [...seen].join(','));
+  }
 }

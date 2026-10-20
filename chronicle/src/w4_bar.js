@@ -29,7 +29,76 @@ function dressBar(g, tables) {
   put('Book_Stack_1', [-2.95, 0.81, 2.0], 0.6);
 }
 
-/* The empty tavern: the permanent hub every story starts and ends in. */
+/* Stage, band and crowd: the tavern is busy, Lucien plays the songs (all rigged CC0 models; skipped if not loaded).
+   Returns { update(t, ctx) } to switch poses when a song starts. */
+function stageAndCrowd(X, g, tables) {
+  const ch = C.chars(X); if (!ch.person) return null;
+  const SZ0 = -10.0, SZ1 = -7.9, SH = 0.45;
+  // the stage: planks, a step, candles and banners either side of the door
+  const pt = C.tex('wood_plank_wall_diff', 2.2, 0.4), stMat = new THREE.MeshLambertMaterial(pt ? { map: pt, color: 0x8a6a4a } : { color: 0x4a3222 });
+  const plat = new THREE.Mesh(new THREE.BoxGeometry(5.8, SH, SZ1 - SZ0), stMat); plat.position.set(0, SH / 2, (SZ0 + SZ1) / 2); g.add(plat);
+  const step = new THREE.Mesh(new THREE.BoxGeometry(1.6, SH / 2, 0.4), stMat); step.position.set(0, SH / 4, SZ1 + 0.2); g.add(step);
+  const put = (k, p, yaw, sc) => { const m = C.place(k, p, yaw, sc); if (m) g.add(m); return m; };
+  put('CandleStick_Triple', [-2.6, SH, SZ1 - 0.25], 0, 1.4); put('CandleStick_Triple', [2.6, SH, SZ1 - 0.25], 0, 1.4);
+  put('Banner_2', [-2.4, SH + 0.9, SZ0 - 0.05], 0, 0.9); put('Banner_1', [2.4, SH + 0.9, SZ0 - 0.05], 0, 0.9);
+  const glows = [[-2.6, SH + 0.62, SZ1 - 0.25], [2.6, SH + 0.62, SZ1 - 0.25]].map((p) => { const s = X.glow(0xffb060, 1.6, 0.7); s.position.set(p[0], p[1], p[2]); g.add(s); return s; });
+  // the band
+  const add = (o, p, yaw) => { const c = o; c.position.set(p[0], p[1], p[2]); c.rotation.y = yaw || 0; g.add(c); return c; };
+  const lucien = add(ch.lucien({ hub: true, pose: 'Idle_Talking_Loop' }), [0, SH, -8.55], 0);
+  lucien.userData.blade.visible = false; lucien.userData.bladeGlow.visible = false; X.hubAnchors.lucien = lucien;
+  const drummer = add(ch.person({ hub: true, seed: 11, female: false, outfit: 'peasant', pose: 'Sitting_Idle_Loop' }), [-1.9, SH, -9.45], 0.25);
+  const drum = solid([cy(0.36, 0.33, 0.5, 12, 0x6a3a22, [0, 0.25, 0]), cy(0.37, 0.37, 0.04, 12, 0xd8c8a0, [0, 0.52, 0]), cy(0.38, 0.38, 0.05, 12, 0x3a2a1a, [0, 0.04, 0])]);
+  drum.position.set(-1.7, SH, -8.85); g.add(drum);
+  const sticks = [-1, 1].map((sd) => { const m = solid([cy(0.012, 0.016, 0.42, 4, 0xc8a878, [0, 0.21, 0])]); m.position.set(-1.7 + sd * 0.16, SH + 0.62, -9.05); g.add(m); return m; });
+  const lutist = add(ch.person({ hub: true, seed: 23, female: true, outfit: 'ranger', pose: 'Idle_Loop' }), [1.85, SH, -9.25], -0.35);
+  const lute = C.creature('lute', { h: 0.85 }); if (lute) C.attach(lutist, 'spine_03', lute, [0.05, -0.05, 0.22], [0.3, 0, 1.15]);
+  const fiddler = add(ch.person({ hub: true, seed: 37, female: false, outfit: 'ranger', pose: 'Idle_Talking_Loop' }), [1.0, SH, -9.6], -0.15);
+  C.attach(fiddler, 'hand_l', solid([bx(0.09, 0.32, 0.04, 0x7a3a1a, [0, 0.14, 0]), bx(0.02, 0.2, 0.02, 0x2a1a10, [0, 0.38, 0])]), [0, 0.05, 0.04], [0, 0, 0.6]);
+  // the crowd: benches at the long tables, the bar, the hearth, a few in front of the stage
+  const crowd = [];
+  const sitAt = (x, z, yaw, seed) => crowd.push({ c: add(ch.person({ hub: true, seed, pose: 'Sitting_Idle_Loop' }), [x, 0, z], yaw), sit: true });
+  tables.forEach((t, i) => {
+    sitAt(t[0] - 0.62, t[1] - 0.45, Math.PI / 2, 100 + i * 7); sitAt(t[0] + 0.62, t[1] + 0.4, -Math.PI / 2, 101 + i * 7);
+    if (i !== 1) sitAt(t[0] - 0.62, t[1] + 0.55, Math.PI / 2, 102 + i * 7);
+  });
+  sitAt(2.7, -5.9, Math.PI / 2, 140); sitAt(2.7, -4.6, Math.PI / 2, 141);
+  const stand = (x, z, yaw, seed, pose) => crowd.push({ c: add(ch.person({ hub: true, seed, pose: pose || 'Idle_Talking_Loop' }), [x, 0, z], yaw), sit: false });
+  stand(-4.2, -3.9, 1.9, 150); stand(-4.0, -1.2, 1.2, 151);
+  stand(1.3, -6.2, -0.4, 160, 'Idle_Loop'); stand(2.1, -5.4, -0.6, 161, 'Idle_Loop'); stand(1.2, -4.6, -0.2, 162, 'Idle_Loop');  // crowd in front of the stage, right of the aisle (the brothers' table is left)
+  // the brothers at the front table, facing the stage: you meet them here before you see them in the songs
+  const ced = add(ch.cedric({ hub: true, pose: 'Sitting_Idle_Loop', noStaff: true }), [-1.55, 0, -4.6], Math.PI * 0.9);
+  const art = add(ch.arthas({ hub: true, pose: 'Idle_Loop' }), [-2.55, 0, -5.1], Math.PI * 0.75);
+  const tb = C.place('Table_Large', [-2.0, 0, -4.1], 0); if (tb) { tb.scale.set(0.45, 1, 0.75); g.add(tb); }
+  const stool = C.place('Stool', [-1.55, 0, -4.6], 0); if (stool) g.add(stool);
+  C.place && [[-2.25, -4.0, 0.3], [-1.75, -4.2, 1.9]].forEach((m) => { const o = C.place('Mug', [m[0], 0.81, m[1]], m[2]); if (o) g.add(o); });
+  const staff = solid([cy(0.022, 0.022, 2.0, 5, 0x5a3a2a, [0, 1.0, 0])]); staff.position.set(-1.0, 0, -4.9); staff.rotation.z = -0.25; g.add(staff);
+  X.hubAnchors.cedric = ced; X.hubAnchors.arthas = art;
+  const keep = add(ch.person({ hub: true, seed: 170, female: false, outfit: 'peasant', pose: 'Idle_Talking_Loop' }), [5.25, 0, -3.2], -Math.PI / 2);
+  const colliders = [{ x0: -2.95, x1: 2.95, z0: -10.2, z1: -7.75 }];
+  colliders.push({ x: -2.0, z: -4.4, r: 1.0 });
+  crowd.filter((p) => !p.sit).forEach((p) => colliders.push({ x: p.c.position.x, z: p.c.position.z, r: 0.35 }));
+  let playing = null;
+  return {
+    colliders, lucien,
+    update(t, ctx) {
+      const on = !!(ctx.ride && t >= 0);
+      if (on !== playing) {
+        playing = on;
+        lucien.userData.pose(on ? 'Spell_Simple_Idle_Loop' : 'Idle_Talking_Loop');
+        fiddler.userData.pose(on ? 'Dance_Loop' : 'Idle_Talking_Loop');
+        crowd.forEach((p, i) => { if (!p.sit) p.c.userData.pose(on ? (i % 2 ? 'Dance_Loop' : 'Idle_Torch_Loop') : (i % 3 ? 'Idle_Talking_Loop' : 'Idle_Loop')); });
+      }
+      // drumsticks on the beat when the band plays
+      const B = on && X.story && X.story.beats ? X.story.beats.beats : null;
+      let hit = 0;
+      if (B) { let k = 0; while (k < B.length - 1 && B[k + 1] <= t) k++; hit = Math.exp(-(t - B[k]) * 9); }
+      sticks.forEach((m, i) => { m.rotation.x = -0.9 + (i ? hit : 1 - hit) * 0.7; });
+      glows.forEach((s) => { s.material.opacity = 0.6 + 0.1 * Math.sin(ctx.time * 9 + s.position.x); });
+    }
+  };
+}
+
+/* The tavern: the permanent hub every song starts and ends in. */
 C.buildBar = function (X) {
   const g = new THREE.Group(), Z0 = X.Z0, kit = C.kit(X);
   const wallMat = new THREE.MeshLambertMaterial({ map: X.TEX.plank, color: 0xb89a7a });
@@ -83,6 +152,7 @@ C.buildBar = function (X) {
   });
   g.add(solid(P));
   if (HAS) dressBar(g, tables);
+  const stage = stageAndCrowd(X, g, tables);
 
   // hanging lanterns and the single red d20 on the middle table
   const lanternPos = [[-2.5, 3.1, -2], [2.2, 3.1, -6.5], [0, 3.1, 1.5]];
@@ -132,8 +202,8 @@ C.buildBar = function (X) {
 
   const colliders = [
     { x0: 3.15, x1: 6, z0: -8.8, z1: -0.8 }, { x0: -6, x1: -4.7, z0: -4.2, z1: -0.8 },
-    { x: 0, z: Z0, r: 0.6 }, { x: 0, z: Z0 - 1.0, r: 0.55 }
-  ];
+    { x: X.STAND.x, z: X.STAND.z - 1.15, r: 0.4 }  // Lucien's music stand
+  ].concat(stage ? stage.colliders : []);
   tables.forEach((t) => colliders.push({ x: t[0], z: t[1], r: 1.05 }));
   [-7.2, -5.9, -4.6, -2.0].forEach((z) => colliders.push({ x: 2.7, z, r: 0.35 }));
 
@@ -144,10 +214,13 @@ C.buildBar = function (X) {
       const f = fire.flicker(ctx.time);
       d20.rotation.y = ctx.time * 0.4; d20.rotation.x = 0.4 + Math.sin(ctx.time * 0.3) * 0.1;
       d20g.material.opacity = 0.4 + 0.15 * Math.sin(ctx.time * 1.7);
-      door.rotation.y = 1.5 * ss(0.3, 2.2, t);
+      // the back door (behind the stage) swings open when the song's camera flies out through it
+      const dA = X.story && X.story.doorAt !== undefined ? X.story.doorAt : 1.5;
+      door.rotation.y = ctx.ride ? 1.5 * ss(dA - 1.5, dA, t) : 0;
+      if (stage) stage.update(t, ctx);
       if (ctx.camD < 40) {
         ctx.light(0, -4.75, 0.9, -2.5, 0xff8a3a, 1.8 * f, 22);
-        ctx.light(1, 1.0, 3.0, -3.5, 0xffc27a, 1.1, 26);
+        ctx.light(1, 0, 3.2, -6.6, 0xffc27a, 1.5, 22);  // stage wash
       }
     }
   };

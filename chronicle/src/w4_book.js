@@ -72,7 +72,7 @@ C.buildBook = function (X) {
     bx(0.5, 0.06, 0.4, 0x2c1e14, [0, 0.03, 0.05]), bx(0.74, 0.06, 0.06, 0x2c1e14, [0, 0.87, -0.17])
   ]);
   g.add(lec);
-  g.position.set(0, 0, X.Z0 - 0.95);
+  g.position.set(X.STAND.x, 0, X.STAND.z - 1.15);  // Lucien's music stand, in front of the stage
 
   const book = new THREE.Group();     // lies on the lectern desk, tilted toward the reader
   book.position.set(0, 1.0, 0.03); book.rotation.x = 0.5;

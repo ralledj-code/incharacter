@@ -55,9 +55,9 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
 
 <div id="start">
   <h1>Alaron Chronicle</h1>
-  <p>A tavern with one chair. A book on the lectern. Each page is a song, and each song is a ride through the story it tells.</p>
+  <p>A crowded tavern on Alaron. Lucien Vale is on stage. Ask him for a song, and watch the story it tells.</p>
   <button id="go" class="primary" disabled>Loading the world…</button>
-  <small>Headphones help. Drag to look around. Keys: W A S D to walk, E to sit, arrow keys to turn pages.</small>
+  <small>Headphones help. Drag to look around. Keys: W A S D to walk, E at the stage, arrow keys to turn pages.</small>
 </div>
 
 <div class="layer" id="top" hidden>
@@ -65,12 +65,13 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
   <button id="bMute" title="Mute (M)">Sound on</button>
   <button id="bPause" title="Pause (Space)" hidden>Pause</button>
   <button id="bSync" title="Tap lyrics to the real vocals" hidden>Sync lyrics</button>
+  <button id="bCalm" title="Camera kicks and shake on the beat">Wild camera</button>
   <button id="bClose" title="Close the book" hidden>Close the book</button>
 </div>
 
 <div class="layer" id="hud" hidden>
   <div id="hint"></div>
-  <div class="row" id="rowSit" hidden><button id="bSit" class="primary">Take the chair</button><button id="bAuto">Walk me there</button></div>
+  <div class="row" id="rowSit" hidden><button id="bSit" class="primary">Ask Lucien for a song</button><button id="bAuto">Walk me there</button></div>
   <div class="row" id="rowBook" hidden><button id="bPrev" aria-label="Previous page">◀</button><button id="bBegin" class="primary">Begin this story</button><button id="bNext" aria-label="Next page">▶</button></div>
   <div id="sync" hidden>
     <div id="syncLine"></div>
@@ -84,9 +85,9 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
 <div id="prog"><i></i></div>
 
 <div id="end" hidden>
-  <h2>The song’s not over.</h2>
-  <p>The war’s just begun…</p>
-  <div id="endbtns"><button id="bBack" class="primary">Back to the book</button><button id="bAgain">Ride again</button></div>
+  <h2>Lucien takes a bow.</h2>
+  <p>The tavern roars for another.</p>
+  <div id="endbtns"><button id="bBack" class="primary">Back to the tavern</button><button id="bAgain">Play it again</button></div>
 </div>
 <div id="dev"></div>
 
@@ -353,12 +354,18 @@ const C = root.__cw, THREE = C.THREE;
 
 /* Loaded art (CC0 Quaternius models + Poly Haven textures, packed by scripts/pack-assets.mjs).
    Everything here is optional: builders ask for a model/texture and fall back to procedural shapes when it is missing. */
-const A = C.assets = { models: {}, tex: {}, chars: {}, clips: {}, ready: false };
-const GLB = ['nature', 'props', 'village'];
-const DIM = { props: 0.68, village: 0.8 };  // colour scale per pack
-const CHARS = ['body_m', 'ranger_m', 'peasant_m', 'hair_long', 'hair_beard'];  // + chars/anims.glb (clips only)
-const TEX = ['old_wood_floor', 'wood_plank_wall', 'rustic_stone_wall', 'forest_ground_04', 'cobblestone_floor_04', 'castle_brick_07'];
-
+const A = C.assets = { models: {}, tex: {}, chars: {}, clips: {}, creatures: {}, ready: false };
+const DIM = { props: 0.68, village: 0.8 };  // colour scale per glb pack
+/* Packs load on demand and every file only once: the tavern pack at start, a level's packs when its song is requested.
+   A level lists what it needs in `packs` (s0_stories / level modules). */
+const PACKS = {
+  tavern: { glb: ['props'], tex: ['old_wood_floor', 'wood_plank_wall', 'rustic_stone_wall'], creatures: ['lute'],
+    chars: ['body_m', 'body_f', 'ranger_m', 'peasant_m', 'ranger_f', 'peasant_f', 'hair_long', 'hair_beard', 'hair_buns', 'hair_parted', 'hair_buzzed', 'hair_buzzed_f'] },
+  nature: { glb: ['nature'], tex: ['forest_ground_04'] },
+  beasts: { creatures: ['wolf', 'dragon', 'bat', 'demon'] },
+  village: { glb: ['village'], tex: ['cobblestone_floor_04', 'castle_brick_07'] }
+};
+C.PACKS = PACKS;
 // asset base: next to the page, also when served as /chronicle (no trailing slash)
 C.BASE = function () {
   if (typeof location === 'undefined') return '';
@@ -401,27 +408,41 @@ function headOnly(root) {
   });
 }
 
-C.loadAssets = function (onProgress) {
-  if (!THREE.GLTFLoader || typeof document === 'undefined') return Promise.resolve();
-  const base = C.BASE(), jobs = [];
-  let done = 0, total = GLB.length + TEX.length + (THREE.SkeletonUtils ? CHARS.length + 1 : 0);
-  const tick = () => { done++; if (onProgress) onProgress(done / total); };
-  const safe = (fn, res) => (x) => { try { fn(x); } catch (e) { console.warn('asset', e); } tick(); res(); };
+const once = {};  // url -> Promise, so shared files download once
+function loadFile(kind, name) {
+  const base = C.BASE(), key = kind + ':' + name;
+  if (once[key]) return once[key];
   const gl = new THREE.GLTFLoader(), tl = new THREE.TextureLoader();
-  GLB.forEach((n) => jobs.push(new Promise((res) => gl.load(new URL('assets/' + n + '.glb', base).href,
-    safe((g) => { g.scene.children.slice().forEach((c) => { A.models[c.name] = prep(c, DIM[n]); }); }, res),
-    undefined, () => { tick(); res(); }))));
-  TEX.forEach((n) => jobs.push(new Promise((res) => tl.load(new URL('assets/tex/' + n + '_diff.jpg', base).href,
-    safe((t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; A.tex[n + '_diff'] = t; }, res),
-    undefined, () => { tick(); res(); }))));
-  if (THREE.SkeletonUtils) {
-    CHARS.forEach((n) => jobs.push(new Promise((res) => gl.load(new URL('assets/chars/' + n + '.glb', base).href,
-      safe((g) => { A.chars[n] = prep(g.scene, 0.85); if (n === 'body_m') headOnly(A.chars[n]); }, res), undefined, () => { tick(); res(); }))));
-    jobs.push(new Promise((res) => gl.load(new URL('assets/chars/anims.glb', base).href,
-      safe((g) => { g.animations.forEach((c) => { A.clips[c.name] = c; }); }, res), undefined, () => { tick(); res(); })));
-  }
-  return Promise.all(jobs).then(() => { A.ready = true; });
+  const safe = (fn, res) => (x) => { try { fn(x); } catch (e) { console.warn('asset', name, e); } res(); };
+  return (once[key] = new Promise((res) => {
+    if (kind === 'glb') gl.load(new URL('assets/' + name + '.glb', base).href,
+      safe((g) => { g.scene.children.slice().forEach((c) => { A.models[c.name] = prep(c, DIM[name]); }); }, res), undefined, () => res());
+    else if (kind === 'tex') tl.load(new URL('assets/tex/' + name + '_diff.jpg', base).href,
+      safe((t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; A.tex[name + '_diff'] = t; }, res), undefined, () => res());
+    else if (kind === 'char') gl.load(new URL('assets/chars/' + name + '.glb', base).href,
+      safe((g) => { A.chars[name] = prep(g.scene, 0.85); if (/^body_/.test(name)) headOnly(A.chars[name]); }, res), undefined, () => res());
+    else if (kind === 'creature') gl.load(new URL('assets/creatures/' + name + '.glb', base).href,
+      safe((g) => { A.creatures[name] = { scene: prep(g.scene), clips: g.animations }; }, res), undefined, () => res());
+    else if (kind === 'anims') gl.load(new URL('assets/chars/anims.glb', base).href,
+      safe((g) => { g.animations.forEach((c) => { A.clips[c.name] = c; }); }, res), undefined, () => res());
+  }));
+}
+/* load packs by name; onProgress(0..1). Resolves even if files fail (builders fall back). */
+C.loadPacks = function (names, onProgress) {
+  if (!THREE.GLTFLoader || typeof document === 'undefined') return Promise.resolve();
+  const files = [];
+  [].concat(names || []).forEach((n) => {
+    const p = PACKS[n]; if (!p) return;
+    (p.glb || []).forEach((f) => files.push(['glb', f]));
+    (p.tex || []).forEach((f) => files.push(['tex', f]));
+    (p.creatures || []).forEach((f) => files.push(['creature', f]));
+    if (THREE.SkeletonUtils && p.chars) { p.chars.forEach((f) => files.push(['char', f])); files.push(['anims', 'anims']); }
+  });
+  let done = 0; const tick = () => { done++; if (onProgress) onProgress(done / Math.max(1, files.length)); };
+  if (!files.length && onProgress) onProgress(1);
+  return Promise.all(files.map(([k, f]) => loadFile(k, f).then(tick)));
 };
+C.loadAssets = (onProgress) => C.loadPacks(['tavern'], onProgress).then(() => { A.ready = true; });
 
 /* a cloned texture with its own repeat, or null */
 C.tex = function (name, rx, ry) {
@@ -435,8 +456,10 @@ C.modelSize = function (key) { const m = A.models[key]; if (!m) return null; con
 
 /* Many copies of one model as InstancedMeshes (one per mesh part). mats: Matrix4 list in world space.
    o.tint multiplies material colours (cloned per call); o.norm scales the model so its height is 1 (then mats scale to metres). */
-C.instModel = function (key, mats, o) {
-  const src = A.models[key]; if (!src || !mats.length) return null;
+C.instModel = function (key, mats, o) { return A.models[key] ? C.instObject(A.models[key], mats, o) : null; };
+C.instObject = function (src, mats, o) {
+  if (!src || !mats.length) return null;
+  if (!src.userData.box) src.userData.box = new THREE.Box3().setFromObject(src);
   o = o || {};
   const g = new THREE.Group(), tint = o.tint !== undefined ? new THREE.Color(o.tint) : null;
   const h = o.norm ? Math.max(1e-3, src.userData.box.max.y - src.userData.box.min.y) : 1;
@@ -466,6 +489,7 @@ C.place = function (key, p, yaw, s) {
    tint: hex (multiplies the texture) or { color, only: materialNameRegex } (solid colour, texture dropped)
    Returns a Group (front +z) with userData.mixer, or null when the character files are missing. */
 C.hasChars = () => !!(A.chars.body_m && THREE.SkeletonUtils);
+const HEIGHT = {};  // body key -> model height
 C.rigChar = function (spec) {
   if (!C.hasChars()) return null;
   const tinted = (mesh, tint) => {
@@ -478,7 +502,8 @@ C.rigChar = function (spec) {
     });
     if (mesh.material.length === 1) mesh.material = mesh.material[0];
   };
-  const body = THREE.SkeletonUtils.clone(A.chars.body_m), bones = {};
+  const bodyKey = spec.base || 'body_m', src = A.chars[bodyKey] || A.chars.body_m;
+  const body = THREE.SkeletonUtils.clone(src), bones = {};
   let arm = null;
   body.traverse((o) => { if (o.isBone) bones[o.name] = o; if (o.isSkinnedMesh) { arm = arm || o.parent; tinted(o, spec.body); } });
   (spec.parts || []).forEach(([key, tint, skip, only]) => {
@@ -493,7 +518,8 @@ C.rigChar = function (spec) {
   });
   body.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
   const g = new THREE.Group(); g.add(body);
-  const box = new THREE.Box3().setFromObject(A.chars.body_m), hh = box.max.y - box.min.y;
+  if (!HEIGHT[bodyKey]) { const box = new THREE.Box3().setFromObject(src); HEIGHT[bodyKey] = box.max.y - box.min.y; }  // full-body bounds (the index cut does not change them)
+  const hh = HEIGHT[bodyKey];
   body.scale.setScalar((spec.h || 1.8) / hh);
   const mixer = new THREE.AnimationMixer(body);
   let cur = null;
@@ -506,6 +532,63 @@ C.rigChar = function (spec) {
   g.updateMatrixWorld(true);
   return g;
 };
+/* An animated creature or prop from creatures/*.glb. o: { clip, h (height in m) or scale, tint, ph }.
+   Returns a Group (+z front) with userData.mixer/pose like rigChar (register it in X.anims to animate), or null. */
+C.hasCreature = (key) => !!A.creatures[key];
+C.creature = function (key, o) {
+  const src = A.creatures[key]; if (!src || !THREE.SkeletonUtils) return null;
+  o = o || {};
+  const body = THREE.SkeletonUtils.clone(src.scene), g = new THREE.Group(), bones = {};
+  body.traverse((m) => {
+    if (m.isBone) bones[m.name] = m;
+    if (!m.isMesh) return;
+    m.frustumCulled = false;
+    if (o.tint !== undefined || o.eyes !== undefined) {
+      const c = new THREE.Color(o.tint === undefined ? 0xffffff : o.tint);
+      m.material = [].concat(m.material).map((x) => {
+        // o.eyes: the cartoon eyes of the CC0 monsters become glowing slits (menace instead of cute)
+        if (o.eyes !== undefined && /Eye_White/i.test(x.name)) return new THREE.MeshBasicMaterial({ color: o.eyes, skinning: x.skinning });
+        if (o.eyes !== undefined && /Eye_Black/i.test(x.name)) return new THREE.MeshBasicMaterial({ color: 0x000000, skinning: x.skinning });
+        const y = x.clone(); y.color.multiply(c); return y;
+      });
+      if (m.material.length === 1) m.material = m.material[0];
+    }
+  });
+  const box = new THREE.Box3().setFromObject(src.scene), hh = Math.max(1e-3, box.max.y - box.min.y);
+  body.scale.multiplyScalar(o.h ? o.h / hh : (o.scale || 1));
+  g.add(body);
+  const mixer = new THREE.AnimationMixer(body); let cur = null;
+  g.userData.pose = (name) => {
+    const clip = src.clips.find((c) => c.name === name) || src.clips[0]; if (!clip || cur === clip.name) return;
+    mixer.stopAllAction(); mixer.clipAction(clip).play(); cur = clip.name;
+  };
+  if (src.clips.length) g.userData.pose(o.clip);
+  g.userData.mixer = mixer; g.userData.bones = bones; g.userData.ph = o.ph === undefined ? Math.random() * 3 : o.ph;
+  return g;
+};
+
+/* Freeze a rigged character in one frame of a clip into plain static meshes (for big instanced crowds).
+   spec as rigChar; returns an Object3D whose meshes can go through C.instObject. */
+C.bakeRig = function (rig, clip, time) {
+  if (!rig) return null;
+  if (clip) rig.userData.pose(clip);
+  rig.userData.mixer.setTime(time || 0); rig.updateMatrixWorld(true);
+  const out = new THREE.Group(), v = new THREE.Vector3(), inv = new THREE.Matrix4().copy(rig.matrixWorld).invert();
+  rig.traverse((m) => {
+    if (!m.isSkinnedMesh || !m.visible) return;
+    const g = m.geometry, n = g.attributes.position.count, pos = new Float32Array(n * 3), mw = new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld);
+    m.skeleton.update();
+    for (let i = 0; i < n; i++) { v.fromBufferAttribute(g.attributes.position, i); m.boneTransform(i, v); v.applyMatrix4(mw); pos[i * 3] = v.x; pos[i * 3 + 1] = v.y; pos[i * 3 + 2] = v.z; }
+    const ng = new THREE.BufferGeometry(); ng.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    if (g.attributes.uv) ng.setAttribute('uv', g.attributes.uv);
+    if (g.index) ng.setIndex(g.index);
+    ng.computeVertexNormals();
+    const mat = [].concat(m.material).map((x) => { const y = x.clone(); y.skinning = false; return y; });
+    out.add(new THREE.Mesh(ng, mat.length === 1 ? mat[0] : mat));
+  });
+  return out;
+};
+
 /* attach an object to a bone of a rigged character (bone space is scaled with the body) */
 C.attach = function (ch, bone, obj, p, r, s) {
   const b = ch.userData.bones && ch.userData.bones[bone]; if (!b) return null;
@@ -513,6 +596,135 @@ C.attach = function (ch, bone, obj, p, r, s) {
   const inv = 1 / b.getWorldScale(new THREE.Vector3()).x;  // undo the body scale so props keep their size in metres
   obj.position.set(p[0], p[1], p[2]).multiplyScalar(inv); if (r) obj.rotation.set(r[0], r[1], r[2]); obj.scale.multiplyScalar((s || 1) * inv);
   b.add(obj); return obj;
+};
+})(typeof window !== 'undefined' ? window : globalThis);
+
+(function (root) {
+'use strict';
+const C = root.__cw, THREE = C.THREE;
+const { clamp, lerp, sm, ss } = C;
+
+/* Camera director: a level's music-video shot list, evaluated purely from song time t (seek-safe).
+   level.shots(X, D) returns [{ t, blend?, cam }] sorted by t; each shot runs until the next one.
+   cam(t, u, o) writes o.pos / o.look (Vector3) and optionally o.fov, o.roll; u = 0..1 progress through the shot.
+   blend > 0 eases from the previous shot over that many seconds, else it is a hard cut.
+   D (below) builds cam functions. Targets: Vector3, Object3D (world position), or () => Vector3. */
+const V = () => new THREE.Vector3();
+let fallback = null;  // set per frame: a point ahead on the rail
+function at(target, out) {
+  if (!target) return fallback ? out.copy(fallback) : out.set(0, 0, 0);
+  if (typeof target === 'function') return out.copy(target());
+  if (target.isObject3D) return target.getWorldPosition(out);
+  return out.copy(target);
+}
+const ease = (u) => sm(u);
+
+C.makeDirector = function (X) {
+  const D = {
+    /* along the rail: side (m, +right), h (m), ahead = how far ahead to look, lead = offset along the rail */
+    rail(o) {
+      o = o || {};
+      return (t, u, out) => {
+        const d = X.distAt(t) + (o.lead || 0), f = X.frame(d);
+        out.pos.set(f.x - f.tz * (o.side || 0), o.h || 1.4, f.z + f.tx * (o.side || 0));
+        if (o.target) at(o.target, out.look); else { const g = X.frame(d + (o.ahead || 12)); out.look.set(g.x - g.tz * (o.lookSide || 0), o.lookH || 1.2, g.z + g.tx * (o.lookSide || 0)); }
+        if (o.fov) out.fov = o.fov;
+      };
+    },
+    /* circle a target: r radius, h height, a0 start angle (rad), w angular speed (rad/s), lookH added to target */
+    orbit(target, o) {
+      o = o || {}; const c = V();
+      return (t, u, out) => {
+        at(target, c); const a = (o.a0 || 0) + (o.w === undefined ? 0.25 : o.w) * (t - (o.t0 || 0));
+        const r = lerp(o.r || 6, o.r1 === undefined ? (o.r || 6) : o.r1, ease(u)), h = lerp(o.h || 2, o.h1 === undefined ? (o.h || 2) : o.h1, ease(u));
+        out.pos.set(c.x + Math.cos(a) * r, c.y + h, c.z + Math.sin(a) * r);
+        out.look.copy(c); out.look.y += o.lookH === undefined ? 1.2 : o.lookH;
+        if (o.fov) out.fov = o.fov;
+      };
+    },
+    /* move from a to b (points or targets) while looking at target (or from lookA to lookB) */
+    dolly(a, b, target, o) {
+      o = o || {}; const pa = V(), pb = V(), la = V(), lb = V();
+      return (t, u, out) => {
+        const e = o.linear ? u : ease(u);
+        at(a, pa); at(b, pb); out.pos.lerpVectors(pa, pb, e);
+        if (o.lookB) { at(target, la); at(o.lookB, lb); out.look.lerpVectors(la, lb, e); } else at(target, out.look);
+        if (o.lookH) out.look.y += o.lookH;
+        if (o.fov) out.fov = lerp(o.fov, o.fov1 || o.fov, e);
+      };
+    },
+    /* ride alongside a moving target: offset [right, up, forward] in the target's heading frame */
+    track(target, o) {
+      o = o || {}; const c = V(), q = new THREE.Quaternion(), off = V(), lk = V();
+      return (t, u, out) => {
+        at(target, c);
+        if (target && target.isObject3D) target.getWorldQuaternion(q); else q.identity();
+        off.set(...(o.offset || [3, 1.6, 0])).applyQuaternion(q); out.pos.copy(c).add(off);
+        lk.set(...(o.lookOffset || [0, 1.3, 0])).applyQuaternion(q); out.look.copy(c).add(lk);
+        if (o.fov) out.fov = o.fov;
+      };
+    },
+    /* locked-off camera with an optional slow push toward the target (push = fraction of the distance) */
+    fixed(pos, target, o) {
+      o = o || {}; const p = V(), c = V();
+      return (t, u, out) => {
+        at(pos, p); at(target, c); out.pos.lerpVectors(p, c, (o.push || 0) * ease(u)); out.look.copy(c);
+        if (o.lookH) out.look.y += o.lookH;
+        if (o.fov) out.fov = lerp(o.fov, o.fov1 || o.fov, ease(u));
+        if (o.roll) out.roll = o.roll;
+      };
+    },
+    /* rail helpers for scenes and shots */
+    p: (d, side, h) => X.at(d, side || 0, h || 0),
+    dAt: (t) => X.distAt(t)
+  };
+
+  let shots = [], beats = null;
+  const A = { pos: V(), look: V(), fov: 60, roll: 0 }, B = { pos: V(), look: V(), fov: 60, roll: 0 };
+  const reset = (o) => { o.fov = 60; o.roll = 0; };
+  function evalShot(i, t, o) {
+    const s = shots[i], t1 = i + 1 < shots.length ? shots[i + 1].t : s.t + 8;
+    reset(o); s.cam(t, clamp((t - s.t) / Math.max(0.01, t1 - s.t)), o);
+  }
+  function kickAt(list, t, decay) {  // 1 on the beat, decaying after it
+    if (!list || !list.length) return 0;
+    let lo = 0, hi = list.length - 1;
+    if (t < list[0]) return 0;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (list[m] <= t) lo = m; else hi = m; }
+    const b = list[hi] <= t ? list[hi] : list[lo];
+    return Math.exp(-(t - b) * decay);
+  }
+  return {
+    D,
+    set(level) {
+      shots = typeof level.shots === 'function' ? level.shots(X, D).filter(Boolean).sort((a, b) => a.t - b.t) : [];
+      beats = level.beats || null;
+    },
+    get active() { return shots.length > 0; },
+    shotIndex(t) { let k = 0; for (let i = 0; i < shots.length; i++) if (shots[i].t <= t) k = i; return k; },
+    /* writes camera pose for song time t; returns the pose object */
+    pose(t, camera, calm) {
+      fallback = X.at(X.distAt(t) + 12, 0, 1.2);
+      const i = this.shotIndex(t), s = shots[i];
+      evalShot(i, t, A);
+      if (s.blend && i > 0 && t - s.t < s.blend) {
+        evalShot(i - 1, t, B); const k = ease((t - s.t) / s.blend);
+        A.pos.lerpVectors(B.pos, A.pos, k); A.look.lerpVectors(B.look, A.look, k); A.fov = lerp(B.fov, A.fov, k); A.roll = lerp(B.roll, A.roll, k);
+      }
+      // music: a small zoom punch on every bar, a shake on strong hits (off in calm mode)
+      let fov = A.fov, shake = 0;
+      if (beats && !calm) {
+        fov -= 2.2 * kickAt(beats.bars, t, 7);
+        shake = 0.06 * kickAt(beats.hits, t, 10);
+      }
+      camera.position.copy(A.pos);
+      if (shake) camera.position.add(new THREE.Vector3(Math.sin(t * 91) * shake, Math.sin(t * 67 + 1) * shake, Math.sin(t * 53 + 2) * shake));
+      camera.up.set(0, 1, 0); camera.lookAt(A.look);
+      if (A.roll) camera.rotateZ(A.roll);
+      if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
+      return A;
+    }
+  };
 };
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -648,7 +860,7 @@ C.create = function (opts) {
   /* ---- ground that follows the rider, snapped to its texture period ---- */
   const PERIOD = 8, GSIZE = 480;
   // photo ground texture when loaded (darker than the procedural one, so its mood colour is boosted)
-  const gReal = C.tex('forest_ground_04_diff'), gtex = gReal || TEX.ground, gBoost = gReal ? 2.2 : 1;
+  let gReal = C.tex('forest_ground_04_diff'), gtex = gReal || TEX.ground, gBoost = gReal ? 2.2 : 1;
   gtex.repeat.set(GSIZE / PERIOD, GSIZE / PERIOD);
   const groundMat = new THREE.MeshLambertMaterial({ map: gtex, color: 0x1a2430 });
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(GSIZE, GSIZE), groundMat);
@@ -709,21 +921,23 @@ C.create = function (opts) {
     lantern.position.set(0.18, 1.76, 0.5); chair.add(lantern);
     const lg = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.glow, color: 0xffb060, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0.8 }));
     lg.scale.set(0.5, 0.5, 1); lg.position.copy(lantern.position); chair.add(lg);
-    lamp.position.set(0.18, 1.7, 0.5); chair.add(lamp);
+    scene.add(lamp);
   })();
-  scene.add(chair);
+  scene.add(chair); chair.visible = false;  // the ride chair is retired: the camera director films the song
 
   /* ---- shared kit passed to scene builders ---- */
   const storyRoot = new THREE.Group(); scene.add(storyRoot);
   const X = {
     THREE, C, scene, camera, TEX, at, yawAt, frame, distAt, tAtDist, fx, mobile, root: storyRoot,
-    sec: sec, Dend: Dend, dBack: dBack, tCross: tCross, Z0: Z0, story: null, anims: [],
+    sec: sec, Dend: Dend, dBack: dBack, tCross: tCross, Z0: Z0, story: null, anims: [], hubAnims: [], anchors: {}, hubAnchors: {},
+    STAND: { x: 0, y: 1.62, z: -5.95 },  // where the player stands to read Lucien's songbook (set by the hub)
     glow(color, size, op) {
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.glow, color, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: op === undefined ? 1 : op }));
       s.scale.set(size, size, 1); return s;
     }
   };
   const hub = C.buildHub(X);
+  const director = C.makeDirector ? C.makeDirector(X) : null;
   scene.add(hub.group);
   let defs = [];
 
@@ -733,7 +947,7 @@ C.create = function (opts) {
   const BAR_KEYS = [{ t: -1e6, m: 'bar', b: 0 }];
   const from = { x: 0, y: 1.28, z: Z0, yaw: 0, pitch: 0 };
   let riding = false;
-  const SEAT = { x: 0, y: 1.28, z: Z0 + 0.02 }, BOOK_PITCH = -0.33;
+  const SEAT = { x: 0, y: 1.28, z: Z0 + 0.02 }, BOOK_PITCH = -0.2;
   const angDiff = (a, b) => { let d = (b - a) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU; return d; };
   const ctx = {
     t: -1, dt: 0, time: 0, camD: -50, cam: camPos, mood: Mo, mode: 'walk',
@@ -748,8 +962,14 @@ C.create = function (opts) {
     });
     while (storyRoot.children.length) storyRoot.remove(storyRoot.children[0]);
   }
+  // rail distance nearest to a point (scene visibility follows wherever the director puts the camera)
+  function nearRail(p, guess) {
+    let best = guess, bd = 1e9;
+    for (let d = Math.max(0, guess - 90); d <= guess + 90; d += 1.5) { const f = frame(d), q = (f.x - p.x) ** 2 + (f.z - p.z) ** 2; if (q < bd) { bd = q; best = d; } }
+    return best;
+  }
   const W = {
-    scene, camera, flash: 0, nearChair: false, colliders: hub.colliders || [], camD: 0, chair, book: hub.book, SEAT,
+    scene, camera, get director() { return director; }, STAND: X.STAND, flash: 0, nearChair: false, colliders: hub.colliders || [], camD: 0, chair, book: hub.book, SEAT,
     get story() { return story; }, get sec() { return sec; }, get duration() { return DURATION; },
     resize(w, h) {
       camera.aspect = w / h;
@@ -758,12 +978,16 @@ C.create = function (opts) {
       camera.updateProjectionMatrix();
     },
     loadStory(st) {
-      disposeRoot(); defs = []; X.anims.length = 0;
+      // the photo ground arrives with a level pack (loaded on request), swap it in once
+      if (!gReal && (gReal = C.tex('forest_ground_04_diff'))) { gReal.repeat.set(GSIZE / PERIOD, GSIZE / PERIOD); groundMat.map = gReal; groundMat.needsUpdate = true; gBoost = 2.2; }
+      disposeRoot(); defs = []; X.anims.length = 0; X.anchors = {};
       story = st; X.story = st;
       buildTimeline(st); buildPath();
       X.sec = sec; X.Dend = Dend; X.dBack = dBack; X.tCross = tCross;
+      X.clearings = typeof st.clearings === 'function' ? st.clearings(X) : [];  // [{ x, z, r }] kept free of trees for the camera
       const list = (typeof st.build === 'function') ? st.build(X) : [];
       list.forEach((d) => { if (d) { storyRoot.add(d.group); defs.push(d); } });
+      if (director) director.set(st);  // after the scenes, so shots can see their anchors
       W.info = { Dend, dBack, tCross, Z0 };
     },
     beginRide(pose) { from.x = pose.x; from.y = pose.y; from.z = pose.z; from.yaw = pose.yaw; from.pitch = pose.pitch; riding = true; },
@@ -788,14 +1012,17 @@ C.create = function (opts) {
         const p = st.player;
         camera.position.set(p.x, 1.65, p.z); camera.rotation.set(p.pitch, p.yaw, 0);
         chair.position.set(0, 0, Z0); chair.rotation.y = 0;
-        W.nearChair = Math.hypot(p.x, p.z - Z0) < 2.1;
+        W.nearChair = Math.hypot(p.x - X.STAND.x, p.z - X.STAND.z) < 2.2;
       } else if (mode === 'book') {
         // seated at the lectern: ease from the player's last pose to the seat
         const b = 1 - sm(st.sit === undefined ? 1 : st.sit), p = st.player, lk = st.look || { yaw: 0, pitch: 0 };
-        const yaw = lk.yaw * 0.6, pitch = BOOK_PITCH + lk.pitch * 0.6;
-        camera.position.set(lerp(SEAT.x, p.x, b), lerp(SEAT.y, 1.65, b), lerp(SEAT.z, p.z, b));
+        const yaw = lk.yaw * 0.6, pitch = BOOK_PITCH + lk.pitch * 0.6, SP = X.STAND;
+        camera.position.set(lerp(SP.x, p.x, b), lerp(SP.y, 1.65, b), lerp(SP.z, p.z, b));
         camera.rotation.set(lerp(pitch, p.pitch, b), yaw + angDiff(yaw, p.yaw) * b, 0);
         chair.position.set(0, 0, Z0); chair.rotation.y = 0;
+      } else if (director && director.active) {
+        director.pose(t, camera, st.calm);
+        camD = nearRail(camera.position, distAt(t));
       } else {
         camD = distAt(t);
         const f = frame(camD), yawP = Math.atan2(-f.tx, -f.tz);
@@ -809,6 +1036,7 @@ C.create = function (opts) {
         chair.position.set(f.x, 0, f.z); chair.rotation.y = yawP;
       }
       camPos.copy(camera.position);
+      lamp.position.set(camPos.x, camPos.y + 0.7, camPos.z);
       sky.position.copy(camPos);
       ground.position.x = Math.round(camPos.x / PERIOD) * PERIOD; ground.position.z = Math.round(camPos.z / PERIOD) * PERIOD;
 
@@ -822,12 +1050,15 @@ C.create = function (opts) {
         s.group.visible = vis;
         if (vis && s.update) s.update(t, ctx);
       }
-      // rigged characters: pose from song time (deterministic, so seeking works); skip hidden ones
-      for (let i = 0; i < X.anims.length; i++) {
-        const a = X.anims[i]; let o = a, vis = true;
-        while (o) { if (!o.visible) { vis = false; break; } o = o.parent; }
-        if (vis) a.userData.mixer.setTime(Math.max(0, t) + a.userData.ph);
-      }
+      // rigged characters/creatures: story ones follow song time (seek-safe), tavern ones wall time; skip hidden ones
+      const animate = (list, tm) => {
+        for (let i = 0; i < list.length; i++) {
+          const a = list[i]; let o = a, vis = true;
+          while (o) { if (!o.visible) { vis = false; break; } o = o.parent; }
+          if (vis) a.userData.mixer.setTime(a.userData.timeFn ? a.userData.timeFn(tm) : tm + a.userData.ph);
+        }
+      };
+      animate(X.anims, ride ? Math.max(0, t) : time); animate(X.hubAnims, time);
       const fT = story && story.flashAt;
       W.flash = (!ride || fT === undefined) ? 0 : (t < fT - 0.2 ? 0 : (t < fT ? (t - (fT - 0.2)) / 0.2 : Math.exp(-(t - fT) * 2.6)));
       W.camD = camD;
@@ -887,6 +1118,7 @@ C.kit = function (X) {
         const side = (rnd01() < 0.5 ? -1 : 1) * (minS + rnd01() * (maxS - minS));
         const p = at(d + (rnd01() - 0.5) * step, side, 0);
         const roll = rnd01(), s = sc[0] + rnd01() * (sc[1] - sc[0]);
+        if (cleared(p, 1)) continue;
         if (roll < rockP) rocks.push(M([p.x, 0, p.z], [0, rnd01() * TAU, 0], [s * 0.9, s * 0.8, s * 1.1]));
         else if (roll < rockP + deadP) deads.push(M([p.x, 0, p.z], [0, rnd01() * TAU, 0], s));
         else pines.push(M([p.x, 0, p.z], [0, rnd01() * TAU, 0], s));
@@ -908,6 +1140,7 @@ C.kit = function (X) {
           for (let k = 0; k < 2; k++) {
             const side = (rnd01() < 0.5 ? -1 : 1) * (2.6 + rnd01() * 9), p = at(d + (rnd01() - 0.5) * uStep, side, 0);
             const r = rnd01(), i = r < 0.3 ? 0 : r < 0.6 ? 1 : r < 0.8 ? 2 : r < 0.96 ? 3 : 4;
+            if (cleared(p, 0.6)) continue;
             lists[i].push(M([p.x, 0, p.z], [0, rnd01() * TAU, 0], U[i][1] * (0.7 + rnd01() * 0.6)));
           }
         }
@@ -927,6 +1160,7 @@ C.kit = function (X) {
     keys.forEach((key, i) => { const m = C.instModel(key, lists[i], { tint }); if (m) g.add(m); });
   }
   function rnd01() { return R(0, 1); }
+  const cleared = (p, k) => (X.clearings || []).some((c) => (p.x - c.x) ** 2 + (p.z - c.z) ** 2 < (c.r * k) ** 2);
 
   /* ---- torches with flickering flames ---- */
   K.torches = function (list, o) {
@@ -1159,12 +1393,14 @@ C.chars = function (X) {
   /* Rigged CC0 versions of the party (Neeris stays procedural). o.pose = animation clip name.
      Their mixers are registered in X.anims; the engine sets them from song time each frame. */
   if (C.hasChars()) {
-    const rig = (spec) => { const g = C.rigChar(spec); X.anims.push(g); return g; };
+    // o.hub: lives in the tavern (animated on wall time, survives level loads); else a story character (song time)
+    const reg = (g, o) => { if (!(o && o.bake)) (o && o.hub ? X.hubAnims : X.anims).push(g); return g; };  // o.bake: not animated (C.bakeRig)
+    const rig = (spec, o) => reg(C.rigChar(spec), o);
     const ear = (g, side) => C.attach(g, 'Head', solid([cn(0.025, 0.11, 4, 0xe0b898, [0, 0, 0])]), [side * 0.085, 0.1, 0.0], [0, 0, -side * 1.15]);
     // Lucien Vale: half-elf wild magic sorcerer. Burgundy coat, long blond hair, pointed ears, crackling hand, glowing blue dagger.
     K.lucien = function (o) {
       o = o || {};
-      const g = rig({ parts: [['ranger_m', 0xb04060, /Hood|Pauldron/], ['hair_long', 0xfff2b8]], pose: o.pose || 'Spell_Simple_Idle_Loop', h: 1.8 });
+      const g = rig({ parts: [['ranger_m', 0xb04060, /Hood|Pauldron/], ['hair_long', 0xfff2b8]], pose: o.pose || 'Spell_Simple_Idle_Loop', h: 1.8 }, o);
       ear(g, -1); ear(g, 1);
       const spark = X.glow(0xb070ff, 0.7, 0.85); C.attach(g, 'hand_r', spark, [0, 0.1, 0]); g.userData.spark = spark;
       const dag = new THREE.Group();
@@ -1177,18 +1413,51 @@ C.chars = function (X) {
     // Cedric: human monk. Red leather, green tunic, bronze dragon pauldrons, beard, wooden staff.
     K.cedric = function (o) {
       o = o || {};
-      const g = rig({ parts: [['peasant_m', 0xd07a60], ['ranger_m', { color: 0xb08440 }, null, /Pauldron/], ['hair_beard', 0x6a4430]], pose: o.pose || 'Idle_Loop', h: 1.85 });
+      const g = rig({ parts: [['peasant_m', 0xd07a60], ['ranger_m', { color: 0xb08440 }, null, /Pauldron/], ['hair_beard', 0x6a4430]], pose: o.pose || 'Idle_Loop', h: 1.85 }, o);
       if (!o.noStaff) C.attach(g, 'hand_r', solid([cy(0.022, 0.022, 2.0, 5, 0x5a3a2a, [0, 0, 0]), cy(0.032, 0.032, 0.1, 5, 0xa0a4ac, [0, 0.98, 0])]), [0, 0.05, 0], [0, 0, 0]);
       return g;
     };
     // Arthas: devout human paladin. Steel plate, dark helm-hood with a glowing visor slit, sword.
     K.arthas = function (o) {
       o = o || {};
-      const g = rig({ parts: [['ranger_m', { color: 0x747a86, only: /Ranger/ }]], pose: o.pose || 'Sword_Idle', h: 1.95 });
+      const g = rig({ parts: [['ranger_m', { color: 0x747a86, only: /Ranger/ }]], pose: o.pose || 'Sword_Idle', h: 1.95 }, o);
       g.traverse((m) => { if (m.isMesh && /Hood/.test(m.name)) [].concat(m.material).forEach((x) => x.color.setHex(0x2a2c34)); });
       const v = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.018, 0.02), new THREE.MeshBasicMaterial({ color: 0xff7a30 }));
       C.attach(g, 'Head', v, [0, 0.1, 0.1]); g.userData.visor = v;
       const sw = C.model('Sword_Bronze'); if (sw) C.attach(g, 'hand_r', sw, [0, 0.05, 0], [0, 0, -Math.PI / 2], 1.1);
+      return g;
+    };
+    // Neeris: druid of the forest (wolf-cursed in this story). Moss-green hooded ranger, gnarled staff, amber eyes.
+    K.neeris = function (o) {
+      o = o || {};
+      const g = rig({ parts: [['ranger_m', 0x6a8a58], ['hair_beard', 0x4a3a2a]], body: 0xc8b8a8, pose: o.pose || 'Idle_Loop', h: 1.78 }, o);
+      g.traverse((m) => { if (m.isMesh && /Hood/.test(m.name)) [].concat(m.material).forEach((x) => x.color.setHex(0x3a5a34)); });
+      C.attach(g, 'hand_r', solid([cy(0.025, 0.035, 1.9, 5, 0x4a3420, [0, 0, 0]), ic(0.07, 0, 0x5a8a3a, [0, 0.95, 0])]), [0, 0.05, 0]);
+      const e = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.014, 0.02), new THREE.MeshBasicMaterial({ color: 0xffb030 }));
+      C.attach(g, 'Head', e, [0, 0.085, 0.1]); g.userData.eyes = e;
+      return g;
+    };
+
+    /* Anyone else: a tavern patron, musician or crowd member. o: { female, outfit: 'peasant'|'ranger', tint, hair, hairTint, pose, hub, seed } */
+    const HAIR_M = ['hair_parted', 'hair_buzzed', 'hair_beard', 'hair_long'], HAIR_F = ['hair_buns', 'hair_buzzed_f', 'hair_long'];
+    const CLOTH = [0x9a6a4a, 0x6a7a9a, 0x8a5a6a, 0x5a7a5a, 0xa08a5a, 0x7a5a8a, 0xb07050, 0x5a6a6a];
+    const HAIRC = [0x2a1c14, 0x5a3a22, 0x8a6a3a, 0xd8c080, 0x1a1a1a, 0x9a4a2a];
+    K.person = function (o) {
+      o = o || {};
+      const rnd = C.mkRng(o.seed || 1), pk = (a) => a[Math.floor(rnd() * a.length)];
+      const f = o.female === undefined ? rnd() < 0.45 : o.female, outfit = (o.outfit || (rnd() < 0.6 ? 'peasant' : 'ranger')) + (f ? '_f' : '_m');
+      const hair = o.hair || pk(f ? HAIR_F : HAIR_M);
+      const parts = [[outfit, o.tint || pk(CLOTH), rnd() < 0.7 ? /Hood|Pauldron/ : null], [hair, o.hairTint || pk(HAIRC)]];
+      if (!f && hair !== 'hair_beard' && rnd() < 0.35) parts.push(['hair_beard', o.hairTint || pk(HAIRC)]);
+      return rig({ base: f ? 'body_f' : 'body_m', parts, pose: o.pose || 'Idle_Loop', h: o.h || (f ? 1.68 : 1.8) }, o);
+    };
+
+    // The wraith over Cobh: a giant hooded figure, nearly black, eyes burning cold.
+    K.wraith = function (o) {
+      o = o || {};
+      const g = rig({ parts: [['ranger_m', { color: 0x0c0e16 }]], body: 0x10121a, pose: o.pose || 'Spell_Simple_Idle_Loop', h: o.h || 16 }, o);
+      const e = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.02, 0.03), new THREE.MeshBasicMaterial({ color: 0xcfe8ff }));
+      C.attach(g, 'Head', e, [0, 0.09 * (o.h || 16) / 1.8, 0.11 * (o.h || 16) / 1.8], null, (o.h || 16) / 1.8); g.userData.eyes = e;
       return g;
     };
   }
@@ -1227,7 +1496,76 @@ function dressBar(g, tables) {
   put('Book_Stack_1', [-2.95, 0.81, 2.0], 0.6);
 }
 
-/* The empty tavern: the permanent hub every story starts and ends in. */
+/* Stage, band and crowd: the tavern is busy, Lucien plays the songs (all rigged CC0 models; skipped if not loaded).
+   Returns { update(t, ctx) } to switch poses when a song starts. */
+function stageAndCrowd(X, g, tables) {
+  const ch = C.chars(X); if (!ch.person) return null;
+  const SZ0 = -10.0, SZ1 = -7.9, SH = 0.45;
+  // the stage: planks, a step, candles and banners either side of the door
+  const pt = C.tex('wood_plank_wall_diff', 2.2, 0.4), stMat = new THREE.MeshLambertMaterial(pt ? { map: pt, color: 0x8a6a4a } : { color: 0x4a3222 });
+  const plat = new THREE.Mesh(new THREE.BoxGeometry(5.8, SH, SZ1 - SZ0), stMat); plat.position.set(0, SH / 2, (SZ0 + SZ1) / 2); g.add(plat);
+  const step = new THREE.Mesh(new THREE.BoxGeometry(1.6, SH / 2, 0.4), stMat); step.position.set(0, SH / 4, SZ1 + 0.2); g.add(step);
+  const put = (k, p, yaw, sc) => { const m = C.place(k, p, yaw, sc); if (m) g.add(m); return m; };
+  put('CandleStick_Triple', [-2.6, SH, SZ1 - 0.25], 0, 1.4); put('CandleStick_Triple', [2.6, SH, SZ1 - 0.25], 0, 1.4);
+  put('Banner_2', [-2.4, SH + 0.9, SZ0 - 0.05], 0, 0.9); put('Banner_1', [2.4, SH + 0.9, SZ0 - 0.05], 0, 0.9);
+  const glows = [[-2.6, SH + 0.62, SZ1 - 0.25], [2.6, SH + 0.62, SZ1 - 0.25]].map((p) => { const s = X.glow(0xffb060, 1.6, 0.7); s.position.set(p[0], p[1], p[2]); g.add(s); return s; });
+  // the band
+  const add = (o, p, yaw) => { const c = o; c.position.set(p[0], p[1], p[2]); c.rotation.y = yaw || 0; g.add(c); return c; };
+  const lucien = add(ch.lucien({ hub: true, pose: 'Idle_Talking_Loop' }), [0, SH, -8.55], 0);
+  lucien.userData.blade.visible = false; lucien.userData.bladeGlow.visible = false; X.hubAnchors.lucien = lucien;
+  const drummer = add(ch.person({ hub: true, seed: 11, female: false, outfit: 'peasant', pose: 'Sitting_Idle_Loop' }), [-1.9, SH, -9.45], 0.25);
+  const drum = solid([cy(0.36, 0.33, 0.5, 12, 0x6a3a22, [0, 0.25, 0]), cy(0.37, 0.37, 0.04, 12, 0xd8c8a0, [0, 0.52, 0]), cy(0.38, 0.38, 0.05, 12, 0x3a2a1a, [0, 0.04, 0])]);
+  drum.position.set(-1.7, SH, -8.85); g.add(drum);
+  const sticks = [-1, 1].map((sd) => { const m = solid([cy(0.012, 0.016, 0.42, 4, 0xc8a878, [0, 0.21, 0])]); m.position.set(-1.7 + sd * 0.16, SH + 0.62, -9.05); g.add(m); return m; });
+  const lutist = add(ch.person({ hub: true, seed: 23, female: true, outfit: 'ranger', pose: 'Idle_Loop' }), [1.85, SH, -9.25], -0.35);
+  const lute = C.creature('lute', { h: 0.85 }); if (lute) C.attach(lutist, 'spine_03', lute, [0.05, -0.05, 0.22], [0.3, 0, 1.15]);
+  const fiddler = add(ch.person({ hub: true, seed: 37, female: false, outfit: 'ranger', pose: 'Idle_Talking_Loop' }), [1.0, SH, -9.6], -0.15);
+  C.attach(fiddler, 'hand_l', solid([bx(0.09, 0.32, 0.04, 0x7a3a1a, [0, 0.14, 0]), bx(0.02, 0.2, 0.02, 0x2a1a10, [0, 0.38, 0])]), [0, 0.05, 0.04], [0, 0, 0.6]);
+  // the crowd: benches at the long tables, the bar, the hearth, a few in front of the stage
+  const crowd = [];
+  const sitAt = (x, z, yaw, seed) => crowd.push({ c: add(ch.person({ hub: true, seed, pose: 'Sitting_Idle_Loop' }), [x, 0, z], yaw), sit: true });
+  tables.forEach((t, i) => {
+    sitAt(t[0] - 0.62, t[1] - 0.45, Math.PI / 2, 100 + i * 7); sitAt(t[0] + 0.62, t[1] + 0.4, -Math.PI / 2, 101 + i * 7);
+    if (i !== 1) sitAt(t[0] - 0.62, t[1] + 0.55, Math.PI / 2, 102 + i * 7);
+  });
+  sitAt(2.7, -5.9, Math.PI / 2, 140); sitAt(2.7, -4.6, Math.PI / 2, 141);
+  const stand = (x, z, yaw, seed, pose) => crowd.push({ c: add(ch.person({ hub: true, seed, pose: pose || 'Idle_Talking_Loop' }), [x, 0, z], yaw), sit: false });
+  stand(-4.2, -3.9, 1.9, 150); stand(-4.0, -1.2, 1.2, 151);
+  stand(1.3, -6.2, -0.4, 160, 'Idle_Loop'); stand(2.1, -5.4, -0.6, 161, 'Idle_Loop'); stand(1.2, -4.6, -0.2, 162, 'Idle_Loop');  // crowd in front of the stage, right of the aisle (the brothers' table is left)
+  // the brothers at the front table, facing the stage: you meet them here before you see them in the songs
+  const ced = add(ch.cedric({ hub: true, pose: 'Sitting_Idle_Loop', noStaff: true }), [-1.55, 0, -4.6], Math.PI * 0.9);
+  const art = add(ch.arthas({ hub: true, pose: 'Idle_Loop' }), [-2.55, 0, -5.1], Math.PI * 0.75);
+  const tb = C.place('Table_Large', [-2.0, 0, -4.1], 0); if (tb) { tb.scale.set(0.45, 1, 0.75); g.add(tb); }
+  const stool = C.place('Stool', [-1.55, 0, -4.6], 0); if (stool) g.add(stool);
+  C.place && [[-2.25, -4.0, 0.3], [-1.75, -4.2, 1.9]].forEach((m) => { const o = C.place('Mug', [m[0], 0.81, m[1]], m[2]); if (o) g.add(o); });
+  const staff = solid([cy(0.022, 0.022, 2.0, 5, 0x5a3a2a, [0, 1.0, 0])]); staff.position.set(-1.0, 0, -4.9); staff.rotation.z = -0.25; g.add(staff);
+  X.hubAnchors.cedric = ced; X.hubAnchors.arthas = art;
+  const keep = add(ch.person({ hub: true, seed: 170, female: false, outfit: 'peasant', pose: 'Idle_Talking_Loop' }), [5.25, 0, -3.2], -Math.PI / 2);
+  const colliders = [{ x0: -2.95, x1: 2.95, z0: -10.2, z1: -7.75 }];
+  colliders.push({ x: -2.0, z: -4.4, r: 1.0 });
+  crowd.filter((p) => !p.sit).forEach((p) => colliders.push({ x: p.c.position.x, z: p.c.position.z, r: 0.35 }));
+  let playing = null;
+  return {
+    colliders, lucien,
+    update(t, ctx) {
+      const on = !!(ctx.ride && t >= 0);
+      if (on !== playing) {
+        playing = on;
+        lucien.userData.pose(on ? 'Spell_Simple_Idle_Loop' : 'Idle_Talking_Loop');
+        fiddler.userData.pose(on ? 'Dance_Loop' : 'Idle_Talking_Loop');
+        crowd.forEach((p, i) => { if (!p.sit) p.c.userData.pose(on ? (i % 2 ? 'Dance_Loop' : 'Idle_Torch_Loop') : (i % 3 ? 'Idle_Talking_Loop' : 'Idle_Loop')); });
+      }
+      // drumsticks on the beat when the band plays
+      const B = on && X.story && X.story.beats ? X.story.beats.beats : null;
+      let hit = 0;
+      if (B) { let k = 0; while (k < B.length - 1 && B[k + 1] <= t) k++; hit = Math.exp(-(t - B[k]) * 9); }
+      sticks.forEach((m, i) => { m.rotation.x = -0.9 + (i ? hit : 1 - hit) * 0.7; });
+      glows.forEach((s) => { s.material.opacity = 0.6 + 0.1 * Math.sin(ctx.time * 9 + s.position.x); });
+    }
+  };
+}
+
+/* The tavern: the permanent hub every song starts and ends in. */
 C.buildBar = function (X) {
   const g = new THREE.Group(), Z0 = X.Z0, kit = C.kit(X);
   const wallMat = new THREE.MeshLambertMaterial({ map: X.TEX.plank, color: 0xb89a7a });
@@ -1281,6 +1619,7 @@ C.buildBar = function (X) {
   });
   g.add(solid(P));
   if (HAS) dressBar(g, tables);
+  const stage = stageAndCrowd(X, g, tables);
 
   // hanging lanterns and the single red d20 on the middle table
   const lanternPos = [[-2.5, 3.1, -2], [2.2, 3.1, -6.5], [0, 3.1, 1.5]];
@@ -1330,8 +1669,8 @@ C.buildBar = function (X) {
 
   const colliders = [
     { x0: 3.15, x1: 6, z0: -8.8, z1: -0.8 }, { x0: -6, x1: -4.7, z0: -4.2, z1: -0.8 },
-    { x: 0, z: Z0, r: 0.6 }, { x: 0, z: Z0 - 1.0, r: 0.55 }
-  ];
+    { x: X.STAND.x, z: X.STAND.z - 1.15, r: 0.4 }  // Lucien's music stand
+  ].concat(stage ? stage.colliders : []);
   tables.forEach((t) => colliders.push({ x: t[0], z: t[1], r: 1.05 }));
   [-7.2, -5.9, -4.6, -2.0].forEach((z) => colliders.push({ x: 2.7, z, r: 0.35 }));
 
@@ -1342,10 +1681,13 @@ C.buildBar = function (X) {
       const f = fire.flicker(ctx.time);
       d20.rotation.y = ctx.time * 0.4; d20.rotation.x = 0.4 + Math.sin(ctx.time * 0.3) * 0.1;
       d20g.material.opacity = 0.4 + 0.15 * Math.sin(ctx.time * 1.7);
-      door.rotation.y = 1.5 * ss(0.3, 2.2, t);
+      // the back door (behind the stage) swings open when the song's camera flies out through it
+      const dA = X.story && X.story.doorAt !== undefined ? X.story.doorAt : 1.5;
+      door.rotation.y = ctx.ride ? 1.5 * ss(dA - 1.5, dA, t) : 0;
+      if (stage) stage.update(t, ctx);
       if (ctx.camD < 40) {
         ctx.light(0, -4.75, 0.9, -2.5, 0xff8a3a, 1.8 * f, 22);
-        ctx.light(1, 1.0, 3.0, -3.5, 0xffc27a, 1.1, 26);
+        ctx.light(1, 0, 3.2, -6.6, 0xffc27a, 1.5, 22);  // stage wash
       }
     }
   };
@@ -1426,7 +1768,7 @@ C.buildBook = function (X) {
     bx(0.5, 0.06, 0.4, 0x2c1e14, [0, 0.03, 0.05]), bx(0.74, 0.06, 0.06, 0x2c1e14, [0, 0.87, -0.17])
   ]);
   g.add(lec);
-  g.position.set(0, 0, X.Z0 - 0.95);
+  g.position.set(X.STAND.x, 0, X.STAND.z - 1.15);  // Lucien's music stand, in front of the stage
 
   const book = new THREE.Group();     // lies on the lectern desk, tilted toward the reader
   book.position.set(0, 1.0, 0.03); book.rotation.x = 0.5;
@@ -1579,6 +1921,23 @@ SC.push(function (X) {
   [-0.28, 0.28].forEach((x) => { const e = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.1, 0.08), new THREE.MeshBasicMaterial({ color: 0xff3020 })); e.position.set(x, 6.55, 0.62); bap.add(e); });
   const eg = X.glow(0xff3020, 3.2, 0.9); eg.position.set(0, 6.55, 0.7); bap.add(eg);
   bap.rotation.y = X.yawAt(dw) - Math.PI / 2; bap.position.y = -8; bap.visible = false; well.add(bap);
+  // the real Baphomet: the CC0 demon, 14 m tall, near black with burning eyes (procedural one above is the fallback)
+  const demon = C.creature('demon', { h: 14, tint: 0x8a4a4e, eyes: 0xff2a10, clip: 'Idle' });
+  if (demon) {
+    bap.children.slice(0, 1).forEach((m) => { m.visible = false; });  // keep only the eye glow from the old figure
+    const rp = X.at(dw, 0, 0), face = Math.atan2(rp.x - wp.x, rp.z - wp.z);  // turn toward the rail
+    demon.rotation.y = face - bap.rotation.y; demon.position.y = -2; bap.add(demon); X.anims.push(demon);
+    X.anchors.wellFace = Math.atan2(Math.cos(face), Math.sin(face));  // orbit angle that looks him in the face
+    eg.position.set(0, 12.4, 1.6); eg.scale.setScalar(5);
+  }
+  X.anchors.well = well; X.anchors.baphomet = bap;
+  // the brothers at the well: Arthas kneels and bleeds into it, Cedric and Lucien behind him
+  const ch = C.chars(X), yw = X.yawAt(dw);
+  const art = ch.arthas({ pose: 'Fixing_Kneeling' }), ced = ch.cedric({ pose: 'Idle_Loop' }), luc = ch.lucien({ pose: 'Idle_Loop' });
+  const toWell = (o, side, back) => { const p = X.at(dw + back, side, 0); o.position.copy(p); o.lookAt(wp.x, 0, wp.z); g.add(o); return o; };
+  toWell(art, side - 2.6, 0.2); toWell(ced, side - 4.6, -2.2); toWell(luc, side - 4.4, 2.0);
+  luc.userData.blade.visible = false; luc.userData.bladeGlow.visible = false;
+  X.anchors.arthasWell = art;
 
   // blood falling into the well
   const NDR = 28, dp = new Float32Array(NDR * 3);
@@ -1596,6 +1955,8 @@ SC.push(function (X) {
       wg.material.color.copy(disc.material.color);
       ring.material.opacity = tau > 0 && tau < 1.6 ? 0.9 * (1 - tau / 1.6) : 0; ring.scale.setScalar(1 + Math.max(0, tau) * 14);
       bap.visible = tau > 0.4; bap.position.y = -8 + 8 * sm((tau - 0.8) / 6.5);
+      if (demon) demon.userData.pose(tau > 7 && tau < 14 ? 'Yes' : tau >= 14 ? 'Punch' : 'Idle');
+      if (art.userData.pose) art.userData.pose(tau > 1.2 ? 'Sword_Idle' : 'Fixing_Kneeling');
       const flash = tau > 0 ? Math.exp(-tau * 2.2) * 6 : 0;
       ctx.light(1, wp.x, 1.8, wp.z, disc.material.color, 2.6 + flash + 0.3 * Math.sin(ctx.time * 4), 34);
       const on = (t > S.t0 + 0.8 && t < TB) ? 1 : 0; drips.visible = on > 0;
@@ -1623,7 +1984,7 @@ SC.push(function (X) {
   eyeMesh.frustumCulled = false; g.add(eyeMesh);
   const dm = new THREE.Object3D();
   // Neeris crouched by the path
-  const dn = S1.d0 + S1.len * 0.45, np = X.at(dn, -3.4, 0), ner = ch.neeris(); ner.position.copy(np); ner.rotation.y = X.yawAt(dn) + Math.PI / 2; g.add(ner);
+  const dn = S1.d0 + S1.len * 0.45, np = X.at(dn, -3.4, 0), ner = ch.neeris({ pose: 'Crouch_Idle_Loop' }); ner.position.copy(np); ner.rotation.y = X.yawAt(dn) + Math.PI / 2; g.add(ner);
   // the slab with the floating dagger, and Lucien watching
   const dd = S2.d0 + S2.len * 0.55, sp = X.at(dd, 3.0, 0);
   const slab = solid([bx(1.5, 0.5, 1.0, 0x6a6e76, [0, 0.25, 0])]); slab.position.copy(sp); slab.rotation.y = X.yawAt(dd); g.add(slab);
@@ -1633,6 +1994,14 @@ SC.push(function (X) {
   const dg = X.glow(0x40c8ff, 3.2, 0.9); dg.position.y = 0.2; dag.add(dg); dag.position.copy(sp); g.add(dag);
   const lu = ch.lucien(); lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false;
   const lp = X.at(dd - 1.0, 5.0, 0); lu.position.copy(lp); lu.rotation.y = X.yawAt(dd) - Math.PI / 2 + 0.5; g.add(lu);
+  X.anchors.neeris = ner; X.anchors.dagger = dag; X.anchors.lucienWood = lu;
+  const wolves = [];
+  for (let i = 0; i < 7; i++) {
+    const w = C.creature('wolf', { h: 0.95, tint: i % 3 ? 0x6a6a72 : 0x3a3a40, clip: 'Gallop', ph: i * 0.37 });
+    if (!w) break;
+    w.userData.side = (i % 2 ? 1 : -1) * (3.5 + (i % 4) * 1.6); w.userData.lead = 3 + i * 2.3; g.add(w); X.anims.push(w); wolves.push(w);
+  }
+  if (wolves.length) X.anchors.wolf = wolves[0];
   return {
     group: g, d0: S1.d0, d1: S2.d1, vis: 90,
     update(t, ctx) {
@@ -1645,8 +2014,23 @@ SC.push(function (X) {
         }
       }
       eyeMesh.instanceMatrix.needsUpdate = true;
+      // the pack: gallops alongside the rail through verse 1b, then rings Neeris and goes still when the curse is pulled out
+      const calm = ss(S2.t0 + 4, S2.t0 + 6, t), dNow = X.distAt(Math.min(t, S2.t0 + 2));
+      wolves.forEach((w, i) => {
+        w.visible = t > S1.t0 - 2 && t < S2.t1;
+        if (!w.visible) return;
+        if (t < S2.t0 + 2) {
+          const d = dNow + w.userData.lead + Math.sin(ctx.time * 0.7 + i) * 0.6, p = X.at(d, w.userData.side, 0);
+          w.position.copy(p); w.rotation.y = X.yawAt(d) + Math.PI; w.userData.pose('Gallop');
+        } else {
+          const a = i / wolves.length * TAU, p = ner.position;
+          w.position.set(p.x + Math.cos(a) * 4.2, 0, p.z + Math.sin(a) * 4.2); w.lookAt(p.x, 0, p.z);
+          w.userData.pose(calm > 0.5 ? 'Idle_2_HeadLow' : 'Idle');
+        }
+      });
       const heart = 1 + 0.05 * Math.sin(ctx.time * 15), slump = ss(X.sec.pre.t0 + 1.5, X.sec.pre.t0 + 4, t);
-      ner.scale.set(heart, (0.85 - 0.2 * slump) * heart, heart); ner.rotation.x = 0.25 * slump;
+      if (!ner.userData.mixer) { ner.scale.set(heart, (0.85 - 0.2 * slump) * heart, heart); ner.rotation.x = 0.25 * slump; }
+      else if (ner.userData.pose) ner.userData.pose(slump > 0.5 ? 'Sitting_Idle_Loop' : 'Crouch_Idle_Loop');
       const rise = ss(S2.t0, S2.t0 + 3, t), stab = ss(S2.t0 + 4, S2.t0 + 4.4, t) * (1 - ss(S2.t0 + 4.4, S2.t0 + 8, t));
       dag.position.set(sp.x, 0.55 + 1.2 * rise + 0.08 * Math.sin(ctx.time * 1.4), sp.z); dag.rotation.y = ctx.time * 0.6;
       dg.material.opacity = 0.55 + 0.35 * Math.sin(ctx.time * 3) * 0.5 + stab * 0.8;
@@ -1728,7 +2112,7 @@ function brothers(secId, opt) {
     const dd = S.d1 - 7;
     [['cedric', -4.2], ['lucien', -5.7], ['arthas', -7.4]].forEach((c, i) => {
       const f = ch[c[0]](), p = X.at(dd - i * 0.6, c[1], 0); f.position.copy(p); f.rotation.y = X.yawAt(dd) + Math.PI / 2 + 0.3 * i;
-      if (c[0] === 'lucien') { f.userData.blade.visible = true; }
+      if (c[0] === 'lucien') { f.userData.blade.visible = true; X.anchors['party_' + secId] = f; }
       g.add(f);
     });
     return {
@@ -1760,25 +2144,27 @@ SC.push(function (X) {
   for (let i = 0; i < NC; i++) { const p = X.at(R(S.d0 - 10, Sb.d0 + 40), R(-22, 22), 0); cm.push(M([p.x, 0.03, p.z], [-Math.PI / 2, 0, R(0, TAU)], [R(1.4, 3.6), R(0.15, 0.4), 1])); }
   const cracks = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0xff5a18, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false }), NC);
   cm.forEach((m, i) => cracks.setMatrixAt(i, m)); cracks.frustumCulled = false; g.add(cracks);
-  const dragon = C.buildDragon('fly'); dragon.scale.setScalar(2.2); g.add(dragon);
+  const flyer = C.creature('dragon', { h: 7, tint: 0x6a5a68, eyes: 0xff7a20, clip: 'Fast_Flying' });  // the black wyrm (CC0 animated dragon)
+  const dragon = flyer || C.buildDragon('fly'); if (!flyer) dragon.scale.setScalar(2.2); else X.anims.push(flyer);
+  g.add(dragon); X.anchors.wyrm = dragon;
   const jet = []; for (let i = 0; i < 7; i++) { const s = X.glow(0xff7a20, 3, 0); g.add(s); jet.push(s); }
   return {
     group: g, d0: S.d0 - 10, d1: Sb.d0, vis: 100,
     update(t, ctx) {
       const ud = dragon.userData, f = 0.5 * Math.sin(ctx.time * 3.4) + 0.15;
-      ud.wR.rotation.z = f; ud.wL.rotation.z = -f;
+      if (ud.wR) { ud.wR.rotation.z = f; ud.wL.rotation.z = -f; }
       const gone = t > S2.t0 + 4;
       dragon.visible = !gone;
       if (!gone) {
-        const c = X.at(ctx.camD + 26, 0, 0), a = 1.2 + (t - S.t0) * 0.33, away = ss(S.t0 + 14, S2.t0 + 2, t);
+        const c = X.at(X.distAt(t) + 26, 0, 0), a = 1.2 + (t - S.t0) * 0.33, away = ss(S.t0 + 14, S2.t0 + 2, t);
         const Rr = 30 * (1 + 2.4 * away), y = 14 + 6 * Math.sin(ctx.time * 0.5) - 16 * (1 - ss(S.t0, S.t0 + 5, t)) + 12 * away;
         dragon.position.set(c.x + Math.cos(a) * Rr, y, c.z + Math.sin(a) * Rr);
-        dragon.rotation.set(0, Math.atan2(Math.sin(a), -Math.cos(a)), 0.3);
-        dragon.rotation.z = 0.3;
-        const fw = new THREE.Vector3(0, 0, -1).applyEuler(dragon.rotation), mouth = dragon.localToWorld(ud.head.clone());
+        dragon.rotation.set(0, Math.atan2(Math.sin(a), -Math.cos(a)) + (flyer ? Math.PI : 0), flyer ? -0.3 : 0.3);
+        if (flyer) flyer.userData.pose(t > S.t0 + 4.5 && t < S.t0 + 10 ? 'Headbutt' : 'Fast_Flying');
+        const fw = new THREE.Vector3(0, 0, flyer ? 1 : -1).applyEuler(dragon.rotation), mouth = ud.head ? dragon.localToWorld(ud.head.clone()) : dragon.position.clone().addScaledVector(fw, 3.2).add(new THREE.Vector3(0, 1.2, 0));
         const br = ss(S.t0 + 5, S.t0 + 6, t) * (1 - ss(S.t0 + 9, S.t0 + 10, t));
         jet.forEach((s, i) => { s.position.copy(mouth).addScaledVector(fw, 2.5 + i * 3.2); s.scale.setScalar(2 + i * 1.2); s.material.opacity = br * (0.8 - i * 0.08); });
-        ctx.light(1, dragon.position.x, dragon.position.y - 4, dragon.position.z, 0xff7a30, 2.0 * br + 0.5, 60);
+        ctx.light(1, dragon.position.x, dragon.position.y - 4, dragon.position.z, 0xff7a30, 2.0 * br + 1.4, 70);  // keep the wyrm readable against the red sky
       } else jet.forEach((s) => { s.material.opacity = 0; });
       cracks.material.opacity = 0.55 + 0.25 * Math.sin(ctx.time * 2.3);
     }
@@ -1794,17 +2180,34 @@ SC.push(function (X) {
   for (let i = 0; i < 14; i++) { const d = R(S.d0, dCr + 30), sd = (R(0, 1) < 0.5 ? -1 : 1) * R(6, 24), p = X.at(d, sd, 0); arches.push(M([p.x, 0, p.z], [0, R(0, TAU), 0], R(0.8, 1.8))); }
   g.add(inst(C.merge([part(tg, 0xcfc6b0)]), lamb({ color: 0xffffff }), arches));
   // the carcass
-  const dragon = C.buildDragon('dead'), SCL = 2.3, bodyD = dCr + 13;
-  const bp = X.at(bodyD, -8.5, 1.1 * SCL * 0.9); dragon.position.copy(bp); dragon.scale.setScalar(SCL); dragon.rotation.y = X.yawAt(bodyD) + Math.PI; dragon.visible = false; g.add(dragon);
+  const SCL = 2.3, bodyD = dCr + 13, corpse = C.creature('dragon', { h: 7, tint: 0x6a5a68, eyes: 0xff7a20, clip: 'Death' });
+  const dragon = corpse || C.buildDragon('dead');
+  const bp = X.at(bodyD, corpse ? -15 : -8.5, corpse ? 0 : 1.1 * SCL * 0.9); dragon.position.copy(bp); if (!corpse) dragon.scale.setScalar(SCL); dragon.rotation.y = X.yawAt(bodyD) + Math.PI; dragon.visible = false; g.add(dragon);
   dragon.updateMatrixWorld(true);
-  const headW = dragon.localToWorld(dragon.userData.head.clone());
+  let headW;
+  if (corpse) {
+    // the death clip plays once from the kill and holds its last frame
+    const dur = (C.assets.creatures.dragon.clips.find((c) => c.name === 'Death') || { duration: 1.5 }).duration;
+    corpse.userData.timeFn = (tm) => clamp(tm - TK, 0, dur - 0.02); X.anims.push(corpse);
+    headW = X.at(bodyD - 3, -13, 2.2);
+  } else headW = dragon.localToWorld(dragon.userData.head.clone());
+  X.anchors.carcass = dragon;
+  // bats over the crater while Cedric hunts
+  const bats = [];
+  for (let i = 0; i < 9; i++) { const b = C.creature('bat', { h: 0.7, tint: 0x4a3a40, clip: 'Bat_Flying', ph: i * 0.21 }); if (!b) break; g.add(b); X.anims.push(b); bats.push(b); }
   const eyeG = [X.glow(0xff2a1a, 3.2, 0), X.glow(0xff2a1a, 3.2, 0)]; eyeG[0].position.copy(headW).add(new THREE.Vector3(0.6, 1.2, 0)); eyeG[1].position.copy(headW).add(new THREE.Vector3(-0.6, 1.2, 0)); eyeG.forEach((e) => g.add(e));
   // Cedric: runs ahead, then stands on the dragon's head
-  const ced = ch.cedric({ pose: 'Sprint_Loop' }); g.add(ced);
+  const ced = ch.cedric({ pose: 'Sprint_Loop' }); g.add(ced); X.anchors.cedricHunt = ced;
   return {
     group: g, d0: S.d0, d1: Sc.d1, vis: 110,
     update(t, ctx) {
       const killed = t >= TK;
+      bats.forEach((b, i) => {
+        b.visible = t > S.t0 && t < TK + 3; if (!b.visible) return;
+        const a = ctx.time * (0.5 + i * 0.05) + i * 0.7, c = X.at(dCr - 6, 0, 0), r = 6 + (i % 3) * 3, flee = ss(TK, TK + 3, t);
+        b.position.set(c.x + Math.cos(a) * r * (1 + flee * 4), 4 + (i % 4) * 1.4 + Math.sin(ctx.time * 2 + i) * 0.6 + flee * 12, c.z + Math.sin(a) * r * (1 + flee * 4));
+        b.rotation.y = -a;
+      });
       dragon.visible = killed;
       if (killed) dragon.scale.setScalar(SCL * (0.92 + 0.08 * sm((t - TK) / 0.4)));
       const glowK = killed ? 0 : ss(X.sec.v2b.t0, X.sec.brk.t0 - 1, t) * (0.8 + 0.2 * Math.sin(ctx.time * 5));
@@ -1836,14 +2239,14 @@ SC.push(function (X) {
   const S = X.sec.v3, kit = C.kit(X), ch = C.chars(X), g = new THREE.Group();
   g.add(kit.trees(S.d0 - 14, S.d1 + 14, { minSide: 9, maxSide: 36, dens: 1.2, deadP: 0.3, tint: 0x7a8a9a }));
   const dF = S.d0 + S.len * 0.5, fp = X.at(dF, 4.6, 0);
-  const fire = kit.fire({ scale: 1.5, size: 7 }); fire.group.position.set(fp.x, 0.1, fp.z); g.add(fire.group);
+  const fire = kit.fire({ scale: 1.5, size: 7 }); fire.group.position.set(fp.x, 0.1, fp.z); g.add(fire.group); X.anchors.campfire = fire.group;
   const stones = [], logs = [];
   for (let i = 0; i < 9; i++) { const a = i / 9 * TAU; stones.push(ic(0.3, 0, 0x5c6068, [Math.cos(a) * 1.1, 0.15, Math.sin(a) * 1.1], [1, 0.7, 1])); }
   for (let i = 0; i < 3; i++) logs.push(cy(0.12, 0.12, 1.4, 6, 0x3a2a1c, [0, 0.25, 0], [0.2, i * 1.05, Math.PI / 2]));
   const ring = solid(stones.concat(logs)); ring.position.set(fp.x, 0, fp.z); g.add(ring);
   // Neeris sits opposite, hands bound; Lucien's coat lies on the log nearest the path
-  const ner = ch.neeris(); const np = X.at(dF, 8.6, 0); ner.position.copy(np); ner.scale.y = 0.72; ner.rotation.y = X.yawAt(dF) + Math.PI / 2; g.add(ner);
-  const lu = ch.lucien({ pose: 'Sitting_Idle_Loop' }); const lp = X.at(dF + 0.5, 1.9, 0); lu.position.copy(lp); lu.rotation.y = X.yawAt(dF) - Math.PI / 2 - 0.4; if (!lu.userData.mixer) lu.scale.y = 0.78; g.add(lu);
+  const ner = ch.neeris({ pose: 'Sitting_Idle_Loop' }); const np = X.at(dF, 8.6, 0); ner.position.copy(np); if (!ner.userData.mixer) ner.scale.y = 0.72; ner.rotation.y = X.yawAt(dF) + Math.PI / 2; g.add(ner);
+  const lu = ch.lucien({ pose: 'Sitting_Idle_Loop' }); const lp = X.at(dF + 0.5, 1.9, 0); lu.position.copy(lp); lu.rotation.y = X.yawAt(dF) - Math.PI / 2 - 0.4; if (!lu.userData.mixer) lu.scale.y = 0.78; g.add(lu); X.anchors.lucienCamp = lu;
   // a loose chain on the ground
   const links = []; for (let i = 0; i < 14; i++) { const a = i * 0.5; links.push(M([fp.x + 2.2 + Math.cos(a) * (0.4 + i * 0.05), 0.06, fp.z + 1.2 + Math.sin(a) * (0.4 + i * 0.05)], [Math.PI / 2, i % 2 ? Math.PI / 2 : 0, a], [1.5, 1, 1])); }
   g.add(inst(kit.linkGeo, lamb({ color: 0xb8bcc8 }), links));
@@ -1852,7 +2255,7 @@ SC.push(function (X) {
     update(t, ctx) {
       fire.update(ctx.time);
       ctx.light(1, fp.x, 1.4, fp.z, 0xff9a40, 2.8 * fire.flicker(ctx.time), 30);
-      ner.rotation.x = 0.12 * Math.sin(ctx.time * 0.6);
+      if (!ner.userData.mixer) ner.rotation.x = 0.12 * Math.sin(ctx.time * 0.6);
     }
   };
 });
@@ -1882,7 +2285,7 @@ SC.push(function (X) {
   [['cedric', -9.2], ['arthas', -10.6]].forEach((c, i) => {
     const f = ch[c[0]](), a = -0.6; f.position.set(Math.sin(a) * 9 + (i ? 1.5 : -0.5), 0, -Math.cos(a) * 9 - 2.5 * i); f.rotation.y = 0.9 - i * 0.2; rd.add(f);
   });
-  const ner = ch.neeris(); rd.add(ner);
+  const ner = ch.neeris(); rd.add(ner); X.anchors.crossroads = rd; X.anchors.neerisCross = ner;
   return {
     group: g, d0: S.d0, d1: S.d1, vis: 100,
     update(t, ctx) {
@@ -1890,8 +2293,9 @@ SC.push(function (X) {
       const redK = 1 - ss(S.t0 + 12.5, S.t0 + 14.5, t) + 0.001;
       redG.material.opacity = 0.9 * redK * (0.8 + 0.2 * Math.sin(ctx.time * 11)); blueG.material.opacity = 0.5 + 0.4 * letGo;
       const a = 0.6, s = 3 + walk * 38;
-      if (walk > 0) { ner.position.set(Math.sin(a) * s, 0, -Math.cos(a) * s); ner.rotation.y = Math.PI + a; ner.scale.y = 1; }
-      else { ner.position.set(1.4, 0, -2.2); ner.scale.y = 0.62; ner.rotation.y = 0.3; }
+      const rigged = !!ner.userData.mixer;
+      if (walk > 0) { ner.position.set(Math.sin(a) * s, 0, -Math.cos(a) * s); ner.rotation.y = Math.PI + a; ner.scale.y = 1; if (rigged) ner.userData.pose('Walk_Loop'); }
+      else { ner.position.set(1.4, 0, -2.2); ner.rotation.y = 0.3; if (rigged) ner.userData.pose(letGo > 0.5 ? 'Idle_Loop' : 'Crouch_Idle_Loop'); else ner.scale.y = 0.62; }
       const cr = X.at(ctx.camD + 8, 0, 0).clone();
       ctx.light(0, cp.x + Math.cos(yaw) * -6, 3, cp.z + Math.sin(yaw) * 2, 0xff4030, 1.9 * redK, 26);
       ctx.light(1, cp.x + Math.cos(yaw) * 6, 3, cp.z - Math.sin(yaw) * 2, 0x60c0ff, 0.8 + 1.5 * letGo, 26);
@@ -1923,8 +2327,12 @@ SC.push(function (X) {
   // cheering crowd lining the road
   const cr = [], NCR = X.mobile ? 36 : 60;
   for (let i = 0; i < NCR; i++) { const d = R(S1.d0 + 4, dG - 10), sd = (i % 2 ? 1 : -1) * R(6.2, 9.5), p = X.at(d, sd, 0); cr.push({ p, ph: R(0, TAU), yaw: X.yawAt(d) + (sd > 0 ? -Math.PI / 2 : Math.PI / 2) + R(-0.4, 0.4), s: R(0.85, 1.1) }); }
-  const crowd = new THREE.InstancedMesh(crowdGeo(), lamb(), NCR); crowd.frustumCulled = false; g.add(crowd);
-  cr.forEach((c, i) => crowd.setColorAt(i, new THREE.Color(pick(TONES))));
+  // the crowd: real people frozen mid-cheer (baked from rigged models) and instanced; capsules if models are missing
+  const chC = C.chars(X), VAR = chC.person ? 5 : 0, baked = [];
+  for (let k = 0; k < VAR; k++) baked.push(C.bakeRig(chC.person({ bake: true, seed: 300 + k * 13 }), k % 2 ? 'Idle_Torch_Loop' : 'Dance_Loop', 0.3 + k * 0.17));
+  const crowd = VAR ? null : new THREE.InstancedMesh(crowdGeo(), lamb(), NCR);
+  if (crowd) { crowd.frustumCulled = false; g.add(crowd); cr.forEach((c, i) => crowd.setColorAt(i, new THREE.Color(pick(TONES)))); }
+  const crowdInst = baked.map((b, k) => { const idx = cr.map((c, i) => i).filter((i) => i % VAR === k); const im = C.instObject(b, idx.map(() => new THREE.Matrix4())); if (im) g.add(im); return { im, idx }; });
   const dm = new THREE.Object3D();
 
   // the gate
@@ -1963,11 +2371,13 @@ SC.push(function (X) {
   const dB = dG + (dE - dG) * 0.45, bpos = X.at(dB, 7.0, 0), bon = kit.fire({ scale: 2.0, size: 9 }); bon.group.position.set(bpos.x, 0, bpos.z); g.add(bon.group);
   const dancers = [], ND = 16;
   for (let i = 0; i < ND; i++) { const a = i / ND * TAU; dancers.push({ x: bpos.x + Math.cos(a) * 3.4, z: bpos.z + Math.sin(a) * 3.4, ph: R(0, TAU), a }); }
-  const dance = new THREE.InstancedMesh(crowdGeo(), lamb(), ND); dance.frustumCulled = false; g.add(dance);
-  dancers.forEach((c, i) => dance.setColorAt(i, new THREE.Color(pick([0xc05a6a, 0x5a8ac0, 0xc0a050, 0x7ac08a]))));
+  const rigDance = chC.person ? dancers.slice(0, X.mobile ? 6 : 8).map((c, i) => { const p = chC.person({ seed: 400 + i * 7, pose: 'Dance_Loop' }); g.add(p); return p; }) : [];
+  const dance = rigDance.length ? null : new THREE.InstancedMesh(crowdGeo(), lamb(), ND);
+  if (dance) { dance.frustumCulled = false; g.add(dance); dancers.forEach((c, i) => dance.setColorAt(i, new THREE.Color(pick([0xc05a6a, 0x5a8ac0, 0xc0a050, 0x7ac08a])))); }
+  X.anchors.bonfire = bon.group;
 
   // the three of them walk ahead, carrying the wyrm's head
-  const marchers = new THREE.Group(); g.add(marchers);
+  const marchers = new THREE.Group(); g.add(marchers); X.anchors.marchers = marchers; X.anchors.gate = G;
   const ced = ch.cedric({ pose: 'Walk_Loop' }), lu = ch.lucien({ pose: 'Walk_Loop' }), art = ch.arthas({ pose: 'Walk_Formal_Loop' });
   ced.position.set(-1.7, 0, 0); lu.position.set(0, 0, -0.6); art.position.set(1.8, 0, 0); marchers.add(ced); marchers.add(lu); marchers.add(art);
   lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false;
@@ -1979,13 +2389,23 @@ SC.push(function (X) {
     group: g, d0: S1.d0, d1: dE, vis: 100,
     update(t, ctx) {
       tor.update(ctx.time); gtor.update(ctx.time); bon.update(ctx.time);
-      for (let i = 0; i < NCR; i++) { const c = cr[i]; dm.position.set(c.p.x, Math.abs(Math.sin(ctx.time * 5 + c.ph)) * 0.18, c.p.z); dm.rotation.set(0, c.yaw, 0); dm.scale.setScalar(c.s); dm.updateMatrix(); crowd.setMatrixAt(i, dm.matrix); }
-      crowd.instanceMatrix.needsUpdate = true;
-      for (let i = 0; i < ND; i++) { const c = dancers[i]; dm.position.set(c.x, Math.abs(Math.sin(ctx.time * 6 + c.ph)) * 0.3, c.z); dm.rotation.set(0, c.a + ctx.time * 0.8, 0.12 * Math.sin(ctx.time * 6 + c.ph)); dm.scale.setScalar(1); dm.updateMatrix(); dance.setMatrixAt(i, dm.matrix); }
-      dance.instanceMatrix.needsUpdate = true;
+      if (crowd) {
+        for (let i = 0; i < NCR; i++) { const c = cr[i]; dm.position.set(c.p.x, Math.abs(Math.sin(ctx.time * 5 + c.ph)) * 0.18, c.p.z); dm.rotation.set(0, c.yaw, 0); dm.scale.setScalar(c.s); dm.updateMatrix(); crowd.setMatrixAt(i, dm.matrix); }
+        crowd.instanceMatrix.needsUpdate = true;
+      }
+      crowdInst.forEach(({ im, idx }) => {
+        if (!im) return;
+        idx.forEach((i, k) => { const c = cr[i]; dm.position.set(c.p.x, Math.abs(Math.sin(ctx.time * 5 + c.ph)) * 0.16, c.p.z); dm.rotation.set(0, c.yaw + Math.PI, 0); dm.scale.setScalar(c.s); dm.updateMatrix(); im.children.forEach((m) => m.setMatrixAt(k, dm.matrix)); });
+        im.children.forEach((m) => { m.instanceMatrix.needsUpdate = true; });
+      });
+      if (dance) {
+        for (let i = 0; i < ND; i++) { const c = dancers[i]; dm.position.set(c.x, Math.abs(Math.sin(ctx.time * 6 + c.ph)) * 0.3, c.z); dm.rotation.set(0, c.a + ctx.time * 0.8, 0.12 * Math.sin(ctx.time * 6 + c.ph)); dm.scale.setScalar(1); dm.updateMatrix(); dance.setMatrixAt(i, dm.matrix); }
+        dance.instanceMatrix.needsUpdate = true;
+      }
+      rigDance.forEach((p, i) => { const a = i / rigDance.length * TAU + ctx.time * 0.25; p.position.set(bpos.x + Math.cos(a) * 3.6, 0, bpos.z + Math.sin(a) * 3.6); p.rotation.y = -a; });
       marchers.visible = t < S2.t0 + 9;
       if (marchers.visible) {
-        const dc = Math.min(ctx.camD + 11, dE - 1), p = X.at(dc, 0, 0);
+        const dc = Math.min(X.distAt(t) + 11, dE - 1), p = X.at(dc, 0, 0);
         marchers.position.set(p.x, ced.userData.mixer ? 0 : Math.abs(Math.sin(ctx.time * 3.2)) * 0.06, p.z); marchers.rotation.y = X.yawAt(dc) + Math.PI;
       }
       const gp = X.at(clamp(ctx.camD + 6, dG - 30, dE), 0, 5);
@@ -2065,6 +2485,10 @@ SC.push(function (X) {
   const eg = X.glow(0x9cc8ff, 7, 0.9); eg.position.set(0, 15.5, 1.9); wr.add(eg);
   const halo = X.glow(0x6a90d0, 24, 0.28); halo.position.set(0, 15.2, 0.4); wr.add(halo);
   wr.rotation.y = X.yawAt(X.Dend); g.add(wr);
+  // the real wraith: a 16 m hooded figure (rigged CC0 body), casting over the city; the cone figure stays as fallback
+  const wraith = C.chars(X).wraith ? C.chars(X).wraith({ h: 16 }) : null;
+  if (wraith) { wr.children.forEach((c) => { if (c !== eg && c !== halo) c.visible = false; }); wraith.rotation.y = Math.PI; wr.add(wraith); eg.position.set(0, 14.6, 1.2); halo.position.set(0, 14.2, 0); }
+  X.anchors.wraith = wr;
   return {
     group: g, d0: X.dBack - 8, d1: X.Dend + 5, vis: 30,
     update(t, ctx) {
@@ -2078,6 +2502,97 @@ SC.push(function (X) {
     }
   };
 });
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* Level 8, Baphomet's Chains: music-video shot list + beat grid (the scenes are s1a-s1d, timings in w1_core).
+   Beats measured with scripts/beats.py (142 BPM). Shots: see w2b_director.js; anchors are published by the scenes. */
+(function (root) {
+'use strict';
+const C = root.__cw, THREE = C.THREE;
+const L = C.storyData.baphomet;
+L.beats = {"bpm":142.14,"beats":[0.19,0.61,0.99,1.42,1.84,2.26,2.75,3.15,3.58,4.03,4.46,4.93,5.39,5.74,6,6.38,6.77,7.06,7.46,7.73,8.06,8.5,8.93,9.36,9.63,9.89,10.35,10.82,11.28,11.68,12.08,12.67,13.12,13.44,13.92,14.43,14.7,15.2,15.55,16,16.5,16.83,17.25,17.62,18,18.34,18.77,19.09,19.49,19.84,20.21,20.74,21.12,21.6,22,22.42,22.83,23.25,23.71,24.13,24.42,24.66,25.01,25.31,25.58,25.86,26.13,26.37,26.62,26.86,27.12,27.42,27.84,28.11,28.48,28.9,29.23,29.6,30.02,30.48,30.96,31.3,31.62,32,32.42,32.94,33.44,33.87,34.29,34.7,35.12,35.55,35.97,36.42,36.77,37.25,37.68,38.1,38.53,38.94,39.38,39.78,40.06,40.62,41.06,41.47,41.9,42.32,42.74,43.14,43.57,44.03,44.43,44.85,45.28,45.7,46.11,46.54,46.94,47.23,47.65,47.94,48.21,48.5,48.82,49.17,49.47,49.87,50.3,50.7,51.06,51.55,51.98,52.4,52.82,53.25,53.65,54.08,54.45,54.77,55.07,55.33,55.81,56.18,56.48,56.99,57.3,57.57,57.84,58.13,58.66,59.12,59.52,60.08,60.35,60.91,61.2,61.47,61.89,62.26,62.62,62.86,63.2,63.57,63.92,64.26,64.54,64.78,65.09,65.39,65.81,66.22,66.78,67.06,67.31,67.63,67.9,68.32,68.56,68.88,69.22,69.58,70,70.42,70.8,71.26,71.68,72.06,72.45,72.86,73.31,73.76,74.19,74.61,74.9,75.17,75.44,75.73,76.02,76.29,76.56,76.85,77.12,77.41,77.7,77.97,78.24,78.53,78.8,79.09,79.36,79.63,79.92,80.21,80.46,80.77,81.04,81.31,81.6,81.87,82.16,82.43,82.72,82.99,83.28,83.55,83.82,84.24,84.67,85.09,85.5,85.78,86.06,86.34,86.75,87.18,87.73,88.03,88.45,88.77,89.12,89.55,89.94,90.26,90.53,90.94,91.33,91.57,91.94,92.21,92.62,93.04,93.47,93.89,94.26,94.72,95.15,95.57,95.98,96.4,96.8,97.23,97.49,97.76,98.08,98.38,98.91,99.28,99.74,99.98,100.29,100.59,101.01,101.42,101.7,102.27,102.69,103.1,103.52,103.94,104.24,104.77,105.2,105.62,106.05,106.46,106.88,107.22,107.58,108.13,108.54,108.91,109.34,109.81,110.22,110.64,110.93,111.46,111.73,112.05,112.32,112.75,113.17,113.58,114,114.37,114.83,115.25,115.6,116.1,116.51,116.93,117.34,117.78,118.19,118.61,119.02,119.44,119.87,120.14,120.7,120.98,121.54,121.86,122.22,122.61,123.22,123.66,124.06,124.5,124.9,125.33,125.6,125.89,126.16,126.54,127.01,127.41,127.66,128,128.26,128.54,129.09,129.52,129.92,130.37,130.77,131.2,131.6,132.03,132.45,133.04,133.28,133.62,133.87,134.11,134.54,134.96,135.23,135.82,136.4,136.64,137.02,137.46,137.9,138.27,138.75,139.15,139.58,139.98,140.27,140.56,140.83,141.25,141.66,141.95,142.22,142.51,142.93,143.34,143.63,143.9,144.18,144.46,144.74,145.02,145.3,145.58,145.86,146.27,146.69,147.1,147.52,147.81,148.1,148.37,148.78,149.2,149.49,149.78,150.05,150.32,150.61,150.88,151.17,151.44,151.73,152.11,152.56,152.98,153.41,153.82,154.24,154.66,155.09,155.5,155.92,156.32,156.77,157.18,157.6,158.02,158.45,158.85,159.28,159.7,160.1,160.53,160.94,161.38,161.79,162.21,162.64,163.06,163.5,164.03,164.32,164.59,164.85,165.15,165.57,166,166.27,166.85,167.26,167.68,168.1,168.53,168.93,169.36,169.76,170.21,170.62,171.04,171.46,171.89,172.3,172.72,173.14,173.55,173.98,174.4,174.82,175.25,175.66,176.08,176.48,176.91,177.34,177.76,178.18,178.61,179.02,179.44,179.86,180.14,180.42,180.67,180.98,181.36,181.7,181.95,182.35,182.77,183.1,183.41,183.65,184.06,184.35,184.82,185.28,185.68,186.18,186.58,187.01,187.42,187.84,188.26,188.67,189.1,189.52,189.94,190.35,190.77,191.18,191.6,192.02,192.45,192.86,193.23,193.66,194.11,194.54,194.96,195.38,195.79,196.22,196.62,197.06,197.44,197.89,198.18,198.45,198.74,199.15,199.57,199.98,200.42,200.69,200.98,201.25,201.58,202.1,202.37,202.78,203.14,203.41,203.79,204.22,204.64,205.07,205.49,205.76,206.35,206.88,207.2,207.62,208.05,208.29,208.74,209.17,209.46,209.73,210.13,210.54,210.96,211.36,211.82,212.13,212.7,213.07,213.41,213.7,213.97,214.26,214.82,215.1,215.39,215.66,215.95,216.22,216.51,216.8,217.07,217.36,217.65,217.94,218.21,218.53,218.85,219.23,219.68,220.05,220.29,220.74,221.2,221.47,222.03,222.53,222.8,223.39,223.74,224.24,224.56,224.9,225.36,225.68,226.02,226.34,226.77,227.14,227.71,228.18,228.61,229.04,229.47,229.73,230.27,230.62,231.22,231.52,231.76,232.08,232.5,232.96,233.39,233.73,234.1,234.56,234.83,235.12,235.41,235.7,235.97,236.26,236.56,236.83,237.12,237.41,237.7,237.97,238.4,238.69,238.98,239.39,239.68,240.1,240.5,240.93,241.52,241.9,242.34,242.77,243.17,243.6,244.02,244.45,244.69,245.28,245.57,245.98,246.38,246.72,246.98,247.38,247.63,247.97,248.21,248.51,249.09,249.5,249.94,250.35,250.78,251.2,251.65,252.05,252.48,252.91,253.34,253.76,254.18,254.61,255.04,255.47,255.89,256.32,256.74,257.17,257.58,258.02,258.3,258.59,258.88,259.3,259.71,260.14,260.56,260.99,261.41,261.84,262.26,262.69,263.1,263.54,263.95,264.38,264.8,265.23,265.65,266.08,266.5,266.91,267.34,267.76,268.18,268.61,269.02,269.46,269.87,270.3,270.72,271.15,271.57,272,272.27,272.56,272.83,273.09,273.42,273.68,273.98,274.48,274.78,275.09,275.52,276.1,276.64,277.06,277.49,277.92,278.32,278.77,279.2,279.63,280.03,280.48,280.72,281.33,281.62,282.02,282.48,283.01,283.33,283.89,284.32,284.74,285.02,285.36,285.6,286.03,286.32,286.67,286.99,287.31,287.73,288.18,288.62,288.99,289.31,289.63,289.89,290.18,290.74,291.17,291.58,291.84,292.22,292.46,292.88,293.31,293.74,294.16,294.59,295.02,295.41,295.79,296.14,296.72,297.01,297.3,297.57,297.86,298.14,298.42,298.72,298.99,299.28,299.66,300.1,300.56,300.96,301.23,301.68,302.08,302.42,302.69,303.12,303.41,303.79,304.11,304.4,304.8,305.25,305.5,305.9,306.37,306.67,306.96,307.39,307.81,308.24,308.66,309.09,309.47,309.95,310.37,310.94,311.23,311.58,312.08,312.69,312.98,313.38,313.71,314.24,314.67,315.09,315.5,315.94,316.35,316.77,317.14,317.63,318.06,318.48,318.91,319.15,319.49,319.76,320.18,320.53,320.83,321.22,321.66,322.11,322.48,322.72,323.15,323.58,324,324.42,324.7,324.98,325.26,325.68,326.11,326.53,326.82,327.1,327.38,327.7,328.24,328.54,329.1,329.54,329.97,330.38,330.82,331.38,331.87,332.13,332.51,332.94,333.38,333.79,334.22,334.64,335.07,335.49,335.9,336.34,336.75,337.17,337.6,338.02,338.45,338.86,339.28,339.71,340.14,340.56,340.98,341.26,341.55,341.84,342.26,342.67,343.1,343.54,343.95,344.38,344.8,345.09,345.38,345.63,346.06,346.5,346.91,347.34,347.76,348.18,348.61,349.02,349.46,349.87,350.3,350.72,351.15,351.57,351.98,352.42,352.83,353.26,353.68,354.11,354.53,354.82,355.1,355.38,355.79,356.22,356.64,357.07,357.49,357.92,358.21,358.5,358.77,359.2,359.63,360.05,360.34,360.9,361.18,361.62,362.18,362.58,363.02,363.31,363.63,363.9,364.37,364.83,365.2,365.58,365.98,366.37],"bars":[0.19,1.84,3.58,5.39,6.77,8.06,9.63,11.28,13.12,14.7,16.5,18,19.49,21.12,22.83,24.42,25.58,26.62,27.84,29.23,30.96,32.42,34.29,35.97,37.68,39.38,41.06,42.74,44.43,46.11,47.65,48.82,50.3,51.98,53.65,55.07,56.48,57.84,59.52,61.2,62.62,63.92,65.09,66.78,67.9,69.22,70.8,72.45,74.19,75.44,76.56,77.7,78.8,79.92,81.04,82.16,83.28,84.67,86.06,87.73,89.12,90.53,91.94,93.47,95.15,96.8,98.08,99.74,101.01,102.69,104.24,106.05,107.58,109.34,110.93,112.32,114,115.6,117.34,119.02,120.7,122.22,124.06,125.6,127.01,128.26,129.92,131.6,133.28,134.54,136.4,137.9,139.58,140.83,142.22,143.63,144.74,145.86,147.52,148.78,150.05,151.17,152.56,154.24,155.92,157.6,159.28,160.94,162.64,164.32,165.57,167.26,168.93,170.62,172.3,173.98,175.66,177.34,179.02,180.42,181.7,183.1,184.35,186.18,187.84,189.52,191.18,192.86,194.54,196.22,197.89,199.15,200.69,202.1,203.41,205.07,206.88,208.29,209.73,211.36,213.07,214.26,215.66,216.8,217.94,219.23,220.74,222.53,224.24,225.68,227.14,229.04,230.62,232.08,233.73,235.12,236.26,237.41,238.69,240.1,241.9,243.6,245.28,246.72,247.97,249.5,251.2,252.91,254.61,256.32,258.02,259.3,260.99,262.69,264.38,266.08,267.76,269.46,271.15,272.56,273.68,275.09,277.06,278.77,280.48,282.02,283.89,285.36,286.67,288.18,289.63,291.17,292.46,294.16,295.79,297.3,298.42,299.66,301.23,302.69,304.11,305.5,306.96,308.66,310.37,312.08,313.71,315.5,317.14,318.91,320.18,321.66,323.15,324.7,326.11,327.38,329.1,330.82,332.51,334.22,335.9,337.6,339.28,340.98,342.26,343.95,345.38,346.91,348.61,350.3,351.98,353.68,355.1,356.64,358.21,359.63,361.18,363.02,364.37,365.98],"hits":[51.06,52.82,53.65,59.52,60.35,61.89,66.22,67.06,72.86,78.8,81.31,85.5,97.23,143.34,144.18,148.78,152.56,154.24,154.66,158.02,163.06,165.15,165.57,173.55,202.37,208.29,208.74,210.54,213.07,214.82,215.66,216.51,217.36,220.29,220.74,221.2,225.36,229.47,241.9,245.28,264.8,268.18,269.46,269.87,270.72,274.48,280.03,281.62,290.18,290.74,291.58,294.59,295.02,295.81,296.72,297.57,298,298.42,299.28,301.23,303.79,304.8,306.96,307.81,308.66,310.37,315.5,315.94,316.35,329.1,329.54,329.97,330.38,330.82,340.56,341.41,342.26,342.67,347.76,348.18,348.61,349.02,349.87,350.72,351.57,354.11,354.53,355.38,355.79,356.22,356.64,357.07,357.49,357.92,358.35,359.2,360.34,360.9,361.62,362.18,363.02]};
+L.doorAt = 31;  // the tavern's back door opens as the camera flies out over Lucien
+
+// where the camera works, no trees grow (same positions the scenes use)
+L.clearings = function (X) {
+  const S = X.sec, c = (d, side, r) => { const p = X.at(d, side, 0); return { x: p.x, z: p.z, r }; };
+  const dCr = S.brk.d0 + 16;
+  return [
+    c(S.v1.d0 + S.v1.len * 0.55, 6.5, 17), c(S.v1b.d0 + S.v1b.len * 0.45, -3.4, 12), c(S.pre.d0 + S.pre.len * 0.55, 3, 10),
+    c(S.chorus.d1 - 7, -5.7, 9), c(S.chorus2.d1 - 7, -5.7, 9), c(dCr + 13, -15, 20), c(dCr, 0, 10),
+    c(S.v3.d0 + S.v3.len * 0.5, 4.6, 13), c(S.pre2.d0 + S.pre2.len * 0.4, 0, 20)
+  ];
+};
+
+L.shots = function (X, D) {
+  const A = X.anchors, H = X.hubAnchors, V = (x, y, z) => new THREE.Vector3(x, y, z);
+  const S = X.sec, P = D.p, d = D.dAt;
+  const wp = (o) => (o ? o.getWorldPosition(new THREE.Vector3()) : X.at(X.distAt(0) + 30, 0, 0));
+  const near = (obj, dx, dy, dz) => () => wp(obj).add(V(dx, dy, dz));
+  const wellP = () => wp(A.well);
+  const lu = H.lucien || V(0, 0.45, -8.55);
+  return [
+    // intro (instrumental): the tavern performance, then out through the back door into the night
+    { t: 0, cam: D.fixed(V(0.4, 2.7, 3.6), V(0, 1.6, -8.6), { push: 0.18, fov: 55 }) },
+    { t: 7.2, cam: D.orbit(lu, { r: 2.8, h: 1.2, a0: 1.2, w: 0.09, t0: 7.2, lookH: 1.4, fov: 50 }) },
+    { t: 14.4, cam: D.orbit(() => (H.cedric ? wp(H.cedric) : V(-2, 0, -4.6)), { r: 2.8, h: 1.1, a0: 0.2, w: 0.12, t0: 14.4, lookH: 1.1, fov: 55 }) },  // the brothers at their table
+    { t: 21.6, cam: D.dolly(V(2.8, 1.5, -6.7), V(-2.8, 1.5, -6.7), V(0, 1.6, -9.2), { fov: 55 }) },
+    { t: 27.4, cam: D.dolly(V(0.9, 2.6, -6.6), V(0, 2.4, -11.2), V(0, 2.1, -16), { lookB: P(30, 0, 2), fov: 60, fov1: 75 }) },
+    { t: 32.0, blend: 0.8, cam: D.dolly(P(9, 0, 2.6), P(d(47.8) - 18, 0, 3.0), P(30, 0, 2), { lookB: P(d(47.8) + 12, 0, 1.5), linear: true, fov: 72 }) },
+    // verse 1: the moonwell. Arthas bleeds, the chains break (54.3), Baphomet rises
+    { t: 47.8, cam: D.orbit(wellP, { r: 17, r1: 13.5, h: 8, h1: 3, a0: (A.wellFace || 0) - 0.9, w: 0.06, t0: 47.8, lookH: 1.2, fov: 60 }) },
+    { t: 54.2, cam: D.orbit(wellP, { r: 19, h: 0.9, a0: (A.wellFace || 0) + 0.25, w: 0.02, t0: 54.2, lookH: 7, fov: 74 }) },
+    { t: 62.2, cam: D.orbit(wellP, { r: 16, r1: 13, h: 2.5, h1: 12, a0: (A.wellFace || 0) - 0.15, w: 0.03, t0: 62.2, lookH: 10.5, fov: 62 }) },
+    { t: 69.9, cam: D.orbit(wellP, { r: 22, h: 11, a0: 0.4, w: -0.11, t0: 69.9, lookH: 9, fov: 60 }) },
+    { t: 78.9, cam: D.track(A.arthasWell, { offset: [1.0, 1.6, -7], lookOffset: [0, 6, 6], fov: 72 }) },  // behind Arthas, up at Baphomet
+    // verse 1b: the wolves run with us
+    { t: 87.0, cam: D.track(A.wolf, { offset: [2.4, 0.7, -0.6], lookOffset: [0, 0.6, 4], fov: 76 }) },
+    { t: 94.6, cam: D.rail({ h: 0.6, ahead: 10, lookH: 0.8, fov: 80 }) },
+    // pre-chorus: Neeris takes the dagger and stops the change
+    { t: 102.1, cam: D.orbit(A.dagger, { r: 4, h: 0.6, a0: 0, w: 0.35, t0: 102.1, lookH: 0.4, fov: 55 }) },
+    { t: 108.0, cam: D.orbit(A.neeris, { r: 3.2, h: 0.9, a0: 1.5, w: 0.16, t0: 108, lookH: 0.7, fov: 55 }) },
+    { t: 113.4, blend: 0.6, cam: D.orbit(A.neeris, { r: 5, r1: 9, h: 3, h1: 9, a0: 2.4, w: 0.18, t0: 113.4, lookH: 0.5, fov: 60 }) },
+    // chorus: the brothers' avenue
+    { t: 117.9, cam: D.rail({ h: 3.2, ahead: 22, lookH: 2, fov: 72 }) },
+    { t: 126.3, cam: D.orbit(() => (A.party_chorus || A.well).getWorldPosition(new THREE.Vector3()), { r: 6, h: 1.4, a0: 0, w: 0.35, t0: 126.3, lookH: 1.3, fov: 55 }) },
+    { t: 134.0, cam: D.rail({ h: 10, ahead: 34, lookH: 0, fov: 65 }) },
+    { t: 141.6, cam: D.rail({ h: 0.8, side: 3, ahead: 14, lookH: 1.6, fov: 78 }) },
+    // verse 2: the black wyrm in the red sky
+    { t: 150.7, cam: D.orbit(A.wyrm, { r: 22, h: -1, a0: 0, w: 0.3, t0: 150.7, lookH: 3.5, fov: 58 }) },  // under the wyrm, circling
+    { t: 157.0, cam: D.track(A.wyrm, { offset: [8, 4, -14], lookOffset: [0, 3.5, 0], fov: 60 }) },  // chasing it
+    // verse 2b: Cedric alone, bats over the crater
+    { t: 164.9, cam: D.track(A.cedricHunt, { offset: [1.6, 1.3, -3.2], lookOffset: [0, 1.3, 6], fov: 74 }) },
+    { t: 172.3, cam: D.rail({ h: 0.5, target: A.cedricHunt, fov: 70 }) },
+    // the break: HE KILLED IT
+    { t: 179.7, cam: D.orbit(A.carcass, { r: 19, h: 5, a0: 0.3, w: 0.35, t0: 179.7, lookH: 2.2, fov: 76 }) },
+    // dragon-slayer
+    { t: 184.0, cam: D.rail({ h: 1.2, side: -4, target: () => wp(A.cedricHunt).add(V(0, 1.4, 0)), fov: 48 }) },  // from the road: Cedric on the carcass
+    { t: 192.2, cam: D.rail({ h: 2, ahead: 16, fov: 66 }) },
+    // verse 3: the camp
+    { t: 200.5, cam: D.orbit(A.campfire, { r: 7, h: 2.2, a0: 0.8, w: 0.12, t0: 200.5, lookH: 1, fov: 60 }) },
+    { t: 208.9, cam: D.orbit(A.lucienCamp, { r: 2.6, h: 0.9, a0: 2.4, w: 0.05, t0: 208.9, lookH: 0.9, fov: 50 }) },
+    // pre-chorus 2: the crossroads, the choice
+    { t: 217.3, cam: D.orbit(A.crossroads, { r: 20, h: 13, h1: 7, a0: 1.4, w: 0.05, t0: 217.3, lookH: 0, fov: 60 }) },
+    { t: 225.9, cam: D.orbit(A.neerisCross, { r: 3.5, h: 1.4, a0: 0.6, w: 0.2, t0: 225.9, lookH: 1, fov: 52 }) },
+    { t: 232.3, cam: D.track(A.neerisCross, { offset: [0.6, 1.8, -4.2], lookOffset: [0, 1.2, 5], fov: 60 }) },
+    // chorus 2: dawn
+    { t: 237.9, cam: D.rail({ h: 3, ahead: 22, lookH: 2, fov: 72 }) },
+    { t: 246.4, cam: D.orbit(() => (A.party_chorus2 || A.campfire).getWorldPosition(new THREE.Vector3()), { r: 7, h: 2, a0: 3, w: -0.3, t0: 246.4, lookH: 1.3, fov: 56 }) },
+    { t: 253.9, cam: D.rail({ h: 12, ahead: 40, lookH: 1, fov: 66 }) },
+    { t: 262.4, cam: D.rail({ h: 1.0, side: -2.5, ahead: 14, lookH: 1.6, fov: 76 }) },
+    // bridge: the march to Cobh with the wyrm's head, the gate, the city rises
+    { t: 271.3, cam: D.track(A.marchers, { offset: [0, 2.2, 7], lookOffset: [0, 1.6, 0], fov: 60 }) },
+    { t: 280.8, cam: D.rail({ h: 5, lead: -8, target: () => wp(A.gate).add(V(0, 7, 0)), fov: 62 }) },  // on the road, the gate ahead
+    { t: 289.7, cam: D.rail({ h: 4, ahead: 18, lookH: 2, fov: 70 }) },
+    // bridge 2: the feast, the morning after
+    { t: 298.7, cam: D.orbit(A.bonfire, { r: 9, h: 3, a0: 0, w: 0.25, t0: 298.7, lookH: 1.2, fov: 62 }) },
+    { t: 307.2, cam: D.rail({ h: 1.6, ahead: 12, fov: 64 }) },
+    // outro and final: the gaol cell, the wraith over the burning city
+    { t: 315.7, cam: D.rail({ h: 1.3, ahead: 10, fov: 64 }) },
+    { t: 326.0, blend: 1.5, cam: D.rail({ h: 1.2, target: A.wraith, fov: 58 }) },
+    { t: 345.0, blend: 3, cam: D.rail({ h: 1.0, lead: 1.5, target: () => A.wraith.getWorldPosition(new THREE.Vector3()).add(V(0, 12, 0)), fov: 50 }) }
+  ];
+};
 })(typeof window !== 'undefined' ? window : globalThis);
 
 (function (root) {
@@ -2106,7 +2621,7 @@ const LEVELS = {
   baphomet: Object.assign({
     session: 'Level 8 · Session recap · 7:48 – 10:43 PM',
     blurb: 'Arthas bleeds into a moonwell and Baphomet’s chains break. Cedric kills a black wyrm alone, Cobh throws a feast, and Lucien wakes up in irons with a wraith over the city.',
-    length: '6 min', audio: 'levels/08-baphomet.mp3', flashAt: 180.1, gaolCue: 'outro',
+    length: '6 min', audio: 'levels/08-baphomet.mp3', packs: ['nature', 'village', 'beasts'], flashAt: 180.1, gaolCue: 'outro',
     build(X) { return C.scenes.baphomet.map((f) => f(X)).filter(Boolean); }
   }, C.storyData.baphomet)
 };
@@ -2174,6 +2689,7 @@ audio.addEventListener('ended', () => { if (mode === 'ride') finish(); });
 /* ---------- start ---------- */
 $('go').disabled = false; $('go').textContent = 'Step inside';
 $('go').onclick = () => {
+  tavernMusic(true);
   $('start').hidden = true; $('top').hidden = false; $('hud').hidden = false; started = true;
   try { audio.muted = true; const p = audio.play(); if (p && p.then) p.then(() => { audio.pause(); audio.currentTime = 0; audio.muted = muted; }).catch(() => { audio.muted = muted; }); } catch (e) { }
   refreshUI();
@@ -2213,18 +2729,55 @@ const pad = $('walkpad');
 pad.addEventListener('pointerdown', (e) => { padHeld = true; pad.setPointerCapture(e.pointerId); e.preventDefault(); });
 ['pointerup', 'pointercancel'].forEach((n) => pad.addEventListener(n, () => { padHeld = false; }));
 
+const HINT_FAR = 'The tavern is loud tonight. Lucien is on stage, his songbook on the stand in front.';
+const HINT_NEAR = 'Lucien grins at you. Pick a song from his book.';
+
+/* ---------- tavern music: a CC0 loop (The Old Tower Inn, RandomMind), gapless via Web Audio ---------- */
+let actx = null, tavGain = null, tavOn = false;
+function tavernMusic(on) {
+  tavOn = on;
+  if (!actx) {
+    if (!on) return;
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+    tavGain = actx.createGain(); tavGain.gain.value = 0; tavGain.connect(actx.destination);
+    fetch(new URL('tavern-loop.mp3', BASE)).then((r) => r.arrayBuffer()).then((b) => actx.decodeAudioData(b)).then((buf) => {
+      const src = actx.createBufferSource(); src.buffer = buf; src.loop = true;
+      src.loopStart = 0.026; src.loopEnd = Math.min(buf.duration, 0.026 + 49.95);  // skip the mp3 encoder's lead-in so the loop is seamless
+      src.connect(tavGain); src.start(0, 0.026); tavernMusic(tavOn);
+    }).catch(() => { });
+  }
+  if (actx.state === 'suspended') actx.resume();
+  const g = tavGain.gain, now = actx.currentTime;
+  g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(on && !muted ? 0.45 : 0, now + (on ? 2.5 : 0.8));
+}
+let calm = false;
+try { calm = localStorage.getItem('alaron:calm') === '1'; } catch (e) { }
+
 /* ---------- actions ---------- */
 function sit() {
   if (sitting || mode !== 'walk') return;
   auto = null; mode = 'book'; sitT = 0; sitting = true; look.yaw = 0; look.pitch = 0; refreshUI();
 }
-function standUp() { if (mode !== 'book') return; mode = 'walk'; sitting = false; player.x = 0; player.z = Math.max(player.z, -1.4); player.yaw = 0; player.pitch = 0; refreshUI(); }
+function standUp() { if (mode !== 'book') return; mode = 'walk'; sitting = false; player.x = W.STAND.x; player.z = W.STAND.z + 0.8; player.yaw = 0; player.pitch = 0; refreshUI(); }
 function flip(d) { const before = W.book.index; if (d > 0) W.book.next(); else W.book.prev(); if (W.book.index !== before) refreshBookUI(); }
 function curStory() { return C.stories[W.book.index]; }
+let requesting = false;
 function begin() {
-  const s = curStory(); if (!s || s.locked || mode !== 'book' || sitting) return;
-  if (songState(s) !== 'ready') return;
-  story = s; loadTimes(s); W.loadStory(s);
+  const s = curStory(); if (!s || s.locked || mode !== 'book' || sitting || requesting) return;
+  if (songState(s) !== 'ready' || !s.packsReady) {
+    // first request of this song: fetch its level packs and audio (shared packs are cached), then start
+    requesting = true; wantSong(s);
+    const btn = $('bBegin'); let kp = 0;
+    const show = () => { const ka = songState(s) === 'ready' ? 1 : 0.4; btn.textContent = 'Lucien tunes up… ' + Math.round((kp * 0.5 + ka * 0.5) * 100) + '%'; };
+    const tk = setInterval(show, 250); show();
+    const waitSong = new Promise((res) => { const k = setInterval(() => { if (songState(s) !== 'loading') { clearInterval(k); res(); } }, 100); });
+    Promise.all([C.loadPacks(s.packs || [], (k) => { kp = k; }), waitSong]).then(() => {
+      clearInterval(tk); requesting = false; s.packsReady = true;
+      if (songState(s) === 'ready') begin(); else refreshBookUI();
+    });
+    return;
+  }
+  story = s; loadTimes(s); W.loadStory(s); tavernMusic(false);
   if (audio.src !== songs[s.id].url) { audio.src = songs[s.id].url; audio.load(); }
   mode = 'ride'; ended = false; paused = false;
   W.beginRide({ x: W.SEAT.x, y: W.SEAT.y, z: W.SEAT.z, yaw: look.yaw * 0.6, pitch: -0.33 + look.pitch * 0.6 });
@@ -2234,18 +2787,20 @@ function begin() {
   $('fade').style.opacity = 0; $('end').hidden = true; refreshUI();
 }
 function backToBook() {
-  audio.pause(); W.endRide(); mode = 'book'; sitting = false; sitT = 1; ended = false; look.yaw = 0; look.pitch = 0;
+  audio.pause(); W.endRide(); tavernMusic(true); mode = 'book'; sitting = false; sitT = 1; ended = false; look.yaw = 0; look.pitch = 0;
   $('fade').style.opacity = 0; $('end').hidden = true; $('lyric').classList.remove('on'); $('stamp').classList.remove('on'); refreshUI();
 }
 function togglePause() { if (mode !== 'ride' || ended) return; paused = !paused; if (paused) audio.pause(); else audio.play(); $('bPause').textContent = paused ? 'Resume' : 'Pause'; }
 let muted = false;
-function toggleMute() { muted = !muted; audio.muted = muted; $('bMute').textContent = muted ? 'Sound off' : 'Sound on'; }
+function toggleMute() { muted = !muted; audio.muted = muted; $('bMute').textContent = muted ? 'Sound off' : 'Sound on'; tavernMusic(tavOn); }
 function finish() { if (ended) return; ended = true; $('fade').style.opacity = 1; setTimeout(() => { if (ended && mode === 'ride') $('end').hidden = false; }, 1400); }
 
 $('bSit').onclick = sit;
 $('bAuto').onclick = () => { auto = { t: 0, x: player.x, z: player.z, yaw: player.yaw }; };
 $('bPrev').onclick = () => flip(-1); $('bNext').onclick = () => flip(1); $('bBegin').onclick = begin;
 $('bMute').onclick = toggleMute; $('bPause').onclick = togglePause;
+const calmLabel = () => { $('bCalm').textContent = calm ? 'Calm camera' : 'Wild camera'; };
+$('bCalm').onclick = () => { calm = !calm; try { localStorage.setItem('alaron:calm', calm ? '1' : '0'); } catch (e) { } calmLabel(); }; calmLabel();
 $('bBright').onclick = () => { expI = (expI + 1) % EXPOS.length; renderer.toneMappingExposure = EXPOS[expI]; $('bBright').textContent = 'Brightness ' + (expI + 1); };
 $('bClose').onclick = () => { if (mode === 'ride') backToBook(); else standUp(); };
 $('bBack').onclick = backToBook;
@@ -2285,22 +2840,22 @@ addEventListener('keydown', (e) => { if (syncing && e.code === 'Space') { e.prev
 function refreshBookUI() {
   if (mode !== 'book') return;
   const s = curStory(); if (!s) return;
-  wantSong(s);
-  const st = songState(s), meta = s.session + ' · ' + s.length + (s.locked || st === 'ready' ? '' : st === 'err' ? ' · song missing' : ' · loading the song…');
+  // songs load when requested (begin), not while browsing the book
+  const st = s.locked ? 'locked' : songs[s.id] ? songState(s) : 'idle', meta = s.session + ' · ' + s.length + (st === 'err' ? ' · song missing' : '');
   $('hint').innerHTML = '<b style="font-family:var(--head);letter-spacing:.1em;font-size:1.25rem">' + s.title + '</b><br><span style="color:var(--ember);font-size:.9rem">' + meta + '</span><br>' + s.blurb;
   if (!s.locked && st === 'err' && !songs[s.id].asked) { songs[s.id].asked = true; pickSong(s); }
-  $('bBegin').disabled = !!s.locked || st !== 'ready';
-  $('bBegin').textContent = s.locked ? 'Coming soon' : 'Begin this story';
+  $('bBegin').disabled = !!s.locked || requesting;
+  if (!requesting) $('bBegin').textContent = s.locked ? 'Coming soon' : 'Ask for this song';
   $('bPrev').disabled = W.book.index === 0; $('bNext').disabled = W.book.index >= W.book.count - 1;
 }
 let lastNear = null;
 function refreshUI() {
   const walk = mode === 'walk', bk = mode === 'book' && !sitting, ride = mode === 'ride';
   $('rowBook').hidden = !bk; $('prog').style.display = ride ? 'block' : 'none';
-  $('bPause').hidden = !ride; $('bSync').hidden = !ride; $('bClose').hidden = walk;
+  $('bPause').hidden = !ride; $('bSync').hidden = !ride; $('bClose').hidden = walk; $('bCalm').hidden = !ride; $('bBright').hidden = ride;  // top bar fits a phone
   $('bClose').textContent = ride ? (innerWidth < 560 ? 'Book' : 'Back to the book') : 'Stand up';
   pad.style.display = walk && mobile ? 'block' : 'none';
-  if (walk) { $('hint').textContent = W.nearChair ? 'The chair is waiting.' : 'An empty bar. A single chair by the lectern, ahead.'; }
+  if (walk) { $('hint').textContent = W.nearChair ? HINT_NEAR : HINT_FAR; }
   if (bk) refreshBookUI();
   if (ride) $('hint').textContent = '';
   if (sitting) $('hint').textContent = '';
@@ -2342,7 +2897,7 @@ function frame(now) {
   if (mode === 'walk' && started) {
     if (auto) {
       auto.t = Math.min(1, auto.t + dt / 2.6); const e = C.sm(auto.t);
-      player.x = C.lerp(auto.x, 0, e); player.z = C.lerp(auto.z, -1.3, e); player.yaw = C.lerp(auto.yaw, 0, e); player.pitch *= 0.95;
+      player.x = C.lerp(auto.x, W.STAND.x, e); player.z = C.lerp(auto.z, W.STAND.z, e); player.yaw = C.lerp(auto.yaw, 0, e); player.pitch *= 0.95;
       if (auto.t >= 1) { auto = null; sit(); }
     } else {
       let fwd = 0, side = 0;
@@ -2357,8 +2912,8 @@ function frame(now) {
 
   const t = mode === 'ride' ? audio.currentTime : -1;
   if (dev.hold) { W.update(dev.hold); renderer.render(W.scene, W.camera); return; }
-  W.update({ mode, t, dt, time, player, look, sit: sitT });
-  if (mode === 'walk' && started && W.nearChair !== lastNear) { lastNear = W.nearChair; $('rowSit').hidden = !W.nearChair || !!auto; if (!auto) $('hint').textContent = W.nearChair ? (mobile ? 'The chair is waiting.' : 'The chair is waiting. Press E, or tap the button.') : 'An empty bar. A single chair by the lectern, ahead.'; }
+  W.update({ mode, t, dt, time, player, look, sit: sitT, calm });
+  if (mode === 'walk' && started && W.nearChair !== lastNear) { lastNear = W.nearChair; $('rowSit').hidden = !W.nearChair || !!auto; if (!auto) $('hint').textContent = W.nearChair ? (HINT_NEAR + (mobile ? '' : ' (E)')) : HINT_FAR; }
   if (mode !== 'walk') $('rowSit').hidden = true;
   $('flash').style.opacity = W.flash.toFixed(3);
 
