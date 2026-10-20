@@ -66,7 +66,8 @@ SC.push(function (X) {
   const dancers = [], ND = 16;
   for (let i = 0; i < ND; i++) { const a = i / ND * TAU; dancers.push({ x: bpos.x + Math.cos(a) * 3.4, z: bpos.z + Math.sin(a) * 3.4, ph: R(0, TAU), a }); }
   let crowdJump = 0.16;
-  const rigDance = chC.person ? dancers.slice(0, X.mobile ? 6 : 8).map((c, i) => { const p = chC.person({ seed: 400 + i * 7, pose: 'Dance_Loop' }); g.add(p); return p; }) : [];
+  // dancers in a ring round the bonfire, dancing in place (moving them while the clip plays made their feet slide)
+  const NDR = X.mobile ? 6 : 8, rigDance = chC.person ? dancers.slice(0, NDR).map((c, i) => { const p = chC.person({ seed: 400 + i * 7, pose: 'Dance_Loop' }); const a = i / NDR * TAU; p.position.set(bpos.x + Math.cos(a) * 3.6, 0, bpos.z + Math.sin(a) * 3.6); p.lookAt(bpos.x, 0, bpos.z); g.add(p); return p; }) : [];
   const dance = rigDance.length ? null : new THREE.InstancedMesh(crowdGeo(), lamb(), ND);
   if (dance) { dance.frustumCulled = false; g.add(dance); dancers.forEach((c, i) => dance.setColorAt(i, new THREE.Color(pick([0xc05a6a, 0x5a8ac0, 0xc0a050, 0x7ac08a])))); }
   X.anchors.bonfire = bon.group;
@@ -76,9 +77,17 @@ SC.push(function (X) {
   const ced = ch.cedric({ pose: 'Walk_Loop' }), lu = ch.lucien({ pose: 'Walk_Loop' }), art = ch.arthas({ pose: 'Walk_Formal_Loop' });
   ced.position.set(-1.7, 0, 0); lu.position.set(0, 0, -0.6); art.position.set(1.8, 0, 0); marchers.add(ced); marchers.add(lu); marchers.add(art);
   lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false;
-  const head = new THREE.Group(); head.add(solid([bx(0.8, 0.6, 1.1, 0x1c1618, [0, 0, 0]), bx(0.55, 0.4, 0.95, 0x1c1618, [0, -0.05, -0.95]), bx(0.5, 0.18, 0.85, 0x3a2626, [0, -0.4, -0.85], [0.35, 0, 0]), cn(0.12, 0.8, 4, 0x2a2224, [-0.3, 0.45, 0.3], [1, 0, 0.3]), cn(0.12, 0.8, 4, 0x2a2224, [0.3, 0.45, 0.3], [1, 0, -0.3])]));
-  head.position.set(-1.2, 3.6, 0); head.rotation.y = Math.PI; head.scale.setScalar(0.9); marchers.add(head);
-  marchers.add(solid([cy(0.04, 0.04, 3.4, 5, 0x5a3a2a, [-1.2, 1.7, 0])]));
+  // the wyrm's head on a pole, carried by Cedric: the dragon model cut down to head, horns and jaw
+  const pole = solid([cy(0.035, 0.045, 3.2, 6, 0x4a3020, [0, 1.3, 0]), cn(0.06, 0.3, 5, 0x8a8a90, [0, 3.0, 0])]);
+  const trophy = C.creature('wyrm', { h: 4.4, tint: 0x2e2a2e });
+  if (trophy) {
+    C.keepBones(trophy, /^(head|neck002|beak|tongue|eye)/);
+    trophy.updateMatrixWorld(true);
+    const hb = trophy.userData.bones.head.getWorldPosition(new THREE.Vector3());
+    const mount = new THREE.Group(); trophy.position.sub(hb); mount.add(trophy); mount.position.y = 2.8; mount.rotation.set(0.5, 0, 0); pole.add(mount);  // impaled, jaw hanging
+    [-0.1, 0.1].forEach((x) => { const e = X.glow(0x803010, 0.35, 0.6); e.position.set(x * 2, 2.95, 0.5); pole.add(e); });  // the last ember in its eyes
+  } else pole.add(solid([bx(0.8, 0.6, 1.1, 0x1c1618, [0, 3.0, 0])]));
+  pole.position.set(-0.38, 0.05, 0.12); pole.rotation.set(0.05, 0, 0.06); ced.add(pole);  // planted at his right side, held upright, moves with him
 
   // the night and the morning after, on the lines (bridge 2)
   const L = X.line, bp3 = new THREE.Vector3(bpos.x, 0, bpos.z);
@@ -96,6 +105,14 @@ SC.push(function (X) {
     suit && C.act(suit, [{ t: 0, show: false }, { t: suitT, show: true, pose: 'Idle_Talking_Loop', face: fl }])
   ];
   X.anchors.feastCedric = fc; X.anchors.suit = suit || fc; X.anchors.feastLucien = fl;
+  // the march as one actor (the three walk together); they stop at the gate while Lucien sings
+  const mStart = X.distAt(S1.t0) + 11, mPath = (d0, d1) => { const pts = []; for (let d = d0; d <= d1; d += 3) pts.push(X.at(d, 0, 0)); return pts; };
+  marchers.position.copy(X.at(mStart, 0, 0));
+  const marchAct = C.act(marchers, [
+    { t: S1.t0 - 1, to: mPath(mStart, dG - 7), by: L(48, 0.5) },
+    { t: L(48, 0.5), pose: 'Idle_Talking_Loop', face: X.at(dG + 40, 0, 0) },                    // "I sang of Cedric all the way through the gate"
+    { t: L(49), to: mPath(dG - 7, dG + 16), by: S2.t0 }                                          // "the whole city rose up wild"
+  ], { rigs: [ced, lu, art] });
   // gold glints around the marchers on "gold in our hands"
   const coins = []; for (let i = 0; i < 14; i++) { const c = X.glow(0xffd060, 0.35, 0); marchers.add(c); coins.push(c); }
   const goldT = L(47), singT = L(48), wildT = L(49);
@@ -116,17 +133,12 @@ SC.push(function (X) {
         for (let i = 0; i < ND; i++) { const c = dancers[i]; dm.position.set(c.x, Math.abs(Math.sin(ctx.time * 6 + c.ph)) * 0.3, c.z); dm.rotation.set(0, c.a + ctx.time * 0.8, 0.12 * Math.sin(ctx.time * 6 + c.ph)); dm.scale.setScalar(1); dm.updateMatrix(); dance.setMatrixAt(i, dm.matrix); }
         dance.instanceMatrix.needsUpdate = true;
       }
-      rigDance.forEach((p, i) => { const a = i / rigDance.length * TAU + ctx.time * 0.25; p.position.set(bpos.x + Math.cos(a) * 3.6, 0, bpos.z + Math.sin(a) * 3.6); p.rotation.y = -a; });
       marchers.visible = t > S1.t0 - 1 && t < S2.t0;  // only during the march; the feast has its own brothers
       feast.forEach((a) => a && a.update(t, ctx));
       [fc, fl, fa].forEach((o) => { o.visible = o.visible && t > S2.t0 - 1; });
       coins.forEach((c, i) => { const u = t - goldT - i * 0.08; c.material.opacity = u > 0 && u < 3 ? 0.9 * (1 - u / 3) : 0; c.position.set(Math.sin(i * 2.4) * (0.5 + u), 2 + u * 2.2 - u * u * 0.8, Math.cos(i * 2.4) * (0.5 + u)); });
-      if (lu.userData.pose) lu.userData.pose(t > singT && t < wildT + 3 ? 'Idle_Talking_Loop' : 'Walk_Loop');  // "I sang of Cedric all the way through the gate"
       crowdJump = 0.16 + 0.35 * ss(wildT - 0.5, wildT + 0.5, t);                                          // "the whole city rose up wild" 
-      if (marchers.visible) {
-        const dc = Math.min(X.distAt(t) + 11, dE - 1), p = X.at(dc, 0, 0);
-        marchers.position.set(p.x, ced.userData.mixer ? 0 : Math.abs(Math.sin(ctx.time * 3.2)) * 0.06, p.z); marchers.rotation.y = X.yawAt(dc) + Math.PI;
-      }
+      marchAct.update(t, ctx);
       const gp = X.at(clamp(ctx.camD + 6, dG - 30, dE), 0, 5);
       ctx.light(0, gp.x, 7, gp.z, 0xffc880, 1.2, 36);
       ctx.light(1, bpos.x, 2.2, bpos.z, 0xff9a50, 2.4 * bon.flicker(ctx.time), 32);
@@ -215,14 +227,17 @@ SC.push(function (X) {
   wr.rotation.y = X.yawAt(X.Dend); g.add(wr);
   // the real wraith: a 16 m hooded figure (rigged CC0 body), casting over the city; the cone figure stays as fallback
   const wraith = C.chars(X).wraith ? C.chars(X).wraith({ h: 16 }) : null;
+  if (wraith) wraith.userData.flyer = true;  // a hovering spirit: no feet to plant
   if (wraith) { wr.children.forEach((c) => { if (c !== eg && c !== halo) c.visible = false; }); wraith.rotation.y = Math.PI; wr.add(wraith); eg.position.set(0, 14.6, 1.2); halo.position.set(0, 14.2, 0); }
   X.anchors.wraith = wr;
+  // where the wraith is at song time t (the camera bake asks for it; the scene update uses the same formula)
+  const wraithAt = (t) => { const k = ss(S.t0, X.sec.final.t1 - 12, t), rise = ss(X.line(54, -1), X.line(54, 5), t); return X.at(X.Dend + lerp(70, 40, k), lerp(-10, -3, k), -18 + 18 * rise + 2 * k); };
+  wr.userData.posAt = wraithAt;
   return {
     group: g, d0: X.dBack - 8, d1: X.Dend + 5, vis: 30,
     update(t, ctx) {
       fires.forEach((f) => f.update(ctx.time));
-      const k = ss(S.t0, X.sec.final.t1 - 12, t), rise = ss(X.line(54, -1), X.line(54, 5), t);
-      const p = X.at(X.Dend + lerp(70, 40, k), lerp(-10, -3, k), -18 + 18 * rise + 2 * k + Math.sin(ctx.time * 0.5) * 0.4);
+      const k = ss(S.t0, X.sec.final.t1 - 12, t), p = wraithAt(t); p.y += Math.sin(ctx.time * 0.5) * 0.4;
       wr.position.copy(p); wr.visible = t > S.t0 - 2;
       strips.forEach((s) => { s.piv.rotation.z = 0.15 * Math.sin(ctx.time * 1.3 + s.ph); s.piv.rotation.x = 0.12 * Math.cos(ctx.time * 1.1 + s.ph); });
       const HT = X.story.hitT, flash = t >= HT ? Math.exp(-(t - HT) * 1.5) : 0;

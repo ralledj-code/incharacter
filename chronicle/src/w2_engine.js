@@ -199,7 +199,7 @@ C.create = function (opts) {
   const storyRoot = new THREE.Group(); scene.add(storyRoot);
   const X = {
     THREE, C, scene, camera, TEX, at, yawAt, frame, distAt, tAtDist, fx, mobile, root: storyRoot,
-    sec: sec, Dend: Dend, dBack: dBack, tCross: tCross, Z0: Z0, story: null, anims: [], hubAnims: [], anchors: {}, hubAnchors: {},
+    sec: sec, Dend: Dend, dBack: dBack, tCross: tCross, Z0: Z0, story: null, anims: [], hubAnims: [], anchors: {}, hubAnchors: {}, actors: [],
     STAND: { x: 0, y: 1.62, z: -5.95 },  // where the player stands to read Lucien's songbook (set by the hub)
     glow(color, size, op) {
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.glow, color, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: op === undefined ? 1 : op }));
@@ -250,7 +250,7 @@ C.create = function (opts) {
     loadStory(st) {
       // the photo ground arrives with a level pack (loaded on request), swap it in once
       if (!gReal && (gReal = C.tex('forest_ground_04_diff'))) { gReal.repeat.set(GSIZE / PERIOD, GSIZE / PERIOD); groundMat.map = gReal; groundMat.needsUpdate = true; gBoost = 2.2; }
-      disposeRoot(); defs = []; X.anims.length = 0; X.anchors = {};
+      disposeRoot(); defs = []; X.anims.length = 0; X.anchors = {}; X.actors = []; C.act.X = X;
       story = st; X.story = st;
       buildTimeline(st); buildPath();
       X.sec = sec; X.Dend = Dend; X.dBack = dBack; X.tCross = tCross;
@@ -264,6 +264,7 @@ C.create = function (opts) {
       X.clearings = typeof st.clearings === 'function' ? st.clearings(X) : [];  // [{ x, z, r }] kept free of trees for the camera
       const list = (typeof st.build === 'function') ? st.build(X) : [];
       list.forEach((d) => { if (d) { storyRoot.add(d.group); defs.push(d); } });
+      C.act.bakeAll(X);                // simulate every actor once (w3c_action)
       if (director) director.set(st);  // after the scenes, so shots can see their anchors
       W.info = { Dend, dBack, tCross, Z0 };
     },
@@ -334,10 +335,11 @@ C.create = function (opts) {
         for (let i = 0; i < list.length; i++) {
           const a = list[i]; let o = a, vis = true;
           while (o) { if (!o.visible) { vis = false; break; } o = o.parent; }
-          if (vis) a.userData.mixer.setTime(a.userData.timeFn ? a.userData.timeFn(tm) : tm + a.userData.ph);
+          if (vis && !a.userData.managed) a.userData.mixer.setTime(a.userData.timeFn ? a.userData.timeFn(tm) : tm + a.userData.ph);
         }
       };
       animate(X.anims, ride ? Math.max(0, t) : time); animate(X.hubAnims, time);
+      if (ride) for (let i = 0; i < X.actors.length; i++) C.act.apply(X.actors[i], Math.max(0, t), ctx);  // baked actors
       const fT = story && story.flashAt;
       W.flash = (!ride || fT === undefined) ? 0 : (t < fT - 0.2 ? 0 : (t < fT ? (t - (fT - 0.2)) / 0.2 : Math.exp(-(t - fT) * 2.6)));
       W.camD = camD;

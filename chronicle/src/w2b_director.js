@@ -10,8 +10,10 @@ const { clamp, lerp, sm, ss } = C;
    D (below) builds cam functions. Targets: Vector3, Object3D (world position), or () => Vector3. */
 const V = () => new THREE.Vector3();
 let fallback = null;  // set per frame: a point ahead on the rail
+let bakeT = null;     // while baking: song time (anchors with userData.posAt(t) are evaluated there)
 function at(target, out) {
   if (!target) return fallback ? out.copy(fallback) : out.set(0, 0, 0);
+  if (bakeT !== null && target.userData && target.userData.posAt) return out.copy(target.userData.posAt(bakeT));
   if (typeof target === 'function') return out.copy(target());
   if (target.isObject3D) return target.getWorldPosition(out);
   return out.copy(target);
@@ -97,27 +99,67 @@ C.makeDirector = function (X) {
     D,
     set(level) {
       shots = typeof level.shots === 'function' ? level.shots(X, D).filter(Boolean).sort((a, b) => a.t - b.t) : [];
-      beats = level.beats || null;
+      beats = level.beats || null; this.baked = null;
+      if (shots.length) this.bake(level.duration || 300);
     },
     get active() { return shots.length > 0; },
     shotIndex(t) { let k = 0; for (let i = 0; i < shots.length; i++) if (shots[i].t <= t) k = i; return k; },
     /* writes camera pose for song time t; returns the pose object */
-    pose(t, camera, calm) {
+    /* raw (unsmoothed) camera intent at time t, into o */
+    raw(t, o) {
       fallback = X.at(X.distAt(t) + 12, 0, 1.2);
       const i = this.shotIndex(t), s = shots[i];
-      evalShot(i, t, A);
+      evalShot(i, t, o);
       if (s.blend && i > 0 && t - s.t < s.blend) {
         evalShot(i - 1, t, B); const k = ease((t - s.t) / s.blend);
-        A.pos.lerpVectors(B.pos, A.pos, k); A.look.lerpVectors(B.look, A.look, k); A.fov = lerp(B.fov, A.fov, k); A.roll = lerp(B.roll, A.roll, k);
+        o.pos.lerpVectors(B.pos, o.pos, k); o.look.lerpVectors(B.look, o.look, k); o.fov = lerp(B.fov, o.fov, k); o.roll = lerp(B.roll, o.roll, k);
       }
-      // music: a small zoom punch on every bar, a shake on strong hits (off in calm mode)
-      let fov = A.fov, shake = 0;
-      // beat kicks/shake removed: they read as jitter on phones (feedback 2026-10-20). Beats still drive cuts and band animation.
-      camera.position.copy(A.pos);
-      if (shake) camera.position.add(new THREE.Vector3(Math.sin(t * 91) * shake, Math.sin(t * 67 + 1) * shake, Math.sin(t * 53 + 2) * shake));
-      camera.up.set(0, 1, 0); camera.lookAt(A.look);
+      return i;
+    },
+    /* Bake the whole camera once (after the actors are baked): every 1/30 s place the actors, evaluate the shot,
+       and smooth position/look/fov with a critically damped spring inside a shot (reset on hard cuts).
+       Playback reads the samples, so the camera never inherits a character's jitter and seeking stays exact. */
+    bake(duration) {
+      const HZ = 30, N = Math.ceil(duration * HZ) + 2, F = new Float32Array(N * 8), cut = new Uint8Array(N);
+      const o = { pos: V(), look: V(), fov: 60, roll: 0 }, x = new Float32Array(8), v = new Float32Array(8), r = new Float32Array(8);
+      const TAU = [0.28, 0.28, 0.28, 0.18, 0.18, 0.18, 0.35, 0.35], dt = 1 / HZ;
+      let prevShot = -1;
+      for (let n = 0; n < N; n++) {
+        const t = n / HZ; bakeT = t;
+        if (C.act && X.actors) X.actors.forEach((a) => C.act.place(a, t));
+        const si = this.raw(t, o);
+        r[0] = o.pos.x; r[1] = o.pos.y; r[2] = o.pos.z; r[3] = o.look.x; r[4] = o.look.y; r[5] = o.look.z; r[6] = o.fov; r[7] = o.roll;
+        const hard = si !== prevShot && !(shots[si].blend > 0);
+        if (n === 0 || hard) {  // a cut: start exactly on the shot, already moving with it (no ramp-up jolt)
+          x.set(r); cut[n] = 1;
+          const o2 = { pos: V(), look: V(), fov: 60, roll: 0 }; bakeT = t + dt;
+          if (C.act && X.actors) X.actors.forEach((a) => C.act.place(a, t + dt));
+          this.raw(t + dt, o2); bakeT = t;
+          const r2 = [o2.pos.x, o2.pos.y, o2.pos.z, o2.look.x, o2.look.y, o2.look.z, o2.fov, o2.roll];
+          for (let k = 0; k < 8; k++) v[k] = (r2[k] - r[k]) / dt;
+          if (C.act && X.actors) X.actors.forEach((a) => C.act.place(a, t));
+        }
+        else for (let k = 0; k < 8; k++) {  // critically damped spring toward the shot's intent
+          const w = 2 / (TAU[k] * (shots[si].smooth || 1)), a = w * w * (r[k] - x[k]) - 2 * w * v[k];  // shot.smooth: softer follow (fast or turning subjects)
+          v[k] += a * dt; x[k] += v[k] * dt;
+        }
+        F.set(x, n * 8); prevShot = si;
+      }
+      bakeT = null;
+      this.baked = { HZ, N, F, cut };
+    },
+    pose(t, camera) {
+      const BK = this.baked;
+      if (!BK) { this.raw(t, A); }
+      else {
+        const f = Math.max(0, Math.min(BK.N - 1.001, t * BK.HZ)), i = Math.floor(f), k = BK.cut[i + 1] ? 0 : f - i, F = BK.F;
+        A.pos.set(lerp(F[i * 8], F[i * 8 + 8], k), lerp(F[i * 8 + 1], F[i * 8 + 9], k), lerp(F[i * 8 + 2], F[i * 8 + 10], k));
+        A.look.set(lerp(F[i * 8 + 3], F[i * 8 + 11], k), lerp(F[i * 8 + 4], F[i * 8 + 12], k), lerp(F[i * 8 + 5], F[i * 8 + 13], k));
+        A.fov = lerp(F[i * 8 + 6], F[i * 8 + 14], k); A.roll = lerp(F[i * 8 + 7], F[i * 8 + 15], k);
+      }
+      camera.position.copy(A.pos); camera.up.set(0, 1, 0); camera.lookAt(A.look);
       if (A.roll) camera.rotateZ(A.roll);
-      if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
+      if (Math.abs(camera.fov - A.fov) > 0.01) { camera.fov = A.fov; camera.updateProjectionMatrix(); }
       return A;
     }
   };

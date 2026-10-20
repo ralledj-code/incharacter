@@ -43,16 +43,19 @@ function prep(node, dim) {
 
 // The free base body is a full figure; outfits are worn over it and its skin pokes through.
 // Keep only the triangles skinned (mostly) to the head and neck, so the outfit carries the rest.
-function headOnly(root) {
+function headOnly(root) { C.keepBones(root, /^(Head|neck_0\d)$/, /SuperHero/i); }
+/* Cut a skinned model down to the triangles driven mostly by bones matching `keep` (e.g. a dragon's head). Clones geometry. */
+C.keepBones = function (root, keep, meshName) {
   root.traverse((o) => {
-    if (!o.isSkinnedMesh || !/SuperHero/i.test(o.name)) return;
+    if (!o.isSkinnedMesh || (meshName && !meshName.test(o.name))) return;
+    o.geometry = o.geometry.clone();
     const g = o.geometry, si = g.attributes.skinIndex, sw = g.attributes.skinWeight, bones = o.skeleton.bones;
     const comp = (at, v, k) => (k === 0 ? at.getX(v) : k === 1 ? at.getY(v) : k === 2 ? at.getZ(v) : at.getW(v));  // r128 has no getComponent
-    const keep = (v) => { let best = 0, bi = 0; for (let k = 0; k < 4; k++) { const w = comp(sw, v, k); if (w > best) { best = w; bi = comp(si, v, k); } } return /^(Head|neck_0\d)$/.test(bones[bi].name); };
+    const keepV = (v) => { let best = 0, bi = 0; for (let k = 0; k < 4; k++) { const w = comp(sw, v, k); if (w > best) { best = w; bi = comp(si, v, k); } } return keep.test(bones[bi].name); };
     const idx = g.index ? g.index.array : null, n = idx ? idx.length : g.attributes.position.count, out = [];
     for (let i = 0; i < n; i += 3) {
       const a = idx ? idx[i] : i, b = idx ? idx[i + 1] : i + 1, c = idx ? idx[i + 2] : i + 2;
-      if (keep(a) && keep(b) && keep(c)) out.push(a, b, c);
+      if (keepV(a) && keepV(b) && keepV(c)) out.push(a, b, c);
     }
     g.setIndex(out);
   });
@@ -178,7 +181,7 @@ C.rigChar = function (spec) {
     mixer.stopAllAction(); mixer.clipAction(clip).play(); cur = clip.name;
   };
   g.userData.pose(spec.pose || 'Idle_Loop');
-  g.userData.mixer = mixer; g.userData.bones = bones; g.userData.ph = Math.random() * 3;
+  g.userData.mixer = mixer; g.userData.bones = bones; g.userData.ph = Math.random() * 3; g.userData.h = spec.h || 1.8;
   g.updateMatrixWorld(true);
   return g;
 };
@@ -214,6 +217,7 @@ C.creature = function (key, o) {
   };
   if (src.clips.length) g.userData.pose(o.clip);
   g.userData.mixer = mixer; g.userData.bones = bones; g.userData.ph = o.ph === undefined ? Math.random() * 3 : o.ph;
+  g.userData.h = o.h || hh * (o.scale || 1); g.userData.clips = src.clips; g.userData.label = key;
   return g;
 };
 

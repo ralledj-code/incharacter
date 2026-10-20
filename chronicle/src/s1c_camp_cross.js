@@ -22,7 +22,7 @@ SC.push(function (X) {
   const art = ch.arthas({ pose: 'Idle_Loop' }); art.position.copy(X.at(dF - 2, 2.4, 0)); g.add(art); X.anchors.arthasCamp = art;
   lu.position.copy(X.at(dF - 0.6, 2.2, 0)); ner.position.copy(X.at(dF + 0.4, 7.0, 0));
   const actors = [
-    C.act(art, [{ t: 0, face: fpos }, { t: L(31), to: X.at(dF + 30, 0, 0), move: 4, pose: 'Sprint_Loop' }, { t: L(31, 4), show: false }]),   // "Arthas ran off to find Cedric's side"
+    C.act(art, [{ t: 0, face: fpos }, { t: L(31), to: [X.at(dF - 1, 0.2, 0), X.at(dF + 24, 0, 0)], move: 6 }, { t: L(31, 6), show: false }]),   // away from the fire, past Lucien's back   // "Arthas ran off to find Cedric's side"
     C.act(lu, [{ t: 0, pose: 'Sitting_Idle_Loop', face: fpos },
       { t: L(33), to: X.at(dF + 2.4, 4.2, 0), move: 2.2, face: ner },                                       // "what do I do with a traitor turned tame?"
       { t: L(33, 2.2), pose: 'Idle_Talking_Loop', face: ner },
@@ -82,8 +82,8 @@ SC.push(function (X) {
       { t: L(36), pose: 'Idle_Talking_Loop', face: V(0, 4) },                                          // "kick the feelings aside, now what will you do?"
       { t: L(37, 1.5), pose: 'Spell_Simple_Idle_Loop', face: V(-2.5, -2) },                            // holds the brothers back
       { t: trackT, pose: 'Spell_Simple_Idle_Loop', face: () => rd.localToWorld(ner.position.clone()).sub(rd.position).applyAxisAngle(new THREE.Vector3(0, 1, 0), -rd.rotation.y) }]),
-    C.act(ced, [{ t: 0, face: V(0, -2) }, { t: L(37), to: V(-2.2, -3.2), move: 2.4, pose: 'Walk_Loop' }, { t: L(37, 2.4), pose: 'Idle_Loop', face: V(0.6, -3.4) }]),   // "Cedric and Arthas want justice"
-    C.act(art, [{ t: 0, face: V(0, -2), pose: 'Sword_Idle' }, { t: L(37), to: V(-3.2, -1.8), move: 2.4, pose: 'Walk_Loop' }, { t: L(37, 2.4), pose: 'Sword_Idle', face: V(0.6, -3.4) }])
+    C.act(ced, [{ t: 0, face: V(0, -2) }, { t: L(37), to: V(-3.2, -1.8), move: 2.4 }, { t: L(37, 2.4), pose: 'Idle_Loop', face: V(0.6, -3.4) }]),   // "Cedric and Arthas want justice"
+    C.act(art, [{ t: 0, face: V(0, -2), pose: 'Sword_Idle' }, { t: L(37), to: V(-2.2, -3.4), move: 2.4 }, { t: L(37, 2.4), pose: 'Sword_Idle', face: V(0.6, -3.4) }])
   ];
   return {
     group: g, d0: S.d0, d1: S.d1, vis: 100,

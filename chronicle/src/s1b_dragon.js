@@ -66,28 +66,41 @@ function brothers(secId, opt) {
       grp.position.copy(p); kit.placeFacing(grp, d, b[2]); g.add(grp);
       banners.push({ geo, base: geo.attributes.position.array.slice(), ph: R(0, TAU) });
     });
-    // the three walk the avenue; on their name line each steps forward and shows who he is
-    const first = S.i === undefined ? 0 : 0, L = X.line, k0 = opt.line0;
+    // the three walk down the avenue toward the camera; they stop for the name lines, each steps forward on his,
+    // stand together on "by fire, by fang", then walk on (actors: facing follows their steps, no sliding)
+    const L = X.line, k0 = opt.line0;
+    const dStop = S.d0 + 16, dA = dStop + 5.5, dEnd = Math.max(S.d0 + 4, dStop - 9);  // close to where the camera enters the avenue, at a walking pace
+    const road = (d0, d1, sd) => { const pts = [], st = d1 < d0 ? -3 : 3; for (let d = d0; st < 0 ? d > d1 : d < d1; d += st) pts.push(X.at(d, sd, 0)); pts.push(X.at(d1, sd, 0)); return pts; };  // always ends exactly at d1
     const who = [['cedric', -1.4, k0 + 1, 'Idle_Torch_Loop'], ['lucien', 0, k0 + 2, 'Spell_Simple_Idle_Loop'], ['arthas', 1.4, k0 + 3, 'Sword_Idle']];
-    const party = who.map(([k, side, line, pose]) => { const f = ch[k]({ pose: 'Walk_Loop' }); if (k === 'lucien') f.userData.blade.visible = true; g.add(f); return { f, side, line, pose }; });
-    party.forEach((p) => { X.anchors[p.f === party[1].f ? 'party_' + secId : (who[party.indexOf(p)][0] + '_' + secId)] = p.f; });
-    const walkD = (t) => S.d0 + 14 + Math.max(0, t - S.t0) * 1.3;
-    const upd = (t) => {
+    const toCam = X.at(dStop - 30, 0, 0);
+    const party = who.map(([k, sd, line, pose]) => {
+      const f = ch[k]({ pose: 'Idle_Loop' }); if (k === 'lucien') f.userData.blade.visible = true;
+      f.position.copy(X.at(dA, sd, 0)); g.add(f);
+      const act = C.act(f, [
+        { t: 0, face: toCam },
+        { t: S.t0 - 1, to: road(dA, dStop, sd), by: L(k0 + 1, -0.4) },                                    // "sing of the brothers"
+        { t: L(k0 + 1, -0.4), pose: 'Idle_Loop', face: toCam },
+        { t: L(line, -0.4), to: X.at(dStop - 1.6, sd * 0.4, 0), move: 0.9 },                               // his name: one step forward
+        { t: L(line, 0.5), pose, face: toCam },
+        { t: L(line, 3.2), to: X.at(dStop, sd, 0), move: 1.1, back: true },                                 // and back into line
+        { t: L(line, 4.3), pose: 'Idle_Loop', face: toCam },
+        { t: L(k0 + 4, -0.2), pose: 'Sword_Idle', face: toCam },                                            // "by fire, by fang"
+        { t: L(k0 + 5, -0.2), to: road(dStop, dEnd, sd), by: S.t1 }                                         // "we walked the road"
+      ]);
+      return { f, act, pose };
+    });
+    X.anchors['party_' + secId] = party[1].f; X.anchors['cedric_' + secId] = party[0].f; X.anchors['arthas_' + secId] = party[2].f;
+    const upd = (t, ctx) => {
       party.forEach((p) => {
-        const lt = L(p.line), on = t >= lt - 0.3 && t < lt + 3.2, d = walkD(t) + (on ? 1.8 * ss(lt - 0.3, lt + 0.3, t) : 0);
-        const pos = X.at(d, p.side * (on ? 0.4 : 1), 0); p.f.position.copy(pos);
-        p.f.rotation.y = X.yawAt(d) + (on ? Math.PI : 0);  // walks away from the camera; turns to face it on his line
-        const late = t >= L(k0 + 4) && t < L(k0 + 5);    // "by fire, by fang": all three face the camera
-        if (late) p.f.rotation.y = X.yawAt(d) + Math.PI;
-        if (p.f.userData.pose) p.f.userData.pose(on ? p.pose : late ? 'Sword_Idle' : 'Walk_Loop');
-        const sp = p.f.userData.spark;
-        if (sp) { if (!sp.userData.base) sp.userData.base = sp.scale.x; sp.scale.setScalar(sp.userData.base * (on && p.pose === 'Spell_Simple_Idle_Loop' ? 3.5 + Math.sin(t * 20) : 1)); }
+        p.act.update(t, ctx);
+        const sp = p.f.userData.spark, on = p.pose === 'Spell_Simple_Idle_Loop' && t > L(k0 + 2, 0.5) && t < L(k0 + 2, 3.2);
+        if (sp) { if (!sp.userData.base) sp.userData.base = sp.scale.x; sp.scale.setScalar(sp.userData.base * (on ? 3.5 + Math.sin(t * 20) : 1)); }
       });
     };
     return {
       group: g, d0: S.d0, d1: S.d1, vis: 100,
       update(t, ctx) {
-        tor.update(ctx.time); upd(t);
+        tor.update(ctx.time); upd(t, ctx);
         banners.forEach((b) => {
           const a = b.geo.attributes.position, arr = a.array;
           for (let i = 0; i < arr.length; i += 3) {
@@ -126,9 +139,9 @@ SC.push(function (X) {
   X.anchors.arthasWyrm = art; X.anchors.lucienWyrm = luc; X.anchors.cedricWyrm = ced; X.anchors.fight = new THREE.Object3D(); X.anchors.fight.position.copy(F); g.add(X.anchors.fight);
   const rose = L(18), struck = L(19), gold = L(20), ran = L(21);
   const actors = [
-    C.act(art, [{ t: 0, face: pos(40, 0), pose: 'Sword_Idle' }, { t: struck + 0.8, to: pos(2.5, -1.2), move: 0.6, pose: 'Sprint_Loop' }, { t: struck + 1.4, pose: 'Sword_Idle', face: pos(40, 0) }, { t: gold, pose: 'Idle_Talking_Loop', face: luc }]),
+    C.act(art, [{ t: 0, face: pos(40, 0), pose: 'Sword_Idle' }, { t: struck + 0.5, to: pos(2.5, -1.2), move: 1.0 }, { t: struck + 1.4, pose: 'Sword_Idle', face: pos(40, 0) }, { t: gold, pose: 'Idle_Talking_Loop', face: luc }]),
     C.act(luc, [{ t: 0, face: pos(40, 0), pose: 'Idle_Loop' }, { t: rose + 1, pose: 'Spell_Simple_Idle_Loop' }, { t: gold, pose: 'Idle_Loop', face: art }]),
-    C.act(ced, [{ t: 0, face: pos(40, 0), pose: 'Idle_Loop' }, { t: struck, pose: 'Crouch_Idle_Loop' }, { t: ran, to: pos(28, 1), move: 3.5, pose: 'Sprint_Loop' }, { t: ran + 3.5, show: false }])
+    C.act(ced, [{ t: 0, face: pos(40, 0), pose: 'Idle_Loop' }, { t: struck, pose: 'Crouch_Idle_Loop' }, { t: ran, to: pos(26, 1), move: 5.5 }, { t: ran + 5.5, show: false }])
   ];
   const bolt = X.glow(0xb070ff, 2.2, 0); g.add(bolt);
   // the wyrm's flight as keyframes on song time (rise from the horizon, dive at the brothers, flee), then waiting in the crater
@@ -143,6 +156,14 @@ SC.push(function (X) {
     for (let k = 0; k < KF.length - 1; k++) if (t < KF[k + 1][0]) { const u = (t - KF[k][0]) / (KF[k + 1][0] - KF[k][0]); return out.lerpVectors(KF[k][1], KF[k + 1][1], sm(u)); }
     return out.copy(KF[KF.length - 1][1]);
   };
+  // the flight as a flying actor: heading, climb and bank come from the path itself
+  if (flyer) {
+    flyer.position.copy(KF[0][1]);
+    const beats = [{ t: 0, show: false }, { t: KF[0][0], show: true }];
+    for (let k = 1; k < KF.length; k++) beats.push({ t: KF[k - 1][0], to: KF[k][1], by: KF[k][0] });
+    beats.push({ t: KF[KF.length - 1][0], face: X.at(dCr, 0, 0) });
+    C.act(flyer, beats, { fly: true, gait: [['Flying', 1]], stance: { clip: 'Flying', at: 0.55 }, idle: 'Flying' });
+  }
   const P0 = new THREE.Vector3(), P1 = new THREE.Vector3();
   return {
     group: g, d0: S.d0 - 10, d1: Sb.d0, t0: S.t0 - 3, t1: Sb.t0 + 0.05,
@@ -151,11 +172,8 @@ SC.push(function (X) {
       const landed = t > S2.t0 + 6;
       dragon.visible = t > rose - 3 && t < Sb.t0;
       if (dragon.visible) {
-        where(t, P0); where(t + 0.2, P1);
-        dragon.position.copy(P0);
-        if (!landed) { const dx = P1.x - P0.x, dz = P1.z - P0.z; if (dx * dx + dz * dz > 1e-4) dragon.rotation.set(-Math.atan2(P1.y - P0.y, Math.hypot(dx, dz)) * 0.6, Math.atan2(dx, dz), Math.sin(t * 0.8) * 0.2); }
-        else { dragon.rotation.set(0, Math.atan2(X.at(dCr, 0, 0).x - lair.x, X.at(dCr, 0, 0).z - lair.z), 0); }
-        if (flyer) flyer.userData.timeFn = landed ? () => 0.55 : null;  // wings folded when it waits in the crater
+        if (flyer) flyer.userData.actor.update(t, ctx);
+        else { where(t, P0); dragon.position.copy(P0); }
         const fw = new THREE.Vector3(0, 0, 1).applyEuler(dragon.rotation), mouth = dragon.position.clone().addScaledVector(fw, 4.2).add(new THREE.Vector3(0, 1.2, 0));
         const br = ss(struck - 1, struck - 0.4, t) * (1 - ss(struck + 1, struck + 1.6, t));  // fire on the dive
         jet.forEach((s, i) => { s.position.copy(mouth).addScaledVector(fw, 2.5 + i * 3.2).y -= i * 0.6; s.scale.setScalar(2 + i * 1.2); s.material.opacity = br * (0.8 - i * 0.08); });
@@ -194,10 +212,20 @@ SC.push(function (X) {
   X.anchors.carcass = dragon;
   // bats over the crater while Cedric hunts
   const bats = [];
-  for (let i = 0; i < 9; i++) { const b = C.creature('bat', { h: 0.7, tint: 0x4a3a40, clip: 'Bat_Flying', ph: i * 0.21 }); if (!b) break; g.add(b); X.anims.push(b); bats.push(b); }
+  for (let i = 0; i < 9; i++) { const b = C.creature('bat', { h: 0.7, tint: 0x4a3a40, clip: 'Bat_Flying', ph: i * 0.21 }); if (!b) break; b.userData.flyer = true; g.add(b); X.anims.push(b); bats.push(b); }
   const eyeG = [X.glow(0xff2a1a, 3.2, 0), X.glow(0xff2a1a, 3.2, 0)]; eyeG[0].position.copy(headW).add(new THREE.Vector3(0.6, 1.2, 0)); eyeG[1].position.copy(headW).add(new THREE.Vector3(-0.6, 1.2, 0)); eyeG.forEach((e) => g.add(e));
   // Cedric: runs ahead, then stands on the dragon's head
   const ced = ch.cedric({ pose: 'Sprint_Loop' }); g.add(ced); X.anchors.cedricHunt = ced;
+  const huntPath = []; for (let d = X.distAt(S.t0) + 32; d < dCr - 3; d += 3) huntPath.push(X.at(d, 1.2, 0));
+  ced.position.copy(huntPath[0] || X.at(dCr - 3, 1.2, 0));
+  let cedAct = null;
+  // Cedric: sprints after it along the path, leaps onto it on "HE KILLED IT", stands on the carcass
+  const top = new THREE.Vector3(headW.x, corpse ? headW.y : headW.y + 0.55 * SCL * 0.5, headW.z);
+  cedAct = C.act(ced, [
+    { t: 0, show: false }, { t: S.t0 - 0.5, show: true, to: huntPath, by: TK - 1.4 },
+    { t: TK - 1.4, to: top, move: 1.4, air: true, y: (u) => Math.sin(u * Math.PI) * 4, pose: 'Jog_Fwd_Loop' },
+    { t: TK, pose: 'Idle_Torch_Loop', face: X.at(dCr + 30, 0, 0) }
+  ]);
   return {
     group: g, d0: S.d0, d1: Sc.d1, vis: 110,
     update(t, ctx) {
@@ -209,19 +237,13 @@ SC.push(function (X) {
         b.rotation.y = -a;
       });
       dragon.visible = killed;
-      if (killed) dragon.scale.setScalar(SCL * (0.92 + 0.08 * sm((t - TK) / 0.4)));
+      if (killed && !corpse) dragon.scale.setScalar(SCL * (0.92 + 0.08 * sm((t - TK) / 0.4)));
       const glowK = killed ? 0 : ss(X.sec.v2b.t0, X.sec.brk.t0 - 1, t) * (0.8 + 0.2 * Math.sin(ctx.time * 5));
       eyeG.forEach((e) => { e.material.opacity = glowK; });
+      cedAct.update(t, ctx);
       if (!killed) {
-        const dc = Math.min(dCr - 3, X.distAt(Math.max(S.t0, t)) + 26), p = X.at(dc, 1.2, 0);
-        ced.position.set(p.x, ced.userData.mixer ? 0 : Math.abs(Math.sin(ctx.time * 9)) * 0.15, p.z); ced.rotation.y = X.yawAt(dc) + Math.PI; ced.visible = t > S.t0 - 0.5;
-        if (ced.userData.pose) ced.userData.pose('Sprint_Loop');
-        const jump = ss(TK - 1.4, TK, t);  // "HE KILLED IT": the leap onto the wyrm
-        if (jump > 0) { const from = X.at(dCr - 3, 1.2, 0); ced.position.set(lerp(from.x, headW.x, jump), Math.sin(jump * Math.PI) * 4 + headW.y * jump, lerp(from.z, headW.z, jump)); }
         ctx.light(0, headW.x, 1.6, headW.z, 0xff3a22, 0.8 * glowK, 30);
       } else {
-        ced.visible = true; ced.position.set(headW.x, corpse ? headW.y : headW.y + 0.55 * SCL * 0.5, headW.z); ced.rotation.y = X.yawAt(dCr) + Math.PI / 2 + 0.6;
-        if (ced.userData.pose) ced.userData.pose('Idle_Torch_Loop');
         const k = Math.exp(-(t - TK) * 1.5);
         ctx.light(0, headW.x, 3.0, headW.z, 0xffd890, 2.2 + 8 * k, 42);
       }

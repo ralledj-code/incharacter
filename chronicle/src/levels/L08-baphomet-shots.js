@@ -30,7 +30,7 @@ L.shots = function (X, D) {
   return [
     // intro (instrumental): the tavern performance, then out through the back door into the night
     { t: 0, cam: D.fixed(V(0.4, 2.7, 3.6), V(0, 1.6, -8.6), { push: 0.18, fov: 55 }) },
-    { t: 7.2, cam: D.orbit(lu, { r: 3.4, h: 1.2, a0: 1.2, w: 0.09, t0: 7.2, lookH: 1.4, fov: 50 }) },
+    { t: 7.2, cam: D.orbit(lu, { r: 3.4, h: 2.5, a0: 1.2, w: 0.09, t0: 7.2, lookH: 1.4, fov: 50 }) },
     { t: 14.4, cam: D.orbit(() => (H.cedric ? wp(H.cedric) : V(-2, 0, -4.6)), { r: 2.8, h: 1.1, a0: 0.2, w: 0.12, t0: 14.4, lookH: 1.1, fov: 55 }) },  // the brothers at their table
     { t: 21.6, cam: D.dolly(V(2.8, 1.5, -6.7), V(-2.8, 1.5, -6.7), V(0, 1.6, -9.2), { fov: 55 }) },
     { t: 27.4, cam: D.dolly(V(0.6, 3.4, -6.4), V(0, 2.1, -11.4), V(0, 2.0, -16), { lookB: P(30, 0, 2), fov: 60, fov1: 75 }) },
@@ -50,20 +50,20 @@ L.shots = function (X, D) {
     { t: X.line(6, -0.2), cam: D.orbit(() => wp(A.arthasWood).lerp(wp(A.neeris), 0.5), { r: 5, h: 1.3, a0: 1.6, w: 0.08, t0: X.line(6), lookH: 1.2, fov: 55 }) },  // "the blade would not land"
     { t: X.line(7, -0.2), cam: D.orbit(A.lucienWood, { r: 2.4, h: 1.5, a0: 0.2, w: 0.05, t0: X.line(7), lookH: 1.55, fov: 45 }) },      // "I stood there, spellless"
     { t: X.line(8, -0.6), cam: D.orbit(A.dagger, { r: 4, h: 0.5, a0: 0, w: 0.3, t0: X.line(8), lookH: 0.3, fov: 55 }) },                // "Neeris took my dagger"
-    { t: X.line(9, -0.2), cam: D.orbit(A.neeris, { r: 3.2, h: 0.9, a0: 1.5, w: 0.16, t0: X.line(9), lookH: 0.7, fov: 52 }) },          // "drove it in"
+    { t: X.line(9, -0.2), cam: D.orbit(A.neeris, { r: 2.6, h: 1.2, a0: 1.5, w: 0.16, t0: X.line(9), lookH: 0.7, fov: 52 }) },          // "drove it in"
     { t: X.line(11, -0.2), blend: 0.6, cam: D.orbit(A.clearing, { r: 6, r1: 12, h: 3, h1: 12, a0: 2.4, w: 0.15, t0: X.line(11), lookH: 0.5, fov: 60 }) },  // "calmed the dead"
     // chorus: the brothers' avenue, one shot per name
     { t: 117.9, cam: D.dolly(() => X.at(X.distAt(117.9) + 2, 0, 1.2), behind(A.party_chorus, -4.5, 1.8), () => wp(A.party_chorus).add(V(0, 1.3, 0)), { fov: 62 }) },  // up the avenue to the brothers
-    { t: X.line(13, -0.3), cam: D.orbit(() => wp(A.cedric_chorus), { r: 4.2, h: 1.3, a0: 0, w: 0.2, t0: X.line(13), lookH: 1.5, fov: 48 }) },  // "Cedric the devout monk"
-    { t: X.line(14, -0.3), cam: D.orbit(() => wp(A.party_chorus), { r: 3.8, h: 1.4, a0: 0.2, w: -0.12, t0: X.line(14), lookH: 1.5, fov: 48 }) },  // "Lucien the cursed sorcerer"
-    { t: X.line(15, -0.3), cam: D.orbit(() => wp(A.arthas_chorus), { r: 4.2, h: 0.9, a0: 2.9, w: 0.15, t0: X.line(15), lookH: 1.8, fov: 52 }) },  // "Arthas the paladin" (low, heroic)
+    { t: X.line(13, -0.3), cam: D.track(A.cedric_chorus, { offset: [0.7, 1.6, 3.0], lookOffset: [0, 1.5, 0], fov: 46 }) },  // "Cedric the devout monk"
+    { t: X.line(14, -0.3), cam: D.track(A.party_chorus, { offset: [-0.6, 1.6, 2.8], lookOffset: [0, 1.5, 0], fov: 46 }) },  // "Lucien the cursed sorcerer"
+    { t: X.line(15, -0.3), cam: D.track(A.arthas_chorus, { offset: [0.5, 0.9, 3.4], lookOffset: [0, 1.8, 0], fov: 52 }) },  // "Arthas the paladin" (low, heroic)
     { t: X.line(16, -0.3), cam: D.orbit(() => wp(A.party_chorus), { r: 7, r1: 12, h: 1.5, h1: 7, a0: 0, w: 0.25, t0: X.line(16), lookH: 1.3, fov: 60 }) },  // "by fire, by fang"
     { t: X.line(17, -0.3), cam: D.rail({ h: 9, ahead: 30, lookH: 0, fov: 64 }) },  // "we walked the road"
     // verse 2: the black wyrm, on the lines
     { t: 150.7, cam: D.track(A.arthasWyrm, { offset: [1.2, 1.5, -3], lookOffset: [0, 8, 30], fov: 66 }) },                         // behind the brothers: it rises on the horizon
-    { t: X.line(18, 2.5), cam: D.orbit(A.wyrm, { r: 18, h: -2, a0: 2.6, w: 0.15, t0: X.line(18, 2.5), lookH: 0, fov: 58 }) },     // the wyrm close, the sky red
+    { t: X.line(18, 2.5), smooth: 2, cam: D.orbit(A.wyrm, { r: 18, h: -2, a0: 2.6, w: 0.15, t0: X.line(18, 2.5), lookH: 0, fov: 58 }) },     // the wyrm close, the sky red
     { t: X.line(19, -0.4), cam: D.orbit(A.fight, { r: 9, h: 1.2, a0: 3.4, w: 0.25, t0: X.line(19), lookH: 3, fov: 72 }) },          // "we struck it down": the dive
-    { t: X.line(19, 2.4), cam: D.track(A.wyrm, { offset: [6, 2, -14], lookOffset: [0, 0, 0], fov: 60 }) },                           // "...it fled"
+    { t: X.line(19, 2.4), smooth: 2.5, cam: D.track(A.wyrm, { offset: [6, 2, -14], lookOffset: [0, 0, 0], fov: 60 }) },                           // "...it fled"
     { t: X.line(20, -0.2), cam: D.orbit(A.fight, { r: 5, h: 1.6, a0: 0.4, w: 0.12, t0: X.line(20), lookH: 1.4, fov: 55 }) },       // "it wants our gold"
     { t: X.line(21, -0.2), cam: D.track(A.cedricWyrm, { offset: [-1.8, 1.4, -3.4], lookOffset: [0, 1.2, 6], fov: 70 }) },           // "Cedric just ran"
     // verse 2b: Cedric alone, bats over the crater, the wyrm waiting
@@ -85,13 +85,13 @@ L.shots = function (X, D) {
     { t: 217.3, cam: D.orbit(A.crossroads, { r: 9, h: 3.5, a0: 1.6, w: 0.05, t0: 217.3, lookH: 0.6, fov: 58 }) },                    // "Neeris begs mercy"
     { t: X.line(36, -0.2), cam: D.orbit(A.lucienCross, { r: 2.8, h: 1.4, a0: 0.2, w: 0.08, t0: X.line(36), lookH: 1.55, fov: 46 }) },  // "now what will you do?"
     { t: X.line(37, -0.2), cam: D.orbit(A.cedricCross, { r: 5, h: 1.2, a0: 2.4, w: 0.1, t0: X.line(37), lookH: 1.5, fov: 55 }) },     // "Cedric and Arthas want justice"
-    { t: X.line(38, -0.2), cam: D.orbit(A.crossroads, { r: 16, h: 12, a0: 1.6, w: 0.04, t0: X.line(38), lookH: 0, fov: 60 }) },       // "I let him go": the fork from above
-    { t: X.line(39, -0.2), cam: D.track(A.neerisCross, { offset: [0.8, 1.7, 3.6], lookOffset: [0, 1.4, 0], fov: 52 }) },              // "track the last moonwell"
+    { t: X.line(38, -0.2), smooth: 1.5, cam: D.orbit(A.crossroads, { r: 16, h: 12, a0: 1.6, w: 0.04, t0: X.line(38), lookH: 0, fov: 60 }) },       // "I let him go": the fork from above
+    { t: X.line(39, -0.2), smooth: 2.5, cam: D.track(A.neerisCross, { offset: [0.8, 1.7, 3.6], lookOffset: [0, 1.4, 0], fov: 52 }) },              // "track the last moonwell"
     // chorus 2: dawn, same staging
     { t: 237.9, cam: D.dolly(() => X.at(X.distAt(237.9) + 2, 0, 1.2), behind(A.party_chorus2, -4.5, 1.8), () => wp(A.party_chorus2).add(V(0, 1.3, 0)), { fov: 62 }) },  // up the avenue to the brothers
-    { t: X.line(41, -0.3), cam: D.orbit(() => wp(A.cedric_chorus2), { r: 4.2, h: 1.3, a0: 0, w: 0.2, t0: X.line(41), lookH: 1.5, fov: 48 }) },  // "Cedric the devout monk"
-    { t: X.line(42, -0.3), cam: D.orbit(() => wp(A.party_chorus2), { r: 3.8, h: 1.4, a0: 0.2, w: -0.12, t0: X.line(42), lookH: 1.5, fov: 48 }) },  // "Lucien the cursed sorcerer"
-    { t: X.line(43, -0.3), cam: D.orbit(() => wp(A.arthas_chorus2), { r: 4.2, h: 0.9, a0: 2.9, w: 0.15, t0: X.line(43), lookH: 1.8, fov: 52 }) },  // "Arthas the paladin" (low, heroic)
+    { t: X.line(41, -0.3), cam: D.track(A.cedric_chorus2, { offset: [0.7, 1.6, 3.0], lookOffset: [0, 1.5, 0], fov: 46 }) },  // "Cedric the devout monk"
+    { t: X.line(42, -0.3), cam: D.track(A.party_chorus2, { offset: [-0.6, 1.6, 2.8], lookOffset: [0, 1.5, 0], fov: 46 }) },  // "Lucien the cursed sorcerer"
+    { t: X.line(43, -0.3), cam: D.track(A.arthas_chorus2, { offset: [0.5, 0.9, 3.4], lookOffset: [0, 1.8, 0], fov: 52 }) },  // "Arthas the paladin" (low, heroic)
     { t: X.line(44, -0.3), cam: D.orbit(() => wp(A.party_chorus2), { r: 7, r1: 12, h: 1.5, h1: 7, a0: 0, w: 0.25, t0: X.line(44), lookH: 1.3, fov: 60 }) },  // "by fire, by fang"
     { t: X.line(45, -0.3), cam: D.rail({ h: 9, ahead: 30, lookH: 0, fov: 64 }) },  // "we walked the road"
     // bridge: the march to Cobh with the wyrm's head, the gate, the city rises

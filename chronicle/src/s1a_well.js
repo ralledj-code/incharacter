@@ -12,13 +12,17 @@ SC.push(function (X) {
   for (let d = 10; d < S.d1 + 6; d += 7) { const a = X.at(d, -3.2, 0), b = X.at(d + 3.5, 3.2, 0); list.push({ x: a.x, z: a.z }, { x: b.x, z: b.z }); }
   const tor = kit.torches(list, { glow: 0xffb060, size: 2.2, op: 0.6, color: 0xffc060 }); g.add(tor.group);
   // the brothers (and Neeris) already on the road, walking ahead of the camera toward the moonwell
-  const ch = C.chars(X), walkers = ch.person ? [['lucien', -0.8, 0], ['cedric', 0.9, 1.2], ['arthas', -0.2, 2.6], ['neeris', 1.4, 4]].map(([k, sd, back]) => {
-    const o = ch[k]({ pose: 'Walk_Loop' }); if (o.userData.blade) { o.userData.blade.visible = false; o.userData.bladeGlow.visible = false; } g.add(o); return { o, sd, back };
+  // they leave the tavern's back door just before the camera flies out and walk the lane ahead of it, toward the moonwell
+  const ch = C.chars(X), lane = (d0, d1, sd) => { const pts = []; for (let d = d0; d <= d1; d += 3) pts.push(X.at(d, sd, 0)); return pts; };
+  const dEnd = X.distAt(47.8) - 2;
+  const walkers = ch.person ? [['lucien', -0.8, 0], ['cedric', 0.9, 1.2], ['arthas', -0.2, 2.6], ['neeris', 1.4, 4]].map(([k, sd, back]) => {
+    const o = ch[k]({ pose: 'Walk_Loop' }); if (o.userData.blade) { o.userData.blade.visible = false; o.userData.bladeGlow.visible = false; }
+    o.position.copy(X.at(12 - back, sd, 0)); g.add(o);
+    return C.act(o, [{ t: 0, show: false }, { t: 27, show: true, to: lane(12 - back, dEnd - back, sd), by: 47.8 }]);
   }) : [];
   return { group: g, d0: S.d0, d1: S.d1, vis: 110, update(t, ctx) {
     tor.update(ctx.time);
-    const camD0 = lerp(9, X.distAt(47.8) - 18, clamp((t - 32) / 15.8, 0, 1));  // the intro shot's camera path (L08 shots), walkers stay ahead of it
-    walkers.forEach(({ o, sd, back }) => { const d = Math.max(14 + Math.max(0, t - 30) * 1.25, camD0 + 9) - back; o.visible = t > 28; o.position.copy(X.at(d, sd, 0)); o.rotation.y = X.yawAt(d) + Math.PI; });
+    walkers.forEach((w) => w.update(t, ctx));
   } };
 });
 
@@ -104,32 +108,32 @@ SC.push(function (X) {
   const TB2 = L(1, 0.1);
   const actors = [
     C.act(art, [
-      { t: S.t0, to: spot(side - 3.4, 0.2), move: 1.5, face: wpos },                          // walks to the rim
+      { t: S.t0 - 4, to: spot(side - 3.4, 0.2), move: 4.5, face: wpos },                      // walks to the rim
       { t: L(0), pose: 'Fixing_Kneeling', face: wpos },                                        // "bled his hand into the well"
-      { t: TB2, to: spot(side - 6, 0.6), move: 0.45, pose: 'Crouch_Idle_Loop', face: wpos },  // thrown back by the blast
+      { t: TB2, to: spot(side - 6, 0.6), move: 0.6, back: true, pose: 'Crouch_Idle_Loop', face: wpos },  // thrown back by the blast
       { t: L(1, 2), pose: 'Sword_Idle', face: wpos },
       { t: L(3), pose: 'Sword_Idle', face: ner }
     ]),
     C.act(ced, [
-      { t: S.t0, to: spot(side - 5, -2.4), move: 2, face: wpos },
+      { t: S.t0 - 4, to: spot(side - 5, -2.4), move: 4.5, face: wpos },
       { t: L(0), pose: 'Idle_Loop', face: wpos },
-      { t: TB2, to: spot(side - 7.5, -3.2), move: 0.6, pose: 'Crouch_Idle_Loop', face: wpos },
+      { t: TB2, to: spot(side - 7.5, -3.2), move: 0.8, back: true, pose: 'Crouch_Idle_Loop', face: wpos },
       { t: L(2), pose: 'Idle_Loop', face: wpos }
     ]),
     C.act(luc, [
-      { t: S.t0, to: spot(side - 5, 2.2), move: 2, face: wpos },
+      { t: S.t0 - 4, to: spot(side - 5, 2.2), move: 4.5, face: wpos },
       { t: L(0), pose: 'Idle_Loop', face: wpos },
-      { t: TB2, to: spot(side - 7.5, 3), move: 0.6, pose: 'Spell_Simple_Idle_Loop', face: wpos }
+      { t: TB2, to: spot(side - 7.5, 3), move: 0.8, back: true, pose: 'Spell_Simple_Idle_Loop', face: wpos }
     ]),
     C.act(ner, [
-      { t: S.t0, to: spot(side - 8, -4.5), move: 3, face: wpos },
+      { t: S.t0 - 4, to: spot(side - 8, -4.5), move: 5, face: wpos },
       { t: L(1), pose: 'Idle_Loop', face: wpos },
       { t: L(3, 2.5), pose: 'Crouch_Idle_Loop', face: wpos }                                   // "the wolf-curse began to grow"
     ])
   ];
   if (baph) actors.push(C.act(baph, [
     { t: 0, pose: 'Idle_Loop' }, { t: L(2), pose: 'Idle_Talking_Loop' }, { t: L(3), pose: 'Spell_Simple_Idle_Loop' }, { t: L(3, 5), pose: 'Idle_Loop' }
-  ]));
+  ], { ignoreGround: true }));  // he rises out of the well
   // wolf eyes opening in the treeline when the curse grows
   const tlEyes = [];
   for (let i = 0; i < 9; i++) {
@@ -208,9 +212,9 @@ SC.push(function (X) {
   const actors = [
     C.act(art, [
       { t: S1.t0, to: at(-4, -1), move: 3, face: ner, pose: 'Sword_Idle' },
-      { t: strike, to: at(-1.3, -3.4), move: 0.7, face: ner, pose: 'Sprint_Loop' },             // "Arthas struck"
+      { t: strike - 0.6, to: at(-1.3, -3.4), move: 1.4, face: ner },                            // "Arthas struck"
       { t: strike + 0.7, pose: 'Sword_Idle', face: ner },
-      { t: L(7), to: at(-3, -2), move: 1.2, face: ner, pose: 'Sword_Idle' }
+      { t: L(7), to: at(-3, -2), move: 1.2, back: true, face: ner, pose: 'Sword_Idle' }
     ]),
     C.act(ced, [{ t: S1.t0, to: at(-6, 0), move: 3, face: ner }, { t: L(4), pose: 'Crouch_Idle_Loop', face: ner }, { t: drove + 2, pose: 'Idle_Loop', face: ner }]),
     C.act(lu, [
@@ -221,17 +225,29 @@ SC.push(function (X) {
     C.act(ner, [
       { t: 0, pose: 'Crouch_Idle_Loop', face: at(-3, 0) },
       { t: L(4), pose: 'Crouch_Idle_Loop', s: 1.12 },                                            // "Neeris turning, teeth and claw"
-      { t: took - 1.2, to: sp.clone().add(new THREE.Vector3(0, 0, 0)).lerp(np, 0.35), move: 1.2, pose: 'Sprint_Loop', s: 1.12 },
-      { t: took, pose: 'Idle_Loop', face: dag, s: 1.12 },                                        // "took my dagger for his own"
+      { t: took - 1, pose: 'Idle_Loop', face: sp, s: 1.12 },                                     // rises, the dagger flies to his hand: "took my dagger for his own"
       { t: drove, pose: 'Fixing_Kneeling', s: 1.0 },                                              // "drove it in, and stopped the change"
       { t: calmT + 1, pose: 'Sitting_Idle_Loop', s: 1.0 }
     ])
   ];
   const wolves = [];
+  const WOLF_GAIT = [['Walk', 0.69], ['Gallop', 2.57]];  // per metre of height (tools/clipspeeds.cjs, paw bones)
   for (let i = 0; i < 7; i++) {
-    const w = C.creature('wolf', { h: 0.95, tint: i % 3 ? 0x6a6a72 : 0x3a3a40, clip: 'Gallop', ph: i * 0.37 });
+    const w = C.creature('wolf', { h: 0.95, tint: i % 3 ? 0x6a6a72 : 0x3a3a40, clip: 'Idle', ph: i * 0.37 });
     if (!w) break;
-    w.userData.side = (i % 2 ? 1 : -1) * (3.5 + (i % 4) * 1.6); w.userData.lead = 3 + i * 2.3; g.add(w); X.anims.push(w); wolves.push(w);
+    const side = (i % 2 ? 1 : -1) * (3.5 + (i % 4) * 1.6), lead = 3 + i * 2.3;
+    const ring = (a, r) => np.clone().add(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r));
+    const run = []; for (let d = S1.d0 - 22 + lead * 0.6; d < dn - 6 - (i % 4) * 2.5; d += 4) run.push(X.at(d, side + (i > 3 ? 1.2 : 0), 0));  // staggered lanes and stops
+    // each wolf has its own slot around Neeris: runs to it, then the pack circles in step (no two meet)
+    const a0 = i / 7 * TAU, r0 = 4.6 + (i % 2) * 0.9; run.push(ring(a0, r0));
+    const circle = []; for (let k = 1; k <= 10; k++) circle.push(ring(a0 + k * 0.5, r0));
+    w.position.copy(run[0]); g.add(w); wolves.push(w);
+    C.act(w, [
+      { t: 0, show: false }, { t: S1.t0 - 8, show: true, to: run, by: L(4, 1) },          // the pack runs with us
+      { t: L(4, 1), to: circle, by: drove, face: ner },                                     // rings Neeris while he turns
+      { t: drove, pose: 'Idle_2_HeadLow', face: ner },                                       // the curse is pulled out
+      { t: calmT + 1, s: 0.999, fn: (u) => w.scale.setScalar(Math.max(0.001, 1 - u / 3)) }
+    ], { gait: WOLF_GAIT, idle: 'Idle' });
   }
   if (wolves.length) X.anchors.wolf = wolves[0];
   const nerEyes = ner.userData.eyes;
@@ -248,22 +264,7 @@ SC.push(function (X) {
       }
       eyeMesh.instanceMatrix.needsUpdate = true;
       actors.forEach((a) => a.update(t, ctx));
-      // the pack: runs with the camera through the wood, then circles Neeris, snarling, until the dagger goes in
-      const arrive = L(4, 1), dNow = X.distAt(Math.min(t, arrive));
-      wolves.forEach((w, i) => {
-        w.visible = t > S1.t0 - 2 && t < calmT + 4;
-        if (!w.visible) return;
-        if (t < arrive) {
-          const d = dNow + w.userData.lead + Math.sin(ctx.time * 0.7 + i) * 0.6, p = X.at(d, w.userData.side, 0);
-          w.position.copy(p); w.rotation.y = X.yawAt(d) + Math.PI; w.userData.pose('Gallop');
-        } else {
-          const a = i / wolves.length * TAU + (t < drove ? (t - arrive) * 0.5 : (drove - arrive) * 0.5), p = ner.position, r = t < drove ? 4.5 : 5.5;
-          w.position.set(p.x + Math.cos(a) * r, 0, p.z + Math.sin(a) * r);
-          if (t < drove) { w.rotation.y = Math.atan2(-Math.sin(a), Math.cos(a)) + (i % 2 ? 0 : Math.PI); w.userData.pose(i % 3 ? 'Gallop' : 'Attack'); }
-          else { w.lookAt(p.x, 0, p.z); w.userData.pose('Idle_2_HeadLow'); }
-          w.scale.setScalar(1 - 0.999 * ss(calmT + 1, calmT + 4, t));  // the cursed pack fades with the curse
-        }
-      });
+      wolves.forEach((w) => w.userData.actor && w.userData.actor.update(t, ctx));
       if (nerEyes) nerEyes.material.color.setHex(t > L(4) && t < drove ? 0xff4010 : 0xffb030);
       // the ward that stops Arthas's blade
       const wp = new THREE.Vector3().lerpVectors(art.position, ner.position, 0.55); ward.position.set(wp.x, 1.3, wp.z);

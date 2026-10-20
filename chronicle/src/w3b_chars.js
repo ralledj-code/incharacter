@@ -199,6 +199,8 @@ C.chars = function (X) {
       C.attach(g, 'Head', e, [0, 0.09 * (o.h || 16) / 1.8, 0.11 * (o.h || 16) / 1.8], null, (o.h || 16) / 1.8); g.userData.eyes = e;
       return g;
     };
+    // label every model with who it is (motion check, debugging)
+    ['lucien', 'cedric', 'arthas', 'neeris', 'person', 'wraith', 'baphomet'].forEach((n) => { const f = K[n]; if (f) K[n] = (o) => { const g = f(o); if (g) g.userData.label = n; return g; }; });
   }
   return K;
 };
