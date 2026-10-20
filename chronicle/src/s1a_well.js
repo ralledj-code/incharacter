@@ -34,9 +34,18 @@ SC.push(function (X) {
   g.add(kit.trees(S.d0 - 15, S.d1 + 15, { minSide: 8, maxSide: 38, dens: 0.8, deadP: 0.5, tint: 0x8fa0b8 }));
   const well = new THREE.Group(); well.position.set(wp.x, 0, wp.z); g.add(well);
   const P = [];
-  for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; P.push(bx(1.0, 1.15, 0.7, 0x70747c, [Math.cos(a) * 2.0, 0.57, Math.sin(a) * 2.0], [0, -a + Math.PI / 2, 0])); }
-  for (let i = 0; i < 6; i++) { const a = i / 6 * TAU + 0.3; P.push(bx(1.3, 5.2, 1.3, 0x5c6068, [Math.cos(a) * 11, 2.6, Math.sin(a) * 11], [0, R(0, 1), 0.04])); }
-  well.add(solid(P));
+  // rim: 12 blocks of photo stone; the standing stones are real rocks stretched into monoliths (procedural boxes as fallback)
+  const rimTex = C.tex('rustic_stone_wall_diff', 1, 1);
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * TAU, m = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.15, 0.7), rimTex ? new THREE.MeshLambertMaterial({ map: rimTex, color: 0x9a9690 }) : new THREE.MeshLambertMaterial({ color: 0x70747c }));
+    m.position.set(Math.cos(a) * 2.0, 0.57, Math.sin(a) * 2.0); m.rotation.y = -a + Math.PI / 2; well.add(m);
+  }
+  for (let i = 0; i < 6; i++) {
+    const a = i / 6 * TAU + 0.3, key = 'Rock_Medium_' + (1 + i % 3), sz = C.modelSize(key);
+    if (sz) { const r = C.place(key, [Math.cos(a) * 11, -0.2, Math.sin(a) * 11], R(0, 6), 1); r.scale.set(1.5 / sz.x, 5.6 / sz.y, 1.4 / sz.z); r.rotation.z = R(-0.05, 0.05); well.add(r); }
+    else P.push(bx(1.3, 5.2, 1.3, 0x5c6068, [Math.cos(a) * 11, 2.6, Math.sin(a) * 11], [0, R(0, 1), 0.04]));
+  }
+  if (P.length) well.add(solid(P));
   const disc = new THREE.Mesh(new THREE.CircleGeometry(1.75, 24), new THREE.MeshBasicMaterial({ color: 0x7aa8ff }));
   disc.rotation.x = -Math.PI / 2; disc.position.y = 0.95; well.add(disc);
   const col = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.8, 60, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0x7aa8ff, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
@@ -196,16 +205,23 @@ SC.push(function (X) {
   const L = X.line, dn = S1.d0 + S1.len * 0.55, yaw = X.yawAt(dn), at = (along, side) => X.at(dn + along, side, 0);
   const np = at(0, -4), ner = ch.neeris({ pose: 'Crouch_Idle_Loop' }); ner.position.copy(np); g.add(ner);
   const sp = at(3, 1.5);
-  const slab = solid([bx(1.5, 0.5, 1.0, 0x6a6e76, [0, 0.25, 0])]); slab.position.copy(sp); slab.rotation.y = yaw; g.add(slab);
+  const slabSz = C.modelSize('Rock_Medium_2'), slab = slabSz ? C.place('Rock_Medium_2', [sp.x, -0.05, sp.z], yaw, 1) : solid([bx(1.5, 0.5, 1.0, 0x6a6e76, [0, 0.25, 0])]);
+  if (slabSz) slab.scale.set(1.8 / slabSz.x, 0.6 / slabSz.y, 1.2 / slabSz.z); else { slab.position.copy(sp); slab.rotation.y = yaw; }
+  g.add(slab);  // a flat rock altar
   const dag = new THREE.Group();
-  const blade = new THREE.Mesh(new THREE.ConeGeometry(0.1, 1.0, 4), new THREE.MeshBasicMaterial({ color: 0xdff4ff })); blade.rotation.x = Math.PI; blade.scale.z = 0.3; blade.position.y = -0.1; dag.add(blade);
-  dag.add(solid([bx(0.36, 0.05, 0.09, 0x8a8e98, [0, 0.42, 0]), cy(0.035, 0.035, 0.3, 5, 0x3a2a22, [0, 0.62, 0]), ic(0.06, 0, 0xa0a4ac, [0, 0.8, 0])]));
+  // the blue dagger: the bronze sword model shrunk to a dagger, point down, with a cold glow (cone fallback)
+  const sw = C.model('Sword_Bronze');
+  if (sw) { const k = 0.55 / C.modelSize('Sword_Bronze').y; sw.scale.setScalar(k); sw.rotation.x = Math.PI; sw.position.y = 0.45; sw.traverse((m) => { if (m.isMesh) m.material = [].concat(m.material).map((x) => { const y = x.clone(); y.color.lerp(new THREE.Color(0x9ad8ff), 0.6); y.emissive = new THREE.Color(0x2060a0); return y; }); }); dag.add(sw); }
+  else {
+    const blade = new THREE.Mesh(new THREE.ConeGeometry(0.1, 1.0, 4), new THREE.MeshBasicMaterial({ color: 0xdff4ff })); blade.rotation.x = Math.PI; blade.scale.z = 0.3; blade.position.y = -0.1; dag.add(blade);
+    dag.add(solid([bx(0.36, 0.05, 0.09, 0x8a8e98, [0, 0.42, 0]), cy(0.035, 0.035, 0.3, 5, 0x3a2a22, [0, 0.62, 0]), ic(0.06, 0, 0xa0a4ac, [0, 0.8, 0])]));
+  }
   const dg = X.glow(0x40c8ff, 3.2, 0.9); dg.position.y = 0.2; dag.add(dg); g.add(dag);
   const lu = ch.lucien({ pose: 'Spell_Simple_Idle_Loop' }); lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false;
   lu.position.copy(at(-3, 3.5)); g.add(lu);
   const art = ch.arthas({ pose: 'Sword_Idle' }); art.position.copy(at(-6, 1)); g.add(art);
   const ced = ch.cedric({ pose: 'Idle_Loop' }); ced.position.copy(at(-7, -1)); g.add(ced);
-  X.anchors.neeris = ner; X.anchors.dagger = dag; X.anchors.lucienWood = lu; X.anchors.arthasWood = art; X.anchors.cedricWood = ced; X.anchors.clearing = new THREE.Object3D(); X.anchors.clearing.position.copy(at(0, 0)); g.add(X.anchors.clearing);
+  X.anchors.neeris = ner; X.anchors.dagger = new THREE.Object3D(); X.anchors.dagger.position.set(sp.x, 1.3, sp.z); g.add(X.anchors.dagger);  // fixed: the camera is baked at load, before the dagger moves X.anchors.lucienWood = lu; X.anchors.arthasWood = art; X.anchors.cedricWood = ced; X.anchors.clearing = new THREE.Object3D(); X.anchors.clearing.position.copy(at(0, 0)); g.add(X.anchors.clearing);
   // the barrier that stops Arthas's blade ("it would not land")
   const ward = X.glow(0x70c8ff, 3, 0); g.add(ward);
   const strike = L(5), stop = L(6), took = L(8), drove = L(9), calmT = L(11);

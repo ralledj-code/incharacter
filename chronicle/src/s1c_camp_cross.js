@@ -60,7 +60,8 @@ SC.push(function (X) {
   const lant = (x, z, colr) => {
     const grp = new THREE.Group(); grp.position.set(x, 0, z);
     grp.add(solid([cy(0.05, 0.06, 2.6, 5, 0x2a2a30, [0, 1.3, 0])]));
-    const b = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.3), new THREE.MeshBasicMaterial({ color: colr })); b.position.y = 2.7; grp.add(b);
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.26, 0.18), new THREE.MeshBasicMaterial({ color: colr })); b.position.y = 2.7; grp.add(b);  // the coloured flame
+    if (C.hasModel('Torch_Metal')) { const tm = C.place('Torch_Metal', [0, 2.45, 0], 0, 0.6 / C.modelSize('Torch_Metal').y); grp.add(tm); }
     const gl = X.glow(colr, 4, 0.9); gl.position.y = 2.7; grp.add(gl); rd.add(grp); return gl;
   };
   const redG = lant(-Math.sin(0.6) * 11 - 1.6, -Math.cos(0.6) * 11, 0xff3a2a), blueG = lant(Math.sin(0.6) * 11 + 1.6, -Math.cos(0.6) * 11, 0x50b8ff);
@@ -82,8 +83,8 @@ SC.push(function (X) {
       { t: L(36), pose: 'Idle_Talking_Loop', face: V(0, 4) },                                          // "kick the feelings aside, now what will you do?"
       { t: L(37, 1.5), pose: 'Spell_Simple_Idle_Loop', face: V(-2.5, -2) },                            // holds the brothers back
       { t: trackT, pose: 'Spell_Simple_Idle_Loop', face: () => rd.localToWorld(ner.position.clone()).sub(rd.position).applyAxisAngle(new THREE.Vector3(0, 1, 0), -rd.rotation.y) }]),
-    C.act(ced, [{ t: 0, face: V(0, -2) }, { t: L(37), to: V(-3.2, -1.8), move: 2.4 }, { t: L(37, 2.4), pose: 'Idle_Loop', face: V(0.6, -3.4) }]),   // "Cedric and Arthas want justice"
-    C.act(art, [{ t: 0, face: V(0, -2), pose: 'Sword_Idle' }, { t: L(37), to: V(-2.2, -3.4), move: 2.4 }, { t: L(37, 2.4), pose: 'Sword_Idle', face: V(0.6, -3.4) }])
+    C.act(ced, [{ t: 0, face: V(0, -2) }, { t: L(37), to: V(-3.8, -1.0), move: 2.4 }, { t: L(37, 2.4), pose: 'Idle_Loop', face: V(0.6, -3.4) }]),   // "Cedric and Arthas want justice"
+    C.act(art, [{ t: 0, face: V(0, -2), pose: 'Sword_Idle' }, { t: L(37), to: V(-1.8, -3.8), move: 2.4 }, { t: L(37, 2.4), pose: 'Sword_Idle', face: V(0.6, -3.4) }])
   ];
   return {
     group: g, d0: S.d0, d1: S.d1, vis: 100,

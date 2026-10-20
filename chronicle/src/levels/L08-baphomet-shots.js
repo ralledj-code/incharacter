@@ -51,7 +51,7 @@ L.shots = function (X, D) {
     { t: X.line(7, -0.2), cam: D.orbit(A.lucienWood, { r: 2.4, h: 1.5, a0: 0.2, w: 0.05, t0: X.line(7), lookH: 1.55, fov: 45 }) },      // "I stood there, spellless"
     { t: X.line(8, -0.6), cam: D.orbit(A.dagger, { r: 4, h: 0.5, a0: 0, w: 0.3, t0: X.line(8), lookH: 0.3, fov: 55 }) },                // "Neeris took my dagger"
     { t: X.line(9, -0.2), cam: D.orbit(A.neeris, { r: 2.6, h: 1.2, a0: 1.5, w: 0.16, t0: X.line(9), lookH: 0.7, fov: 52 }) },          // "drove it in"
-    { t: X.line(11, -0.2), blend: 0.6, cam: D.orbit(A.clearing, { r: 6, r1: 12, h: 3, h1: 12, a0: 2.4, w: 0.15, t0: X.line(11), lookH: 0.5, fov: 60 }) },  // "calmed the dead"
+    { t: X.line(11, -0.2), blend: 0.6, smooth: 2, cam: D.orbit(A.clearing, { r: 6, r1: 12, h: 3, h1: 12, a0: 2.4, w: 0.15, t0: X.line(11), lookH: 0.5, fov: 60 }) },  // "calmed the dead"
     // chorus: the brothers' avenue, one shot per name
     { t: 117.9, cam: D.dolly(() => X.at(X.distAt(117.9) + 2, 0, 1.2), behind(A.party_chorus, -4.5, 1.8), () => wp(A.party_chorus).add(V(0, 1.3, 0)), { fov: 62 }) },  // up the avenue to the brothers
     { t: X.line(13, -0.3), cam: D.track(A.cedric_chorus, { offset: [0.7, 1.6, 3.0], lookOffset: [0, 1.5, 0], fov: 46 }) },  // "Cedric the devout monk"

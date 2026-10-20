@@ -1225,8 +1225,9 @@ C.kit = function (X) {
   K.torches = function (list, o) {
     o = o || {};
     const g = new THREE.Group();
-    const poleGeo = merge([cy(0.05, 0.07, 2.4, 5, 0x3a2a1c, [0, 1.2, 0]), cy(0.2, 0.1, 0.22, 6, 0x2a2a30, [0, 2.45, 0])]);
+    const poleGeo = merge([cy(0.05, 0.07, 2.4, 5, 0x3a2a1c, [0, 1.2, 0])].concat(C.hasModel('Torch_Metal') ? [] : [cy(0.2, 0.1, 0.22, 6, 0x2a2a30, [0, 2.45, 0])]));
     g.add(inst(poleGeo, lamb(), list.map((p) => M([p.x, 0, p.z]))));
+    if (C.hasModel('Torch_Metal')) { const ts = C.modelSize('Torch_Metal'), k = 0.55 / ts.y; const im = C.instModel('Torch_Metal', list.map((p) => M([p.x, 2.15, p.z], [0, 0, 0], k))); if (im) g.add(im); }  // iron basket
     const flameGeo = new THREE.ConeGeometry(0.17, 0.55, 6);
     const flames = new THREE.InstancedMesh(flameGeo, new THREE.MeshBasicMaterial({ color: o.color || 0xff9a30 }), list.length);
     flames.frustumCulled = false; g.add(flames);
@@ -1834,6 +1835,7 @@ function dressBar(g, tables) {
   // behind and on the counter
   [-7.6, -6.2, -4.8, -3.4, -2.0].forEach((z, i) => put(i % 2 ? 'SmallBottles_1' : 'Bottle_1', [4.0, 1.17, z + 0.3], i));
   put('Barrel_Holder', [5.55, 1.2, -9.3], -Math.PI / 2);
+  for (let i = 0; i < 7; i++) { put('Shelf_Small_Bottles', [5.62, 1.94, -7.6 + i * 1.0], -Math.PI / 2, 0.85); put(i % 2 ? 'SmallBottles_1' : 'Bottle_1', [5.6, 2.64, -7.4 + i * 1.0], -Math.PI / 2 + i, 1.1); }
   put('Barrel', [5.4, 0, -0.2], 0.3); put('Barrel', [5.45, 0, 0.6], 1.2); put('Crate_Wooden', [5.3, 0, 1.7], 0.2);
   // the back wall (behind the player at the start): bookcases, chest, banners, weapons
   put('Bookcase_2', [-3.6, 0, 5.25], Math.PI); put('Bookcase_2', [3.6, 0, 5.25], Math.PI);
@@ -1944,13 +1946,18 @@ C.buildBar = function (X) {
   } else FP.forEach((b) => P.push(bx(b[0], b[1], b[2], stone, [b[3], b[4], b[5]])));
   P.push(cy(0.1, 0.1, 1.2, 6, 0x3a2a1c, [-5.2, 0.5, -2.8], [0, 0, Math.PI / 2]), cy(0.1, 0.1, 1.2, 6, 0x3a2a1c, [-5.2, 0.6, -2.2], [0.3, 0, Math.PI / 2]));
   // bar counter and shelves on the right
-  P.push(bx(1.3, 1.1, 7.5, wood, [4.1, 0.55, -4.7]), bx(1.5, 0.1, 7.7, dark, [4.0, 1.12, -4.7]),
-    bx(0.4, 0.08, 7, wood, [5.6, 1.9, -4.7]), bx(0.4, 0.08, 7, wood, [5.6, 2.6, -4.7]));
-  for (let i = 0; i < 18; i++) {
+  // the counter and its top in photo planks; shelves stay simple
+  const cTex = C.tex('wood_plank_wall_diff', 3, 0.5), cTop = C.tex('old_wood_floor_diff', 0.6, 3);
+  if (cTex) {
+    const box = (w, h, d, x, y, z, map, col) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ map, color: col })); m.position.set(x, y, z); g.add(m); };
+    box(1.3, 1.1, 7.5, 4.1, 0.55, -4.7, cTex, 0x8a6a50); box(1.5, 0.1, 7.7, 4.0, 1.12, -4.7, cTop, 0x6a5040);
+  } else P.push(bx(1.3, 1.1, 7.5, wood, [4.1, 0.55, -4.7]), bx(1.5, 0.1, 7.7, dark, [4.0, 1.12, -4.7]));
+  P.push(bx(0.4, 0.08, 7, wood, [5.6, 1.9, -4.7]), bx(0.4, 0.08, 7, wood, [5.6, 2.6, -4.7]));
+  if (!HAS) for (let i = 0; i < 18; i++) {
     const col = [0x8a5a1a, 0x2a5a3a, 0x5a3a22, 0x7a2a2a][i % 4];
     P.push(cy(0.07, 0.08, 0.34, 6, col, [5.55, 2.1, -7.9 + i * 0.4]), cy(0.07, 0.08, 0.34, 6, col, [5.55, 2.8, -7.9 + i * 0.4 + 0.1]));
   }
-  for (let i = 0; i < 6; i++) P.push(cy(0.09, 0.08, 0.16, 7, 0x9a9aa0, [3.95, 1.25, -7.4 + i * 1.15]));
+  if (!HAS) for (let i = 0; i < 6; i++) P.push(cy(0.09, 0.08, 0.16, 7, 0x9a9aa0, [3.95, 1.25, -7.4 + i * 1.15]));
   // stools, one knocked over
   if (!HAS) [-7.2, -5.9, -4.6, -2.0].forEach((z) => P.push(cy(0.22, 0.22, 0.07, 8, wood, [2.7, 0.72, z]), cy(0.04, 0.05, 0.7, 5, dark, [2.7, 0.36, z])));
   if (!HAS) P.push(cy(0.22, 0.22, 0.07, 8, wood, [2.4, 0.2, -3.3], [0, 0, Math.PI / 2]), cy(0.04, 0.05, 0.7, 5, dark, [2.75, 0.2, -3.3], [0, 0, Math.PI / 2]));
@@ -1973,7 +1980,9 @@ C.buildBar = function (X) {
   const lanternPos = [[-2.5, 3.1, -2], [2.2, 3.1, -6.5], [0, 3.1, 1.5]];
   const lm = new THREE.MeshBasicMaterial({ color: 0xffc880 });
   lanternPos.forEach((p) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.36, 0.28), lm); m.position.set(p[0], p[1], p[2]); g.add(m);
+    const ch = C.place('Chandelier', [p[0], p[1] - 0.4, p[2]], 0, 0.9);  // candle chandeliers (model) instead of box lanterns
+    if (ch) g.add(ch);
+    else { const m = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.36, 0.28), lm); m.position.set(p[0], p[1], p[2]); g.add(m); }
     const s = X.glow(0xffb060, 3.2, 0.7); s.position.set(p[0], p[1], p[2]); g.add(s);
     g.add(solid([cy(0.01, 0.01, 1.0, 4, 0x222222, [p[0], p[1] + 0.7, p[2]])]));
   });
@@ -2112,11 +2121,11 @@ function tex(canvas) { const t = new THREE.CanvasTexture(canvas); t.anisotropy =
 /* ---------- the lectern and the book ---------- */
 C.buildBook = function (X) {
   const g = new THREE.Group();
-  const lec = solid([
-    bx(0.7, 0.07, 0.5, 0x3a2618, [0, 0.95, 0], [0.5, 0, 0]), bx(0.1, 0.95, 0.1, 0x2c1e14, [0, 0.47, 0.05]),
-    bx(0.5, 0.06, 0.4, 0x2c1e14, [0, 0.03, 0.05]), bx(0.74, 0.06, 0.06, 0x2c1e14, [0, 0.87, -0.17])
-  ]);
-  g.add(lec);
+  const STAND = C.hasModel && C.hasModel('BookStand');
+  const lec = solid([bx(0.7, 0.07, 0.5, 0x3a2618, [0, 0.95, 0], [0.5, 0, 0]), bx(0.74, 0.06, 0.06, 0x2c1e14, [0, 0.87, -0.17])].concat(STAND ? [] : [
+    bx(0.1, 0.95, 0.1, 0x2c1e14, [0, 0.47, 0.05]), bx(0.5, 0.06, 0.4, 0x2c1e14, [0, 0.03, 0.05])]));
+  if (C.hasModel('BookStand')) { const bs = C.place('BookStand', [0, 0, 0.05], Math.PI, 0.92 / C.modelSize('BookStand').y); g.add(bs); lec.geometry = lec.geometry.clone(); lec.visible = true; lec.scale.set(1, 1, 1); }
+  g.add(lec);  // the slanted desk stays (the book rests on it); the stand under it is the BookStand model
   g.position.set(X.STAND.x, 0, X.STAND.z - 1.15);  // Lucien's music stand, in front of the stage
 
   const book = new THREE.Group();     // lies on the lectern desk, tilted toward the reader
@@ -2228,9 +2237,18 @@ SC.push(function (X) {
   g.add(kit.trees(S.d0 - 15, S.d1 + 15, { minSide: 8, maxSide: 38, dens: 0.8, deadP: 0.5, tint: 0x8fa0b8 }));
   const well = new THREE.Group(); well.position.set(wp.x, 0, wp.z); g.add(well);
   const P = [];
-  for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; P.push(bx(1.0, 1.15, 0.7, 0x70747c, [Math.cos(a) * 2.0, 0.57, Math.sin(a) * 2.0], [0, -a + Math.PI / 2, 0])); }
-  for (let i = 0; i < 6; i++) { const a = i / 6 * TAU + 0.3; P.push(bx(1.3, 5.2, 1.3, 0x5c6068, [Math.cos(a) * 11, 2.6, Math.sin(a) * 11], [0, R(0, 1), 0.04])); }
-  well.add(solid(P));
+  // rim: 12 blocks of photo stone; the standing stones are real rocks stretched into monoliths (procedural boxes as fallback)
+  const rimTex = C.tex('rustic_stone_wall_diff', 1, 1);
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * TAU, m = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.15, 0.7), rimTex ? new THREE.MeshLambertMaterial({ map: rimTex, color: 0x9a9690 }) : new THREE.MeshLambertMaterial({ color: 0x70747c }));
+    m.position.set(Math.cos(a) * 2.0, 0.57, Math.sin(a) * 2.0); m.rotation.y = -a + Math.PI / 2; well.add(m);
+  }
+  for (let i = 0; i < 6; i++) {
+    const a = i / 6 * TAU + 0.3, key = 'Rock_Medium_' + (1 + i % 3), sz = C.modelSize(key);
+    if (sz) { const r = C.place(key, [Math.cos(a) * 11, -0.2, Math.sin(a) * 11], R(0, 6), 1); r.scale.set(1.5 / sz.x, 5.6 / sz.y, 1.4 / sz.z); r.rotation.z = R(-0.05, 0.05); well.add(r); }
+    else P.push(bx(1.3, 5.2, 1.3, 0x5c6068, [Math.cos(a) * 11, 2.6, Math.sin(a) * 11], [0, R(0, 1), 0.04]));
+  }
+  if (P.length) well.add(solid(P));
   const disc = new THREE.Mesh(new THREE.CircleGeometry(1.75, 24), new THREE.MeshBasicMaterial({ color: 0x7aa8ff }));
   disc.rotation.x = -Math.PI / 2; disc.position.y = 0.95; well.add(disc);
   const col = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.8, 60, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0x7aa8ff, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
@@ -2390,16 +2408,23 @@ SC.push(function (X) {
   const L = X.line, dn = S1.d0 + S1.len * 0.55, yaw = X.yawAt(dn), at = (along, side) => X.at(dn + along, side, 0);
   const np = at(0, -4), ner = ch.neeris({ pose: 'Crouch_Idle_Loop' }); ner.position.copy(np); g.add(ner);
   const sp = at(3, 1.5);
-  const slab = solid([bx(1.5, 0.5, 1.0, 0x6a6e76, [0, 0.25, 0])]); slab.position.copy(sp); slab.rotation.y = yaw; g.add(slab);
+  const slabSz = C.modelSize('Rock_Medium_2'), slab = slabSz ? C.place('Rock_Medium_2', [sp.x, -0.05, sp.z], yaw, 1) : solid([bx(1.5, 0.5, 1.0, 0x6a6e76, [0, 0.25, 0])]);
+  if (slabSz) slab.scale.set(1.8 / slabSz.x, 0.6 / slabSz.y, 1.2 / slabSz.z); else { slab.position.copy(sp); slab.rotation.y = yaw; }
+  g.add(slab);  // a flat rock altar
   const dag = new THREE.Group();
-  const blade = new THREE.Mesh(new THREE.ConeGeometry(0.1, 1.0, 4), new THREE.MeshBasicMaterial({ color: 0xdff4ff })); blade.rotation.x = Math.PI; blade.scale.z = 0.3; blade.position.y = -0.1; dag.add(blade);
-  dag.add(solid([bx(0.36, 0.05, 0.09, 0x8a8e98, [0, 0.42, 0]), cy(0.035, 0.035, 0.3, 5, 0x3a2a22, [0, 0.62, 0]), ic(0.06, 0, 0xa0a4ac, [0, 0.8, 0])]));
+  // the blue dagger: the bronze sword model shrunk to a dagger, point down, with a cold glow (cone fallback)
+  const sw = C.model('Sword_Bronze');
+  if (sw) { const k = 0.55 / C.modelSize('Sword_Bronze').y; sw.scale.setScalar(k); sw.rotation.x = Math.PI; sw.position.y = 0.45; sw.traverse((m) => { if (m.isMesh) m.material = [].concat(m.material).map((x) => { const y = x.clone(); y.color.lerp(new THREE.Color(0x9ad8ff), 0.6); y.emissive = new THREE.Color(0x2060a0); return y; }); }); dag.add(sw); }
+  else {
+    const blade = new THREE.Mesh(new THREE.ConeGeometry(0.1, 1.0, 4), new THREE.MeshBasicMaterial({ color: 0xdff4ff })); blade.rotation.x = Math.PI; blade.scale.z = 0.3; blade.position.y = -0.1; dag.add(blade);
+    dag.add(solid([bx(0.36, 0.05, 0.09, 0x8a8e98, [0, 0.42, 0]), cy(0.035, 0.035, 0.3, 5, 0x3a2a22, [0, 0.62, 0]), ic(0.06, 0, 0xa0a4ac, [0, 0.8, 0])]));
+  }
   const dg = X.glow(0x40c8ff, 3.2, 0.9); dg.position.y = 0.2; dag.add(dg); g.add(dag);
   const lu = ch.lucien({ pose: 'Spell_Simple_Idle_Loop' }); lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false;
   lu.position.copy(at(-3, 3.5)); g.add(lu);
   const art = ch.arthas({ pose: 'Sword_Idle' }); art.position.copy(at(-6, 1)); g.add(art);
   const ced = ch.cedric({ pose: 'Idle_Loop' }); ced.position.copy(at(-7, -1)); g.add(ced);
-  X.anchors.neeris = ner; X.anchors.dagger = dag; X.anchors.lucienWood = lu; X.anchors.arthasWood = art; X.anchors.cedricWood = ced; X.anchors.clearing = new THREE.Object3D(); X.anchors.clearing.position.copy(at(0, 0)); g.add(X.anchors.clearing);
+  X.anchors.neeris = ner; X.anchors.dagger = new THREE.Object3D(); X.anchors.dagger.position.set(sp.x, 1.3, sp.z); g.add(X.anchors.dagger);  // fixed: the camera is baked at load, before the dagger moves X.anchors.lucienWood = lu; X.anchors.arthasWood = art; X.anchors.cedricWood = ced; X.anchors.clearing = new THREE.Object3D(); X.anchors.clearing.position.copy(at(0, 0)); g.add(X.anchors.clearing);
   // the barrier that stops Arthas's blade ("it would not land")
   const ward = X.glow(0x70c8ff, 3, 0); g.add(ward);
   const strike = L(5), stop = L(6), took = L(8), drove = L(9), calmT = L(11);
@@ -2794,7 +2819,8 @@ SC.push(function (X) {
   const lant = (x, z, colr) => {
     const grp = new THREE.Group(); grp.position.set(x, 0, z);
     grp.add(solid([cy(0.05, 0.06, 2.6, 5, 0x2a2a30, [0, 1.3, 0])]));
-    const b = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.3), new THREE.MeshBasicMaterial({ color: colr })); b.position.y = 2.7; grp.add(b);
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.26, 0.18), new THREE.MeshBasicMaterial({ color: colr })); b.position.y = 2.7; grp.add(b);  // the coloured flame
+    if (C.hasModel('Torch_Metal')) { const tm = C.place('Torch_Metal', [0, 2.45, 0], 0, 0.6 / C.modelSize('Torch_Metal').y); grp.add(tm); }
     const gl = X.glow(colr, 4, 0.9); gl.position.y = 2.7; grp.add(gl); rd.add(grp); return gl;
   };
   const redG = lant(-Math.sin(0.6) * 11 - 1.6, -Math.cos(0.6) * 11, 0xff3a2a), blueG = lant(Math.sin(0.6) * 11 + 1.6, -Math.cos(0.6) * 11, 0x50b8ff);
@@ -2816,8 +2842,8 @@ SC.push(function (X) {
       { t: L(36), pose: 'Idle_Talking_Loop', face: V(0, 4) },                                          // "kick the feelings aside, now what will you do?"
       { t: L(37, 1.5), pose: 'Spell_Simple_Idle_Loop', face: V(-2.5, -2) },                            // holds the brothers back
       { t: trackT, pose: 'Spell_Simple_Idle_Loop', face: () => rd.localToWorld(ner.position.clone()).sub(rd.position).applyAxisAngle(new THREE.Vector3(0, 1, 0), -rd.rotation.y) }]),
-    C.act(ced, [{ t: 0, face: V(0, -2) }, { t: L(37), to: V(-3.2, -1.8), move: 2.4 }, { t: L(37, 2.4), pose: 'Idle_Loop', face: V(0.6, -3.4) }]),   // "Cedric and Arthas want justice"
-    C.act(art, [{ t: 0, face: V(0, -2), pose: 'Sword_Idle' }, { t: L(37), to: V(-2.2, -3.4), move: 2.4 }, { t: L(37, 2.4), pose: 'Sword_Idle', face: V(0.6, -3.4) }])
+    C.act(ced, [{ t: 0, face: V(0, -2) }, { t: L(37), to: V(-3.8, -1.0), move: 2.4 }, { t: L(37, 2.4), pose: 'Idle_Loop', face: V(0.6, -3.4) }]),   // "Cedric and Arthas want justice"
+    C.act(art, [{ t: 0, face: V(0, -2), pose: 'Sword_Idle' }, { t: L(37), to: V(-1.8, -3.8), move: 2.4 }, { t: L(37, 2.4), pose: 'Sword_Idle', face: V(0.6, -3.4) }])
   ];
   return {
     group: g, d0: S.d0, d1: S.d1, vis: 100,
@@ -3000,9 +3026,11 @@ SC.push(function (X) {
   const iron = 0x2a2c32, P = [];
   for (let i = 0; i <= 16; i++) P.push(cy(0.04, 0.04, H, 6, iron, [-HW + i * (HW * 2 / 16), H / 2, -L / 2]));
   [0.25, 1.8, 3.3].forEach((y) => P.push(bx(HW * 2, 0.1, 0.1, iron, [0, y, -L / 2])));
-  P.push(cy(0.2, 0.17, 0.35, 8, 0x3a3a40, [1.6, 0.18, L / 2 - 2.5]), bx(0.4, 0.4, 0.4, 0x4a3222, [1.4, 0.2, L / 2 - 3.1]));
+  const pb = C.place('Bucket_Wooden_1', [1.6, 0, L / 2 - 2.5], 0.4, 1), pst = C.place('Stool', [1.4, 0, L / 2 - 3.1], 0.2, 0.8);
+  if (pb) G.add(pb); if (pst) G.add(pst);
+  if (!pb) P.push(cy(0.2, 0.17, 0.35, 8, 0x3a3a40, [1.6, 0.18, L / 2 - 2.5]), bx(0.4, 0.4, 0.4, 0x4a3222, [1.4, 0.2, L / 2 - 3.1]));
   for (let i = 0; i < 12; i++) P.push(bx(R(0.4, 0.9), 0.08, R(0.2, 0.5), 0xa89050, [-1.7 + R(-0.4, 0.4), 0.05 + 0.02 * (i % 3), L / 2 - 2.2 + R(-0.7, 0.7)], [0, R(0, 3), 0]));
-  P.push(cy(0.03, 0.03, 0.14, 5, 0xe8e0c0, [1.4, 0.47, L / 2 - 3.1]));
+  P.push(cy(0.03, 0.03, 0.14, 5, 0xe8e0c0, [1.4, pst ? 0.5 : 0.47, L / 2 - 3.1]));  // the candle on the stool
   const wb = []; for (let i = -1; i <= 1; i++) wb.push(cy(0.03, 0.03, 0.9, 5, iron, [HW - 0.05, 2.4, -2 + i * 0.28]));
   G.add(solid(P.concat(wb)));
   const win = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.9), new THREE.MeshBasicMaterial({ color: 0x5a7aa8 })); win.position.set(HW - 0.02, 2.4, -2); win.rotation.y = -Math.PI / 2; G.add(win);
@@ -3137,7 +3165,7 @@ L.shots = function (X, D) {
     { t: X.line(7, -0.2), cam: D.orbit(A.lucienWood, { r: 2.4, h: 1.5, a0: 0.2, w: 0.05, t0: X.line(7), lookH: 1.55, fov: 45 }) },      // "I stood there, spellless"
     { t: X.line(8, -0.6), cam: D.orbit(A.dagger, { r: 4, h: 0.5, a0: 0, w: 0.3, t0: X.line(8), lookH: 0.3, fov: 55 }) },                // "Neeris took my dagger"
     { t: X.line(9, -0.2), cam: D.orbit(A.neeris, { r: 2.6, h: 1.2, a0: 1.5, w: 0.16, t0: X.line(9), lookH: 0.7, fov: 52 }) },          // "drove it in"
-    { t: X.line(11, -0.2), blend: 0.6, cam: D.orbit(A.clearing, { r: 6, r1: 12, h: 3, h1: 12, a0: 2.4, w: 0.15, t0: X.line(11), lookH: 0.5, fov: 60 }) },  // "calmed the dead"
+    { t: X.line(11, -0.2), blend: 0.6, smooth: 2, cam: D.orbit(A.clearing, { r: 6, r1: 12, h: 3, h1: 12, a0: 2.4, w: 0.15, t0: X.line(11), lookH: 0.5, fov: 60 }) },  // "calmed the dead"
     // chorus: the brothers' avenue, one shot per name
     { t: 117.9, cam: D.dolly(() => X.at(X.distAt(117.9) + 2, 0, 1.2), behind(A.party_chorus, -4.5, 1.8), () => wp(A.party_chorus).add(V(0, 1.3, 0)), { fov: 62 }) },  // up the avenue to the brothers
     { t: X.line(13, -0.3), cam: D.track(A.cedric_chorus, { offset: [0.7, 1.6, 3.0], lookOffset: [0, 1.5, 0], fov: 46 }) },  // "Cedric the devout monk"

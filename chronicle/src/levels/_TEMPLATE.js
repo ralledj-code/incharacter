@@ -33,16 +33,23 @@ const KEYS = [
 /* Scenes: one builder per story beat, placed by section (X.sec[id] = { t0, t1, d0, d1, len, mid } in path metres).
    X.at(d, side, h) = point on/next to the path, X.yawAt(d) = heading. Publish what the camera films in X.anchors.
    Kit: kit.trees / kit.village / kit.torches / kit.fire / C.place / C.instModel; people ch.lucien / cedric / arthas / neeris / person / wraith;
-   creatures C.creature('demon'|'dragon'|'wolf'|'bat', { h, tint, eyes, clip }) -> push to X.anims. See LEVELS.md tables.
+   creatures C.creature('wolf'|'wyrm'|'bat', { h, tint, eyes, clip }); move them with C.act (see LEVELS.md). Villains: ch.baphomet / ch.wraith.
    Return { group, d0, d1, vis, update(t, ctx) }; ctx.light(slot 0|1, x, y, z, color, intensity, dist) per frame. */
 const SCENES = [
   function opening(X) {
     const S = X.sec.v1, kit = C.kit(X), ch = C.chars(X), g = new THREE.Group();
     g.add(kit.trees(S.d0 - 10, S.d1 + 10, { minSide: 8, maxSide: 36, dens: 1.0, deadP: 0.2 }));
-    const lu = ch.lucien({ pose: 'Walk_Loop' }), p = X.at(S.mid, 4, 0);
-    lu.position.copy(p); lu.rotation.y = X.yawAt(S.mid); g.add(lu);
+    // everything that moves is an actor: beats on lyric lines, paths along the rail, facing and gait automatic
+    const lu = ch.lucien({ pose: 'Idle_Loop' }), path = [];
+    for (let d = S.d0 - 4; d < S.mid; d += 3) path.push(X.at(d, 4, 0));
+    path.push(X.at(S.mid, 4, 0)); lu.position.copy(path[0]); g.add(lu);
+    const act = C.act(lu, [
+      { t: S.t0 - 2, to: path, by: X.line(0) },                          // walks in as the verse starts
+      { t: X.line(0), pose: 'Spell_Simple_Idle_Loop', face: X.at(S.mid - 10, 0, 0) },   // first line: casts toward the camera
+      { t: X.line(1), pose: 'Idle_Talking_Loop' }
+    ]);
     X.anchors.lucien = lu;
-    return { group: g, d0: S.d0, d1: S.d1, vis: 100, update(t, ctx) { } };
+    return { group: g, d0: S.d0, d1: S.d1, vis: 100, update(t, ctx) { act.update(t, ctx); } };
   }
 ];
 

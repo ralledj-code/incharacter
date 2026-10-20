@@ -19,6 +19,7 @@ function dressBar(g, tables) {
   // behind and on the counter
   [-7.6, -6.2, -4.8, -3.4, -2.0].forEach((z, i) => put(i % 2 ? 'SmallBottles_1' : 'Bottle_1', [4.0, 1.17, z + 0.3], i));
   put('Barrel_Holder', [5.55, 1.2, -9.3], -Math.PI / 2);
+  for (let i = 0; i < 7; i++) { put('Shelf_Small_Bottles', [5.62, 1.94, -7.6 + i * 1.0], -Math.PI / 2, 0.85); put(i % 2 ? 'SmallBottles_1' : 'Bottle_1', [5.6, 2.64, -7.4 + i * 1.0], -Math.PI / 2 + i, 1.1); }
   put('Barrel', [5.4, 0, -0.2], 0.3); put('Barrel', [5.45, 0, 0.6], 1.2); put('Crate_Wooden', [5.3, 0, 1.7], 0.2);
   // the back wall (behind the player at the start): bookcases, chest, banners, weapons
   put('Bookcase_2', [-3.6, 0, 5.25], Math.PI); put('Bookcase_2', [3.6, 0, 5.25], Math.PI);
@@ -129,13 +130,18 @@ C.buildBar = function (X) {
   } else FP.forEach((b) => P.push(bx(b[0], b[1], b[2], stone, [b[3], b[4], b[5]])));
   P.push(cy(0.1, 0.1, 1.2, 6, 0x3a2a1c, [-5.2, 0.5, -2.8], [0, 0, Math.PI / 2]), cy(0.1, 0.1, 1.2, 6, 0x3a2a1c, [-5.2, 0.6, -2.2], [0.3, 0, Math.PI / 2]));
   // bar counter and shelves on the right
-  P.push(bx(1.3, 1.1, 7.5, wood, [4.1, 0.55, -4.7]), bx(1.5, 0.1, 7.7, dark, [4.0, 1.12, -4.7]),
-    bx(0.4, 0.08, 7, wood, [5.6, 1.9, -4.7]), bx(0.4, 0.08, 7, wood, [5.6, 2.6, -4.7]));
-  for (let i = 0; i < 18; i++) {
+  // the counter and its top in photo planks; shelves stay simple
+  const cTex = C.tex('wood_plank_wall_diff', 3, 0.5), cTop = C.tex('old_wood_floor_diff', 0.6, 3);
+  if (cTex) {
+    const box = (w, h, d, x, y, z, map, col) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ map, color: col })); m.position.set(x, y, z); g.add(m); };
+    box(1.3, 1.1, 7.5, 4.1, 0.55, -4.7, cTex, 0x8a6a50); box(1.5, 0.1, 7.7, 4.0, 1.12, -4.7, cTop, 0x6a5040);
+  } else P.push(bx(1.3, 1.1, 7.5, wood, [4.1, 0.55, -4.7]), bx(1.5, 0.1, 7.7, dark, [4.0, 1.12, -4.7]));
+  P.push(bx(0.4, 0.08, 7, wood, [5.6, 1.9, -4.7]), bx(0.4, 0.08, 7, wood, [5.6, 2.6, -4.7]));
+  if (!HAS) for (let i = 0; i < 18; i++) {
     const col = [0x8a5a1a, 0x2a5a3a, 0x5a3a22, 0x7a2a2a][i % 4];
     P.push(cy(0.07, 0.08, 0.34, 6, col, [5.55, 2.1, -7.9 + i * 0.4]), cy(0.07, 0.08, 0.34, 6, col, [5.55, 2.8, -7.9 + i * 0.4 + 0.1]));
   }
-  for (let i = 0; i < 6; i++) P.push(cy(0.09, 0.08, 0.16, 7, 0x9a9aa0, [3.95, 1.25, -7.4 + i * 1.15]));
+  if (!HAS) for (let i = 0; i < 6; i++) P.push(cy(0.09, 0.08, 0.16, 7, 0x9a9aa0, [3.95, 1.25, -7.4 + i * 1.15]));
   // stools, one knocked over
   if (!HAS) [-7.2, -5.9, -4.6, -2.0].forEach((z) => P.push(cy(0.22, 0.22, 0.07, 8, wood, [2.7, 0.72, z]), cy(0.04, 0.05, 0.7, 5, dark, [2.7, 0.36, z])));
   if (!HAS) P.push(cy(0.22, 0.22, 0.07, 8, wood, [2.4, 0.2, -3.3], [0, 0, Math.PI / 2]), cy(0.04, 0.05, 0.7, 5, dark, [2.75, 0.2, -3.3], [0, 0, Math.PI / 2]));
@@ -158,7 +164,9 @@ C.buildBar = function (X) {
   const lanternPos = [[-2.5, 3.1, -2], [2.2, 3.1, -6.5], [0, 3.1, 1.5]];
   const lm = new THREE.MeshBasicMaterial({ color: 0xffc880 });
   lanternPos.forEach((p) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.36, 0.28), lm); m.position.set(p[0], p[1], p[2]); g.add(m);
+    const ch = C.place('Chandelier', [p[0], p[1] - 0.4, p[2]], 0, 0.9);  // candle chandeliers (model) instead of box lanterns
+    if (ch) g.add(ch);
+    else { const m = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.36, 0.28), lm); m.position.set(p[0], p[1], p[2]); g.add(m); }
     const s = X.glow(0xffb060, 3.2, 0.7); s.position.set(p[0], p[1], p[2]); g.add(s);
     g.add(solid([cy(0.01, 0.01, 1.0, 4, 0x222222, [p[0], p[1] + 0.7, p[2]])]));
   });

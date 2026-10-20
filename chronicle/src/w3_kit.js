@@ -77,8 +77,9 @@ C.kit = function (X) {
   K.torches = function (list, o) {
     o = o || {};
     const g = new THREE.Group();
-    const poleGeo = merge([cy(0.05, 0.07, 2.4, 5, 0x3a2a1c, [0, 1.2, 0]), cy(0.2, 0.1, 0.22, 6, 0x2a2a30, [0, 2.45, 0])]);
+    const poleGeo = merge([cy(0.05, 0.07, 2.4, 5, 0x3a2a1c, [0, 1.2, 0])].concat(C.hasModel('Torch_Metal') ? [] : [cy(0.2, 0.1, 0.22, 6, 0x2a2a30, [0, 2.45, 0])]));
     g.add(inst(poleGeo, lamb(), list.map((p) => M([p.x, 0, p.z]))));
+    if (C.hasModel('Torch_Metal')) { const ts = C.modelSize('Torch_Metal'), k = 0.55 / ts.y; const im = C.instModel('Torch_Metal', list.map((p) => M([p.x, 2.15, p.z], [0, 0, 0], k))); if (im) g.add(im); }  // iron basket
     const flameGeo = new THREE.ConeGeometry(0.17, 0.55, 6);
     const flames = new THREE.InstancedMesh(flameGeo, new THREE.MeshBasicMaterial({ color: o.color || 0xff9a30 }), list.length);
     flames.frustumCulled = false; g.add(flames);

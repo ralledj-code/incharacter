@@ -164,9 +164,11 @@ SC.push(function (X) {
   const iron = 0x2a2c32, P = [];
   for (let i = 0; i <= 16; i++) P.push(cy(0.04, 0.04, H, 6, iron, [-HW + i * (HW * 2 / 16), H / 2, -L / 2]));
   [0.25, 1.8, 3.3].forEach((y) => P.push(bx(HW * 2, 0.1, 0.1, iron, [0, y, -L / 2])));
-  P.push(cy(0.2, 0.17, 0.35, 8, 0x3a3a40, [1.6, 0.18, L / 2 - 2.5]), bx(0.4, 0.4, 0.4, 0x4a3222, [1.4, 0.2, L / 2 - 3.1]));
+  const pb = C.place('Bucket_Wooden_1', [1.6, 0, L / 2 - 2.5], 0.4, 1), pst = C.place('Stool', [1.4, 0, L / 2 - 3.1], 0.2, 0.8);
+  if (pb) G.add(pb); if (pst) G.add(pst);
+  if (!pb) P.push(cy(0.2, 0.17, 0.35, 8, 0x3a3a40, [1.6, 0.18, L / 2 - 2.5]), bx(0.4, 0.4, 0.4, 0x4a3222, [1.4, 0.2, L / 2 - 3.1]));
   for (let i = 0; i < 12; i++) P.push(bx(R(0.4, 0.9), 0.08, R(0.2, 0.5), 0xa89050, [-1.7 + R(-0.4, 0.4), 0.05 + 0.02 * (i % 3), L / 2 - 2.2 + R(-0.7, 0.7)], [0, R(0, 3), 0]));
-  P.push(cy(0.03, 0.03, 0.14, 5, 0xe8e0c0, [1.4, 0.47, L / 2 - 3.1]));
+  P.push(cy(0.03, 0.03, 0.14, 5, 0xe8e0c0, [1.4, pst ? 0.5 : 0.47, L / 2 - 3.1]));  // the candle on the stool
   const wb = []; for (let i = -1; i <= 1; i++) wb.push(cy(0.03, 0.03, 0.9, 5, iron, [HW - 0.05, 2.4, -2 + i * 0.28]));
   G.add(solid(P.concat(wb)));
   const win = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.9), new THREE.MeshBasicMaterial({ color: 0x5a7aa8 })); win.position.set(HW - 0.02, 2.4, -2); win.rotation.y = -Math.PI / 2; G.add(win);

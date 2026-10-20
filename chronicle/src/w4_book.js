@@ -67,11 +67,11 @@ function tex(canvas) { const t = new THREE.CanvasTexture(canvas); t.anisotropy =
 /* ---------- the lectern and the book ---------- */
 C.buildBook = function (X) {
   const g = new THREE.Group();
-  const lec = solid([
-    bx(0.7, 0.07, 0.5, 0x3a2618, [0, 0.95, 0], [0.5, 0, 0]), bx(0.1, 0.95, 0.1, 0x2c1e14, [0, 0.47, 0.05]),
-    bx(0.5, 0.06, 0.4, 0x2c1e14, [0, 0.03, 0.05]), bx(0.74, 0.06, 0.06, 0x2c1e14, [0, 0.87, -0.17])
-  ]);
-  g.add(lec);
+  const STAND = C.hasModel && C.hasModel('BookStand');
+  const lec = solid([bx(0.7, 0.07, 0.5, 0x3a2618, [0, 0.95, 0], [0.5, 0, 0]), bx(0.74, 0.06, 0.06, 0x2c1e14, [0, 0.87, -0.17])].concat(STAND ? [] : [
+    bx(0.1, 0.95, 0.1, 0x2c1e14, [0, 0.47, 0.05]), bx(0.5, 0.06, 0.4, 0x2c1e14, [0, 0.03, 0.05])]));
+  if (C.hasModel('BookStand')) { const bs = C.place('BookStand', [0, 0, 0.05], Math.PI, 0.92 / C.modelSize('BookStand').y); g.add(bs); lec.geometry = lec.geometry.clone(); lec.visible = true; lec.scale.set(1, 1, 1); }
+  g.add(lec);  // the slanted desk stays (the book rests on it); the stand under it is the BookStand model
   g.position.set(X.STAND.x, 0, X.STAND.z - 1.15);  // Lucien's music stand, in front of the stage
 
   const book = new THREE.Group();     // lies on the lectern desk, tilted toward the reader

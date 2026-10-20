@@ -69,11 +69,18 @@ Big crowds: `C.bakeRig(ch.person({ bake: true, seed }), clip, time)` → `C.inst
 ### Make what is sung happen (most important)
 Every lyric line should show its action. Tools:
 - `X.line(k, dt)` = start time of lyric line k (0-based over the whole song) + dt. Use it for every story event and every cut.
-- `C.act(obj, [{ t, pose, to, move, face, y, s, show, fn }])` (w3c_action.js): a character's beats on song time. `to` walks/runs there (pose picked from speed unless given), `face` turns to a point/object/angle, `show` hides/shows, `fn(u, t)` for custom effects. Build the list in the scene, call `.update(t, ctx)` from the scene's `update`.
-- Cut the camera on the lines too: one shot per line or two (`{ t: X.line(k, -0.2), cam: ... }`), framed on whoever the line is about.
-- Level 8 is the reference: the well (Arthas kneels on "bled his hand", Baphomet rises on "chains broke", wings spread on "the demon spoke"), the wood (the blade stops on "would not land"), the choruses (each brother steps forward on his name), the wyrm (rises, dives, flees, waits in the crater), the camp, the crossroads, the feast, the gaol.
+- **Everything that moves is an actor** (`C.act(obj, beats, opts)`, w3c_action.js). Never set a moving character's position or rotation by hand in `update`: the motion check flags that as an "unmanaged mover" (its feet slide).
+  - beats: `{ t, to, move | by | speed, pose, face, back, air, y, s, show, fn }`. `to` is a point, an Object3D, or an array of points (a path; build paths along the rail with `X.at(d, side)` every 3 m and always end on the exact target).
+  - Facing comes from movement automatically (models face +z); `face` is for standing still. `back: true` = stagger/step backwards (keeps facing). `air: true` + `y: u => ...` = a jump arc (u = 0..1 over the move).
+  - Walk/jog/sprint is chosen from the real speed and played at the measured stride rate; stay under ~5 m/s for people (sprint 2.7 m/s × 2). Pose changes crossfade automatically.
+  - Creatures: `{ gait: [['Walk', 0.69], ['Gallop', 2.57]], idle: 'Idle' }` (wolf strides per metre of height; measure new ones with `tools/clipspeeds.cjs`). Flyers: `{ fly: true, gait: [['Flying', 1]], stance: { clip, at } }`: the path is smoothed into a glide, pitch and bank come from it.
+  - Groups (several people walking as one): `C.act(group, beats, { rigs: [a, b, c] })`.
+  - Scenes call `actor.update(t, ctx)` in their update (the engine also does it).
+- Things that move by formula but must be filmed (a rising spirit) get `obj.userData.posAt = (t) => Vector3` so the baked camera can find them. Static anchors for anything that only moves in a scene's update (the camera is baked at load).
+- Cut the camera on the lines too: one shot per line or two (`{ t: X.line(k, -0.2), cam: ... }`), framed on whoever the line is about. Close-ups on a walking character: `D.track(actor, { offset: [side, up, front], lookOffset })`, front-on so nobody blocks. `smooth: 1.5..2.5` on a shot softens the follow for fast or turning subjects.
+- The camera is baked at load with a damped spring per shot (no jitter, no kicks/shake). Cuts are instant, `blend` eases.
+- Level 8 is the reference: the well (Arthas kneels on "bled his hand", Baphomet rises on "chains broke", wings spread on "the demon spoke"), the wood (the blade stops on "would not land"), the choruses (the brothers walk toward the camera, each steps forward on his name), the wyrm (rises, dives, flees, waits in the crater), the camp, the crossroads, the feast, the gaol.
 - Scenes can set `t0`/`t1` (song-time window) instead of path-distance visibility when they overlap other places (e.g. the gaol inside the street).
-- No camera kicks or shake: Rasmus found them jittery. Keep moves smooth; cut instead.
 
 ### Creatures (`C.creature(key, { h, tint, eyes, clip })`, pack `beasts`)
 | key | clips |
@@ -111,6 +118,9 @@ Then render screenshots (scripts from previous sessions live in the scratchpad; 
 - Before rendering a level: `await __cw.loadPacks(story.packs)`, `W.loadStory(story)`, then `__alaron.dev.hold = { mode: 'ride', t, dt: 0.016, time: t, player: {x:0,z:0,yaw:0,pitch:0}, look: {yaw:0,pitch:0} }`.
 - Shoot every ~6–8 s of the song plus every section start; build a contact sheet (sharp) and look at all of it. Fix: camera inside geometry, empty frames (target out of shot), blown-out light, characters clipping props, models facing the wrong way (models face +z; turn with `lookAt`).
 - `node tools/clipcheck.cjs 0.5 0.3`: lists every moment the camera touches geometry (raycasts). Must end with "no camera clipping".
+- `node tools/motioncheck.cjs`: backwards/sideways walking, too fast for the gait (sliding), snap turns, feet in/above ground, actors overlapping, unmanaged movers, camera jolts. Fix everything except a few marginal "too-fast" at the limit.
+- `node tools/strip.cjs <out.png> <t0> <seconds> 12 --debug`: a film strip of consecutive frames with arrows (green = facing, red = movement). Use it on every action beat: stills can't show motion.
+- `PY=<venv python> CRF=27 node tools/video.cjs <out.mp4> <t0> <t1> 24 854 480`: an mp4 with the song for Rasmus (keep under 30 MB to reach his phone).
 - Full UI flow (desktop 1280×720 and phone 390×844): start → walk to stage → book → page to the level → "Ask for this song" → ride → seek → end card. Check lyrics against the audio at a few points (`__alaron.seek(t)`).
 
 ## 6. Ship
