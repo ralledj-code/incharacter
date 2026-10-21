@@ -3891,7 +3891,8 @@ C.levels[ID] = {
 })(typeof window !== 'undefined' ? window : globalThis);
 
 /* Level 5: The Hunt for the Pig (21/06/2026). Lucien sings.
-   The Blackbird -> the night road -> the ruin floor gives way -> Severin's grove (eight souls turning, Lucien refuses her)
+   The Blackbird -> the night road -> the city square at night, twelve bound in the middle: Lucien on a rooftop sees Severin in the crowd,
+   runs the roof tiles and jumps to her feet; eight of the twelve are turning, he refuses her
    -> eight pyres under the moon -> the frightened man -> the cave under the cleansed tree. From here on everything is one cave system:
    the blood troll, the bones, the carved dungeon, Lucien wearing the Pig's face past two shapeshifting druids, eight candles,
    the Pig's keep built in the bottom cavern, the fireball through the lit window (prisoners inside), the Pig grows, Lucien falls.
@@ -3909,7 +3910,7 @@ const CHORUS = (played) => ['Oh, Alaron, count the names,', 'Eight small fires, 
 const CUES = [
   { id: 'intro', t: 0, v: 0.4, motes: 'dust', stamp: '', lines: [] },
   { id: 'road', t: 26, v: 2.0, motes: 'fireflies', stamp: '21/06/2026', lines: [] },
-  { id: 'ruin', t: 57, v: 1.0, motes: 'dust', stamp: '', lines: [] },
+  { id: 'ruin', t: 55, v: 1.0, motes: 'dust', stamp: 'the city', lines: [] },
   { id: 'v1', t: 67.5, v: 0.9, motes: 'fireflies', stamp: '', lines: ['I ran the tiles, I fell through air,', 'Landed at her feet, and she was there,', 'Severin, real as blood, real as bone,', 'Asked me home to what I’ve grown', '“Better let the dying go,', 'The ones still turning still don’t know,”', 'She said, “We’re already dead, all of us are,”', 'I would not follow that kind of star', 'Eight souls turning in the dark,', 'My brothers holding back the mark,', 'I chose the innocent, not the crown she wore,', 'That’s a debt I’m answering for'] },
   { id: 'chorus', t: 108.0, v: 1.0, motes: 'embers', stamp: '', lines: CHORUS(false) },
   { id: 'inst', t: 128.0, v: 2.4, motes: 'dust', stamp: '', lines: [] },
@@ -3936,7 +3937,7 @@ C.defineMood('grove', 0x0c1416, 0.03, 0x03060a, 0x10222a, 0x6a8a98, 0x0c1418, 0.
 C.defineMood('cave', 0x0c0a0e, 0.03, 0x020203, 0x0c0a0e, 0x9a90b0, 0x1c1618, 1.0, 0x9088b0, 0.4, 0xffb070, 2.3, 0x24201e, 0, 0, 0);
 C.defineMood('lair', 0x1c0a08, 0.026, 0x080202, 0x2a0a06, 0xc06848, 0x2a100a, 0.95, 0xff8050, 0.55, 0xff8a40, 2.2, 0x281410, 0, 0, 0);
 const KEYS = [
-  { t: -1e6, m: 'bar', b: 0 }, { t: 26.5, m: 'outside', b: 3 }, { t: 60, m: 'cross', b: 4 }, { t: 70.6, m: 'grove', b: 1 },
+  { t: -1e6, m: 'bar', b: 0 }, { t: 26.5, m: 'outside', b: 3 }, { t: 54, m: 'cross', b: 4 }, { t: 71.4, m: 'grove', b: 3 },
   { t: 108, m: 'camp', b: 3 }, { t: 128, m: 'outside', b: 4 }, { t: 145, m: 'cross', b: 3 }, { t: 150.2, m: 'cave', b: 2 },
   { t: 196, m: 'cave', b: 1 }, { t: 207, m: 'lair', b: 6 }, { t: 219.4, m: 'flash', b: 0.15 }, { t: 220.0, m: 'lair', b: 1.5 },
   { t: 249, m: 'crater', b: 3 }, { t: 269, m: 'wellRed', b: 0.6 }, { t: 271.5, m: 'crater', b: 2 }, { t: 281, m: 'black', b: 9 }
@@ -3985,71 +3986,83 @@ const SCENES = [
     return { group: g, d0: S.d0 - 6, d1: S.d1 + 4, vis: 100, update(t, ctx) { act.update(t, ctx); torch.material.opacity = 0.8 + 0.1 * Math.sin(ctx.time * 12); const p = grp.getWorldPosition(V3(0, 0, 0)); ctx.light(1, p.x, 2.2, p.z, 0xffa040, 1.8, 18); } };
   },
 
-  /* ---- the ruin floor gives way; Severin's grove: eight souls turning, and the crown she wore ---- */
-  function ruinAndGrove(X) {
+  /* ---- the city square at night: twelve bound in the middle, Lucien on a rooftop. He sees Severin in the crowd,
+     runs the roof tiles and jumps down to her feet. Eight of the twelve are turning; he will not let them go her way. ---- */
+  function citySquare(X) {
     const kit = C.kit(X), ch = chars(X), g = new THREE.Group(), Lk = X.line;
-    const SR = X.sec.ruin, dR = SR.d0 + 9, SV = X.sec.v1, dG = SV.d0 + 14;
-    g.add(kit.trees(SR.d0 - 6, SV.d1 + 6, { minSide: 9, maxSide: 34, dens: 0.9, deadP: 0.55, tint: 0x8aa0a8 }));
-    // the ruin courtyard: an old tiled floor, broken pillars
-    const tm = tileMat(), yaw = X.yawAt(dR), tiles = [];
-    for (let i = -3; i <= 3; i++) for (let j = -2; j <= 6; j++) {
-      const p = X.at(dR + j * 1.25, i * 1.25, 0.06), m = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.14, 1.18), tm);
-      m.position.copy(p); m.rotation.y = yaw + R(-0.03, 0.03); g.add(m); tiles.push({ m, i, j, y0: p.y, ph: R(0, 1) });
+    const SV = X.sec.v1, dSq = SV.d0 + 8;
+    // the square's own frame: -z is ahead along the rail, +x to the right
+    const CT = new THREE.Group(); CT.position.copy(X.at(dSq, 0, 0)); CT.rotation.y = X.yawAt(dSq); g.add(CT); CT.updateMatrixWorld(true);
+    const W = (x, z) => CT.localToWorld(V3(x, 0, z));
+    // houses round the square (the kit), cobbles, torches
+    const hs = [[-13, -6, 1], [-13, 4, 1], [-12, 14, 1], [13, -9, -1], [12, 18, -1], [-4, -17, 0], [6, -18, 0], [-6, 22, 2]].map(([x, z, f]) => {
+      const p = W(x, z), yaw = CT.rotation.y + (f === 1 ? Math.PI / 2 : f === -1 ? -Math.PI / 2 : f === 2 ? Math.PI : 0);
+      return { x: p.x, z: p.z, yaw, w: 6, d: 6, st: 2, brick: (x + z) % 3 === 0 };
+    });
+    const vil = kit.village(hs); if (vil) g.add(vil);
+    const cob = new THREE.Mesh(new THREE.PlaneGeometry(30, 46), new THREE.MeshLambertMaterial({ color: 0x8a7a6a, map: C.tex('cobblestone_floor_04_diff', 7, 10) || null }));
+    cob.rotation.x = -Math.PI / 2; cob.position.set(0, 0.015, 2); CT.add(cob);
+    const tl = [[-6, -8], [6, -8], [-7, 7], [-2, 12]].map(([x, z]) => { const p = W(x, z); return { x: p.x, z: p.z }; });
+    const tor = kit.torches(tl, { glow: 0xffb060, size: 3.6, op: 0.9 }); g.add(tor.group);
+    // the rooftop he starts on: a long house on the right, its roof of tiles
+    const RX = 8.6, RH = 5.0, rf = [];
+    rf.push(bx(6.4, RH, 7.4, 0x6a5a4a, [RX, RH / 2, 3.5]));
+    for (let z = 0; z <= 7; z += 0.5) rf.push(bx(6.6, 0.1, 0.56, (z * 2) % 2 ? 0x7a3a2a : 0x6a3024, [RX, RH + 0.05, z], [0.12, 0, 0]));
+    rf.push(bx(0.5, 1.6, 0.5, 0x4a3a32, [RX + 2.2, RH + 0.8, 5.6]));   // a chimney
+    CT.add(solid(rf));
+    const wl = []; for (let z = 1.5; z < 7; z += 3) wl.push(C.part(new THREE.PlaneGeometry(0.8, 1.0), 0xffb860, M([RX - 3.22, 2.6, z], [0, -Math.PI / 2, 0])));
+    CT.add(C.emis(wl, { side: THREE.DoubleSide }));
+    // the twelve, bound and kneeling round a post in the middle
+    const center = V3(0, 0, 0), souls = [], dead = [], TURN = [0, 1, 3, 4, 6, 7, 9, 10];   // the eight who are turning
+    CT.add(solid([cy(0.18, 0.2, 3.2, 8, 0x4a3424, [0, 1.6, 0]), cy(2.6, 2.6, 0.08, 20, 0x4a4440, [0, 0.04, 0])]));
+    for (let k = 0; k < 12; k++) {
+      const a = k / 12 * TAU, p = V3(Math.cos(a) * 2.0, 0, Math.sin(a) * 2.0);
+      const s = ch.person({ seed: 4100 + k * 7, outfit: 'peasant', pose: 'Fixing_Kneeling' }); s.position.copy(p); s.rotation.y = Math.atan2(p.x, p.z); s.userData.label = 'bound'; CT.add(s); souls.push(s);
+      const rope = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.02, 4, 12), new THREE.MeshLambertMaterial({ color: 0x8a7050 })); rope.rotation.x = Math.PI / 2; rope.position.set(p.x * 0.96, 0.62, p.z * 0.96); rope.scale.setScalar(0.85); CT.add(rope);
+      const turning = TURN.includes(k);
+      const e = X.glow(0xffb030, 0.25, 0); e.position.set(p.x * 1.08, 1.05, p.z * 1.08); CT.add(e); s.userData.eyeG = turning ? e : null;
+      if (turning) { const body = lay(ch.person && ch.person({ bake: true, seed: 4100 + k * 7, outfit: 'peasant' })); if (body) { body.position.copy(p); body.rotation.y = a; body.visible = false; CT.add(body); dead.push({ body, s }); } }
     }
-    const pil = []; [[-4.6, 0], [4.6, 1.5], [-4.6, 6], [4.6, 7], [-1, 10]].forEach(([s, o], k) => { const p = X.at(dR + o, s, 0), h = [3.2, 1.6, 2.4, 3.6, 1.1][k]; pil.push(cy(0.42, 0.48, h, 8, 0x8a8478, [p.x, h / 2, p.z]), ic(0.4, 0, 0x7a746a, [p.x + 0.8, 0.25, p.z + 0.3])); });
-    g.add(solid(pil));
-    const fallC = X.at(dR + 3.75, 0, 0), pit = hole(2.2); pit.position.x = fallC.x; pit.position.z = fallC.z; g.add(pit);
-    // Lucien runs the tiles and drops through
-    const luR = ch.lucien({ pose: 'Idle_Loop' }); luR.userData.blade.visible = false; luR.userData.bladeGlow.visible = false; g.add(luR);
-    luR.position.copy(X.at(dR - 8, 0.3, 0));
-    const fallT = Lk(0, 0.2);
-    const runA = C.act(luR, [{ t: 0, face: fallC }, { t: 62.8, to: railPts(X, dR - 8, dR + 3.75, 0.0), by: fallT }, { t: fallT, to: fallC.clone().setY(-0.01), move: 0.15 },
-      { t: fallT + 0.15, to: fallC.clone().setY(-0.01), move: 0.9, air: true, y: (u) => -3.5 * u * u }, { t: fallT + 1.0, show: false }], { ignoreGround: true });
-    X.anchors.ruin = new THREE.Object3D(); X.anchors.ruin.position.copy(fallC); g.add(X.anchors.ruin); X.anchors.luRun = luR;
-
-    // the grove: pale dead trees in a ring, mist, Severin crowned
-    const gc = X.at(dG, 0, 0), gyaw = X.yawAt(dG);
-    for (let k = 0; k < 9; k++) { const a = k / 9 * TAU, p = gc.clone().add(V3(Math.cos(a) * 12, 0, Math.sin(a) * 12)); put(g, pick(['DeadTree_1', 'DeadTree_2', 'DeadTree_3']), p, R(0, TAU), R(7, 10)); }
-    const mist = []; for (let k = 0; k < 12; k++) { const s = X.glow(0x9ad8d0, R(4, 8), 0.12); s.position.copy(gc.clone().add(V3(R(-9, 9), R(0.3, 1.2), R(-9, 9)))); g.add(s); mist.push(s); }
-    const sev = severin(X, ch, { crown: true }); const sevP = X.at(dG + 1.6, 0.4, 0); sev.position.copy(sevP); g.add(sev);
-    const lu = ch.lucien({ pose: 'Idle_Loop' }); lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false; g.add(lu);
-    const landP = X.at(dG - 0.4, 0.2, 0); lu.position.copy(landP);
-    // the eight, kneeling in a ring off to the side, turning
-    const ringC = X.at(dG + 1, -7.5, 0), souls = [], dead = [];
-    for (let k = 0; k < 8; k++) {
-      const a = k / 8 * TAU, p = ringC.clone().add(V3(Math.cos(a) * 3.2, 0, Math.sin(a) * 3.2));
-      const s = ch.person({ seed: 4100 + k * 7, outfit: 'peasant', pose: 'Fixing_Kneeling' }); s.position.copy(p); s.lookAt(ringC.x, 0, ringC.z); s.userData.label = 'soul'; g.add(s); souls.push(s);
-      const e = X.glow(0xffb030, 0.25, 0); e.position.copy(p).add(V3((ringC.x - p.x) * 0.08, 1.1, (ringC.z - p.z) * 0.08)); g.add(e); s.userData.eyeG = e;
-      const body = lay(ch.person && ch.person({ bake: true, seed: 4100 + k * 7, outfit: 'peasant' })); if (body) { body.position.copy(p); body.rotation.y = a + Math.PI / 2; body.visible = false; g.add(body); dead.push(body); }
-    }
-    const art = ch.arthas({ pose: 'Sword_Idle' }), ced = ch.cedric({ pose: 'Idle_Loop' }); g.add(art); g.add(ced);
-    art.position.copy(X.at(dG - 8, -3, 0)); ced.position.copy(X.at(dG - 8.5, -1.8, 0));
-    const holdT = Lk(9, -1.6);
-    const acts = [runA,
-      C.act(lu, [{ t: 0, show: false }, { t: Lk(1, -0.7), show: true, to: landP, move: 0.6, air: true, y: (u) => 6 * (1 - u) * (1 - u) }, { t: Lk(1, -0.1), pose: 'Crouch_Idle_Loop', face: sev },   // "landed at her feet"
+    // the crowd round the edge (frozen rigs, instanced), keeping clear of the roof and the landing
+    const cr = [];
+    for (let i = 0; i < (X.mobile ? 22 : 34); i++) { const a = R(0, TAU), r = R(5.2, 8.5), x = Math.cos(a) * r, z = Math.sin(a) * r; if (x > 2.2 && z > -8) continue; cr.push({ x, z, yaw: Math.atan2(-x, -z) + R(-0.3, 0.3) }); }
+    const baked = [];
+    for (let k = 0; k < 4; k++) { const p = ch.person({ bake: true, seed: 4500 + k * 13 }); if (p.userData.mixer) baked.push(C.bakeRig(p, k % 2 ? 'Idle_Torch_Loop' : 'Idle_Loop', 0.2 + k * 0.3)); }
+    baked.forEach((b, k) => { const mats = cr.filter((c, i) => i % baked.length === k).map((c) => { const p = W(c.x, c.z); return M([p.x, 0, p.z], [0, CT.rotation.y + c.yaw, 0], 1); }); const im = C.instObject(b, mats); if (im) g.add(im); });
+    // Severin in the crowd, crowned; Lucien on the roof; the brothers among the people
+    const sevP = V3(4.6, 0, -6.0), landP = V3(5.2, 0, -4.7);
+    const sev = severin(X, ch, { crown: true }); sev.position.copy(sevP); CT.add(sev);
+    const lu = ch.lucien({ pose: 'Idle_Loop' }); lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false; CT.add(lu);
+    const roofA = V3(RX, RH + 0.1, 6.4), roofB = V3(RX - 1.2, RH + 0.1, 0.5);
+    lu.position.copy(roofA);
+    const art = ch.arthas({ pose: 'Idle_Loop' }), ced = ch.cedric({ pose: 'Idle_Loop' }); CT.add(art); CT.add(ced);
+    art.position.set(-5.2, 0, -3.4); ced.position.set(-5.6, 0, 2.2);
+    const runT = Lk(0, -0.1), jumpT = Lk(1, -1.4), holdT = Lk(9, -1.6), deathT = Lk(11, 0.4);
+    const acts = [
+      C.act(lu, [{ t: 0, pose: 'Idle_Loop', face: center }, { t: 62, pose: 'Idle_Loop', face: sevP },                  // he sees her
+        { t: runT, to: [roofA, V3(RX - 0.5, RH + 0.1, 3.4), roofB], by: jumpT, air: true },                                // "I ran the tiles"
+        { t: jumpT, to: landP, move: 1.3, air: true, y: (u) => 1.8 * Math.sin(Math.PI * u) },                          // "I fell through air"
+        { t: jumpT + 1.2, pose: 'Crouch_Idle_Loop', face: sev },                                                       // "landed at her feet"
         { t: Lk(2, -0.5), pose: 'Idle_Loop', face: sev },
-        { t: Lk(7, -0.2), pose: 'Idle_Loop', face: X.at(dG - 8, 0.2, 0) },                                                // "I would not follow that kind of star"
-        { t: Lk(10, -0.6), to: X.at(dG + 0.6, -3.4, 0), move: 1.6 }, { t: Lk(10, 1.0), pose: 'Spell_Simple_Idle_Loop', face: sev }]),  // between her and the innocent
-      C.act(sev, [{ t: 0, show: false }, { t: Lk(1, -0.5), show: true, pose: 'Idle_Loop', face: landP }, { t: Lk(3), pose: 'Idle_Talking_Loop', face: landP },
-        { t: Lk(4), pose: 'Spell_Simple_Idle_Loop', face: ringC }, { t: Lk(6), pose: 'Idle_Talking_Loop', face: lu }, { t: Lk(11, 1.4), show: false }]),
-      C.act(art, [{ t: 0, show: false }, { t: holdT - 2.5, show: true, face: ringC }, { t: holdT - 2.4, to: X.at(dG + 1.8, -5.0, 0), by: holdT }, { t: holdT, pose: 'Sword_Idle', face: ringC }]),
-      C.act(ced, [{ t: 0, show: false }, { t: holdT - 2.3, show: true, face: ringC }, { t: holdT - 2.2, to: X.at(dG - 2.4, -6, 0), by: holdT + 0.3 }, { t: holdT + 0.3, pose: 'Idle_Loop', face: ringC }])
+        { t: Lk(7, -0.2), pose: 'Idle_Loop', face: V3(8, 0, 6) },                                                      // "I would not follow that kind of star"
+        { t: Lk(10, -0.6), to: V3(3.0, 0, -3.2), move: 1.6 }, { t: Lk(10, 1.0), pose: 'Spell_Simple_Idle_Loop', face: sev }], { ignoreGround: true }),   // between her and the innocent
+      C.act(sev, [{ t: 0, pose: 'Idle_Loop', face: center }, { t: jumpT + 0.4, pose: 'Idle_Loop', face: landP }, { t: Lk(3), pose: 'Idle_Talking_Loop', face: landP },
+        { t: Lk(4), pose: 'Spell_Simple_Idle_Loop', face: center }, { t: Lk(6), pose: 'Idle_Talking_Loop', face: lu }, { t: Lk(11, 1.4), show: false }]),
+      C.act(art, [{ t: 0, face: center }, { t: holdT, to: V3(-2.6, 0, -1.6), move: 2.0 }, { t: holdT + 2.0, pose: 'Sword_Idle', face: center }]),   // "my brothers holding back the mark"
+      C.act(ced, [{ t: 0, face: center }, { t: holdT + 0.3, to: V3(-2.8, 0, 1.6), move: 2.0 }, { t: holdT + 2.3, pose: 'Idle_Loop', face: center }])
     ];
-    const deathT = Lk(11, 0.4);
-    X.anchors.severin = sev; X.anchors.luGrove = lu; X.anchors.souls = new THREE.Object3D(); X.anchors.souls.position.copy(ringC); g.add(X.anchors.souls); X.anchors.arthasGrove = art;
+    X.anchors.severin = sev; X.anchors.luGrove = lu; X.anchors.square = CT; X.anchors.arthasGrove = art;
+    X.anchors.souls = new THREE.Object3D(); CT.add(X.anchors.souls);
+    const sw = W(sevP.x, sevP.z);
     return {
-      group: g, d0: SR.d0 - 6, d1: SV.d1 + 6, vis: 100,
+      group: g, d0: X.sec.ruin.d0 - 10, d1: SV.d1 + 10, vis: 100,
       update(t, ctx) {
-        acts.forEach((a) => a.update(t, ctx));
-        // the tiles fall away under him
-        tiles.forEach((o) => { const near = Math.abs(o.i) <= 1 && o.j >= 2 && o.j <= 4; const u = near ? Math.max(0, t - fallT + 0.05 - o.ph * 0.25) : 0; o.m.position.y = o.y0 - 4.9 * u * u; o.m.visible = o.m.position.y > -3; });
-        pit.material.opacity = ss(fallT - 0.1, fallT + 0.3, t);
-        mist.forEach((s, k) => { s.material.opacity = 0.08 + 0.06 * Math.sin(ctx.time * 0.5 + k); });
-        souls.forEach((s, k) => { s.visible = s.visible && t < deathT + k * 0.12; s.userData.eyeG.material.opacity = t > Lk(5) && t < deathT + k * 0.12 ? 0.5 + 0.4 * Math.sin(ctx.time * 7 + k) : 0; });
-        dead.forEach((b, k) => { b.visible = t >= deathT + k * 0.12; });
+        acts.forEach((a) => a.update(t, ctx)); tor.update(ctx.time);
+        souls.forEach((s, k) => { const e = s.userData.eyeG; if (e) e.material.opacity = t > Lk(5) && t < deathT + k * 0.1 ? 0.5 + 0.4 * Math.sin(ctx.time * 7 + k) : 0; });
+        dead.forEach(({ body, s }, k) => { body.visible = t >= deathT + k * 0.15; s.visible = s.visible && !body.visible; });
         sev.userData.aura.material.opacity = 0.2 + 0.1 * Math.sin(ctx.time * 2.2);
-        ctx.light(0, sevP.x, 2.4, sevP.z, 0x70ffc8, 1.8, 18);
-        const sp = lu.getWorldPosition(V3(0, 0, 0)); ctx.light(1, sp.x, 1.8, sp.z, 0xb070ff, t > Lk(10, 1) && t < Lk(11, 3) ? 2.6 : 0, 12);
+        ctx.light(0, sw.x, 2.4, sw.z, 0x70ffc8, t > 60 ? 1.6 : 0.4, 16);
+        const lp = lu.getWorldPosition(V3(0, 0, 0)); ctx.light(1, lp.x, lp.y + 1.8, lp.z, 0xb070ff, t > Lk(10, 1) && t < Lk(11, 3) ? 2.6 : 0, 12);
       }
     };
   },
@@ -4310,7 +4323,7 @@ const SCENES = [
 
 function clearings(X) {
   const c = (d, side, r) => { const p = X.at(d, side, 0); return { x: p.x, z: p.z, r }; }, S = X.sec;
-  return [c(S.ruin.d0 + 13, 0, 9), c(S.v1.d0 + 14, 0, 11), c(S.v1.d0 + 15, -7.5, 6), c(S.chorus.d0 + 13, 5, 9), c(X.distAt(X.line(18)) + 5, 3.5, 8), c(X.distAt(X.line(22)) - 4, -4, 7)];
+  return [c(S.v1.d0 + 8, 0, 24), c(S.chorus.d0 + 13, 5, 9), c(X.distAt(X.line(18)) + 5, 3.5, 8), c(X.distAt(X.line(22)) - 4, -4, 7)];
 }
 
 function shots(X, D) {
@@ -4318,7 +4331,7 @@ function shots(X, D) {
   const wp = (o) => (o ? (o.isVector3 ? o.clone() : o.getWorldPosition(new THREE.Vector3())) : X.at(X.distAt(0) + 30, 0, 0));
   const near = (o, dx, dy, dz) => () => wp(o).add(V3(dx, dy, dz));
   const lu = H.lucien || V3(0, 0.45, -8.55), bros = () => (H.cedric ? wp(H.cedric) : V3(-2, 0, -4.6));
-  const kl = (x, y, z) => () => A.keep.localToWorld(V3(x, y, z)), cl = (x, y, z) => () => A.candles.localToWorld(V3(x, y, z));
+  const sq = (x, y, z) => () => A.square.localToWorld(V3(x, y, z)), kl = (x, y, z) => () => A.keep.localToWorld(V3(x, y, z)), cl = (x, y, z) => () => A.candles.localToWorld(V3(x, y, z));
   const dB = X.distAt(Lk(23)) + 6, dGt = X.distAt(Lk(27)) + 6, dA = X.sec.chorus2.d0 + 7;
   const S = X.sec, dG = S.v1.d0 + 14, dK = X.distAt(217.9) + 34, dS = dK - 17;
   return [
@@ -4332,21 +4345,23 @@ function shots(X, D) {
     { t: 40.3, cam: D.rail({ h: 7, ahead: 26, lookH: 0, fov: 62 }) },
     { t: 45.8, cam: D.track(A.party, { offset: [-2.4, 1.2, -3.0], lookOffset: [0, 1.2, 6], fov: 66 }) },
     { t: 51.1, cam: D.orbit(A.party, { r: 4, r1: 7, h: 2, h1: 5, a0: -0.6, w: 0.08, t0: 51.1, lookH: 1.2, fov: 58 }) },
-    // the ruin: the floor gives way
-    { t: 59.3, cam: D.fixed(near(A.ruin, -6, 4.5, 6), near(A.ruin, 0, 0.5, 0), { push: 0.1, fov: 50 }) },
-    { t: 65.2, smooth: 1.6, cam: D.track(A.luRun, { offset: [0.4, 1.6, 3.4], lookOffset: [0, 1.0, 0], fov: 55 }) },
-    { t: Lk(0, 0.1), cam: D.fixed(near(A.ruin, 2.5, 6.5, 2.5), near(A.ruin, 0, -1, 0), { push: 0.3, fov: 55 }) },          // "I fell through air"
-    // Severin's grove
-    { t: Lk(1, -0.8), cam: D.fixed(P(dG - 4.5, 2.2, 1.2), near(A.severin, 0, 1.2, 0), { push: 0.2, fov: 50 }) },             // "landed at her feet"
-    { t: Lk(2, -0.2), cam: D.dolly(P(dG - 1.6, -1.8, 1.6), P(dG - 0.8, -1.2, 1.65), near(A.severin, 0, 1.5, 0), { fov: 42 }) },   // Severin
+    // the city square: the overview from the roof, her in the crowd, the run, the jump
+    { t: 56.4, cam: D.dolly(sq(-3, 15, 24), sq(-2, 11, 15), sq(0, 0.5, 0), { fov: 56 }) },
+    { t: 59.3, cam: D.fixed(sq(9.8, 7.2, 9.0), sq(0, 0.8, -1), { push: 0.12, fov: 52 }) },                                   // the overview, over his shoulder
+    { t: 62.4, cam: D.fixed(sq(8.6, 9.6, 5.8), near(A.severin, 0, 1.5, 0), { push: 0.5, fov: 24 }) },                       // there she is
+    { t: 65.3, cam: D.fixed(sq(11.4, 6.3, 4.4), near(A.luGrove, 0, 1.4, 0), { push: 0.2, fov: 48 }) },
+    { t: Lk(0, -0.2), smooth: 1.6, cam: D.track(A.luGrove, { offset: [0.6, 1.4, 3.6], lookOffset: [0, 1.0, 0], fov: 58 }) },   // "I ran the tiles"
+    { t: Lk(1, -1.5), cam: D.fixed(sq(1.8, 0.5, -9.4), sq(6.6, 3.6, -1.6), { fov: 62 }) },                                   // "I fell through air"
+    { t: Lk(1, -0.1), cam: D.fixed(sq(1.4, 1.4, -9.0), () => wp(A.luGrove).lerp(wp(A.severin), 0.5).add(V3(0, 0.9, 0)), { push: 0.2, fov: 48 }) },   // "landed at her feet"
+    { t: Lk(2, -0.2), cam: D.dolly(sq(2.6, 1.6, -8.4), sq(3.2, 1.65, -7.6), near(A.severin, 0, 1.5, 0), { fov: 42 }) },      // Severin
     { t: Lk(3, -0.2), cam: D.orbit(A.severin, { r: 3.4, h: 1.5, a0: 2.2, w: 0.08, t0: Lk(3), lookH: 1.4, fov: 48 }) },
-    { t: Lk(4, -0.2), cam: D.orbit(A.souls, { r: 6.5, h: 3.2, a0: 0.4, w: 0.1, t0: Lk(4), lookH: 0.8, fov: 58 }) },        // "better let the dying go"
-    { t: Lk(6, -0.2), cam: D.fixed(near(A.luGrove, 0.6, 1.7, -1.2), near(A.severin, 0, 1.6, 0), { push: 0.2, fov: 40 }) },     // "we're already dead"
-    { t: Lk(7, -0.2), cam: D.fixed(P(dG - 5, 0.4, 1.7), near(A.luGrove, 0, 1.55, 0), { push: 0.25, fov: 40 }) },               // "I would not follow"
-    { t: Lk(8, -0.2), cam: D.orbit(A.souls, { r: 2.4, h: 2.2, a0: 1.0, w: 0.25, t0: Lk(8), lookH: 0.8, fov: 62 }) },         // eight souls turning
-    { t: Lk(9, -0.2), cam: D.orbit(A.arthasGrove, { r: 3.2, h: 1.3, a0: 2.8, w: 0.1, t0: Lk(9), lookH: 1.3, fov: 52 }) },      // brothers holding back
-    { t: Lk(10, -0.2), cam: D.orbit(() => wp(A.luGrove).lerp(wp(A.severin), 0.5), { r: 4.2, h: 1.6, a0: 1.6, w: 0.08, t0: Lk(10), lookH: 1.5, fov: 50 }) },  // the innocent, not the crown
-    { t: Lk(11, -0.2), cam: D.orbit(A.souls, { r: 9, r1: 14, h: 4, h1: 9, a0: 2.6, w: 0.05, t0: Lk(11), lookH: 0.3, fov: 58 }) },
+    { t: Lk(4, -0.2), cam: D.orbit(A.souls, { r: 4.2, h: 3.2, a0: 0.4, w: 0.1, t0: Lk(4), lookH: 0.8, fov: 60 }) },          // "better let the dying go"
+    { t: Lk(6, -0.2), cam: D.fixed(near(A.luGrove, -0.6, 1.7, -0.9), near(A.severin, 0, 1.6, 0), { push: 0.2, fov: 40 }) },   // "we're already dead"
+    { t: Lk(7, -0.2), cam: D.fixed(sq(5.9, 1.7, -2.3), near(A.luGrove, 0, 1.55, 0), { push: 0.25, fov: 40 }) },               // "I would not follow"
+    { t: Lk(8, -0.2), cam: D.orbit(A.souls, { r: 3.4, h: 2.2, a0: 1.0, w: 0.25, t0: Lk(8), lookH: 0.8, fov: 62 }) },        // eight souls turning
+    { t: Lk(9, -0.2), cam: D.orbit(A.arthasGrove, { r: 2.6, h: 1.3, a0: 2.8, w: 0.1, t0: Lk(9), lookH: 1.3, fov: 52 }) },     // brothers holding back
+    { t: Lk(10, -0.2), cam: D.fixed(sq(0.4, 1.8, -8.8), () => wp(A.luGrove).lerp(wp(A.severin), 0.5).add(V3(0, 1.4, 0)), { push: 0.2, fov: 48 }) },   // the innocent, not the crown
+    { t: Lk(11, -0.2), cam: D.orbit(A.souls, { r: 6, r1: 12, h: 4, h1: 10, a0: 2.6, w: 0.05, t0: Lk(11), lookH: 0.3, fov: 58 }) },
     // the pyres
     { t: S.chorus.t0, cam: D.dolly(near(A.pyres, -9, 5, -9), near(A.pyres, -6, 2.4, -6), near(A.pyres, 0, 0.8, 0), { fov: 58 }) },
     { t: Lk(13, -0.3), cam: D.fixed(near(A.pyres, -3.5, 1.0, 3.0), near(A.pyres, 0, 0.6, 0), { push: 0.2, fov: 60 }) },    // eight small fires
@@ -4359,7 +4374,7 @@ function shots(X, D) {
     { t: Lk(19, -0.2), cam: D.fixed(near(A.luMan, 0.8, 1.6, 0.8), near(A.man, 0, 1.0, 0), { push: 0.3, fov: 40 }) },          // "his mind cracked open"
     { t: Lk(20, -0.3), cam: D.dolly(P(X.distAt(Lk(22)) - 20, 1.5, 2.4), P(X.distAt(Lk(22)) - 14, 0.5, 3.4), near(A.tree, 0, 6, 0), { fov: 62 }) },   // "the cave, the tree we'd cleansed"
     { t: Lk(21, -0.2), cam: D.fixed(kl(1.5, 6.0, -12), near(A.pig, 0, 1.8, 0), { push: 0.35, fov: 34 }) },                    // the Pig waiting past that door
-    { t: Lk(22, -0.4), cam: D.fixed(P(X.distAt(Lk(22)) + 0.5, 0.9, 1.0), near(A.troll, 0, 2.6, 0), { push: 0.2, fov: 56 }) },          // the blood troll
+    { t: Lk(22, -0.4), cam: D.fixed(P(X.distAt(Lk(22)) - 1.0, -0.9, 2.3), near(A.troll, 0, 2.6, 0), { push: 0.2, fov: 56 }) },          // the blood troll
     { t: Lk(22, 1.4), cam: D.fixed(near(A.trollDead, 2.6, 2.2, 2.6), near(A.trollDead, 0, 0.3, 0), { push: 0.15, fov: 52 }) },
     { t: Lk(23, -0.2), cam: D.fixed(P(dB - 4, 0.6, 1.7), near(A.bones, 0, 0.1, 0), { push: 0.2, fov: 56 }) },          // the bones
     { t: Lk(24, -0.3), cam: D.track(A.luCave, { offset: [0.6, 1.7, 3.6], lookOffset: [0, 1.4, 0], fov: 60 }) },                // the carved dungeon
@@ -4403,7 +4418,7 @@ function shots(X, D) {
 
 C.levels[ID] = {
   session: 'Level 5 · Session recap · 21/06/2026',
-  blurb: 'Lucien falls through an old floor at Severin’s feet and refuses her, and eight souls die. A frightened man gives up the cave under the cleansed tree; past a blood troll and a carved dungeon, Lucien wears the Pig’s own face past his druids. Then a lit window, a fireball, and the prisoners inside.',
+  blurb: 'Twelve bound in the city square; Lucien runs the rooftops, drops at Severin’s feet and refuses her, and eight souls die. A frightened man gives up the cave under the cleansed tree; past a blood troll and a carved dungeon, Lucien wears the Pig’s own face past his druids. Then a lit window, a fireball, and the prisoners inside.',
   length: '5 min', audio: 'levels/05-' + ID + '.mp3',
   packs: ['nature', 'village', 'beasts'],
   doorAt: 19.6,
