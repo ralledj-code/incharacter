@@ -129,7 +129,7 @@ const SCENES = [
       const rope = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.02, 4, 12), new THREE.MeshLambertMaterial({ color: 0x8a7050 })); rope.rotation.x = Math.PI / 2; rope.position.set(p.x * 0.96, 0.62, p.z * 0.96); rope.scale.setScalar(0.85); CT.add(rope);
       const turning = TURN.includes(k);
       const e = X.glow(0xffb030, 0.25, 0); e.position.set(p.x * 1.08, 1.05, p.z * 1.08); CT.add(e); s.userData.eyeG = turning ? e : null;
-      if (turning) { const body = lay(ch.person && ch.person({ bake: true, seed: 4100 + k * 7, outfit: 'peasant' })); if (body) { body.position.copy(p); body.rotation.y = a; body.visible = false; CT.add(body); dead.push({ body, s }); } }
+      if (turning) { dead.push({ s }); const body = null; if (body) { body.position.copy(p); body.rotation.y = a; body.visible = false; CT.add(body); dead.push({ body, s }); } }
     }
     // the crowd round the edge (frozen rigs, instanced), keeping clear of the roof and the landing
     const cr = [];
@@ -167,7 +167,7 @@ const SCENES = [
       update(t, ctx) {
         acts.forEach((a) => a.update(t, ctx)); tor.update(ctx.time);
         souls.forEach((s, k) => { const e = s.userData.eyeG; if (e) e.material.opacity = t > Lk(5) && t < deathT + k * 0.1 ? 0.5 + 0.4 * Math.sin(ctx.time * 7 + k) : 0; });
-        dead.forEach(({ body, s }, k) => { body.visible = t >= deathT + k * 0.15; s.visible = s.visible && !body.visible; });
+        dead.forEach(({ s }, k) => C.lib.fallAt(s, t, deathT + k * 0.15, 0.7, 1));        // the eight fall forward where they knelt
         sev.userData.aura.material.opacity = 0.2 + 0.1 * Math.sin(ctx.time * 2.2);
         ctx.light(0, sw.x, 2.4, sw.z, 0x70ffc8, t > 60 ? 1.6 : 0.4, 16);
         const lp = lu.getWorldPosition(V3(0, 0, 0)); ctx.light(1, lp.x, lp.y + 1.8, lp.z, 0xb070ff, t > Lk(10, 1) && t < Lk(11, 3) ? 2.6 : 0, 12);
@@ -261,7 +261,7 @@ const SCENES = [
     // the blood troll in the passage, felled
     const dT = X.distAt(Lk(22)) + 7, trollP = X.at(dT, 0.4, 0);
     const troll = C.lib.troll(X, { pose: 'Idle_Loop' }); C.lib.trollSkin(troll);
-    const trollDead = lay(C.lib.troll(X, { bake: true }), 'Idle_Loop', 0.2); if (trollDead) { C.lib.trollSkin(trollDead); trollDead.position.copy(trollP); trollDead.rotation.y = X.yawAt(dT) + 1.3; trollDead.visible = false; g.add(trollDead); }
+    const trollDead = null; if (trollDead) { C.lib.trollSkin(trollDead); trollDead.position.copy(trollP); trollDead.rotation.y = X.yawAt(dT) + 1.3; trollDead.visible = false; g.add(trollDead); }
     if (troll) { troll.position.copy(trollP); g.add(troll); }
     const party = new THREE.Group(); g.add(party);
     const lu = ch.lucien({ pose: 'Idle_Loop' }), art = ch.arthas({ pose: 'Sword_Idle' }), ced = ch.cedric({ pose: 'Idle_Loop' });
@@ -300,7 +300,7 @@ const SCENES = [
     const candleT = Lk(31, -0.3);
 
     const acts = [
-      troll && C.act(troll, [{ t: 0, face: X.at(dC, 0, 0) }, { t: Lk(22, -0.6), pose: 'Sword_Idle', face: X.at(dC, 0, 0) }, { t: fellT, show: false }]),
+      troll && C.act(troll, [{ t: 0, face: X.at(dC, 0, 0) }, { t: Lk(22, -0.6), pose: 'Sword_Idle', face: X.at(dC, 0, 0) }, { t: fellT - 0.5, pose: 'Idle_Loop', face: X.at(dC, 0, 0) }], { ignoreGround: true }),
       C.act(lu, [{ t: 0, show: false }, { t: Lk(22, -1.4), show: true, face: trollP }, { t: Lk(22, -1.3), to: X.at(dT - 5.5, 0.4, 0), move: 1.3 }, { t: Lk(22, 0), pose: 'Spell_Simple_Idle_Loop', face: trollP },
         { t: Lk(23, 0.2), to: railPts(X, dT - 5.5, dGt - 9, 0.3), by: faceT - 0.3 },
         { t: faceT, show: false }]),                                                                                      // "I wore his face"
@@ -318,7 +318,7 @@ const SCENES = [
         { t: Lk(29, -0.4), to: railPts(X, dGt - 2.6, dGt - 22, (i ? 1 : -1) * 2.2), speed: 4.2 }, { t: Lk(29, 4), show: false }], { gait: [['Walk', 0.69], ['Gallop', 2.57]], idle: 'Idle' })),   // "I sent them out"
       C.act(luC, [{ t: 0, show: false }, { t: X.sec.chorus2.t0 - 0.5, show: true, pose: 'Sitting_Idle_Loop', face: ap }, { t: X.sec.deep.t0, show: false }])
     ].filter(Boolean);
-    X.anchors.troll = troll || lu; X.anchors.trollDead = trollDead || lu; X.anchors.luCave = lu; X.anchors.arthasCave = art; X.anchors.cedricCave = ced;
+    X.anchors.troll = troll || lu; X.anchors.trollDead = troll || lu; X.anchors.luCave = lu; X.anchors.arthasCave = art; X.anchors.cedricCave = ced;
     X.anchors.bones = new THREE.Object3D(); X.anchors.bones.position.copy(X.at(dB + 2, 0, 0)); g.add(X.anchors.bones);
     X.anchors.dungeon = new THREE.Object3D(); X.anchors.dungeon.position.copy(X.at(dD0 + 6, 0, 0)); g.add(X.anchors.dungeon);
     X.anchors.gate = gate; X.anchors.disguise = disguise || lu; X.anchors.druid0 = dru[0]; X.anchors.druid1 = dru[1]; X.anchors.candles = alc; X.anchors.luCandle = luC;
@@ -327,7 +327,7 @@ const SCENES = [
       group: g, d0: dC - 10, d1: dLair + 10, vis: 120,
       update(t, ctx) {
         acts.forEach((a) => a.update(t, ctx)); tor.update(ctx.time);
-        if (trollDead) trollDead.visible = t >= fellT;
+        C.lib.fallAt(troll, t, fellT - 0.4, 1.1, -1);                                   // the troll goes over
         const sw = Math.max(0, 1 - Math.abs(t - faceT) / 0.7) + Math.max(0, 1 - Math.abs(t - shiftT) / 0.6) * 0.8;
         const sp = t < shiftT - 1 ? (disguise || lu).getWorldPosition(V3(0, 0, 0)) : gp;
         swirl.position.set(sp.x, 1.4, sp.z); swirl.material.opacity = 0.9 * sw;
@@ -380,7 +380,7 @@ const SCENES = [
     if (pig) { pig.position.copy(winLocal); pig.rotation.y = Math.PI; K.add(pig); }
     // the Pig out of the door, into the blood (a second rig at ground level, so the window one can stay in the room)
     const pigOut = C.lib.pig(X, { pose: 'Idle_Loop' }); if (pigOut) { pigOut.position.copy(K.localToWorld(V3(0, 0, -1.5))); g.add(pigOut); }
-    const fallen = lay(ch.lucien({ bake: true, pose: 'Idle_Loop' }), 'Idle_Loop', 0.1); if (fallen) { fallen.position.copy(X.at(dS - 3.4, 0.3, 0)); fallen.rotation.y = kyaw + Math.PI; fallen.visible = false; g.add(fallen); }
+    const fallen = null; if (fallen) { fallen.position.copy(X.at(dS - 3.4, 0.3, 0)); fallen.rotation.y = kyaw + Math.PI; fallen.visible = false; g.add(fallen); }
     const goneT = Lk(48, 1.1);
     const acts = [
       C.act(lu, [{ t: 0, face: kp }, { t: 205, to: railPts(X, dS - 14, dS, 0), by: 215 }, { t: 215, pose: 'Idle_Loop', face: winP },
@@ -388,7 +388,7 @@ const SCENES = [
         { t: Lk(37, 0.6), pose: 'Idle_Loop', face: winP }, { t: Lk(40, -0.3), pose: 'Fixing_Kneeling', face: winP },       // "a burden I will carry"
         { t: Lk(43, -0.4), pose: 'Idle_Loop', face: poolP },                                                              // "I am standing still"
         { t: Lk(47, 0), pose: 'Spell_Simple_Idle_Loop', face: poolP },
-        { t: Lk(48, 0.5), to: X.at(dS - 3.0, 0, 0), move: 0.55, back: true }, { t: goneT, show: false }]),                // "I'm going down"
+        { t: Lk(48, 0.5), to: X.at(dS - 3.0, 0, 0), move: 0.55, back: true }, { t: goneT - 0.6, pose: 'Idle_Loop', face: poolP }], { ignoreGround: true }),                // "I'm going down"
       C.act(art, [{ t: 0, face: kp }, { t: 205.2, to: railPts(X, dS - 15, dS - 1.6, -1.6), by: 215.5 }, { t: 215.5, pose: 'Sword_Idle', face: kp },
         { t: Lk(40, 1.0), pose: 'Idle_Loop', face: lu },
         { t: Lk(50, -0.6), to: X.at(dS - 0.6, -0.6, 0), move: 1.3 }, { t: Lk(50, 0.8), pose: 'Sword_Idle', face: poolP }]),    // "the fight is not won"
@@ -402,7 +402,7 @@ const SCENES = [
         { t: Lk(48, -2.2), to: X.at(dS + 2.6, 0, 0), move: 2.4 }, { t: Lk(48, 0.4), pose: 'Sword_Idle', face: lu }])
     ].filter(Boolean);
     X.anchors.keep = K; X.anchors.window = new THREE.Object3D(); X.anchors.window.position.copy(winP); g.add(X.anchors.window);
-    X.anchors.pig = pig || K; X.anchors.pigOut = pigOut || K; X.anchors.luKeep = lu; X.anchors.arthasKeep = art; X.anchors.cedricKeep = ced; X.anchors.fallen = fallen || lu;
+    X.anchors.pig = pig || K; X.anchors.pigOut = pigOut || K; X.anchors.luKeep = lu; X.anchors.arthasKeep = art; X.anchors.cedricKeep = ced; X.anchors.fallen = lu;
     X.anchors.pool = new THREE.Object3D(); X.anchors.pool.position.copy(poolP); g.add(X.anchors.pool);
     X.anchors.prisoner = prisoners[1] || K;
     return {
@@ -421,7 +421,7 @@ const SCENES = [
         pool.material.opacity = 0.9 * ss(outT + 1, outT + 4, t);
         const fp = (pigOut || K).getWorldPosition(V3(0, 0, 0));
         feed.forEach((o, k) => { const v = ((ctx.time * 0.5 + k / 12) % 1); const on = t > Lk(45, -0.3) && t < Lk(46, 1.5); o.s.material.opacity = on ? 0.9 * v : 0; const r = o.r * (1 - v); o.s.position.set(fp.x + Math.cos(o.a + v * 3) * r, 1.4 + o.h * (1 - v), fp.z + Math.sin(o.a + v * 3) * r); });   // "the fire I made, it feeds him more"
-        if (fallen) fallen.visible = t >= goneT;
+        C.lib.fallAt(lu, t, goneT - 0.5, 0.9, -1);                                    // "I'm going down"
         const wp = winP; ctx.light(0, wp.x, wp.y + 1, wp.z, 0xff7a30, 2.2 + 3.5 * burn + 6 * Math.max(0, 1 - Math.abs(b) / 0.8), 40);
         ctx.light(1, fp.x, 2.4, fp.z, t > outT ? 0xff2a10 : 0xffa040, t > outT ? 2.8 : 1.4, 18);
       }

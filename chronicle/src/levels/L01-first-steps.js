@@ -237,8 +237,8 @@ const SCENES = [
       const sw = put(new THREE.Group(), 'Sword_Bronze', V3(0, 0, 0), 0, 0.95); if (sw) C.attach(m, 'hand_r', sw, [0, 0.02, 0.02], [Math.PI / 2, 0, 0]);
       m.position.set(-1.5 + i, 0, -6 - i * 0.6); wh.add(m); return m;
     });
-    const body = corpse(ch, 909, 0x7a2a2a); if (body) { body.position.set(-3.6, 0, 15.2); body.rotation.y = 0.6; wh.add(body); }
-    const fallen = corpse(ch, 1200 + 17, 0x8a2a20); if (fallen) { fallen.position.set(0.5, 0, 3.8); fallen.rotation.y = Math.PI; wh.add(fallen); }
+    const body = null; if (body) { body.position.set(-3.6, 0, 15.2); body.rotation.y = 0.6; wh.add(body); }
+    const fallen = null; if (fallen) { fallen.position.set(0.5, 0, 3.8); fallen.rotation.y = Math.PI; wh.add(fallen); }
     // the frozen one: his own body in ice
     const iceM = new THREE.MeshLambertMaterial({ color: 0xa8e0ff, emissive: 0x284a6a, transparent: true, opacity: 0.92 });
     let ice = null; { const p = ch.person({ bake: true, seed: 1200, female: false, outfit: 'ranger', tint: 0x7a1a1a }); const b = p && p.userData.mixer && C.bakeRig(p, 'Sword_Idle', 0.3); if (b) { b.traverse((m) => { if (m.isMesh) m.material = iceM; }); ice = new THREE.Group(); ice.add(b); const sh = []; for (let i = 0; i < 9; i++) { const a = i / 9 * TAU; sh.push(cn(0.12, R(0.5, 1.1), 5, 0xc8f0ff, [Math.cos(a) * 0.35, 0.3, Math.sin(a) * 0.35], [Math.cos(a) * 0.4, 0, -Math.sin(a) * 0.4])); } ice.add(solid(sh)); wh.add(ice); } }
@@ -271,7 +271,7 @@ const SCENES = [
         { t: turnT + 0.8, pose: 'Sword_Idle', face: P(1.6, 9) },
         { t: stormT + 0.8, to: P(2.4, 6.8), move: 1.0 }, { t: stormT + 1.8, pose: 'Idle_Loop', face: P(2.4, 2.4) }]),
       C.act(sil, [{ t: 0, pose: 'Idle_Talking_Loop', face: P(0, 4) }, { t: L(30), pose: 'Fixing_Kneeling', face: P(0, 4) }, { t: L(31, 0.15), show: false }]),   // "Silas began to unravel"
-      C.act(clerk, [{ t: 0, pose: 'Idle_Loop', face: P(0, 9) }, { t: tearT + 0.5, pose: 'Idle_Loop', face: P(1.6, 9) }, { t: tearT + 1.1, show: false }]),
+      C.act(clerk, [{ t: 0, pose: 'Idle_Loop', face: P(0, 9) }, { t: tearT + 0.5, pose: 'Idle_Loop', face: P(1.6, 9) }], { ignoreGround: true }),
       wolf && C.act(wolf, [{ t: 0, show: false }, { t: L(31, 0.15), show: true, pose: 'Attack', face: P(-0.6, 6) },                            // "fur breaking skin"
         { t: L(31, 1.6), pose: 'Idle_2_HeadLow', face: P(-0.6, 6) },
         { t: tearT - 0.4, to: P(-3.0, 14.4), move: 1.3 }, { t: tearT + 0.9, pose: 'Attack', face: P(-3.8, 15.5) },                                    // "tore through a man"
@@ -285,7 +285,7 @@ const SCENES = [
         i === 0 ? { t: freezeT, show: false } :
           i === 1 ? { t: blowT, to: P(0.5, 3.6), move: 0.35, back: true } :
             { t: fleeT + i * 0.3, to: [P(-1 + i, -3), P(-1 + i * 1.5, -20)], speed: 4.4 },
-        i === 1 ? { t: blowT + 0.4, show: false } : i > 1 ? { t: fleeT + 5, show: false } : { t: 999, show: false }]))
+        i === 1 ? { t: blowT + 0.4, pose: 'Idle_Loop', face: P(0, 7) } : i > 1 ? { t: fleeT + 5, show: false } : { t: 999, show: false }]))
     ].filter(Boolean);
     X.anchors.wh = wh; X.anchors.luWh = lu; X.anchors.arthasWh = art; X.anchors.cedricWh = ced; X.anchors.silasWh = sil; X.anchors.beast = wolf || sil; X.anchors.clerk = clerk;
     X.anchors.vials = vg; X.anchors.merch0 = merch[0]; X.anchors.merch1 = merch[1];
@@ -297,8 +297,8 @@ const SCENES = [
         if (wolf) wolf.visible = wolf.visible && t > L(31) && t < stormT + 4;
         vials.forEach((v, i) => { v.visible = t < dosesT + 0.6 + i * 0.4; });
         vg.material.opacity = t < dosesT + 3.4 ? 0.6 : 0;
-        if (body) body.visible = t > tearT + 1.1;
-        if (fallen) fallen.visible = t > blowT + 0.4;
+        C.lib.fallAt(clerk, t, tearT + 0.7, 0.8, -1);                                  // the man in the shadows goes down
+        C.lib.fallAt(merch[1], t, blowT + 0.25, 0.7, -1);                             // Arthas's single blow
         if (ice) { ice.visible = t > freezeT; ice.position.set(-1.5, 0, 3.0); ice.rotation.y = 0; }
         flash.material.opacity = 0.9 * Math.max(0, 1 - Math.abs(t - L(31, 0.15)) / 0.5) + 0.5 * Math.max(0, 1 - Math.abs(t - tearT - 1) / 0.6);
         // the ice ray: from Lucien's hand to the first merchant

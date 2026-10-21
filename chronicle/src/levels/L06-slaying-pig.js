@@ -1,8 +1,8 @@
 /* Level 6: Slaying the Pig (06/07/2026). Lucien sings.
-   The whole fight is in the Pig's compound at the bottom of the cave, round a great pool of blood: they drive him back, Lucien's fire,
+   The Pig's compound is under the ground: a massive built complex of halls. The fight is in the great hall, round its pool of blood: they drive him back, Lucien's fire,
    the burned room (the prisoners), the Pig drags Arthas under the blood and nearly drowns him, they haul him out, the Pig falls.
-   Then the ash next door, the black water from the rock into a corrupted well (a wolf rises out of it), down into the drowned dead city
-   of Stagford, the last prisoner turns out to be Severin (Baphomet in a vision, the elixir), Lucien pours it out alone,
+   Then the ash next door, the black water from the rock into a corrupted well (a wolf rises out of it), the draining hall where the people
+   of Stagford were bled, up the tunnel into Stagford itself (sacked and empty on the surface), the last prisoner turns out to be Severin (Baphomet in a vision, the elixir), Lucien pours it out alone,
    and the church: the High Inquisitor, their father, with something red-eyed under a grate in his floor.
    Lyrics: Whisper transcript, all lines matched. Beats: scripts/beats.py (109 BPM). */
 (function (root) {
@@ -40,23 +40,21 @@ const BEATS = {"bpm":109.14,"beats":[0.29,0.83,1.38,1.9,2.4,2.93,3.5,4.0,4.58,5.
 
 C.defineMood('pigfight', 0x1c0a08, 0.024, 0x080202, 0x2a0a06, 0xc06848, 0x2a100a, 1.0, 0xff8050, 0.55, 0xff8a40, 2.2, 0x281410, 0, 0, 0);
 C.defineMood('blackwater', 0x080a0c, 0.03, 0x020203, 0x0a0c10, 0x8890a8, 0x14161a, 0.9, 0x8090b0, 0.35, 0xffb070, 2.0, 0x1a1c20, 0, 0, 0);
-C.defineMood('deadcity', 0x0a1014, 0.022, 0x020406, 0x0c1820, 0x7a90a8, 0x10161c, 0.85, 0x90a8c0, 0.4, 0xffa860, 2.0, 0x161c22, 0, 0, 0.3, 0x50c0ff, 0x8070ff);
+C.defineMood('deadcity', 0x2a2624, 0.02, 0x14141c, 0x6a4a3a, 0xb0a090, 0x2a2420, 0.95, 0xffc0a0, 0.6, 0xffa060, 1.8, 0x2a2420, 0.2, 0, 0);   // Stagford: sacked, smoke over a grey dusk
 C.defineMood('church', 0x1a1610, 0.018, 0x0a0806, 0x2a2016, 0xffe0b0, 0x2a2016, 1.0, 0xffe0c0, 0.5, 0xffd090, 1.6, 0x2a2218, 0, 0, 0);
 const KEYS = [
   { t: -1e6, m: 'bar', b: 0 }, { t: 9.5, m: 'pigfight', b: 1.5 }, { t: 25.9, m: 'flash', b: 0.1 }, { t: 26.3, m: 'pigfight', b: 1.2 },
   { t: 44.5, m: 'wellRed', b: 2 }, { t: 58, m: 'pigfight', b: 3 }, { t: 75, m: 'crater', b: 3 }, { t: 84, m: 'blackwater', b: 4 },
-  { t: 124.4, m: 'deadcity', b: 4 }, { t: 172, m: 'wellRed', b: 1.5 }, { t: 181, m: 'deadcity', b: 3 }, { t: 193.2, m: 'crater', b: 0.8 }, { t: 197.4, m: 'deadcity', b: 2 },
+  { t: 102, m: 'blackwater', b: 4 }, { t: 138.0, m: 'deadcity', b: 0.2 }, { t: 142.0, m: 'blackwater', b: 0.2 }, { t: 147.5, m: 'deadcity', b: 3 }, { t: 172, m: 'wellRed', b: 1.5 }, { t: 181, m: 'deadcity', b: 3 }, { t: 193.2, m: 'crater', b: 0.8 }, { t: 197.4, m: 'deadcity', b: 2 },
   { t: 263.5, m: 'church', b: 4 }, { t: 286.6, m: 'gaol', b: 3 }, { t: 303.6, m: 'blackwater', b: 5 }, { t: 324, m: 'black', b: 8 }
 ];
 const TITLES = [
-  { t: 133.9, name: 'Stagford', sub: 'the city below the cave' },
+  { t: 138.3, name: 'Stagford', sub: 'sacked by the Pig, its people taken below' },
   { t: 269.5, name: 'The High Inquisitor', sub: 'the church · Arthas and Cedric’s father' }
 ];
 
 /* places along the rail (metres) */
 const DP = 36;       // the blood pool in the Pig's compound
-const DCITY = 92;    // the drowned city starts
-const DV = 150;      // the square where Severin speaks
 const DCH = 238;     // the church
 
 /* ---- helpers ---- */
@@ -67,197 +65,200 @@ const darkTint = (g, hex) => {
 };
 
 const SCENES = [
-  /* ---- the compound: the blood pool, the burned keep, the ash next door, the black water and the well ---- */
+  /* ---- the Pig's compound under the ground: a massive built complex of halls.
+     The great hall (the blood pool, the burned room above its back wall), the hall behind it (the ash, the black water and the well),
+     the draining hall (where the people of Stagford were bled), the tunnel up, and Stagford itself on the surface: sacked and empty.
+     Everything here is in the compound's own frame F: -z is deeper in, +x to the right. ---- */
   function compound(X) {
-    const ch = chars(X), g = new THREE.Group(), Lk = X.line;
-    g.add(C.lib.cave(X, 10, 82, { w: 16, h: 18, wFn: (d) => 1 - 0.55 * ss(62, 78, d) + 0.0, fungus: 0xff7040 }));
-    // the compound's frame: -z ahead along the rail, +x right; the pool in the middle
+    const ch = chars(X), kit = C.kit(X), g = new THREE.Group(), Lk = X.line;
+    g.add(C.lib.cave(X, 4, DP - 14, { w: 4, h: 5 }));   // the passage down from the cave to the compound's door
     const F = new THREE.Group(); F.position.copy(X.at(DP, 0, 0)); F.rotation.y = X.yawAt(DP); g.add(F); F.updateMatrixWorld(true);
-    const Wp = (x, y, z) => F.localToWorld(V3(x, y, z));
+    const P = (x, z, y) => V3(x, y || 0, z);
+    // ---- the halls ----
+    const stone = new THREE.MeshLambertMaterial({ color: 0x7a6e64, map: C.tex('castle_brick_07_diff', 5, 3) || null });
+    const floorM = new THREE.MeshLambertMaterial({ color: 0x5a524a, map: C.tex('cobblestone_floor_04_diff', 6, 6) || null });
+    const B = (w, h, d, x, y, z, m) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m || stone); o.position.set(x, y, z); F.add(o); return o; };
+    const endWall = (z, W, H, dw, dh) => { B(W - dw / 2, H, 0.6, -(W + dw / 2) / 2, H / 2, z); B(W - dw / 2, H, 0.6, (W + dw / 2) / 2, H / 2, z); B(dw, H - dh, 0.6, 0, dh + (H - dh) / 2, z); };
+    const hall = (z0, z1, W, H) => {
+      const L = z0 - z1, zc = (z0 + z1) / 2;
+      B(0.6, H, L, -W, H / 2, zc); B(0.6, H, L, W, H / 2, zc); B(W * 2 + 0.6, 0.6, L, 0, H + 0.3, zc, new THREE.MeshLambertMaterial({ color: 0x1a1612 }));
+      const f = new THREE.Mesh(new THREE.PlaneGeometry(W * 2, L), floorM); f.rotation.x = -Math.PI / 2; f.position.set(0, 0.02, zc); F.add(f);
+    };
+    hall(16, -16, 13, 11);  hall(-16, -44, 10, 8);  hall(-44, -80, 12, 10);  hall(-80, -96, 2.6, 4.2);
+    endWall(16, 13, 11, 4.4, 5);
+    // the great hall's back wall: a door below, the burned room's window above it
+    B(11.4, 11, 0.6, -7.3, 5.5, -16); B(11.4, 11, 0.6, 7.3, 5.5, -16); B(3.2, 1.0, 0.6, 0, 3.9, -16); B(3.2, 4.4, 0.6, 0, 8.8, -16);
+    // the burned room above the door (its floor is the second hall's low ceiling there)
+    B(12, 0.4, 7, 0, 4.4, -19.5); B(0.4, 3.6, 7, -6, 6.2, -19.5); B(0.4, 3.6, 7, 6, 6.2, -19.5); B(12, 3.6, 0.4, 0, 6.2, -23);
+    endWall(-44, 12, 10, 4.4, 5); endWall(-80, 12, 10, 5.2, 4.2);
+    const cols = []; for (let z = 12; z > -14; z -= 6) [-1, 1].forEach((s) => cols.push(cy(0.6, 0.7, 11, 10, 0x8a7e70, [s * 9, 5.5, z])));
+    for (let z = -48; z > -78; z -= 7) [-1, 1].forEach((s) => cols.push(cy(0.5, 0.6, 10, 10, 0x8a7e70, [s * 8.6, 5, z])));
+    F.add(solid(cols));
+    // braziers in the great hall, torches on the walls further in
+    const fires = [[-9.5, 10], [9.5, 10], [-9.5, -11], [9.5, -11]].map(([x, z]) => { F.add(solid([cy(0.5, 0.35, 1.0, 8, 0x3a3634, [x, 0.5, z])])); const fr = kit.fire({ scale: 0.8, size: 4 }); fr.group.position.set(x, 1.0, z); F.add(fr.group); return fr; });
+    const wallT = []; [[-9.6, -24], [9.6, -38], [-11.6, -52], [11.6, -60], [-11.6, -70], [11.6, -76]].forEach(([x, z]) => { const l = X.glow(0xffa050, 2.6, 0.9); l.position.set(x * 0.98, 3, z); F.add(l); wallT.push(l); });
+    // hooks and chains in the great hall
+    const hk = []; for (let i = 0; i < 8; i++) { const x = -11 + i * 3.1, z = 13; hk.push(cy(0.02, 0.02, 4, 4, 0x3a3a40, [x, 9, z]), cy(0.3, 0.22, 1.4, 6, 0x5a1414, [x, 6.3, z]), cy(0.12, 0.12, 0.3, 5, 0xd8ccb0, [x, 5.5, z])); }
+    F.add(solid(hk));
+    // ---- the blood pool, in the middle of the great hall, and the channels that feed it from the draining hall ----
     const pool = new THREE.Mesh(new THREE.CircleGeometry(5.6, 32), new THREE.MeshLambertMaterial({ color: 0x220303, emissive: 0x0c0101 })); pool.rotation.x = -Math.PI / 2; pool.position.y = 0.04; F.add(pool);
-    const rim = []; for (let i = 0; i < 26; i++) { const a = i / 26 * TAU; rim.push(ic(R(0.35, 0.55), 0, 0x4a3a34, [Math.cos(a) * 5.9, 0.1, Math.sin(a) * 5.9], [1.2, 0.5, 1])); }
+    const rim = []; for (let i = 0; i < 26; i++) { const a = i / 26 * TAU; rim.push(bx(1.3, 0.3, 0.6, 0x5a4e46, [Math.cos(a) * 5.9, 0.15, Math.sin(a) * 5.9], [0, -a, 0])); }
     F.add(solid(rim));
+    const chanM = new THREE.MeshLambertMaterial({ color: 0x2a0404, emissive: 0x0a0000 });
+    const chan = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 72), chanM); chan.rotation.x = -Math.PI / 2; chan.position.set(1.2, 0.035, -42); F.add(chan);
     const sheen = []; for (let i = 0; i < 6; i++) { const s = X.glow(0xff3020, R(1.5, 3), 0.08); s.position.set(R(-3, 3), 0.1, R(-3, 3)); F.add(s); sheen.push(s); }
-    // the Pig's keep behind the pool, burned out: black window, smoke
-    const brick = new THREE.MeshLambertMaterial({ color: 0x6a6058, map: C.tex('castle_brick_07_diff', 3, 3) || null });
-    const KB = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), brick); m.position.set(x, y, z); F.add(m); };
-    const kz = -15;
-    KB(5.6, 10, 1, -4.4, 5, kz); KB(5.6, 10, 1, 4.4, 5, kz); KB(3.2, 1.2, 1, 0, 3.8, kz); KB(3.2, 3.4, 1, 0, 8.3, kz); KB(14.4, 10, 1, 0, 5, kz - 9);
-    KB(1, 10, 9, -6.7, 5, kz - 4.5); KB(1, 10, 9, 6.7, 5, kz - 4.5); KB(14.4, 0.4, 9, 0, 4.4, kz - 4.5);
-    F.add(solid([bx(15, 0.6, 10, 0x2a1e18, [0, 10.2, kz - 4.5]), bx(2.8, 3.2, 0.1, 0x1a100a, [0, 1.6, kz + 0.52])]));
-    const winFire = []; for (let i = 0; i < 5; i++) { const f = X.glow(0xff6a20, R(1.5, 2.6), 0); f.position.set(R(-1.2, 1.2), 5.5 + R(-0.4, 0.6), kz - 1.2); F.add(f); winFire.push(f); }
-    const smoke = []; for (let i = 0; i < 14; i++) { const s = C.lib.smoke(X, 0x141010, R(2.5, 4.5), 0); F.add(s); smoke.push({ s, ph: R(0, 1), x: R(-1.5, 1.5) }); }
-    // the room behind the window: the prisoners, burned (a camera looks in through the window on "souls were burning")
-    const pris = []; for (let k = 0; k < 3; k++) { const p = ch.person({ seed: 6100 + k * 9, outfit: 'peasant', pose: 'Fixing_Kneeling' }); darkTint(p, 0x2a1a14); p.position.set(-2 + k * 2, 4.6, kz - 3 - (k % 2)); p.rotation.y = R(-0.5, 0.5); F.add(p); pris.push(p); }
-    // next door: a burned hut, no roof, two bodies in the ash
-    const hut = []; const hx = 10.5, hz = -7;
-    hut.push(bx(5, 2.4, 0.4, 0x1c1614, [hx, 1.2, hz - 2.5]), bx(0.4, 1.6, 5, 0x1c1614, [hx - 2.5, 0.8, hz]), bx(0.4, 2.8, 5, 0x1c1614, [hx + 2.5, 1.4, hz]), bx(2.4, 1.1, 0.4, 0x1c1614, [hx + 1.2, 0.55, hz + 2.5]),
-      bx(0.25, 0.25, 5.4, 0x0e0a08, [hx - 0.5, 2.6, hz], [0.3, 0, 0.5]), bx(4.6, 0.04, 4.6, 0x2a2420, [hx, 0.03, hz]));
-    F.add(solid(hut));
-    const ashBodies = [0, 1].map((k) => { const b = lay(ch.person && ch.person({ bake: true, seed: 6200 + k * 5, outfit: 'peasant' })); if (b) { darkTint(b, 0x141010); b.position.set(hx - 0.8 + k * 1.6, 0.02, hz + (k ? 0.6 : -0.4)); b.rotation.y = k ? 2.6 : 0.4; F.add(b); } return b; });
-    const embers = []; for (let i = 0; i < 8; i++) { const e = X.glow(0xff5a20, R(0.3, 0.7), 0.6); e.position.set(hx + R(-2, 2), 0.1, hz + R(-2, 2)); F.add(e); embers.push(e); }
-    // the black water: out of the rock on the left, a channel into a corrupted well
-    const wellP = V3(-10, 0, -3), rock = V3(-15.5, 0, -12);
-    F.add(solid([ic(3.4, 0, 0x3a3634, [rock.x, 2.4, rock.z], [1, 1.5, 1]), cy(1.25, 1.35, 0.8, 14, 0x5a5650, [wellP.x, 0.4, wellP.z])]));
+    // ---- the burned room: fire still in the window, smoke, the prisoners ----
+    const kz = -16;
+    const winFire = []; for (let i = 0; i < 5; i++) { const f = X.glow(0xff6a20, R(1.5, 2.6), 0); f.position.set(R(-1.4, 1.4), 5.4 + R(-0.2, 0.8), -18.5); F.add(f); winFire.push(f); }
+    const smoke = []; for (let i = 0; i < 12; i++) { const s = C.lib.smoke(X, 0x141010, R(2, 3.5), 0); F.add(s); smoke.push({ s, ph: R(0, 1), x: R(-1.2, 1.2) }); }
+    for (let k = 0; k < 3; k++) { const p = ch.person({ seed: 6100 + k * 9, outfit: 'peasant', pose: 'Fixing_Kneeling' }); darkTint(p, 0x2a1a14); p.position.set(-2.2 + k * 2.2, 4.6, -20.5 - (k % 2)); p.rotation.y = R(-0.4, 0.4); F.add(p); }
+    // ---- the second hall: next door lies ash (two bodies), the black water out of the rock into the well ----
+    const hx = 7.2, hz = -27;
+    F.add(solid([bx(4.4, 0.04, 6, 0x141210, [hx, 0.03, hz]), bx(0.25, 0.25, 4, 0x0e0a08, [hx - 1, 0.3, hz + 1], [0.2, 0.6, 0.3]), bx(1.6, 0.6, 0.3, 0x1c1614, [hx + 1, 0.3, hz - 2]), ic(0.5, 0, 0x1a1412, [hx - 1.4, 0.2, hz - 1.8])]));
+    [0, 1].forEach((k) => { const b = lay(ch.person && ch.person({ bake: true, seed: 6200 + k * 5, outfit: 'peasant' })); if (b) { darkTint(b, 0x141010); b.position.set(hx - 0.9 + k * 1.8, 0.03, hz + (k ? 1.2 : -0.6)); b.rotation.y = k ? 2.6 : 0.4; F.add(b); } });
+    const embers = []; for (let i = 0; i < 8; i++) { const e = X.glow(0xff5a20, R(0.3, 0.7), 0.6); e.position.set(hx + R(-2, 2), 0.1, hz + R(-2.5, 2.5)); F.add(e); embers.push(e); }
+    const wellP = V3(-5.6, 0, -35), rock = V3(-9.2, 0, -39.5);
+    F.add(solid([ic(2.0, 0, 0x3a3634, [rock.x, 1.6, rock.z], [1, 1.6, 1]), cy(1.25, 1.35, 0.8, 14, 0x3a3632, [wellP.x, 0.4, wellP.z])]));
     const blk = new THREE.MeshLambertMaterial({ color: 0x050608, emissive: 0x010204 });
     const wd = new THREE.Mesh(new THREE.CircleGeometry(1.05, 20), blk); wd.rotation.x = -Math.PI / 2; wd.position.set(wellP.x, 0.82, wellP.z); F.add(wd);
-    const chan = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1), blk); const cv = rock.clone().sub(wellP); chan.scale.y = cv.length() - 2.6; chan.rotation.set(-Math.PI / 2, 0, Math.atan2(cv.x, cv.z)); chan.position.copy(wellP.clone().add(rock).multiplyScalar(0.5)).setY(0.05); F.add(chan);
-    const glints = []; for (let i = 0; i < 10; i++) { const s = X.glow(0x8aa0c0, 0.25, 0.4); F.add(s); glints.push({ s, ph: i / 10 }); }
-    // the channel on into the dark, down toward the city (the water carries all our pain)
-    const down = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1), blk); down.scale.y = 46; down.rotation.set(-Math.PI / 2, 0, 0); down.position.set(-9.6, 0.05, -40); F.add(down);
-    const wolf = C.creature('wolf', { h: 1.5, tint: 0x0c0c10, eyes: 0xff2a10 }); if (wolf) { wolf.userData.label = 'water-wolf'; X.anims.push(wolf); wolf.position.set(wellP.x + 1.6, 0, wellP.z + 1.2); F.add(wolf); }
-    const mist = C.lib.smoke(X, 0x0a0a0e, 4, 0); mist.position.set(wellP.x + 1.2, 1.2, wellP.z + 1); F.add(mist);
+    const wch = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 1), blk); const cv = rock.clone().sub(wellP); wch.scale.y = cv.length() - 2.2; wch.rotation.set(-Math.PI / 2, 0, Math.atan2(cv.x, cv.z)); wch.position.copy(wellP.clone().add(rock).multiplyScalar(0.5)).setY(0.05); F.add(wch);
+    const glints = []; for (let i = 0; i < 8; i++) { const s = X.glow(0x8aa0c0, 0.25, 0.4); F.add(s); glints.push({ s, ph: i / 8 }); }
+    const wolf = C.creature('wolf', { h: 1.5, tint: 0x0c0c10, eyes: 0xff2a10 }); if (wolf) { wolf.userData.label = 'water-wolf'; X.anims.push(wolf); wolf.position.set(wellP.x + 1.8, 0, wellP.z + 1.4); F.add(wolf); }
+    const mist = C.lib.smoke(X, 0x0a0a0e, 4, 0); mist.position.set(wellP.x + 1.4, 1.2, wellP.z + 1.2); F.add(mist);
+    // ---- the draining hall: stone slabs, the people of Stagford on them, cages from the ceiling ----
+    const slabs = [];
+    for (let z = -49; z > -77; z -= 4) [-1, 1].forEach((s) => slabs.push(bx(1.1, 0.9, 2.3, 0x6a625a, [s * 5, 0.45, z]), bx(0.2, 0.06, 2.3, 0x4a0606, [s * 5 - s * 0.6, 0.92, z])));
+    F.add(solid(slabs));
+    let bi = 0;
+    for (let z = -49; z > -77; z -= 4) [-1, 1].forEach((s) => { if ((bi++ % 3) === 2) return; const b = lay(ch.person && ch.person({ bake: true, seed: 7000 + bi * 11 })); if (!b) return; darkTint(b, 0x9aa0a8); b.position.set(s * 5, 0.92, z + 0.9); F.add(b); });
+    const cages = []; [[-3, -54], [3.2, -62], [-2.6, -70]].forEach(([x, z]) => { for (let i = 0; i < 10; i++) { const a = i / 10 * TAU; cages.push(cy(0.03, 0.03, 2.2, 4, 0x3a3a40, [x + Math.cos(a) * 0.8, 5.4, z + Math.sin(a) * 0.8])); } cages.push(cy(0.85, 0.85, 0.1, 10, 0x3a3a40, [x, 4.3, z]), cy(0.03, 0.03, 3.6, 4, 0x3a3a40, [x, 8.3, z])); });
+    F.add(solid(cages));
+    // ---- the tunnel up, and Stagford on the surface: sacked, burned, empty ----
+    const QZ = -128;
+    F.add(solid([ic(5, 0, 0x4a4644, [-7.6, 3, -96], [1, 1, 1.2]), ic(5, 0, 0x4a4644, [7.6, 3, -96], [1, 1, 1.2]), bx(10, 4, 3, 0x3a3634, [0, 6.2, -96])]));
+    const cobble = new THREE.Mesh(new THREE.PlaneGeometry(40, 110), new THREE.MeshLambertMaterial({ color: 0x5a5650, map: C.tex('cobblestone_floor_04_diff', 10, 26) || null })); cobble.rotation.x = -Math.PI / 2; cobble.position.set(0, 0.025, -152); F.add(cobble);
+    const hs = []; const yawF = F.rotation.y;
+    for (let z = -106; z > -200; z -= 9) [-1, 1].forEach((s) => { if (Math.abs(z - QZ) < 7) return; const p = F.localToWorld(V3(s * R(9.5, 11), 0, z + R(-1, 1))); hs.push({ x: p.x, z: p.z, yaw: yawF + (s < 0 ? Math.PI / 2 : -Math.PI / 2), w: pick([4, 6]), d: 6, st: R(0, 1) < 0.5 ? 2 : 1, brick: R(0, 1) < 0.4 }); });
+    const vil = kit.village(hs, { tint: 0x4a4440, glass: 0x060606 }); if (vil) g.add(vil);
+    const debris = []; for (let i = 0; i < 26; i++) { const z = R(-104, -196), x = R(-7, 7); if (Math.abs(x) < 1.6) continue; debris.push(bx(R(0.4, 1.4), R(0.1, 0.4), R(0.2, 1.2), pick([0x2a2420, 0x1c1814, 0x3a3028]), [x, 0.1, z], [0, R(0, TAU), R(-0.3, 0.3)])); }
+    debris.push(cy(2.2, 2.4, 0.8, 16, 0x5a5650, [-6.2, 0.4, QZ - 5]), cy(1.9, 1.9, 0.05, 16, 0x1a1816, [-6.2, 0.82, QZ - 5]));
+    F.add(solid(debris));
+    put(F, 'Prop_Wagon', V3(-4.6, 0, -114), 0.5, 2.0); put(F, 'Barrel', V3(4.8, 0, -150), 0, 1.0); put(F, 'Prop_Wagon', V3(4.4, 0, -168), 2.4, 2.0);
+    const citySmoke = []; [[-11, -112], [10, -134], [-10, -150], [11, -170], [-11, -186]].forEach(([x, z]) => { for (let i = 0; i < 5; i++) { const s = C.lib.smoke(X, 0x1a1816, R(4, 7), 0); F.add(s); citySmoke.push({ s, x, z, ph: R(0, 1) }); } });
+    const cityEmbers = []; for (let i = 0; i < 20; i++) { const e = X.glow(0xff6a20, R(0.3, 0.8), 0.6); e.position.set(R(-12, 12), R(0.2, 4), R(-106, -190)); F.add(e); cityEmbers.push(e); }
 
-    // the fight
-    const pig = C.lib.pig(X, { pose: 'Sword_Idle' }), pigDead = lay(C.lib.pig(X, { bake: true }), 'Idle_Loop', 0.2);
+    // ---- the fight ----
+    const pig = C.lib.pig(X, { pose: 'Idle_Loop' });
     const lu = ch.lucien({ pose: 'Idle_Loop' }), art = ch.arthas({ pose: 'Sword_Idle' }), ced = ch.cedric({ pose: 'Idle_Loop' });
     lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false;
-    [pig, lu, art, ced].forEach((o) => o && F.add(o));
-    if (pig) pig.position.set(-0.5, 0, -8.5);
-    if (pigDead) { pigDead.position.set(-4.6, 0.02, 2.4); pigDead.rotation.y = 2.2; pigDead.visible = false; F.add(pigDead); }
-    lu.position.set(0.8, 0, 16); art.position.set(-1.2, 0, 15); ced.position.set(2.2, 0, 15.5);
-    const P = (x, z, y) => V3(x, y || 0, z);
+    const torchG = X.glow(0xffa040, 1.1, 0); C.attach(lu, 'hand_r', torchG, [0, 0.12, 0.05]);
+    const vial = X.glow(0x60ff90, 0.45, 0); C.attach(lu, 'hand_l', vial, [0, 0.08, 0.04]);
+    const pri = ch.person({ seed: 6107, female: false, outfit: 'peasant', tint: 0x5a4a3a, pose: 'Idle_Loop' }); pri.userData.label = 'prisoner';
+    const sev = severin(X, ch, { crown: true });
+    [pig, lu, art, ced, pri, sev].forEach((o) => o && F.add(o));
+    if (pig) pig.position.set(-0.5, 0, -9.5);
+    lu.position.set(0.8, 0, 15.5); art.position.set(-1.2, 0, 15); ced.position.set(2.2, 0, 15.2);
+    pri.position.set(-3, 0, -66); sev.position.set(-0.4, 0, QZ - 2.2);
     const fireT = Lk(1), grabT = 43.6, underT = 45.8, pullT = 57.0, outT = 61.0, killT = 64.6;
+    const turnT = Lk(26), sevGo = Lk(34, -0.6), shakeT = Lk(35), hideT = Lk(38), pourT = Lk(40), aloneT = Lk(42, -1.2);
+    const q = (x, dz) => P(x, QZ + dz);
     const acts = [
-      pig && C.act(pig, [{ t: 0, pose: 'Sword_Idle', face: P(0, 10) },
-        { t: 12.5, to: [P(-3.4, -5), P(-6.4, -0.5), P(-3.6, 4.2)], by: 17.5 }, { t: 17.5, pose: 'Sword_Idle', face: P(-1.2, 7) },        // round the pool at them
-        { t: Lk(0), to: P(-4.8, 1.4), move: 1.5, back: true }, { t: Lk(0, 1.6), pose: 'Sword_Idle', face: P(-1, 6) },                   // "we drove it back"
+      pig && C.act(pig, [{ t: 0, pose: 'Idle_Loop', face: P(0, 10) },
+        { t: 12.5, to: [P(-3.4, -6), P(-7.0, -1.0), P(-3.6, 4.2)], by: 17.5 }, { t: 17.5, pose: 'Sword_Idle', face: P(-1.2, 7) },        // round the pool at them
+        { t: Lk(0), to: P(-4.8, 1.4), move: 1.5, back: true }, { t: Lk(0, 1.6), pose: 'Idle_Loop', face: P(-1, 6) },                 // "we drove it back"
         { t: Lk(4, -1.6), to: P(-2.6, 3.6), move: 1.4 }, { t: grabT, to: P(-1.6, 1.4, -0.45), move: 2.0, air: true },                     // he takes Arthas into the blood
         { t: underT, pose: 'Sword_Idle', face: P(-0.8, 0.6) },
-        { t: Lk(7, 0.4), to: P(-3.4, -1.2, -0.3), move: 1.6, air: true, back: true },                                                       // Cedric's blows drive him off
-        { t: outT, to: P(-4.0, 1.8), move: 1.4, air: true }, { t: outT + 1.4, pose: 'Sword_Idle', face: P(0, 3) },
-        { t: killT, show: false }], { ignoreGround: true }),
+        { t: Lk(7, 0.4), to: P(-3.4, -1.2, -0.3), move: 1.6, air: true, back: true },                                                       // Cedric drives him off
+        { t: outT, to: P(-4.0, 1.8), move: 1.4, air: true }, { t: outT + 1.4, pose: 'Idle_Loop', face: P(0, 3) }], { ignoreGround: true }),
       C.act(art, [{ t: 0, face: P(0, 0) }, { t: 10.6, to: [P(-1.2, 10), P(-1.6, 6.8)], by: 15.5 }, { t: 15.5, pose: 'Sword_Idle', face: P(-3.6, 4.2) },
         { t: Lk(0, 0.2), to: P(-3.0, 4.4), move: 1.4 }, { t: Lk(0, 1.6), pose: 'Sword_Idle', face: P(-4.8, 1.4) },
-        { t: grabT, to: P(-0.9, 1.0, -1.1), move: 2.0, air: true },                                                                         // dragged under
-        { t: underT, to: P(-0.8, 0.6, -1.5), move: 6, air: true },                                                                          // only his head above the blood, then not even that
-        { t: pullT, to: P(1.4, 4.6), move: 2.4, air: true }, { t: pullT + 2.4, pose: 'Fixing_Kneeling', face: P(-1, 0) },                // hauled out
-        { t: outT + 0.8, pose: 'Sword_Idle', face: P(-4.0, 1.8) }, { t: killT - 1.6, to: P(-2.6, 2.8), move: 1.6 }, { t: killT, pose: 'Sword_Idle', face: P(-4.6, 2.4) },   // the killing blow
-        { t: Lk(9, 0.2), pose: 'Fixing_Kneeling', face: P(-4.6, 2.4) }], { ignoreGround: true }),
+        { t: grabT, to: P(-0.9, 1.0, -1.1), move: 2.0, air: true },
+        { t: underT, to: P(-0.8, 0.6, -1.5), move: 6, air: true },
+        { t: pullT, to: P(1.4, 4.6), move: 2.4, air: true }, { t: pullT + 2.4, pose: 'Fixing_Kneeling', face: P(-1, 0) },
+        { t: outT + 0.8, pose: 'Sword_Idle', face: P(-4.0, 1.8) }, { t: killT - 1.6, to: P(-2.6, 2.8), move: 1.6 }, { t: killT, pose: 'Sword_Idle', face: P(-4.0, 1.8) },
+        { t: Lk(9, 0.2), pose: 'Fixing_Kneeling', face: P(-4.0, 1.8) },
+        { t: 100.5, to: [P(-1.4, -6), P(-0.6, -18), P(-2.4, -40), P(-2.0, -76), P(-1.2, -96), P(-1.2, q(0, 5).z)], by: 161.5 }, { t: 161.5, pose: 'Idle_Loop', face: q(0, -3) },
+        { t: shakeT, pose: 'Idle_Loop', face: q(-8, 8) },                                                                            // "Arthas doubted, shook his head"
+        { t: aloneT, to: [q(-1.2, 12), P(-1.2, -100)], speed: 1.3 }, { t: aloneT + 22, show: false }], { ignoreGround: true }),
       C.act(ced, [{ t: 0, face: P(0, 0) }, { t: 11.0, to: [P(2.2, 10), P(0.8, 7.0)], by: 15.8 }, { t: 15.8, pose: 'Idle_Loop', face: P(-3.6, 4.2) },
         { t: Lk(0, 0.4), to: P(-2.0, 3.0), move: 1.2 }, { t: Lk(0, 1.6), pose: 'Sword_Idle', face: P(-4.8, 1.4) },
-        { t: Lk(4, -1.0), to: P(-0.2, 5.6), move: 0.6, back: true }, { t: Lk(4, -0.4), pose: 'Idle_Loop', face: P(-2.6, 3.6) },            // knocked back
+        { t: Lk(4, -1.0), to: P(-0.2, 5.6), move: 0.6, back: true }, { t: Lk(4, -0.4), pose: 'Idle_Loop', face: P(-2.6, 3.6) },
         { t: Lk(7, -0.6), to: P(-2.2, 1.6), move: 1.0 }, { t: Lk(7, 0.4), pose: 'Sword_Idle', face: P(-3.4, -1.2) },
         { t: pullT, to: P(0.4, 2.6), move: 0.8 }, { t: pullT + 0.8, pose: 'Idle_Loop', face: P(-0.8, 0.6) },
-        { t: Lk(9), pose: 'Sword_Idle', face: P(-6, 6) }]),
+        { t: Lk(9), pose: 'Sword_Idle', face: P(-6, 6) },
+        { t: 101, to: [P(1.6, -6), P(0.6, -18), P(2.4, -40), P(2.2, -76), P(1.4, -96), P(1.4, q(0, 5.4).z)], by: 162 }, { t: 162, pose: 'Idle_Loop', face: q(0, -3) },
+        { t: Lk(36, -0.4), pose: 'Idle_Loop', face: lu },                                                                            // "Cedric's eyes stayed sharp and still"
+        { t: aloneT + 0.3, to: [q(1.4, 12), P(1.4, -100)], speed: 1.3 }, { t: aloneT + 22, show: false }]),
       C.act(lu, [{ t: 0, face: P(0, 0) }, { t: 10.4, to: [P(0.8, 12), P(1.6, 8.4)], by: 15.4 }, { t: 15.4, pose: 'Spell_Simple_Idle_Loop', face: P(-3.6, 4.2) },
-        { t: fireT - 0.4, pose: 'Spell_Simple_Idle_Loop', face: P(-4.8, 1.4) },                                                             // "smoke poured thick where my fire cracked"
-        { t: Lk(2, -0.2), pose: 'Idle_Loop', face: P(0, kz) },                                                                             // he looks up at the window
-        { t: Lk(6, -0.3), pose: 'Idle_Loop', face: P(0, kz) },
+        { t: fireT - 0.4, pose: 'Spell_Simple_Idle_Loop', face: P(-4.8, 1.4) },                                                           // "where my fire cracked"
+        { t: Lk(2, -0.2), pose: 'Idle_Loop', face: P(0, kz) },                                                                           // he looks up at the window
         { t: Lk(7, 0.2), to: P(1.2, 3.4), move: 1.6 }, { t: Lk(7, 1.8), pose: 'Spell_Simple_Idle_Loop', face: P(-3.4, -1.2) },
         { t: pullT, to: P(0.6, 3.6), move: 0.6 }, { t: pullT + 0.6, pose: 'Crouch_Idle_Loop', face: P(-0.8, 0.6) },
         { t: outT, pose: 'Spell_Simple_Idle_Loop', face: P(-4.0, 1.8) },
-        { t: Lk(9), pose: 'Spell_Simple_Idle_Loop', face: P(-6, 6) },                                                                        // "still we shout"
-        { t: Lk(10), to: P(7.2, -4.4), move: 3.2 }, { t: Lk(10, 3.2), pose: 'Idle_Loop', face: P(hx, hz) },                                // next door
-        { t: Lk(11, -0.2), pose: 'Spell_Simple_Idle_Loop', face: P(hx, hz) },                                                               // "my fireball, my hand"
-        { t: Lk(12, -0.4), to: [P(0, -3.6), P(-7.4, -1.4)], move: 4.0 }, { t: Lk(12, 3.6), pose: 'Idle_Loop', face: wellP },                // to the water
-        { t: Lk(16, 0.6), to: [P(-9.0, -8), P(-9.6, -26), P(-9.6, -34)], speed: 1.3 }, { t: 122, show: false }]),
-      wolf && C.act(wolf, [{ t: 0, show: false }, { t: Lk(14, -0.2), show: true, pose: 'Idle_2_HeadLow', face: P(-7.4, -1.4) }, { t: Lk(14, 1.4), pose: 'Idle', face: P(-7.4, -1.4) }, { t: Lk(15, 0.6), show: false }], { gait: [['Walk', 0.69], ['Gallop', 2.57]], idle: 'Idle' })
+        { t: Lk(9), pose: 'Spell_Simple_Idle_Loop', face: P(-6, 6) },                                                                       // "still we shout"
+        { t: Lk(9, 0.6), to: [P(2.2, -6), P(0.8, -15), P(0.6, -19), P(hx - 2.6, hz + 2.4)], by: Lk(12, -0.5) }, { t: Lk(12, -0.5), pose: 'Idle_Loop', face: P(hx, hz) },   // next door
+        { t: Lk(12, -0.2), to: [P(1.0, -30), P(wellP.x + 2.4, wellP.z + 1.0)], by: Lk(13, 0.2) }, { t: Lk(13, 0.2), pose: 'Idle_Loop', face: wellP },   // to the water
+        { t: Lk(16, 0.4), to: [P(-0.6, -42), P(-0.4, -48)], speed: 1.2 }, { t: Lk(18), pose: 'Idle_Loop', face: P(-5, -52) },                // into the draining hall
+        { t: 124.6, to: [P(0, -60), P(0, -76), P(0, -96)], by: 147.5 },                                                                      // "beneath the cave, below the ground"
+        { t: 147.5, to: [P(0.2, -104), q(0.4, 1.4)], by: 161.5 }, { t: 161.5, pose: 'Idle_Loop', face: q(0, -3) },                            // up into Stagford
+        { t: turnT + 0.6, pose: 'Idle_Loop', face: sev }, { t: Lk(34, -0.3), pose: 'Idle_Talking_Loop', face: q(0, 6) },                     // "I told my brothers"
+        { t: hideT, pose: 'Idle_Loop', face: q(0, 6) },
+        { t: pourT - 1.6, to: q(1.4, 0.4), move: 1.4 }, { t: pourT - 0.2, pose: 'Crouch_Idle_Loop', face: q(1.8, -0.6) },                   // "I poured it out upon the stone"
+        { t: Lk(41), pose: 'Idle_Loop', face: q(0, -10) },
+        { t: 236.4, to: [q(0.6, -6), q(0.3, -48)], by: 262.5 }]),
+      C.act(pri, [{ t: 0, pose: 'Idle_Loop', face: P(0, -60) }, { t: 128.5, to: [P(-1.6, -76), P(-0.8, -96), P(-0.8, -104), q(-0.4, -2.2)], by: 161.2 }, { t: 161.2, pose: 'Idle_Loop', face: q(0, -10) },
+        { t: turnT - 0.5, pose: 'Idle_Loop', face: lu }, { t: turnT + 0.5, show: false }]),                                                  // "her face was his, the prisoner turned"
+      C.act(sev, [{ t: 0, show: false }, { t: turnT + 0.5, show: true, pose: 'Idle_Loop', face: lu }, { t: Lk(27), pose: 'Idle_Talking_Loop', face: lu },
+        { t: Lk(28), pose: 'Spell_Simple_Idle_Loop', face: q(4, -16) }, { t: Lk(30), pose: 'Idle_Talking_Loop', face: lu },
+        { t: Lk(31, -0.2), pose: 'Spell_Simple_Idle_Loop', face: lu }, { t: Lk(32), pose: 'Idle_Talking_Loop', face: lu }, { t: sevGo, show: false }]),
+      wolf && C.act(wolf, [{ t: 0, show: false }, { t: Lk(14, -0.2), show: true, pose: 'Idle_2_HeadLow', face: P(wellP.x + 2.4, wellP.z + 1.0) }, { t: Lk(14, 1.4), pose: 'Idle', face: P(wellP.x + 2.4, wellP.z + 1.0) }, { t: Lk(15, 0.6), show: false }], { gait: [['Walk', 0.69], ['Gallop', 2.57]], idle: 'Idle' })
     ].filter(Boolean);
-    // fire bolts at the Pig
+    // Baphomet in the vision, over the sacked roofs: then in chains, then in flames
+    const baph = ch.baphomet ? ch.baphomet({ h: 13, pose: 'Idle_Loop' }) : null;
+    const bp = q(4, -17);
+    if (baph) { baph.position.copy(bp); baph.lookAt(F.localToWorld(q(0, 0))); baph.rotation.set(0, Math.atan2(-bp.x, 17), 0); F.add(baph); }
+    const chains = []; for (let k = 0; k < 40; k++) { const a = k * 0.45; chains.push(M([bp.x + Math.cos(a) * 1.6, 2 + k * 0.16, bp.z + Math.sin(a) * 1.6], [Math.PI / 2, k % 2 ? Math.PI / 2 : 0, a], [3, 3, 3])); }
+    const chainM = C.inst(kit.linkGeo, C.lamb({ color: 0xb8bcc8 }), chains); F.add(chainM);
+    const flames = []; for (let k = 0; k < 10; k++) { const f = X.glow(0xff5a20, R(3, 6), 0); f.position.copy(bp).add(V3(R(-3, 3), R(0, 6), R(-3, 3))); F.add(f); flames.push(f); }
+    const swirl = X.glow(0x70ffc8, 3, 0); swirl.position.copy(q(-0.4, -2.2)).setY(1.2); F.add(swirl);
+    const splash = X.glow(0x60ff90, 2.4, 0); splash.position.copy(q(1.8, -0.6)).setY(0.1); F.add(splash);
     const bolts = [0, 1, 2].map(() => { const b = X.glow(0xff8a30, 1.0, 0); F.add(b); return b; });
-    const splash = X.glow(0xff2a10, 3.2, 0); F.add(splash);
+    const splashB = X.glow(0xff2a10, 3.2, 0); splashB.position.set(-1, 0.4, 1); F.add(splashB);
     X.anchors.F = F; X.anchors.pool = new THREE.Object3D(); F.add(X.anchors.pool);
-    X.anchors.pig = pig || F; X.anchors.pigDead = pigDead || F; X.anchors.luF = lu; X.anchors.arthasF = art; X.anchors.cedricF = ced; X.anchors.wolf = wolf || F;
-    X.cmp = { kz, hx, hz, wellP, rock }; const K = X.cmp;
+    X.anchors.pig = pig || F; X.anchors.luF = lu; X.anchors.arthasF = art; X.anchors.cedricF = ced; X.anchors.wolf = wolf || F;
+    X.anchors.sev = sev; X.anchors.pri = pri; X.anchors.baph = baph || sev; X.anchors.splash = splash;
+    X.cmp = { kz, hx, hz, wellP, rock, QZ };
+    const visT = [Lk(28), Lk(30, 2)], chainT = [Lk(32), Lk(33)], vfT = [Lk(33), Lk(34, -0.4)];
+    const Wp = (x, y, z) => F.localToWorld(V3(x, y, z));
     return {
-      group: g, d0: 8, d1: 84, vis: 60,
+      group: g, d0: 0, d1: 400, t0: 4, t1: 263.4,
       update(t, ctx) {
         acts.forEach((a) => a.update(t, ctx));
-        if (pigDead) pigDead.visible = t >= killT;
+        C.lib.fallAt(pig, t, killT, 0.9, -1);                                                                                             // the Pig goes over backwards
+        fires.forEach((f) => f.update(ctx.time));
         sheen.forEach((s, i) => { s.material.opacity = 0.1 + 0.08 * Math.sin(ctx.time * 0.7 + i); });
-        winFire.forEach((f, i) => { f.material.opacity = 0.55 + 0.3 * Math.sin(ctx.time * 9 + i * 2) * (t < 70 ? 1 : 0.4); });
-        smoke.forEach((o) => { const u = (ctx.time * 0.12 + o.ph) % 1; o.s.position.set(o.x + u * 2, 6 + u * 10, kz - 1); o.s.material.opacity = 0.45 * Math.sin(u * Math.PI); });
-        embers.forEach((e, i) => { e.material.opacity = 0.4 + 0.3 * Math.sin(ctx.time * 3 + i); });
-        const lp = F.worldToLocal(lu.getWorldPosition(V3(0, 0, 0))).add(V3(0, 1.4, 0)), pp = pig ? pig.position.clone().add(V3(0, 1.8, 0)) : V3(0, 0, 0);
+        winFire.forEach((f, i) => { f.material.opacity = (0.55 + 0.3 * Math.sin(ctx.time * 9 + i * 2)) * (t < 70 ? 1 : 0.4); });
+        smoke.forEach((o) => { const u = (ctx.time * 0.12 + o.ph) % 1; o.s.position.set(o.x + u * 1.5, 6 + u * 4.5, -15.6 + u * 3); o.s.material.opacity = 0.45 * Math.sin(u * Math.PI); });
+        embers.concat(cityEmbers).forEach((e, i) => { e.material.opacity = 0.4 + 0.3 * Math.sin(ctx.time * 3 + i); });
+        citySmoke.forEach((o) => { const u = (ctx.time * 0.05 + o.ph) % 1; o.s.position.set(o.x + u * 3, 4 + u * 18, o.z); o.s.material.opacity = 0.5 * Math.sin(u * Math.PI); });
+        const lp = lu.position.clone().add(V3(0, 1.4, 0)), pp = pig ? pig.position.clone().add(V3(0, 1.8, 0)) : V3(0, 0, 0);
         bolts.forEach((b, i) => { const u = (t - fireT - i * 0.45) / 0.5; b.material.opacity = u > 0 && u < 1 ? 1 : 0; if (u > 0 && u < 1) b.position.lerpVectors(lp, pp, u); });
-        splash.position.set(-1, 0.4, 1); splash.material.opacity = 0.9 * Math.max(0, 1 - Math.abs(t - grabT - 1.6) / 0.8);
+        splashB.material.opacity = 0.9 * Math.max(0, 1 - Math.abs(t - grabT - 1.6) / 0.8);
         glints.forEach((o) => { const u = (ctx.time * 0.15 + o.ph) % 1; o.s.position.lerpVectors(rock, wellP, u).setY(0.1); });
         mist.material.opacity = 0.5 * ss(Lk(14, -0.5), Lk(14, 0.5), t) * (1 - ss(Lk(15), Lk(15, 1), t));
-        const c = t > 83 && t < 124 ? Wp(K.wellP.x, 0, K.wellP.z) : Wp(0, 0, 0); ctx.light(0, c.x, 2.4, c.z, t > 83 && t < 124 ? 0x8aa0d0 : 0xff3a20, t > 83 && t < 124 ? 2.0 : 1.8, 26);
-        const ash = t > Lk(10, -1) && t < Lk(12, -0.5), w = ash ? Wp(hx, 3, hz) : Wp(0, 5.5, kz); ctx.light(1, w.x, w.y, w.z, 0xff7a30, ash ? 2.8 : 2.6, 30);
-      }
-    };
-  },
-
-  /* ---- the drowned dead city of Stagford; Severin; Baphomet in a vision; the elixir poured out ---- */
-  function deadCity(X) {
-    const kit = C.kit(X), ch = chars(X), g = new THREE.Group(), Lk = X.line;
-    const d0 = DCITY, d1 = DCH - 10;
-    g.add(C.lib.cave(X, d0 - 8, d1 + 4, { w: 26, h: 30, fungus: 0x60a0ff }));
-    // black water both sides of a stone causeway
-    const blk = new THREE.MeshLambertMaterial({ color: 0x06080c, emissive: 0x010306 });
-    for (let d = d0; d < d1; d += 6) [-1, 1].forEach((s) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 22), blk); m.position.copy(X.at(d + 3, s * 13.5, 0.04)); m.rotation.set(-Math.PI / 2, 0, X.yawAt(d + 3) + Math.PI / 2); g.add(m); });
-    const cob = C.tex('cobblestone_floor_04_diff', 1, 1);
-    for (let d = d0; d < d1; d += 6) { const m = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 6.4), new THREE.MeshLambertMaterial({ color: 0x6a7078, map: cob || null })); m.position.copy(X.at(d + 3, 0, 0.03)); m.rotation.set(-Math.PI / 2, 0, X.yawAt(d + 3)); g.add(m); }
-    // the dead houses, dark windows, standing in the water
-    const hs = [];
-    for (let d = d0 + 4; d < d1 - 4; d += 9) [-1, 1].forEach((s) => { if (Math.abs(d - DV) < 9) return; const p = X.at(d + R(-1.5, 1.5), s * R(7.5, 10), 0); hs.push({ x: p.x, z: p.z, yaw: X.yawAt(d) + (s > 0 ? -Math.PI / 2 : Math.PI / 2), w: pick([4, 6]), d: 6, st: R(0, 1) < 0.6 ? 2 : 1, brick: R(0, 1) < 0.4 }); });
-    const vil = kit.village(hs, { tint: 0x8090a8, glass: 0x0a0c12 }); if (vil) g.add(vil);
-    // the drowned dead, and their spirits
-    for (let i = 0; i < (X.mobile ? 8 : 14); i++) { const b = lay(ch.person && ch.person({ bake: true, seed: 7000 + i * 11 })); if (!b) break; darkTint(b, 0x5a6878); const s = (i % 2 ? 1 : -1); b.position.copy(X.at(d0 + 8 + i * 8.5, s * R(3.2, 6), 0.02)); b.rotation.y = R(0, TAU); g.add(b); }
-    const spirits = []; for (let i = 0; i < 26; i++) { const s = X.glow(0x9ad8ff, R(0.4, 0.9), 0); s.position.copy(X.at(R(d0, d1), R(-12, 12), 0)); g.add(s); spirits.push({ s, ph: R(0, 1), y0: R(0, 2) }); }
-    // the square where she speaks
-    const sq = X.at(DV, 0, 0);
-    const torch = (o) => { const f = X.glow(0xffa040, 1.1, 0.95); C.attach(o, 'hand_r', f, [0, 0.12, 0.05]); return f; };
-    const lu = ch.lucien({ pose: 'Walk_Loop' }), art = ch.arthas({ pose: 'Walk_Loop' }), ced = ch.cedric({ pose: 'Walk_Loop' });
-    lu.userData.blade.visible = false; lu.userData.bladeGlow.visible = false; torch(lu);
-    const pri = ch.person({ seed: 6107, female: false, outfit: 'peasant', tint: 0x5a4a3a, pose: 'Walk_Loop' }); pri.userData.label = 'prisoner';
-    const sev = severin(X, ch, { crown: true });
-    [lu, art, ced, pri, sev].forEach((o) => g.add(o));
-    const s0 = d0 + 4;
-    lu.position.copy(X.at(s0, 0.4, 0)); art.position.copy(X.at(s0 - 1.6, -1.2, 0)); ced.position.copy(X.at(s0 - 1.8, 1.4, 0)); pri.position.copy(X.at(s0 - 3.6, 0.2, 0));
-    const meet = (side, dd) => X.at(DV + dd, side, 0);
-    const turnT = Lk(26), sevGo = Lk(34, -0.6), shakeT = Lk(35), hideT = Lk(38), pourT = Lk(40), aloneT = Lk(42, -1.2);
-    const vial = X.glow(0x60ff90, 0.45, 0); C.attach(lu, 'hand_l', vial, [0, 0.08, 0.04]);
-    const splash = X.glow(0x60ff90, 2.4, 0); splash.position.copy(meet(1.6, 1.4)).setY(0.1); g.add(splash);
-    const acts = [
-      C.act(lu, [{ t: 0, show: false }, { t: 124, show: true, face: X.at(s0 + 5, 0, 0) }, { t: 124.4, to: railPts(X, s0, DV - 1.4, 0.4), by: 161.5 }, { t: 161.5, pose: 'Idle_Loop', face: meet(0, 3) },
-        { t: turnT + 0.6, pose: 'Idle_Loop', face: meet(-0.4, 2.2) }, { t: Lk(31, 0.6), pose: 'Idle_Loop', face: meet(-0.4, 2.2) },   // takes the elixir
-        { t: Lk(34, -0.3), pose: 'Idle_Talking_Loop', face: meet(0, -4) },                                                         // "I told my brothers"
-        { t: hideT, pose: 'Idle_Loop', face: meet(0, -4) },
-        { t: pourT - 1.6, to: meet(1.4, 0.6), move: 1.4 }, { t: pourT - 0.2, pose: 'Crouch_Idle_Loop', face: meet(1.6, 1.4) },     // "I poured it out upon the stone"
-        { t: Lk(41), pose: 'Idle_Loop', face: meet(0, 8) },
-        { t: 236.4, to: railPts(X, DV + 1, d1 - 6, 0.3), by: 262.5 }, { t: 262.8, show: false }]),
-      C.act(art, [{ t: 0, show: false }, { t: 124, show: true, face: X.at(s0 + 5, 0, 0) }, { t: 124.8, to: railPts(X, s0 - 1.6, DV - 4, -1.2), by: 161.8 }, { t: 161.8, pose: 'Idle_Loop', face: meet(0, 3) },
-        { t: shakeT, pose: 'Idle_Loop', face: meet(-6, -8) },                                                                    // "Arthas doubted, shook his head"
-        { t: aloneT, to: railPts(X, DV - 4, DV - 30, -1.2), speed: 1.3 }, { t: aloneT + 18, show: false }]),
-      C.act(ced, [{ t: 0, show: false }, { t: 124, show: true, face: X.at(s0 + 5, 0, 0) }, { t: 125, to: railPts(X, s0 - 1.8, DV - 3.6, 1.4), by: 162 }, { t: 162, pose: 'Idle_Loop', face: meet(0, 3) },
-        { t: Lk(36, -0.4), pose: 'Idle_Loop', face: lu },                                                                        // "Cedric's eyes stayed sharp and still"
-        { t: aloneT + 0.3, to: railPts(X, DV - 3.6, DV - 30, 1.2), speed: 1.3 }, { t: aloneT + 18, show: false }]),
-      C.act(pri, [{ t: 0, show: false }, { t: 124, show: true, face: X.at(s0 + 5, 0, 0) }, { t: 125.2, to: railPts(X, s0 - 3.6, DV + 2.2, -0.4), by: 161.2 }, { t: 161.2, pose: 'Idle_Loop', face: meet(0, 8) },
-        { t: turnT - 0.5, pose: 'Idle_Loop', face: lu }, { t: turnT + 0.5, show: false }]),                                          // "her face was his, the prisoner turned"
-      C.act(sev, [{ t: 0, show: false }, { t: turnT + 0.5, show: true, pose: 'Idle_Loop', face: lu }, { t: Lk(27), pose: 'Idle_Talking_Loop', face: lu },
-        { t: Lk(28), pose: 'Spell_Simple_Idle_Loop', face: meet(5, 18) }, { t: Lk(30), pose: 'Idle_Talking_Loop', face: lu },
-        { t: Lk(31, -0.2), pose: 'Spell_Simple_Idle_Loop', face: lu }, { t: Lk(32), pose: 'Idle_Talking_Loop', face: lu }, { t: sevGo, show: false }])
-    ];
-    sev.position.copy(meet(-0.4, 2.2));
-    // Baphomet in the vision: a giant behind the dead houses, then in chains, then in flames
-    const baph = ch.baphomet ? ch.baphomet({ h: 13, pose: 'Idle_Loop' }) : null;
-    if (baph) { baph.position.copy(X.at(DV + 15, 4, 0)); baph.lookAt(sq.x, 0, sq.z); g.add(baph); }
-    const chains = []; const cp = X.at(DV + 15, 4, 0);
-    for (let k = 0; k < 40; k++) { const a = k * 0.45; chains.push(M([cp.x + Math.cos(a) * 1.6, 2 + k * 0.16, cp.z + Math.sin(a) * 1.6], [Math.PI / 2, k % 2 ? Math.PI / 2 : 0, a], [3, 3, 3])); }
-    const chainM = C.inst(kit.linkGeo, C.lamb({ color: 0xb8bcc8 }), chains); g.add(chainM);
-    const flames = []; for (let k = 0; k < 10; k++) { const f = X.glow(0xff5a20, R(3, 6), 0); f.position.copy(cp).add(V3(R(-3, 3), R(0, 6), R(-3, 3))); g.add(f); flames.push(f); }
-    const swirl = X.glow(0x70ffc8, 3, 0); swirl.position.copy(meet(-0.4, 2.2)).setY(1.2); g.add(swirl);
-    X.anchors.luCity = lu; X.anchors.arthasCity = art; X.anchors.cedricCity = ced; X.anchors.sev = sev; X.anchors.pri = pri; X.anchors.baph = baph || sev;
-    X.anchors.sq = new THREE.Object3D(); X.anchors.sq.position.copy(sq); g.add(X.anchors.sq);
-    X.anchors.splash = splash;
-    const visT = [Lk(28), Lk(30, 2)], chainT = [Lk(32), Lk(33)], fireT = [Lk(33), Lk(34, -0.4)];
-    return {
-      group: g, d0: d0 - 8, d1: d1 + 4, vis: 40,
-      update(t, ctx) {
-        acts.forEach((a) => a.update(t, ctx));
-        spirits.forEach((o) => { const u = (ctx.time * 0.06 + o.ph) % 1; o.s.position.y = o.y0 + u * 9; o.s.material.opacity = (t > Lk(23) ? 0.55 : 0.25) * Math.sin(u * Math.PI); });
-        const vb = (t > visT[0] && t < visT[1]) || (t > chainT[0] && t < fireT[1]) || (t > Lk(39) && t < Lk(39, 2.5));
+        torchG.material.opacity = t > 102 ? 0.95 : 0;                                                                                     // "I carry fire"
+        const vb = (t > visT[0] && t < visT[1]) || (t > chainT[0] && t < vfT[1]) || (t > Lk(39) && t < Lk(39, 2.5));
         if (baph) { baph.visible = vb; if (baph.userData.wings) baph.userData.wings.forEach((w, i) => { w.rotation.z = (i ? -1 : 1) * (0.4 + 0.3 * Math.sin(ctx.time * 2)); }); }
-        chainM.visible = (t > chainT[0] && t < fireT[1]) || (t > Lk(39) && t < Lk(39, 2.5));
-        flames.forEach((f, k) => { f.material.opacity = t > fireT[0] && t < fireT[1] ? 0.6 + 0.3 * Math.sin(ctx.time * 9 + k) : 0; });
+        chainM.visible = (t > chainT[0] && t < vfT[1]) || (t > Lk(39) && t < Lk(39, 2.5));
+        flames.forEach((f, k) => { f.material.opacity = t > vfT[0] && t < vfT[1] ? 0.6 + 0.3 * Math.sin(ctx.time * 9 + k) : 0; });
         swirl.material.opacity = 0.9 * Math.max(0, 1 - Math.abs(t - turnT - 0.5) / 0.6) + 0.7 * Math.max(0, 1 - Math.abs(t - sevGo) / 0.6);
         vial.material.opacity = t > Lk(31, 0.4) && t < hideT ? 0.9 : 0;
         splash.material.opacity = t > pourT && t < pourT + 4 ? 0.8 * (1 - (t - pourT) / 4) : 0;
-        const lp = lu.getWorldPosition(V3(0, 0, 0)); ctx.light(1, lp.x, 2.2, lp.z, 0xffa040, 2.2, 16);
-        ctx.light(0, cp.x, 8, cp.z, vb ? 0xff3010 : 0x60ff90, vb ? 4 : (t > pourT && t < pourT + 4 ? 2.5 : 0), 40);
+        // light: wherever the story is
+        const l0 = t < 72 ? Wp(0, 2, 0) : t < 84 ? Wp(hx, 3, hz) : t < 104 ? Wp(wellP.x, 3, wellP.z) : t < 148 ? Wp(0, 4, lu.position.z) : vb ? Wp(bp.x, 8, bp.z) : Wp(lu.position.x, 2.2, lu.position.z);
+        ctx.light(0, l0.x, l0.y, l0.z, t < 72 ? 0xff3a20 : t < 84 ? 0xff7a30 : t < 104 ? 0x8aa0d0 : vb ? 0xff3010 : 0xffa040, vb ? 4 : 2.4, vb ? 40 : 26);
+        const l1 = t < 84 ? Wp(0, 5.5, -18) : t > pourT && t < pourT + 4 ? Wp(splash.position.x, 1, splash.position.z) : Wp(0, 6, -60);
+        ctx.light(1, l1.x, l1.y, l1.z, t > pourT && t < pourT + 4 ? 0x60ff90 : 0xff7a30, 2.4, 30);
       }
     };
   },
@@ -338,72 +339,73 @@ function shots(X, D) {
   const near = (o, dx, dy, dz) => () => wp(o).add(V3(dx, dy, dz));
   const lu = H.lucien || V3(0, 0.45, -8.55);
   const f = (x, y, z) => () => A.F.localToWorld(V3(x, y, z)), c = (x, y, z) => () => A.CH.localToWorld(V3(x, y, z));
-  const K = X.cmp || { kz: -15, hx: 10.5, hz: -7, wellP: V3(-10, 0, -3) }, CHd = X.church || { L1: -32, gz: -21 };
+  const K = X.cmp || { kz: -16, hx: 7.2, hz: -27, wellP: V3(-5.6, 0, -35), rock: V3(-9.2, 0, -39.5), QZ: -128 }, CHd = X.church || { L1: -32, gz: -21 };
   return [
     // the Blackbird, straight down into the cave
     { t: 0, cam: D.orbit(lu, { r: 3.2, h: 1.9, a0: 0.9, w: 0.08, t0: 0, lookH: 1.5, fov: 46 }) },
     { t: 5.0, cam: D.dolly(V3(0.6, 2.4, -6.6), V3(0, 2.0, -11.4), V3(0, 1.9, -16), { fov: 60, fov1: 72 }) },
     // the compound: the charge round the pool
-    { t: 9.5, cam: D.dolly(f(14, 9, 20), f(6, 5, 13), f(0, 1, -4), { fov: 60 }) },
+    { t: 9.5, cam: D.dolly(f(0, 5.0, 11), f(3.6, 4.2, 8.5), f(0, 1, -4), { fov: 62 }) },
     { t: 13.6, cam: D.fixed(f(3.6, 1.0, 9.5), near(A.pig, 0, 2.2, 0), { push: 0.2, fov: 54 }) },
     { t: 16.9, cam: D.orbit(f(-2.4, 0, 5), { r: 5.5, h: 1.6, a0: 1.2, w: 0.2, t0: 16.9, lookH: 1.6, fov: 58 }) },
     { t: Lk(0, -0.2), cam: D.fixed(f(-0.6, 1.4, 9.0), near(A.pig, 0, 2.0, 0), { push: 0.3, fov: 50 }) },                      // "we drove it back"
-    { t: Lk(1, -0.3), cam: D.fixed(near(A.luF, 1.0, 1.7, 1.6), near(A.pig, 0, 2.0, 0), { fov: 52 }) },                         // "where my fire cracked"
-    { t: Lk(1, 2.2), cam: D.fixed(f(4, 4, 0), f(0, 8, K.kz), { push: 0.2, fov: 54 }) },                                       // the smoke out of the window
-    { t: Lk(2, -0.3), cam: D.fixed(f(1.5, 6.2, K.kz + 4), f(0, 5.0, K.kz - 3), { push: 0.4, fov: 48 }) },                       // "I sent the flame, I did not know"
-    { t: Lk(3, -0.2), cam: D.fixed(f(-0.4, 5.6, K.kz + 0.8), f(0, 4.8, K.kz - 3.5), { push: 0.2, fov: 60 }) },                  // souls burning
-    { t: Lk(4, -0.3), cam: D.fixed(near(A.luF, -0.8, 1.6, -1.6), near(A.luF, 0, 1.5, 0), { push: 0.25, fov: 40 }) },             // "God forgive me"
-    { t: Lk(4, 3.0), cam: D.fixed(f(4.5, 2.4, 6.5), f(-1.2, 0.4, 1.2), { push: 0.2, fov: 54 }) },             // into the blood
-    { t: Lk(5, 1.6), cam: D.fixed(f(1.6, 0.7, 3.4), near(A.arthasF, 0, 0.3, 0), { push: 0.2, fov: 46 }) },                    // under
-    { t: Lk(6, -0.3), cam: D.fixed(f(1.9, 1.5, 7.0), near(A.luF, 0, 1.15, 0), { push: 0.3, fov: 38 }) },               // "my hands still shake"
-    { t: Lk(7, -0.2), cam: D.orbit(A.pool, { r: 6, h: 1.4, a0: 2.4, w: 0.18, t0: Lk(7), lookH: 1.0, fov: 58 }) },               // "what did I make?"
-    { t: 56.8, cam: D.fixed(f(2.8, 1.0, 5.6), near(A.arthasF, 0, 0.6, 0), { push: 0.2, fov: 50 }) },                           // hauled out
+    { t: Lk(1, -0.3), cam: D.fixed(f(3.4, 1.8, 10.4), near(A.pig, 0, 2.0, 0), { fov: 52 }) },                                // "where my fire cracked"
+    { t: Lk(1, 2.2), cam: D.fixed(f(4, 3, 2), f(0, 6.5, K.kz), { push: 0.2, fov: 56 }) },                                    // smoke out of the burned room's window
+    { t: Lk(2, -0.3), cam: D.fixed(f(1.2, 5.8, -12.5), f(0, 5.0, -19.5), { push: 0.4, fov: 50 }) },                          // "I sent the flame, I did not know"
+    { t: Lk(3, -0.2), cam: D.fixed(f(-0.4, 5.6, -16.4), f(0, 4.8, -21), { push: 0.2, fov: 62 }) },                          // souls burning
+    { t: Lk(4, -0.3), cam: D.fixed(f(1.9, 1.6, 6.6), near(A.luF, 0, 1.5, 0), { push: 0.25, fov: 40 }) },                     // "God forgive me"
+    { t: Lk(4, 3.0), cam: D.fixed(f(4.5, 2.4, 6.5), f(-1.2, 0.4, 1.2), { push: 0.2, fov: 54 }) },                            // into the blood
+    { t: Lk(5, 1.6), cam: D.fixed(f(1.6, 0.7, 3.4), near(A.arthasF, 0, 0.3, 0), { push: 0.2, fov: 46 }) },                   // under
+    { t: Lk(6, -0.3), cam: D.fixed(f(1.9, 1.5, 7.0), near(A.luF, 0, 1.15, 0), { push: 0.3, fov: 38 }) },                     // "my hands still shake"
+    { t: Lk(7, -0.2), cam: D.orbit(A.pool, { r: 7.5, h: 2.0, a0: 2.4, w: 0.15, t0: Lk(7), lookH: 1.0, fov: 58 }) },            // "what did I make?"
+    { t: 56.8, cam: D.fixed(f(2.8, 1.0, 5.6), near(A.arthasF, 0, 0.6, 0), { push: 0.2, fov: 50 }) },                         // hauled out
     { t: 60.4, cam: D.orbit(near(A.pig, 0, 0, 0), { r: 6, h: 2.2, a0: 1.8, w: 0.12, t0: 60.4, lookH: 2.2, fov: 56 }) },
-    { t: 63.9, cam: D.fixed(f(-0.6, 1.1, 6.4), near(A.arthasF, 0, 1.4, 0), { fov: 54 }) },                                       // the blow
-    // the aftermath
-    { t: Lk(8, -0.2), cam: D.dolly(near(A.pigDead, 1.6, 4.5, 3.2), near(A.pigDead, 1.2, 2.2, 2.4), near(A.pigDead, 0, 0.4, 0), { fov: 52 }) },  // "the pig is dead"
-    { t: Lk(9, -0.2), cam: D.orbit(f(0, 0, 4), { r: 5.5, h: 1.2, a0: 3.4, w: 0.1, t0: Lk(9), lookH: 1.4, fov: 56 }) },          // "still we shout"
-    { t: Lk(10, -0.2), cam: D.fixed(f(K.hx - 3.6, 3.4, K.hz + 5.2), f(K.hx, 0.2, K.hz), { push: 0.25, fov: 52 }) },       // "next door lies ash"
-    { t: Lk(11, -0.2), cam: D.fixed(near(A.luF, 0.8, 1.6, 1.0), near(A.luF, 0, 1.3, 0), { push: 0.3, fov: 38 }) },               // "my fireball, my hand"
-    { t: Lk(12, -0.3), cam: D.dolly(f(K.wellP.x + 4, 1.4, K.wellP.z + 5), f(K.wellP.x + 2.5, 1.0, K.wellP.z + 3), f(-15.5, 1.5, -12), { fov: 56 }) },   // water from stone
+    { t: 63.9, cam: D.fixed(f(-0.6, 1.3, 7.4), f(-3.6, 1.2, 2.0), { fov: 56 }) },                                            // the blow, he goes over
+    // the aftermath, deeper in
+    { t: Lk(8, -0.2), cam: D.dolly(f(-1.6, 4.5, 6.4), f(-2.4, 2.4, 4.8), f(-4.6, 0.3, 0.8), { fov: 52 }) },                   // "the pig is dead"
+    { t: Lk(9, -0.2), cam: D.orbit(f(0, 0, 3), { r: 5.5, h: 1.2, a0: 3.4, w: 0.1, t0: Lk(9), lookH: 1.4, fov: 56 }) },          // "still we shout"
+    { t: Lk(10, -0.2), cam: D.fixed(f(K.hx - 4.4, 3.0, K.hz + 6), f(K.hx, 0.2, K.hz), { push: 0.25, fov: 52 }) },              // "next door lies ash"
+    { t: Lk(11, -0.2), smooth: 2, cam: D.track(A.luF, { offset: [0.4, 1.6, 2.4], lookOffset: [0, 1.3, 0], fov: 42 }) },        // "my fireball, my hand"
+    { t: Lk(12, -0.3), cam: D.dolly(f(K.wellP.x + 4.4, 1.6, K.wellP.z + 5), f(K.wellP.x + 3, 1.2, K.wellP.z + 3), f(K.rock.x, 1.5, K.rock.z), { fov: 56 }) },   // water from stone
     { t: Lk(13, -0.2), cam: D.fixed(f(K.wellP.x + 1.2, 2.6, K.wellP.z + 1.2), f(K.wellP.x, 0.7, K.wellP.z), { push: 0.3, fov: 50 }) },   // the corrupted well
-    { t: Lk(14, -0.3), cam: D.fixed(f(K.wellP.x + 3.4, 1.0, K.wellP.z + 4.4), near(A.wolf, 0, 0.9, 0), { push: 0.25, fov: 44 }) },   // the black that turns a man to wolf
-    { t: Lk(15, -0.2), cam: D.dolly(f(K.wellP.x + 2, 2.5, K.wellP.z), f(4, 3, K.kz + 3), f(K.hx, 1, K.hz), { fov: 58 }) },       // from the death I built myself
-    { t: Lk(16, -0.2), smooth: 2, cam: D.track(A.luF, { offset: [0.8, 1.7, -3.0], lookOffset: [0, 0.4, 6], fov: 62 }) },       // root to vein
-    { t: Lk(18, -0.3), cam: D.fixed(f(-11.2, 1.0, -22), f(-9.6, 0.1, -50), { push: 0.3, fov: 58 }) },                            // the water carries on down
-    { t: Lk(19, -0.2), cam: D.fixed(near(A.luF, 0.6, 1.7, -1.4), near(A.luF, 0, 1.55, 0), { push: 0.15, fov: 42 }) },
-    // Stagford
-    { t: 123.6, cam: D.dolly(P(DCITY - 4, 0, 14), P(DCITY + 8, 0, 8), P(DCITY + 30, 0, 1.5), { fov: 64 }) },
-    { t: Lk(21, -0.3), cam: D.track(A.luCity, { offset: [0.6, 1.7, 3.6], lookOffset: [0, 1.3, 0], fov: 56 }) },
-    { t: Lk(22, -0.3), cam: D.rail({ h: 1.0, side: 4, ahead: 14, lookH: 0.4, fov: 60 }) },                                         // the dead of Stagford
-    { t: Lk(23, -0.3), cam: D.rail({ h: 16, ahead: 34, lookH: 0, fov: 66 }) },                                                     // a city empty
-    { t: Lk(24, -0.3), cam: D.track(A.luCity, { offset: [-0.5, 1.6, 2.2], lookOffset: [0, 1.5, 0], fov: 44 }) },                 // I carry fire
-    { t: Lk(25, -0.2), cam: D.track(A.luCity, { offset: [2.6, 3.2, -4.4], lookOffset: [0, 1.2, 8], fov: 60 }) },
-    { t: 151.5, cam: D.rail({ h: 2.2, ahead: 16, lookH: 1.3, fov: 62 }) },
-    { t: 157.5, smooth: 2, cam: D.track(A.luCity, { offset: [2.2, 2.3, 3.2], lookOffset: [0, 1.3, 0], fov: 54 }) },
+    { t: Lk(14, -0.3), cam: D.fixed(f(K.wellP.x + 4.4, 1.0, K.wellP.z + 5.4), near(A.wolf, 0, 0.9, 0), { push: 0.25, fov: 44 }) },      // the black that turns a man to wolf
+    { t: Lk(15, -0.2), cam: D.fixed(f(-1, 3.2, -30), f(K.hx, 0.4, K.hz), { push: 0.2, fov: 58 }) },                           // from the death I built myself
+    { t: Lk(16, -0.2), cam: D.fixed(f(1.6, 0.6, -40), f(1.2, 0.05, -10), { push: 0.2, fov: 60 }) },                          // root to vein: the channel back to the pool
+    { t: Lk(17, -0.2), smooth: 2, cam: D.track(A.luF, { offset: [0.8, 1.8, -3.0], lookOffset: [0, 0.6, 6], fov: 62 }) },      // the water carries all our pain
+    { t: Lk(18, -0.3), cam: D.fixed(f(0, 3.6, -46), f(-5, 0.9, -58), { push: 0.25, fov: 58 }) },                             // the draining hall
+    { t: Lk(19, -0.2), cam: D.fixed(near(A.luF, 0.8, 1.7, -1.6), near(A.luF, 0, 1.55, 0), { push: 0.15, fov: 42 }) },
+    // chorus: beneath the cave, below the ground; and Stagford, up on the surface, empty
+    { t: 124.4, cam: D.dolly(f(0, 8.5, -46), f(0, 6, -56), f(0, 0.5, -76), { fov: 64 }) },                                    // "what have we found"
+    { t: Lk(21, -0.3), smooth: 2, cam: D.track(A.luF, { offset: [0.6, 1.8, 4.0], lookOffset: [0, 1.3, 0], fov: 56 }) },       // "beneath the cave"
+    { t: Lk(22, -0.3), cam: D.dolly(f(-3, 1.4, -50), f(-3, 1.4, -66), f(-5, 0.9, -60), { fov: 52 }) },                        // the dead of Stagford
+    { t: Lk(23, -0.3), cam: D.dolly(f(0, 22, -96), f(0, 18, -112), f(0, 0, -160), { fov: 64 }) },                            // a city empty, a city dead
+    { t: Lk(24, -0.3), smooth: 2, cam: D.track(A.luF, { offset: [-0.5, 1.6, 2.2], lookOffset: [0, 1.5, 0], fov: 44 }) },      // I carry fire
+    { t: Lk(25, -0.2), cam: D.fixed(f(3, 2.4, -100), near(A.luF, 0, 1.5, 0), { push: 0.2, fov: 56 }) },                       // out of the ground
+    { t: 151.5, cam: D.fixed(f(-5, 9, -112), f(0, 1.5, K.QZ), { push: 0.15, fov: 60 }) },
+    { t: 156.5, smooth: 2, cam: D.track(A.luF, { offset: [2.2, 2.3, 3.2], lookOffset: [0, 1.3, 0], fov: 54 }) },
     // Severin
-    { t: Lk(26, -0.3), cam: D.fixed(P(DV - 2.8, 1.4, 1.7), near(A.pri, 0, 1.5, 0), { push: 0.3, fov: 40 }) },           // the prisoner turned
+    { t: Lk(26, -0.3), cam: D.fixed(f(1.8, 1.7, K.QZ + 3.6), near(A.pri, 0, 1.5, 0), { push: 0.3, fov: 40 }) },               // the prisoner turned
     { t: Lk(27, -0.2), cam: D.orbit(A.sev, { r: 2.8, h: 1.5, a0: 2.6, w: 0.08, t0: Lk(27), lookH: 1.5, fov: 44 }) },
-    { t: Lk(28, -0.3), cam: D.fixed(P(DV - 7, 0.2, 1.5), near(A.baph, 0, 8, 0), { push: 0.2, fov: 62 }) },               // "Baphomet comes"
-    { t: Lk(29, -0.2), cam: D.fixed(P(DV + 4.4, -1.6, 1.7), near(A.sev, 0, 1.55, 0), { push: 0.2, fov: 40 }) },
-    { t: Lk(30, -0.2), cam: D.orbit(A.sq, { r: 6, h: 2, a0: 0.4, w: 0.07, t0: Lk(30), lookH: 1.4, fov: 52 }) },
-    { t: Lk(31, -0.3), cam: D.fixed(near(A.sev, 0.9, 1.3, 0.9), () => wp(A.sev).lerp(wp(A.luCity), 0.5).add(V3(0, 1.2, 0)), { push: 0.2, fov: 44 }) },   // the elixir
-    { t: Lk(32, -0.3), cam: D.fixed(P(DV - 7, 2.0, 2.2), near(A.baph, 0, 7, 0), { push: 0.25, fov: 58 }) },                  // free from chains
-    { t: Lk(33, -0.2), cam: D.fixed(near(A.luCity, -1.2, 1.2, -1.6), near(A.baph, 0, 6, 0), { push: 0.2, fov: 62 }) },            // blood and flames
-    { t: Lk(34, -0.2), cam: D.orbit(near(A.luCity, 0, 0, -2), { r: 4.2, h: 1.6, a0: 2.4, w: 0.08, t0: Lk(34), lookH: 1.5, fov: 52 }) },   // "I told my brothers"
-    { t: Lk(35, -0.2), cam: D.fixed(near(A.luCity, 0.5, 1.7, 0.4), near(A.arthasCity, 0, 1.6, 0), { push: 0.2, fov: 40 }) },      // Arthas doubted
-    { t: Lk(36, -0.2), cam: D.fixed(near(A.luCity, -0.6, 1.7, 0.2), near(A.cedricCity, 0, 1.6, 0), { push: 0.2, fov: 38 }) },     // Cedric's eyes
-    { t: Lk(38, -0.2), cam: D.fixed(near(A.luCity, 0.9, 1.3, 0.9), near(A.luCity, 0, 1.0, 0), { push: 0.25, fov: 40 }) },         // the vial hid from sight
-    { t: Lk(39, -0.2), cam: D.fixed(P(DV - 3, -2.4, 1.2), near(A.baph, 0, 7, 0), { push: 0.3, fov: 56 }) },                  // that captive knight
-    { t: Lk(40, -0.6), cam: D.fixed(near(A.splash, 1.6, 1.2, 1.6), near(A.splash, 0, 0.2, 0), { push: 0.2, fov: 46 }) },          // poured out upon the stone
-    { t: Lk(41, -0.2), cam: D.fixed(near(A.luCity, 0.4, 1.7, 1.6), near(A.luCity, 0, 1.55, 0), { push: 0.2, fov: 42 }) },
-    { t: Lk(42, -0.6), cam: D.orbit(A.luCity, { r: 3, r1: 16, h: 2, h1: 14, a0: 0.4, w: 0.1, t0: Lk(42, -0.6), lookH: 1.2, fov: 56 }) },   // alone
-    // chorus 2: alone through the dead city
-    { t: Lk(43, -0.3), smooth: 2, cam: D.track(A.luCity, { offset: [0.6, 1.7, 3.6], lookOffset: [0, 1.3, 0], fov: 56 }) },
-    { t: Lk(45, -0.3), cam: D.rail({ h: 1.2, side: -4, ahead: 12, lookH: 0.4, fov: 60 }) },
-    { t: Lk(46, -0.3), cam: D.track(A.luCity, { offset: [3, 5, -6], lookOffset: [0, 1, 6], fov: 60 }) },
-    { t: Lk(47, -0.3), cam: D.track(A.luCity, { offset: [-0.5, 1.6, 2.2], lookOffset: [0, 1.5, 0], fov: 44 }) },
-    { t: Lk(48, -0.2), smooth: 2, cam: D.track(A.luCity, { offset: [0, 2.4, -5], lookOffset: [0, 1.6, 10], fov: 62 }) },
+    { t: Lk(28, -0.3), cam: D.fixed(f(-0.6, 1.4, K.QZ + 7), near(A.baph, 0, 8, 0), { push: 0.2, fov: 62 }) },                 // "Baphomet comes"
+    { t: Lk(29, -0.2), cam: D.fixed(f(-1.8, 1.7, K.QZ - 6), near(A.sev, 0, 1.55, 0), { push: 0.2, fov: 40 }) },
+    { t: Lk(30, -0.2), cam: D.orbit(f(0, 0, K.QZ), { r: 6, h: 2, a0: 0.4, w: 0.07, t0: Lk(30), lookH: 1.4, fov: 52 }) },
+    { t: Lk(31, -0.3), cam: D.fixed(f(-1.6, 1.3, K.QZ - 0.4), () => wp(A.sev).lerp(wp(A.luF), 0.5).add(V3(0, 1.2, 0)), { push: 0.2, fov: 44 }) },   // the elixir
+    { t: Lk(32, -0.3), cam: D.fixed(f(1.4, 2.0, K.QZ + 9), near(A.baph, 0, 7, 0), { push: 0.25, fov: 58 }) },                 // free from chains
+    { t: Lk(33, -0.2), cam: D.fixed(f(-1.4, 1.2, K.QZ + 4), near(A.baph, 0, 6, 0), { push: 0.2, fov: 62 }) },                 // blood and flames
+    { t: Lk(34, -0.2), cam: D.orbit(f(0, 0, K.QZ + 3), { r: 4.6, h: 1.6, a0: 2.4, w: 0.08, t0: Lk(34), lookH: 1.5, fov: 52 }) },   // "I told my brothers"
+    { t: Lk(35, -0.2), cam: D.fixed(f(0.8, 1.7, K.QZ + 2.6), near(A.arthasF, 0, 1.6, 0), { push: 0.2, fov: 40 }) },           // Arthas doubted
+    { t: Lk(36, -0.2), cam: D.fixed(f(-0.4, 1.7, K.QZ + 2.4), near(A.cedricF, 0, 1.6, 0), { push: 0.2, fov: 38 }) },          // Cedric's eyes
+    { t: Lk(38, -0.2), cam: D.fixed(f(1.6, 1.3, K.QZ + 0.6), near(A.luF, 0, 1.0, 0), { push: 0.25, fov: 40 }) },             // the vial hid from sight
+    { t: Lk(39, -0.2), cam: D.fixed(f(-2.4, 1.2, K.QZ + 5), near(A.baph, 0, 7, 0), { push: 0.3, fov: 56 }) },                 // that captive knight
+    { t: Lk(40, -0.6), cam: D.fixed(near(A.splash, 1.6, 1.2, 1.6), near(A.splash, 0, 0.2, 0), { push: 0.2, fov: 46 }) },      // poured out upon the stone
+    { t: Lk(41, -0.2), cam: D.fixed(f(0.8, 1.7, K.QZ - 1.4), near(A.luF, 0, 1.55, 0), { push: 0.2, fov: 42 }) },
+    { t: Lk(42, -0.6), cam: D.orbit(A.luF, { r: 3, r1: 16, h: 2, h1: 14, a0: 0.4, w: 0.1, t0: Lk(42, -0.6), lookH: 1.2, fov: 56 }) },   // alone
+    // chorus 2: alone through the sacked city
+    { t: Lk(43, -0.3), smooth: 2, cam: D.track(A.luF, { offset: [0.6, 1.7, 3.6], lookOffset: [0, 1.3, 0], fov: 56 }) },
+    { t: Lk(45, -0.3), cam: D.fixed(f(-5.5, 1.2, K.QZ - 22), near(A.luF, 0, 1.2, 0), { push: 0.15, fov: 56 }) },
+    { t: Lk(46, -0.3), smooth: 2, cam: D.track(A.luF, { offset: [3, 5, -6], lookOffset: [0, 1, 6], fov: 60 }) },
+    { t: Lk(47, -0.3), smooth: 2, cam: D.track(A.luF, { offset: [-0.5, 1.6, 2.2], lookOffset: [0, 1.5, 0], fov: 44 }) },
+    { t: Lk(48, -0.2), smooth: 2, cam: D.track(A.luF, { offset: [0, 2.4, -5], lookOffset: [0, 1.6, 10], fov: 62 }) },
     // the church
     { t: 262.8, cam: D.dolly(c(0, 2.0, 1.2), c(0, 2.4, -6), c(0, 3, -30), { fov: 60 }) },
     { t: Lk(49, 1.6), cam: D.fixed(c(4.4, 1.7, -10), near(A.luCh, 0, 1.4, 0), { push: 0.2, fov: 50 }) },                         // their father's hall
@@ -425,7 +427,7 @@ function shots(X, D) {
 
 C.levels[ID] = {
   session: 'Level 6 · Session recap · 06/07/2026',
-  blurb: 'In the blood pool of his own compound the Pig nearly drowns Arthas before they bring him down. Under the cave lies Stagford, a drowned dead city; the last prisoner wears Severin’s face, and Lucien pours her elixir out alone. Then the church, and their father, the High Inquisitor, who says nothing.',
+  blurb: 'In the blood pool of his own compound the Pig nearly drowns Arthas before they bring him down. Below the cave lie the halls where Stagford’s people were bled, and above, Stagford stands sacked and empty; the last prisoner wears Severin’s face, and Lucien pours her elixir out alone. Then the church, and their father, the High Inquisitor, who says nothing.',
   length: '6 min', audio: 'levels/06-' + ID + '.mp3',
   packs: ['nature', 'village', 'beasts'],
   doorAt: 5.0,

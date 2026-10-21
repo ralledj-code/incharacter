@@ -1,7 +1,7 @@
 (function (root) {
 'use strict';
 const C = root.__cw, THREE = C.THREE;
-const { TAU, R, M, bx, cy, cn, ic, solid, lerp } = C;
+const { TAU, R, M, bx, cy, cn, ic, solid, lerp, clamp } = C;
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* Story kit shared by level modules (C.lib): props on the ground, rail paths, bodies, Severin, the pig, the blood troll,
@@ -31,6 +31,14 @@ L.lay = function (rig, clip, tm) {
   if (!rig || !rig.userData.mixer) return null;
   const b = C.bakeRig(rig, clip || 'Idle_Loop', tm || 0.4); if (!b) return null;
   const g = new THREE.Group(); b.rotation.x = -Math.PI / 2; b.position.set(0, 0.12, -(rig.userData.h || 1.8) * 0.5); g.add(b); return g;
+};
+// a real fall instead of swapping in a lying body: tips the model over its own feet (backwards, or dir = 1 forwards)
+// from t0 over dur seconds. Call every frame from the scene's update, after the actor. Actors only set heading, so this sticks.
+L.fallAt = function (o, t, t0, dur, dir) {
+  if (!o) return;
+  o.rotation.order = 'YXZ';
+  const u = clamp((t - t0) / (dur || 0.8), 0, 1), e = u * u;   // accelerating, like a body going over
+  o.rotation.x = (dir || -1) * (Math.PI / 2 - 0.06) * e;
 };
 L.corpse = function (ch, seed, tint) { return L.lay(ch.person && ch.person({ bake: true, seed, female: false, tint })); };
 
