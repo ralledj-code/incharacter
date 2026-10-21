@@ -129,6 +129,22 @@ L.druid = function (X, o) {
   return g;
 };
 
+/* The High Inquisitor (Arthas and Cedric's father): tall, white and gold robes, a red stole, grey beard, a mitre. */
+L.inquisitor = function (X, o) {
+  o = o || {};
+  const g = brute(X, { parts: [['ranger_m', { color: 0xe8e0cc }, /Hood/], ['hair_beard', 0xb8b4ac], ['hair_parted', 0xb8b4ac]], body: 0xd8b8a0, pose: o.pose || 'Idle_Loop', h: o.h || 1.95 }, o);
+  if (!g) return null;
+  C.attach(g, 'Head', solid([cn(0.11, 0.3, 4, 0xf0e8d8, [0, 0.27, -0.01], [0, Math.PI / 4, 0]), bx(0.02, 0.28, 0.13, 0xc8a040, [0, 0.25, 0.06]), cy(0.11, 0.11, 0.04, 8, 0xc8a040, [0, 0.13, -0.01])]), [0, 0, 0]);
+  C.attach(g, 'spine_03', solid([bx(0.07, 0.75, 0.02, 0x9a1a1a, [-0.09, -0.3, 0]), bx(0.07, 0.75, 0.02, 0x9a1a1a, [0.09, -0.3, 0]), bx(0.06, 0.06, 0.03, 0xc8a040, [0.09, -0.2, 0.01])]), [0, 0, 0.16]);
+  g.userData.label = 'inquisitor';
+  return g;
+};
+// a puff of dark smoke (normal blending, so it darkens what is behind it)
+L.smoke = function (X, color, size, op) {
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: X.glow(0xffffff, 1, 1).material.map, color: color || 0x161414, transparent: true, opacity: op === undefined ? 0.5 : op, depthWrite: false }));
+  s.scale.set(size || 3, size || 3, 1); return s;
+};
+
 /* Cave: rock walls both sides, a low black ceiling with stalactites, glowing fungi, from rail distance d0 to d1.
    o: { w (half width), h (ceiling), tint } */
 L.cave = function (X, d0, d1, o) {

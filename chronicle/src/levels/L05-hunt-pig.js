@@ -441,7 +441,7 @@ function shots(X, D) {
   const lu = H.lucien || V3(0, 0.45, -8.55), bros = () => (H.cedric ? wp(H.cedric) : V3(-2, 0, -4.6));
   const sq = (x, y, z) => () => A.square.localToWorld(V3(x, y, z)), kl = (x, y, z) => () => A.keep.localToWorld(V3(x, y, z)), cl = (x, y, z) => () => A.candles.localToWorld(V3(x, y, z));
   const dB = X.distAt(Lk(23)) + 6, dGt = X.distAt(Lk(27)) + 6, dA = X.sec.chorus2.d0 + 7;
-  const S = X.sec, dG = S.v1.d0 + 14, dK = X.distAt(217.9) + 34, dS = dK - 17;
+  const S = X.sec, dK = X.distAt(217.9) + 34, dS = dK - 17;
   return [
     // the Blackbird, then out on the hunt
     { t: 0, cam: D.fixed(V3(0.4, 2.7, 3.6), V3(0, 1.6, -8.6), { push: 0.15, fov: 55 }) },
