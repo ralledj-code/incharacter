@@ -82,6 +82,13 @@ Every lyric line should show its action. Tools:
 - Level 8 is the reference: the well (Arthas kneels on "bled his hand", Baphomet rises on "chains broke", wings spread on "the demon spoke"), the wood (the blade stops on "would not land"), the choruses (the brothers walk toward the camera, each steps forward on his name), the wyrm (rises, dives, flees, waits in the crater), the camp, the crossroads, the feast, the gaol.
 - Scenes can set `t0`/`t1` (song-time window) instead of path-distance visibility when they overlap other places (e.g. the gaol inside the street).
 
+### Shared story kit (`src/w3d_story.js`, `C.lib`)
+- `chars(X)` (party builders with a stand-in person for bare tests), `put(g, key, p, yaw, h)` props by height, `railPts(X, d0, d1, side)` paths, `lay(rig)` / `corpse(ch, seed, tint)` bodies on the floor, `severin(X, ch, { crown })`.
+- Villains on the rigged body: `pig(X, { h, pose })` (boar butcher with a broadaxe, level 5), `troll(X)` + `trollSkin(g)` (blood troll), `druid(X)` (hooded, antlers, green eyes; swap in a creature when it shapeshifts).
+- `cave(X, d0, d1, { w, h, wFn, hFn, fungus })`: rock walls, black ceiling, stalactites, glowing fungi along the rail (level 5 is all cave after the troll).
+- Name cards: `titles: [{ t, name, sub, dur }]` on the level shows who someone is the first time they are on screen (level 1 introduces the cast).
+- Anything built in a local group: call `group.updateMatrixWorld(true)` before `localToWorld` at build time.
+
 ### Creatures (`C.creature(key, { h, tint, eyes, clip })`, pack `beasts`)
 | key | clips |
 |---|---|

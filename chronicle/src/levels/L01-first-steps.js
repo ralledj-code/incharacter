@@ -50,36 +50,8 @@ const TITLES = [
   { t: 234.2, name: 'Severin', sub: 'a name that don’t sit right' }
 ];
 
-/* ---- helpers ---- */
-// the party builders, plus a stand-in person when the character art is missing (npm test runs without assets)
-function chars(X) {
-  const ch = C.chars(X); if (ch.person) return ch;
-  const o = Object.create(ch);
-  o.person = (p) => { const g = new THREE.Group(); g.add(solid([cy(0.22, 0.26, 1.2, 6, (p && p.tint) || 0x6a5a4a, [0, 0.8, 0]), ic(0.18, 1, 0xc8a080, [0, 1.6, 0])])); g.userData.pose = () => {}; return g; };
-  return o;
-}
-const put = (g, key, p, yaw, h) => {  // a pack prop standing on p, h metres tall
-  if (!C.hasModel(key)) return null;
-  const o = C.place(key, [p.x, p.y || 0, p.z], yaw || 0, h / C.modelSize(key).y); g.add(o); return o;
-};
-const railPts = (X, d0, d1, side, y) => { const pts = []; const st = d1 > d0 ? 3 : -3; for (let d = d0; st > 0 ? d < d1 : d > d1; d += st) pts.push(X.at(d, side, y || 0)); pts.push(X.at(d1, side, y || 0)); return pts; };
-const toward = (X, d, side) => { const p = X.at(d, side, 0); return p; };
-// a body on the floor: the rig baked in a pose, laid on its back (static)
-function corpse(ch, seed, tint) {
-  const p = ch.person && ch.person({ bake: true, seed, female: false, tint });
-  if (!p || !p.userData.mixer) return null;
-  const b = p && C.bakeRig(p, 'Idle_Loop', 0.4); if (!b) return null;
-  const g = new THREE.Group(); b.rotation.x = -Math.PI / 2; b.position.set(0, 0.12, -0.9); g.add(b); return g;
-}
-// Severin: pale, white-haired, in the black-green of the pines, eyes like cold lamps
-function severin(X, ch, o) {
-  const s = ch.person({ seed: 777, female: true, outfit: 'ranger', tint: 0x1a2a24, hair: 'hair_long', hairTint: 0xe6e8ee, pose: (o && o.pose) || 'Idle_Loop' });
-  s.traverse((m) => { if (m.isMesh) [].concat(m.material).forEach((x) => { if (x.color && /Body|Skin|Superhero/i.test(x.name)) x.color.multiplyScalar(1.25); }); });
-  [-0.032, 0.032].forEach((x) => { const e = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.012, 0.02), new THREE.MeshBasicMaterial({ color: 0xb0ffe0 })); C.attach(s, 'Head', e, [x, 0.075, 0.1]); });
-  const aura = X.glow(0x70ffc8, 2.6, 0.25); aura.position.y = 1.2; s.add(aura); s.userData.aura = aura;
-  s.userData.label = 'severin';
-  return s;
-}
+/* shared story kit (w3d_story.js) */
+const { chars, put, railPts, corpse, severin } = C.lib;
 
 const SCENES = [
   /* ---- the guild township: stalls and banners, Lucien busking for coins ---- */
