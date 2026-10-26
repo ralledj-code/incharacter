@@ -28,10 +28,16 @@ const LEVELS = {
     build(X) { return C.scenes.baphomet.map((f) => f(X)).filter(Boolean); }
   }, C.storyData.baphomet)
 };
-C.stories = PLAYLIST.map(([level, id, title, date, len]) => Object.assign(
-  { id, level, title, date, length: len },
-  LEVELS[id] || (C.levels && C.levels[id]) || { locked: true, session: 'Level ' + level + (date ? ' · ' + date : ''), blurb: SOON }
-));
+// a level with a live painted storyboard (C.boards, chronicle/painted/) plays painted; ?3d keeps the 3D ride,
+// ?painted previews boards that are not live yet (art still missing)
+const q = typeof location !== 'undefined' ? location.search : '', classic = /[?&]3d\b/.test(q), preview = /[?&]painted\b/.test(q);
+C.stories = PLAYLIST.map(([level, id, title, date, len]) => {
+  const s = Object.assign({ id, level, title, date, length: len },
+    LEVELS[id] || (C.levels && C.levels[id]) || { locked: true, session: 'Level ' + level + (date ? ' · ' + date : ''), blurb: SOON });
+  const key = String(level).padStart(2, '0') + '-' + id, board = C.boards && C.boards[key];
+  if (board && !s.locked && !classic && (board.live || preview)) Object.assign(s, { painted: board, paintBase: 'levels/' + key + '/', packs: [] });
+  return s;
+});
 // the page the book opens on: the latest playable level
 C.firstStory = C.stories.reduce((k, s, i) => (s.locked ? k : i), 0);
 })(typeof window !== 'undefined' ? window : globalThis);
