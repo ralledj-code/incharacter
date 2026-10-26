@@ -36,6 +36,8 @@ C.stories = PLAYLIST.map(([level, id, title, date, len]) => {
     LEVELS[id] || (C.levels && C.levels[id]) || { locked: true, session: 'Level ' + level + (date ? ' · ' + date : ''), blurb: SOON });
   const key = String(level).padStart(2, '0') + '-' + id, board = C.boards && C.boards[key];
   if (board && !s.locked && !classic && (board.live || preview)) Object.assign(s, { painted: board, paintBase: 'levels/' + key + '/', packs: [] });
+  // only painted levels are playable; the 3D rides stay reachable with ?3d
+  if (!s.locked && !s.painted && !classic) Object.assign(s, { locked: true, session: 'Level ' + level + (date ? ' · ' + date : ''), blurb: SOON });
   return s;
 });
 // the page the book opens on: the latest playable level
