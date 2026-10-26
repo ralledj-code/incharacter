@@ -21,7 +21,7 @@ Inside the InCharacter repo (ralledj-code/incharacter). Source: `chronicle/`. Bu
 - Skipped: Bush_Common (its leaves need the pack's vertex-colour shader).
 
 ## Architecture (src/, IIFEs sharing `window.__cw`; build order in scripts/build.mjs, levels/*.js auto-included)
-- Flow: start screen -> busy tavern hub (walk to the stage) -> Lucien's songbook on the music stand -> "Ask for this song" (downloads that level's packs + mp3) -> music video on song time -> end card -> back to the tavern. Tavern music loop between songs. First-visit coach hints (localStorage `alaron:coach`). `/chronicle` is public (middleware skips it).
+- Flow (2026-10-26): start screen = song list (one card per level, cover from its painted board's `cover` shot, Play goes straight into the song, Share = `/chronicle?song=<id>`, which puts that card first; `?painted`/`?3d` carry into shared links). Back/end return to the list. Old flow still behind "Step into the tavern": start screen -> busy tavern hub (walk to the stage) -> Lucien's songbook on the music stand -> "Ask for this song" (downloads that level's packs + mp3) -> music video on song time -> end card -> back to the tavern. Tavern music loop between songs. First-visit coach hints (localStorage `alaron:coach`). `/chronicle` is public (middleware skips it).
 - w1_core: helpers, level 8 data (CUES, LINE_TIMES, KEYS), moods (`C.defineMood`), procedural textures/geometry.
 - w1b_assets: on-demand packs (`C.PACKS`, `C.loadPacks`), `C.place / instModel / instObject / tex`, rigged people (`C.rigChar`, `C.bakeRig`), creatures (`C.creature`), `C.attach` to bones.
 - w2b_director: camera director: shot lists baked once at load with a damped spring per shot (no kicks/shake).
@@ -47,7 +47,6 @@ Inside the InCharacter repo (ralledj-code/incharacter). Source: `chronicle/`. Bu
 - Check: `node tools/pshot.cjs <out> "t,t,..."` stills or `node tools/pshot.cjs <out> video t0 t1 24 960 540` (mp4 with the song). Runs offline (CDN scripts served from node_modules), SwiftShader: ~1 min per second of video at 960x540.
 
 ## Roadmap
-- Song picker (proposed 2026-10-26, not built): replace the walk-to-the-stage tavern hub with an episode list like a series: one card per level with its key painting, title and length, campaign order, unplayed ones dimmed. Tavern stays as an optional ambient backdrop. Map of Alaron with pins is a possible later layer.
 - Quality target: "polished stylized" (Journey/Valheim feel), not Skyrim realism. The limit is assets, not WebGL. Steps: upgrade Three.js r128 -> current (ES modules, bundler), post-processing (bloom, vignette, grading), glTF props/characters from asset packs (Quaternius/Kenney free, Synty paid) + Mixamo animations, desktop-only shadows/AO. Keep a mobile low path.
 - Lives in InCharacter now (login-gated static route, Vercel preview per branch).
 - Next: stories as Supabase rows (cues/keys/lineTimes JSON), audio in Supabase Storage (private bucket, signed URLs) instead of public/. Forge shares InCharacter's Supabase auth.

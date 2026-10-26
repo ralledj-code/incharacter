@@ -10,7 +10,7 @@ const { clamp, lerp } = C;
    storyboard card, so timing can be checked before anything is painted. */
 C.boards = C.boards || {};
 
-const PW = 16, PH = 9, FOV = 36, TAN = Math.tan(FOV * Math.PI / 360), DEPTH = 2.6, MOVE = 1.4, ORBIT = 0.5;  // ORBIT: how far the camera turns back toward the centre while it drifts (parallax)
+const PW = 16, PH = 9, FOV = 36, TAN = Math.tan(FOV * Math.PI / 360), DEPTH = 2.1, MOVE = 1.4, ORBIT = 0.4;  // ORBIT: how far the camera turns back toward the centre while it drifts (parallax)
 const TRANS = { cut: 0, fade: 1.2, ink: 1.5, black: 1.6, flash: 0 };
 const KIND = { cut: 0, fade: 1, ink: 2, black: 3, flash: 0 };
 const GRADE = { red: [1.12, 0.86, 0.84], cold: [0.88, 0.98, 1.14], green: [0.9, 1.06, 0.98], none: [1, 1, 1] };
@@ -29,7 +29,7 @@ varying vec2 vUv;
 void main() {
   vUv = uv; float d = texture2D(dMap, uv).r; vec3 p = position; p.z += d * amt;
   float nearL = smoothstep(0.45, 0.95, d), farL = 1.0 - smoothstep(0.05, 0.4, d);
-  p.x += drift * (nearL * 0.09 * sin(time * 0.23) - farL * 0.05 * sin(time * 0.17 + 1.3));
+  p.x += drift * (nearL * 0.06 * sin(time * 0.23) - farL * 0.05 * sin(time * 0.17 + 1.3));
   p.y += drift * nearL * 0.035 * sin(time * 0.31 + 0.7);
   float w = sway * smoothstep(0.55, 1.0, d);
   p.x += w * 0.035 * sin(time * 1.3 + p.y * 2.1 + p.x * 0.7);

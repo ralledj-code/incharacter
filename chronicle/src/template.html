@@ -18,11 +18,31 @@ button { font-family: var(--head); letter-spacing: 0.08em; color: var(--ink); ba
 button:hover { border-color: var(--ember); }
 button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
 button.primary { border-color: var(--ember); color: #ffd9a8; }
-#start, #end { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 18px; background: radial-gradient(ellipse at 50% 40%, #151a24 0%, #07090d 70%); z-index: 20; padding: 24px max(16px, env(safe-area-inset-left, 0px)); box-sizing: border-box; }
-#end { background: rgba(3, 4, 6, 0.9); z-index: 18; }
-#start h1, #end h2 { font-family: var(--head); font-weight: 400; letter-spacing: 0.12em; margin: 0; font-size: clamp(1.9rem, 6vw, 3.4rem); text-wrap: balance; color: #f1e6cf; }
-#start p, #end p { max-width: 34em; margin: 0; color: var(--dim); font-size: 1.1rem; line-height: 1.5; text-wrap: balance; }
+#start { position: fixed; inset: 0; z-index: 20; overflow-y: auto; -webkit-overflow-scrolling: touch; background: radial-gradient(ellipse at 50% 0%, #151a24 0%, #07090d 70%);
+  padding: max(28px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(28px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); box-sizing: border-box; }
+#songsHead { text-align: center; margin: 0 auto 22px; max-width: 40em; }
+#songsHead p { margin: 10px auto 0; }
+#songs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; max-width: 1180px; margin: 0 auto; }
+.song { display: flex; flex-direction: column; background: rgba(14, 16, 21, 0.92); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; min-width: 0; }
+.song.focus { border-color: var(--ember); box-shadow: 0 0 0 1px var(--ember), 0 0 28px rgba(224, 144, 63, 0.25); }
+.song .cover { position: relative; aspect-ratio: 16 / 9; background: linear-gradient(160deg, #1d2330, #0b0d12); background-size: cover; background-position: center; }
+.song .cover b { position: absolute; left: 12px; bottom: 8px; font-family: var(--head); font-weight: 400; font-size: 2.4rem; color: rgba(241, 230, 207, 0.85); text-shadow: 0 2px 12px #000; }
+.song .cover em { position: absolute; right: 10px; top: 8px; font-style: normal; font-family: var(--head); letter-spacing: 0.1em; font-size: 0.78rem; color: #ffd9a8; background: rgba(0, 0, 0, 0.55); padding: 3px 8px; }
+.song .txt { padding: 12px 14px 4px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.song h3 { margin: 0; font-family: var(--head); font-weight: 400; letter-spacing: 0.06em; font-size: 1.25rem; color: #f1e6cf; }
+.song .meta { color: var(--ember); font-size: 0.9rem; }
+.song .blurb { color: var(--dim); font-size: 0.98rem; line-height: 1.4; margin: 2px 0 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.song .btns { display: flex; gap: 8px; padding: 10px 14px 14px; }
+.song .btns .play { flex: 1; }
+.song.locked { opacity: 0.45; }
+#tavernRow { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 26px auto 0; text-align: center; }
+#start h1 { font-family: var(--head); font-weight: 400; letter-spacing: 0.12em; margin: 0; font-size: clamp(1.9rem, 6vw, 3.4rem); text-wrap: balance; color: #f1e6cf; }
+#start p { max-width: 34em; color: var(--dim); font-size: 1.1rem; line-height: 1.5; text-wrap: balance; }
 #start small { color: var(--dim); opacity: 0.8; max-width: 30em; font-size: 0.95rem; }
+#end { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 18px; background: radial-gradient(ellipse at 50% 40%, #151a24 0%, #07090d 70%); z-index: 20; padding: 24px max(16px, env(safe-area-inset-left, 0px)); box-sizing: border-box; }
+#end { background: rgba(3, 4, 6, 0.9); z-index: 18; }
+#end h2 { font-family: var(--head); font-weight: 400; letter-spacing: 0.12em; margin: 0; font-size: clamp(1.9rem, 6vw, 3.4rem); text-wrap: balance; color: #f1e6cf; }
+#end p { max-width: 34em; margin: 0; color: var(--dim); font-size: 1.1rem; line-height: 1.5; text-wrap: balance; }
 #endbtns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 #hud { bottom: 0; padding-bottom: max(18px, env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 5; }
 #stamp { font-family: var(--head); letter-spacing: 0.18em; color: var(--ember); font-size: 0.95rem; text-transform: uppercase; opacity: 0; transition: opacity 0.8s; min-height: 1.2em; text-shadow: 0 1px 8px #000; }
@@ -60,10 +80,15 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
 <div id="flash"></div><div id="fade"></div>
 
 <div id="start">
-  <h1>Alaron Chronicle</h1>
-  <p>A crowded tavern on Alaron. Lucien Vale is on stage. Ask him for a song, and watch the story it tells.</p>
-  <button id="go" class="primary" disabled>Loading the world…</button>
-  <small>Headphones help. Drag to look around. Keys: W A S D to walk, E at the stage, arrow keys to turn pages.</small>
+  <header id="songsHead">
+    <h1>Alaron Chronicle</h1>
+    <p>The songs of Lucien Vale, one for each chapter of the campaign. Pick one and watch the story it tells.</p>
+  </header>
+  <div id="songs" role="list"></div>
+  <div id="tavernRow">
+    <button id="go" disabled>Loading the world…</button>
+    <small>Or step into the tavern and ask Lucien yourself. Headphones help.</small>
+  </div>
 </div>
 
 <div class="layer" id="top" hidden>
