@@ -10,24 +10,27 @@ const { clamp, lerp } = C;
    storyboard card, so timing can be checked before anything is painted. */
 C.boards = C.boards || {};
 
-const PW = 16, PH = 9, FOV = 36, TAN = Math.tan(FOV * Math.PI / 360), DEPTH = 1.6;
+const PW = 16, PH = 9, FOV = 36, TAN = Math.tan(FOV * Math.PI / 360), DEPTH = 2.6, MOVE = 1.4, ORBIT = 0.5;  // ORBIT: how far the camera turns back toward the centre while it drifts (parallax)
 const TRANS = { cut: 0, fade: 1.2, ink: 1.5, black: 1.6, flash: 0 };
 const KIND = { cut: 0, fade: 1, ink: 2, black: 3, flash: 0 };
 const GRADE = { red: [1.12, 0.86, 0.84], cold: [0.88, 0.98, 1.14], green: [0.9, 1.06, 0.98], none: [1, 1, 1] };
 // particle looks: colour, size (world units at 1 m), velocity, wobble, twinkle rate, alpha, count
 const FX = {
-  embers: [0xff9a3a, 0.09, [0.05, 0.38, 0.02], 0.28, 6, 0.95, 150],
+  embers: [0xff9a3a, 0.11, [0.06, 0.45, 0.02], 0.32, 6, 1.0, 220],
   sparks: [0xffd27a, 0.05, [0.0, 1.3, 0.05], 0.12, 14, 1.0, 120],
-  dust: [0xeedcb8, 0.04, [0.05, 0.02, 0.0], 0.3, 1.0, 0.4, 220],
-  ash: [0xa8a49c, 0.06, [0.09, -0.2, 0.0], 0.35, 0.6, 0.5, 170],
+  dust: [0xeedcb8, 0.05, [0.06, 0.03, 0.0], 0.35, 1.0, 0.6, 320],
+  ash: [0xa8a49c, 0.07, [0.09, -0.2, 0.0], 0.35, 0.6, 0.65, 240],
   snow: [0xd8ecff, 0.06, [0.12, -0.55, 0.0], 0.3, 1.0, 0.75, 240],
-  fireflies: [0xd2ff86, 0.1, [0.0, 0.03, 0.0], 0.8, 2.4, 0.95, 46]
+  fireflies: [0xd2ff86, 0.12, [0.0, 0.03, 0.0], 0.8, 2.4, 1.0, 70]
 };
 
-const PLANE_VS = `uniform sampler2D dMap; uniform float amt, sway, time;
+const PLANE_VS = `uniform sampler2D dMap; uniform float amt, sway, time, drift;
 varying vec2 vUv;
 void main() {
   vUv = uv; float d = texture2D(dMap, uv).r; vec3 p = position; p.z += d * amt;
+  float nearL = smoothstep(0.45, 0.95, d), farL = 1.0 - smoothstep(0.05, 0.4, d);
+  p.x += drift * (nearL * 0.09 * sin(time * 0.23) - farL * 0.05 * sin(time * 0.17 + 1.3));
+  p.y += drift * nearL * 0.035 * sin(time * 0.31 + 0.7);
   float w = sway * smoothstep(0.55, 1.0, d);
   p.x += w * 0.035 * sin(time * 1.3 + p.y * 2.1 + p.x * 0.7);
   p.y += w * 0.02 * sin(time * 1.7 + p.x * 1.9);
@@ -73,7 +76,7 @@ void main() {
   c *= mix(1.0, smoothstep(1.05, 0.25, length(q)), 0.6);
   c += (hash(vUv * res + fract(time * 7.13) * 91.0) - 0.5) * grain;
   c = mix(c, vec3(1.0, 0.96, 0.9), flash) * (1.0 - black);
-  float f = clamp(aspect / 2.39, 0.0, 1.0), y = abs(vUv.y - 0.5) * 2.0;
+  float f = clamp(aspect / 2.2, 0.0, 1.0), y = abs(vUv.y - 0.5) * 2.0;
   if (y > mix(1.0, f, bars)) c = vec3(0.0);
   gl_FragColor = vec4(c, 1.0);
 }`;
@@ -120,7 +123,7 @@ C.createPainted = function (renderer, opts) {
   function makeSlot() {
     const scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000);
     const mat = new THREE.ShaderMaterial({ vertexShader: PLANE_VS, fragmentShader: PLANE_FS,
-      uniforms: { map: { value: null }, dMap: { value: flatD }, amt: { value: DEPTH }, sway: { value: 0 }, time: { value: 0 }, flick: { value: 0 } } });
+      uniforms: { map: { value: null }, dMap: { value: flatD }, amt: { value: DEPTH }, drift: { value: 1 }, sway: { value: 0 }, time: { value: 0 }, flick: { value: 0 } } });
     const plane = new THREE.Mesh(planeGeo, mat); scene.add(plane);
     return { scene, mat, plane, idx: -1, fx: [], fog: [] };
   }
@@ -129,12 +132,13 @@ C.createPainted = function (renderer, opts) {
   function assign(sl, i) {
     if (sl.idx === i) return; sl.idx = i; clearFx(sl);
     const s = shots[i]; if (!s) return;
-    (s.fx || []).forEach((name, n) => {
-      if (name === 'fog' || name === 'smoke') {
-        const tex = name === 'smoke' ? smokeTex : fogTex;
-        for (let j = 0; j < (mobile ? 4 : 7); j++) {
-          const m = new THREE.Mesh(new THREE.PlaneGeometry(11, 5.5), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: name === 'smoke' ? 0.4 : 0.28, depthWrite: false, depthTest: false }));
-          m.userData = { z: 1.8 + j * 0.9, x0: (j * 7.3) % 22 - 11, y0: (j % 3 - 1) * 2.2 - (name === 'fog' ? 1.2 : -0.5), v: (name === 'smoke' ? 0.1 : 0.22) * (j % 2 ? 1 : -0.7), rise: name === 'smoke' ? 0.12 : 0 };
+    const fxs = (s.fx || []).slice(); if (!fxs.includes('fog') && !fxs.includes('smoke') && !fxs.includes('none')) fxs.push('haze');
+    fxs.forEach((name, n) => {
+      if (name === 'fog' || name === 'smoke' || name === 'haze') {
+        const tex = name === 'smoke' ? smokeTex : fogTex, haze = name === 'haze';
+        for (let j = 0; j < (haze ? 3 : mobile ? 4 : 6); j++) {
+          const m = new THREE.Mesh(new THREE.PlaneGeometry(11, 5.5), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: name === 'smoke' ? 0.42 : haze ? 0.08 : 0.26, depthWrite: false, depthTest: false }));
+          m.userData = { z: 1.6 + j * 0.8, x0: (j * 7.3) % 22 - 11, y0: (j % 3 - 1) * 1.6 - (name === 'smoke' ? -0.5 : 2.2), v: (name === 'smoke' ? 0.14 : 0.3) * (j % 2 ? 1 : -0.7), rise: name === 'smoke' ? 0.16 : 0 };
           m.renderOrder = 2; sl.scene.add(m); sl.fog.push(m);
         }
         return;
@@ -190,16 +194,16 @@ C.createPainted = function (renderer, opts) {
     const t0 = s.t, t1 = i + 1 < shots.length ? shots[i + 1].t : board.end || t0 + 8;
     const u = clamp((t - t0) / Math.max(0.1, t1 - t0), 0, 1.15), e = lerp(u, 0.5 - 0.5 * Math.cos(Math.PI * Math.min(1, u)), 0.55) + Math.max(0, u - 1) * 0.5;
     const mv = s.move || { from: [0, 0, 0], to: [0, 0, 0.1] }, a = mv.from, b = mv.to;
-    const cover = Math.min((PH / 2) / TAN, (PW / 2) / (TAN * aspect)) * 0.93;
+    const cover = Math.min((PH / 2) / TAN, (PW / 2) / (TAN * aspect)) * 0.92;
     const dist = cover * (1 - lerp(a[2], b[2], e) * 0.7);
     const hh = dist * TAN, hw = hh * aspect;
     const fx = aspect < 1.2 && s.focus ? (s.focus[0] - 0.5) * PW : 0, fy = aspect < 1.2 && s.focus ? (0.5 - s.focus[1]) * PH * 0.5 : 0;
-    let x = lerp(a[0], b[0], e) * PW + fx, y = lerp(a[1], b[1], e) * PH + fy;
+    let x = lerp(a[0], b[0], e) * PW * MOVE + fx, y = lerp(a[1], b[1], e) * PH + fy;
     // a slow breath so even a held shot is alive
-    x += Math.sin(t * 0.21 + i) * 0.06; y += Math.sin(t * 0.17 + i * 2) * 0.04;
+    x += Math.sin(t * 0.21 + i) * 0.14; y += Math.sin(t * 0.17 + i * 2) * 0.08;
     x = clamp(x, -(PW / 2 - hw * 1.02), PW / 2 - hw * 1.02); y = clamp(y, -(PH / 2 - hh * 1.02), PH / 2 - hh * 1.02);
     if (shake) { x += Math.sin(t * 61) * shake * 0.08; y += Math.cos(t * 53) * shake * 0.06; }
-    camera.position.set(x, y, dist + DEPTH * 0.35); camera.lookAt(x * 0.96, y * 0.96, 0);
+    camera.position.set(x, y, dist + DEPTH * 0.35); camera.lookAt(x * (1 - ORBIT), y * (1 - ORBIT), 0);
   }
   function drawSlot(sl, i, t, time, calm, target) {
     const s = shots[i], e = cache.get(i);
@@ -207,7 +211,7 @@ C.createPainted = function (renderer, opts) {
     sl.mat.uniforms.dMap.value = e && e.ready ? e.dMap : flatD;
     sl.plane.visible = !!(e && e.ready);
     sl.mat.uniforms.time.value = time; sl.mat.uniforms.sway.value = s.sway || 0;
-    const fl = s.flicker || 0; sl.mat.uniforms.flick.value = fl * 0.16 * (Math.sin(time * 9.1) * 0.5 + Math.sin(time * 15.3 + 1.7) * 0.3 + Math.sin(time * 4.3) * 0.4);
+    const fl = s.flicker || 0; sl.mat.uniforms.flick.value = fl * 0.26 * (Math.sin(time * 9.1) * 0.5 + Math.sin(time * 15.3 + 1.7) * 0.3 + Math.sin(time * 4.3) * 0.4);
     const sk = !calm && s.shake ? s.shake * Math.exp(-(t - s.t) * 2.5) : 0;
     placeCam(s, t, i, sk);
     sl.fx.forEach((p) => { p.material.uniforms.time.value = t - s.t + 20; p.material.uniforms.pr.value = H * 0.9; });
