@@ -1,4 +1,5 @@
-// Paints a level's storyboard with Google's Gemini image model (needs GEMINI_API_KEY).
+// Paints a level's storyboard with Google's Gemini image model. Key: GEMINI_API_KEY, or none when the environment's
+// network secret adds the x-goog-api-key header for generativelanguage.googleapis.com (Claude Code cloud).
 //   node scripts/paint.mjs <level> cast            character sheets -> painted/<level>/cast/<name>.jpg (the look every shot copies)
 //   node scripts/paint.mjs <level> shots [ids...]  shots -> painted/<level>/raw/<id>.png (cast sheets of `who` go in as references)
 //   options: --force (repaint existing), --model <name>, --n <parallel> (default 3), --max <images this run> (default 80, a spend cap)
@@ -14,16 +15,16 @@ let calls = 0;
 const [level, step, ...ids] = args;
 const KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 if (!level || !['cast', 'shots'].includes(step)) { console.error('usage: node scripts/paint.mjs <level> cast|shots [ids...] [--force] [--model m] [--n 3]'); process.exit(1); }
-if (!KEY) { console.error('GEMINI_API_KEY is not set'); process.exit(1); }
 const board = JSON.parse(fs.readFileSync(`painted/${level}.json`, 'utf8'));
 const dir = `painted/${level}`, castDir = `${dir}/cast`, rawDir = `${dir}/raw`;
 fs.mkdirSync(castDir, { recursive: true }); fs.mkdirSync(rawDir, { recursive: true });
 const API = 'https://generativelanguage.googleapis.com/v1beta';
+const HDR = KEY ? { 'x-goog-api-key': KEY } : {};  // no key: the proxy injects it
 
 // pick an image model: --model, GEMINI_IMAGE_MODEL, else the best image-capable model the key can see
 async function pickModel() {
   if (wantModel || process.env.GEMINI_IMAGE_MODEL) return wantModel || process.env.GEMINI_IMAGE_MODEL;
-  const r = await fetch(`${API}/models?pageSize=200&key=${KEY}`); const j = await r.json();
+  const r = await fetch(`${API}/models?pageSize=200`, { headers: HDR }); const j = await r.json();
   if (!r.ok) throw new Error('list models: ' + JSON.stringify(j).slice(0, 300));
   const names = (j.models || []).filter((m) => (m.supportedGenerationMethods || []).includes('generateContent') && /image/i.test(m.name) && !/imagen/i.test(m.name)).map((m) => m.name.replace('models/', ''));
   const rank = (n) => (/pro/.test(n) ? 4 : 0) + (/preview/.test(n) ? 0 : 1) + (+(n.match(/gemini-(\d+(\.\d+)?)/) || [0, 0])[1]);
@@ -40,7 +41,7 @@ async function paint(model, prompt, refs, aspect) {
   let withAspect = true;
   for (let tries = 0; tries < 6; tries++) {
     if (++calls > maxImages) throw new Error(`spend cap reached (--max ${maxImages} requests this run)`);
-    const r = await fetch(`${API}/models/${model}:generateContent?key=${KEY}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: body(withAspect) });
+    const r = await fetch(`${API}/models/${model}:generateContent`, { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, HDR), body: body(withAspect) });
     const j = await r.json().catch(() => ({}));
     if (r.status === 400 && withAspect && /imageConfig|aspect/i.test(JSON.stringify(j))) { withAspect = false; continue; }
     if (r.status === 429 || r.status >= 500) { const w = 2000 * 2 ** tries; console.log(`  ${r.status}, retry in ${w / 1000}s`); await new Promise((k) => setTimeout(k, w)); continue; }
