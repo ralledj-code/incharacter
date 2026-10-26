@@ -56,6 +56,9 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
 #hint { font-size: 1.05rem; color: var(--ink); text-shadow: 0 1px 10px #000; text-align: center; max-width: 28em; text-wrap: balance; }
 .row { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
 #top { top: 0; padding-top: max(10px, env(safe-area-inset-top, 0px)); display: flex; justify-content: flex-end; gap: 8px; z-index: 6; }
+#top { transition: opacity 0.6s; }
+#top.away { opacity: 0; pointer-events: none; }
+#top.away > * { pointer-events: none; }
 #top button { min-height: 40px; padding: 0 12px; font-size: 0.9rem; white-space: nowrap; }
 @media (max-width: 560px) { #top { gap: 6px; } #top button { padding: 0 8px; font-size: 0.78rem; letter-spacing: 0.03em; } #bSync { display: none; } }
 #prog { position: fixed; left: 0; right: 0; bottom: 0; height: 12px; z-index: 7; cursor: pointer; display: none; }

@@ -56,28 +56,28 @@ void main() {
 const PART_FS = `uniform vec3 color; uniform float alpha; varying float vA;
 void main() { float r = length(gl_PointCoord - 0.5); gl_FragColor = vec4(color, smoothstep(0.5, 0.0, r) * alpha * vA); }`;
 const POST_VS = 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
-const POST_FS = `uniform sampler2D A, B; uniform float k, kind, time, flash, black, aspect, bars, grain; uniform vec3 tA, tB; uniform vec2 res;
+const POST_FS = `uniform sampler2D A, B; uniform float k, kind, time, flash, black, aspect, grain; uniform vec3 tA, tB; uniform vec2 res; uniform vec4 frame;
 varying vec2 vUv;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y); }
 float fbm(vec2 p) { float v = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { v += a * noise(p); p *= 2.03; a *= 0.5; } return v; }
 void main() {
-  vec3 a = texture2D(A, vUv).rgb * tA, b = texture2D(B, vUv).rgb * tB, c = a;
+  vec2 uv = (vUv - frame.xy) / frame.zw;
+  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) { gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); return; }
+  vec3 a = texture2D(A, uv).rgb * tA, b = texture2D(B, uv).rgb * tB, c = a;
   if (kind > 0.5 && kind < 1.5) c = mix(b, a, smoothstep(0.0, 1.0, k));
   else if (kind > 1.5 && kind < 2.5) {           // ink bleeding in from the darks
-    float n = fbm(vUv * vec2(aspect, 1.0) * 2.6 + 3.7) * 0.75 + (1.0 - dot(b, vec3(0.33))) * 0.25;
+    float n = fbm(uv * vec2(aspect, 1.0) * 2.6 + 3.7) * 0.75 + (1.0 - dot(b, vec3(0.33))) * 0.25;
     float th = k * 1.3 - 0.15, m = smoothstep(th - 0.06, th + 0.06, n);
     float edge = clamp(1.0 - abs(n - th) / 0.06, 0.0, 1.0) * step(0.01, k) * step(k, 0.99);
     c = mix(a, b, m) * (1.0 - 0.55 * edge);
   } else if (kind > 2.5) c = k < 0.4 ? b * (1.0 - k / 0.4) : a * smoothstep(0.4, 1.0, k);
   c = pow(max(c, 0.0), vec3(1.06));
-  vec2 q = (vUv - 0.5) * vec2(min(aspect, 1.9) * 0.82, 1.0);
+  vec2 q = (uv - 0.5) * vec2(aspect * 0.82, 1.0);
   c *= mix(1.0, smoothstep(1.05, 0.25, length(q)), 0.6);
   c += (hash(vUv * res + fract(time * 7.13) * 91.0) - 0.5) * grain;
   c = mix(c, vec3(1.0, 0.96, 0.9), flash) * (1.0 - black);
-  float f = clamp(aspect / 2.2, 0.0, 1.0), y = abs(vUv.y - 0.5) * 2.0;
-  if (y > mix(1.0, f, bars)) c = vec3(0.0);
   gl_FragColor = vec4(c, 1.0);
 }`;
 
@@ -106,12 +106,12 @@ C.createPainted = function (renderer, opts) {
   const planeGeo = new THREE.PlaneGeometry(PW, PH, mobile ? 128 : 220, mobile ? 72 : 124);
   const flatD = (() => { const t = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1, THREE.RGBAFormat); t.needsUpdate = true; return t; })();
   const fogTex = softTex(false), smokeTex = softTex(true);
-  let aspect = 16 / 9, W = 2, H = 2, pr = 1;
+  const aspect = 16 / 9; let W = 2, H = 2, pr = 1;
   const rt = [0, 1].map(() => new THREE.WebGLRenderTarget(2, 2, { depthBuffer: true }));
   const post = new THREE.ShaderMaterial({
     vertexShader: POST_VS, fragmentShader: POST_FS, depthTest: false, depthWrite: false,
     uniforms: { A: { value: rt[0].texture }, B: { value: rt[1].texture }, k: { value: 1 }, kind: { value: 0 }, time: { value: 0 }, flash: { value: 0 }, black: { value: 0 },
-      aspect: { value: aspect }, bars: { value: 1 }, grain: { value: 0.045 }, tA: { value: new THREE.Vector3(1, 1, 1) }, tB: { value: new THREE.Vector3(1, 1, 1) }, res: { value: new THREE.Vector2(2, 2) } }
+      aspect: { value: aspect }, frame: { value: new THREE.Vector4(0, 0, 1, 1) }, grain: { value: 0.045 }, tA: { value: new THREE.Vector3(1, 1, 1) }, tB: { value: new THREE.Vector3(1, 1, 1) }, res: { value: new THREE.Vector2(2, 2) } }
   });
   const postScene = new THREE.Scene(), postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), post));
@@ -194,10 +194,10 @@ C.createPainted = function (renderer, opts) {
     const t0 = s.t, t1 = i + 1 < shots.length ? shots[i + 1].t : board.end || t0 + 8;
     const u = clamp((t - t0) / Math.max(0.1, t1 - t0), 0, 1.15), e = lerp(u, 0.5 - 0.5 * Math.cos(Math.PI * Math.min(1, u)), 0.55) + Math.max(0, u - 1) * 0.5;
     const mv = s.move || { from: [0, 0, 0], to: [0, 0, 0.1] }, a = mv.from, b = mv.to;
-    const cover = Math.min((PH / 2) / TAN, (PW / 2) / (TAN * aspect)) * 0.92;
-    const dist = cover * (1 - lerp(a[2], b[2], e) * 0.7);
+    const cover = Math.min((PH / 2) / TAN, (PW / 2) / (TAN * aspect)) * 0.95;
+    const dist = cover * (1 - lerp(a[2], b[2], e) * 0.5);
     const hh = dist * TAN, hw = hh * aspect;
-    const fx = aspect < 1.2 && s.focus ? (s.focus[0] - 0.5) * PW : 0, fy = aspect < 1.2 && s.focus ? (0.5 - s.focus[1]) * PH * 0.5 : 0;
+    const fx = 0, fy = 0;
     let x = lerp(a[0], b[0], e) * PW * MOVE + fx, y = lerp(a[1], b[1], e) * PH + fy;
     // a slow breath so even a held shot is alive
     x += Math.sin(t * 0.21 + i) * 0.14; y += Math.sin(t * 0.17 + i * 2) * 0.08;
@@ -229,9 +229,10 @@ C.createPainted = function (renderer, opts) {
     active: () => !!board,
     start(st) { if (st.painted !== board) preload(st); board.end = st.silenceT || st.duration; lastT = 0; },
     resize(w, h) {
-      aspect = w / h; pr = renderer.getPixelRatio(); W = Math.round(w * pr); H = Math.round(h * pr);
-      rt.forEach((r) => r.setSize(W, H)); camera.aspect = aspect; camera.updateProjectionMatrix();
-      post.uniforms.aspect.value = aspect; post.uniforms.res.value.set(W, H);
+      pr = renderer.getPixelRatio(); W = Math.round(w * pr); H = Math.round(h * pr);
+      const fw = Math.min(w, h * aspect), fh = fw / aspect;  // the whole painting fits the screen: bands above/below or at the sides
+      rt.forEach((r) => r.setSize(Math.round(fw * pr), Math.round(fh * pr))); camera.aspect = aspect; camera.updateProjectionMatrix();
+      post.uniforms.frame.value.set((1 - fw / w) / 2, (1 - fh / h) / 2, fw / w, fh / h); post.uniforms.res.value.set(W, H);
     },
     // make sure the art around song time t is decoded (headless tools await this before shooting)
     ensure(t) { const i = shotAt(t); keepAround(i); return Promise.all([i - 1, i, i + 1].map((j) => (cache.get(j) || {}).promise).filter(Boolean)); },
@@ -252,7 +253,7 @@ C.createPainted = function (renderer, opts) {
       U.flash.value = tr === 'flash' && since >= 0 ? Math.exp(-since * 5) * 0.85 : 0;
       const gA = GRADE[s.grade || 'none'] || GRADE.none, gB = GRADE[(shots[i - 1] || {}).grade || 'none'] || GRADE.none;
       U.tA.value.set(...gA); U.tB.value.set(...gB);
-      U.time.value = time; U.bars.value = 1;
+      U.time.value = time;
       renderer.setRenderTarget(null); renderer.render(postScene, postCam);
       lastT = t;
     },
