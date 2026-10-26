@@ -1,7 +1,7 @@
 // Paints a level's storyboard with Google's Gemini image model (needs GEMINI_API_KEY).
 //   node scripts/paint.mjs <level> cast            character sheets -> painted/<level>/cast/<name>.jpg (the look every shot copies)
 //   node scripts/paint.mjs <level> shots [ids...]  shots -> painted/<level>/raw/<id>.png (cast sheets of `who` go in as references)
-//   options: --force (repaint existing), --model <name>, --n <parallel> (default 3)
+//   options: --force (repaint existing), --model <name>, --n <parallel> (default 3), --max <images this run> (default 80, a spend cap)
 // Then: python scripts/layers.py <level> (web images + depth maps for the parallax player).
 import fs from 'node:fs';
 import path from 'node:path';
@@ -9,7 +9,8 @@ import sharp from 'sharp';
 
 const args = process.argv.slice(2), flag = (k) => { const i = args.indexOf(k); if (i < 0) return null; const v = args[i + 1]; args.splice(i, 2); return v; };
 const force = args.includes('--force'); if (force) args.splice(args.indexOf('--force'), 1);
-const wantModel = flag('--model'), par = +(flag('--n') || 3);
+const wantModel = flag('--model'), par = +(flag('--n') || 3), maxImages = +(flag('--max') || 80);
+let calls = 0;
 const [level, step, ...ids] = args;
 const KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 if (!level || !['cast', 'shots'].includes(step)) { console.error('usage: node scripts/paint.mjs <level> cast|shots [ids...] [--force] [--model m] [--n 3]'); process.exit(1); }
@@ -38,6 +39,7 @@ async function paint(model, prompt, refs, aspect) {
   const body = (withAspect) => JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: Object.assign({ responseModalities: ['IMAGE', 'TEXT'] }, withAspect ? { imageConfig: { aspectRatio: aspect } } : {}) });
   let withAspect = true;
   for (let tries = 0; tries < 6; tries++) {
+    if (++calls > maxImages) throw new Error(`spend cap reached (--max ${maxImages} requests this run)`);
     const r = await fetch(`${API}/models/${model}:generateContent?key=${KEY}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: body(withAspect) });
     const j = await r.json().catch(() => ({}));
     if (r.status === 400 && withAspect && /imageConfig|aspect/i.test(JSON.stringify(j))) { withAspect = false; continue; }
