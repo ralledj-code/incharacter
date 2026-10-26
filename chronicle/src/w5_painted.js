@@ -10,18 +10,18 @@ const { clamp, lerp } = C;
    storyboard card, so timing can be checked before anything is painted. */
 C.boards = C.boards || {};
 
-const PW = 16, PH = 9, FOV = 36, TAN = Math.tan(FOV * Math.PI / 360), DEPTH = 2.1, MOVE = 1.4, ORBIT = 0.4;  // ORBIT: how far the camera turns back toward the centre while it drifts (parallax)
+const PW = 16, PH = 9, FOV = 36, TAN = Math.tan(FOV * Math.PI / 360), DEPTH = 1.7, MOVE = 0.9, ORBIT = 0.2;  // ORBIT: how far the camera turns back toward the centre while it drifts (parallax)
 const TRANS = { cut: 0, fade: 1.2, ink: 1.5, black: 1.6, flash: 0 };
 const KIND = { cut: 0, fade: 1, ink: 2, black: 3, flash: 0 };
 const GRADE = { red: [1.12, 0.86, 0.84], cold: [0.88, 0.98, 1.14], green: [0.9, 1.06, 0.98], none: [1, 1, 1] };
 // particle looks: colour, size (world units at 1 m), velocity, wobble, twinkle rate, alpha, count
 const FX = {
-  embers: [0xff9a3a, 0.11, [0.06, 0.45, 0.02], 0.32, 6, 1.0, 220],
+  embers: [0xff9a3a, 0.12, [0.07, 0.5, 0.02], 0.36, 6, 1.0, 300],
   sparks: [0xffd27a, 0.05, [0.0, 1.3, 0.05], 0.12, 14, 1.0, 120],
-  dust: [0xeedcb8, 0.05, [0.06, 0.03, 0.0], 0.35, 1.0, 0.6, 320],
-  ash: [0xa8a49c, 0.07, [0.09, -0.2, 0.0], 0.35, 0.6, 0.65, 240],
+  dust: [0xeedcb8, 0.055, [0.07, 0.035, 0.0], 0.4, 1.0, 0.7, 420],
+  ash: [0xa8a49c, 0.075, [0.1, -0.22, 0.0], 0.4, 0.6, 0.75, 320],
   snow: [0xd8ecff, 0.06, [0.12, -0.55, 0.0], 0.3, 1.0, 0.75, 240],
-  fireflies: [0xd2ff86, 0.12, [0.0, 0.03, 0.0], 0.8, 2.4, 1.0, 70]
+  fireflies: [0xd2ff86, 0.13, [0.0, 0.03, 0.0], 0.9, 2.4, 1.0, 100]
 };
 
 const PLANE_VS = `uniform sampler2D dMap; uniform float amt, sway, time, drift;
@@ -31,6 +31,7 @@ void main() {
   float d = texture2D(dMap, uv).r * 0.36
     + (texture2D(dMap, uv + vec2(o.x, 0.0)).r + texture2D(dMap, uv - vec2(o.x, 0.0)).r + texture2D(dMap, uv + vec2(0.0, o.y)).r + texture2D(dMap, uv - vec2(0.0, o.y)).r) * 0.11
     + (texture2D(dMap, uv + o).r + texture2D(dMap, uv - o).r + texture2D(dMap, uv + vec2(o.x, -o.y)).r + texture2D(dMap, uv - vec2(o.x, -o.y)).r) * 0.05;
+  float L = 4.0, f = fract(d * L); d = (floor(d * L) + smoothstep(0.35, 0.65, f)) / L;
   vec3 p = position; p.z += d * amt;
   float nearL = smoothstep(0.45, 0.95, d), farL = 1.0 - smoothstep(0.05, 0.4, d);
   p.x += drift * (nearL * 0.06 * sin(time * 0.23) - farL * 0.05 * sin(time * 0.17 + 1.3));
@@ -136,12 +137,12 @@ C.createPainted = function (renderer, opts) {
   function assign(sl, i) {
     if (sl.idx === i) return; sl.idx = i; clearFx(sl);
     const s = shots[i]; if (!s) return;
-    const fxs = (s.fx || []).slice(); if (!fxs.includes('fog') && !fxs.includes('smoke') && !fxs.includes('none')) fxs.push('haze');
+    const fxs = (s.fx || []).slice(); if (!fxs.includes('none')) fxs.push('haze');
     fxs.forEach((name, n) => {
       if (name === 'fog' || name === 'smoke' || name === 'haze') {
         const tex = name === 'smoke' ? smokeTex : fogTex, haze = name === 'haze';
         for (let j = 0; j < (haze ? 3 : mobile ? 4 : 6); j++) {
-          const m = new THREE.Mesh(new THREE.PlaneGeometry(11, 5.5), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: name === 'smoke' ? 0.42 : haze ? 0.08 : 0.26, depthWrite: false, depthTest: false }));
+          const m = new THREE.Mesh(new THREE.PlaneGeometry(11, 5.5), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: name === 'smoke' ? 0.45 : haze ? 0.1 : 0.3, depthWrite: false, depthTest: false }));
           m.userData = { z: 1.6 + j * 0.8, x0: (j * 7.3) % 22 - 11, y0: (j % 3 - 1) * 1.6 - (name === 'smoke' ? -0.5 : 2.2), v: (name === 'smoke' ? 0.14 : 0.3) * (j % 2 ? 1 : -0.7), rise: name === 'smoke' ? 0.16 : 0 };
           m.renderOrder = 2; sl.scene.add(m); sl.fog.push(m);
         }
