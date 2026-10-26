@@ -19,7 +19,8 @@ renderer.toneMapping = THREE.LinearToneMapping;
 const EXPOS = [1.0, 1.35, 1.8, 0.8]; let expI = 0; renderer.toneMappingExposure = EXPOS[0];
 const W = C.create({ mobile });
 W.book.setStories(C.stories); W.book.setIndex(C.firstStory || 0, true);
-function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); W.resize(w, h); }
+const P = C.createPainted(renderer, { mobile });  // painted levels (w5_painted)
+function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); W.resize(w, h); P.resize(w, h); }
 addEventListener('resize', resize); resize();
 
 /* ---------- state ---------- */
@@ -139,7 +140,7 @@ function coachTick(dt) {
     else if (coachKey === 'look' && (drag || coachT > 5)) coach('walk');
     else if (!coachKey && !coachSeen.walk) coach('walk');
   } else if (mode === 'book' && !sitting) coach('book');
-  else if (mode === 'ride') coach('ride');
+  else if (mode === 'ride' && !(story && story.painted)) coach('ride');
 }
 let calm = false;
 try { calm = localStorage.getItem('alaron:calm') === '1'; } catch (e) { }
@@ -162,13 +163,14 @@ function begin() {
     const show = () => { const ka = songState(s) === 'ready' ? 1 : 0.4; btn.textContent = 'Lucien tunes up… ' + Math.round((kp * 0.5 + ka * 0.5) * 100) + '%'; };
     const tk = setInterval(show, 250); show();
     const waitSong = new Promise((res) => { const k = setInterval(() => { if (songState(s) !== 'loading') { clearInterval(k); res(); } }, 100); });
-    Promise.all([C.loadPacks(s.packs || [], (k) => { kp = k; }), waitSong]).then(() => {
+    const art = s.painted ? P.preload(s, (k) => { kp = k; }) : C.loadPacks(s.packs || [], (k) => { kp = k; });
+    Promise.all([art, waitSong]).then(() => {
       clearInterval(tk); requesting = false; s.packsReady = true;
       if (songState(s) === 'ready') begin(); else refreshBookUI();
     });
     return;
   }
-  story = s; loadTimes(s); W.loadStory(s); tavernMusic(false);
+  story = s; loadTimes(s); if (s.painted) P.start(s); else W.loadStory(s); tavernMusic(false);
   if (audio.src !== songs[s.id].url) { audio.src = songs[s.id].url; audio.load(); }
   mode = 'ride'; ended = false; paused = false;
   W.beginRide({ x: W.SEAT.x, y: W.SEAT.y, z: W.SEAT.z, yaw: look.yaw * 0.6, pitch: -0.33 + look.pitch * 0.6 });
@@ -254,6 +256,7 @@ function refreshUI() {
 }
 
 /* ---------- lyrics ---------- */
+const cueAt = (t) => { let k = 0; story.cues.forEach((c, i) => { if (c.t <= t) k = i; }); return k; };
 let lastLine = '', lastStamp = '', lastTitle = null;
 function flatLines(s) { const a = []; s.cues.forEach((c, ci) => (c.lines || []).forEach((tx, k) => a.push({ ci, k, tx }))); return a; }
 function loadTimes(s) {
@@ -263,7 +266,7 @@ function loadTimes(s) {
   s.times = tm;
 }
 function lyricsAt(t) {
-  const cues = story.cues, i = W.cueIndexAt(Math.max(0, t)), c = cues[i], nx = cues[i + 1], end = nx ? nx.t : story.duration;
+  const cues = story.cues, i = cueAt(Math.max(0, t)), c = cues[i], nx = cues[i + 1], end = nx ? nx.t : story.duration;
   const st = c.stamp && t - c.t < 7 && t >= c.t ? c.stamp : '';
   if (st !== lastStamp) { lastStamp = st; if (st) $('stamp').textContent = st; $('stamp').classList.toggle('on', !!st); }
   // name cards: who someone is, the first time they appear (level `titles: [{ t, name, sub, dur }]`)
@@ -305,9 +308,10 @@ function frame(now) {
   if (mode === 'ride' && idle > 15 && !drag) { look.yaw *= Math.exp(-dt * 0.5); look.pitch *= Math.exp(-dt * 0.5); }
 
   const t = mode === 'ride' ? audio.currentTime : -1;
-  if (dev.hold) { W.update(dev.hold); renderer.render(W.scene, W.camera); return; }
+  const painted = mode === 'ride' && story && story.painted;
+  if (dev.hold) { dev.shot(dev.hold); return; }
   coachTick(dt);
-  W.update({ mode, t, dt, time, player, look, sit: sitT, calm });
+  if (!painted) W.update({ mode, t, dt, time, player, look, sit: sitT, calm });
   if (mode === 'walk' && started && W.nearChair !== lastNear) { lastNear = W.nearChair; $('rowSit').hidden = !W.nearChair || !!auto; if (!auto) $('hint').textContent = W.nearChair ? (HINT_NEAR + (mobile ? '' : ' (E)')) : HINT_FAR; }
   if (mode !== 'walk') $('rowSit').hidden = true;
   $('flash').style.opacity = W.flash.toFixed(3);
@@ -318,12 +322,15 @@ function frame(now) {
     if (!ended && t >= story.silenceT) finish();
   }
   if ($('dev').style.display === 'block') {
-    $('dev').textContent = 'fps ' + fps.toFixed(0) + '  mode ' + mode + '\nt ' + t.toFixed(1) + '  cue ' + (story && mode === 'ride' ? story.cues[W.cueIndexAt(Math.max(0, t))].id : '-') + '\nd ' + W.camD.toFixed(0) + '\nmarks (K): ' + marks.join(', ');
+    $('dev').textContent = 'fps ' + fps.toFixed(0) + '  mode ' + mode + '\nt ' + t.toFixed(1) + '  cue ' + (story && mode === 'ride' ? story.cues[cueAt(Math.max(0, t))].id : '-') + (painted ? '  shot ' + P.info().shot : '\nd ' + W.camD.toFixed(0)) + '\nmarks (K): ' + marks.join(', ');
   }
-  renderer.render(W.scene, W.camera);
+  if (painted) P.render(t, time, calm); else renderer.render(W.scene, W.camera);
 }
 // dev.hold = a fixed W.update state (renders that instead of live input); dev.shot(state) renders one frame now
-const dev = { hold: null, shot(st) { W.update(st); renderer.render(W.scene, W.camera); } };
+const dev = { hold: null, shot(st) {
+  if (st.mode === 'ride' && story && story.painted) { P.render(st.t, st.time, true); return; }
+  W.update(st); renderer.render(W.scene, W.camera);
+}, painted: P, play(s) { story = s; loadTimes(s); P.start(s); mode = 'ride'; } };
 requestAnimationFrame(frame);
 window.__alaron = { W, renderer, dev, player, look, audio, get mode() { return mode; }, sit, begin, flip, seek(t) { audio.currentTime = t; } };
 }

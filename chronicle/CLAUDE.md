@@ -2,10 +2,11 @@
 
 Interactive 3D "ride" for Rasmus's D&D campaign (island of Alaron). Player walks into an empty bar, sits at a chair by a lectern, flips a book to pick a story, and the chair rides rails through fog scenes synced to a Suno song. Singer in the songs = Lucien Vale (half-elf Wild Magic Sorcerer, Rasmus's character). Lyrics come from InCharacter session logs.
 
-POC status: playable slice, first story "Baphomet's Chains" (366.8 s). First visual pass done 2026-10-20 (headless Chrome screenshots across the whole ride, desktop + 390px phone): full flow walk -> sit -> book -> ride -> lyrics works. Not yet checked on a real phone or the Legion Go.
+Status: 3D levels 1, 5, 6, 8 playable. Not yet checked on a real phone or the Legion Go.
+Direction change 2026-10-26: Rasmus felt nothing cinematically in the 3D rides (low detail, illustration rather than storytelling). New pilot: **painted levels** in the style of Blizzard's Burdens of Shaohao / Lords of War shorts: one painting per shot, depth-map parallax, particles, fog, ink transitions. Level 1 is the pilot (see "Painted levels" below).
 
 ## Where it lives
-Inside the InCharacter repo (ralledj-code/incharacter). Source: `chronicle/`. Build output: `public/chronicle/index.html` (committed) next to `public/chronicle/song.mp3`. Served at `/chronicle` (rewrite in next.config.mjs). Middleware gates it: its matcher does not exclude .html/.mp3, so page and song need a login.
+Inside the InCharacter repo (ralledj-code/incharacter). Source: `chronicle/`. Build output: `public/chronicle/index.html` (committed) next to `public/chronicle/song.mp3`. Served at `/chronicle` (rewrite in next.config.mjs). Public, no login (middleware skips it).
 
 ## Commands
 - In `chronicle/`: `npm i && npm run build` -> ../public/chronicle/index.html. **Rebuild and commit the output after every src change.** `npm run dev` builds and serves public/chronicle standalone. `npm test` = node smoke test (stubbed canvas; does NOT check GLSL or rendering).
@@ -37,6 +38,13 @@ Inside the InCharacter repo (ralledj-code/incharacter). Source: `chronicle/`. Bu
 4. Story direction from Rasmus: stay true to the story, leave things to imagination, skip detail rather than rush a scene. Subtle motion, fog, sparse silhouettes. Don't crowd.
 5. Looking: drag direction was reported reversed on mobile; fixed (yaw/pitch signs), unverified.
 6. Characters: Cedric (monk: red leather, bronze dragon pauldrons, green tunic, beads, wooden staff), Lucien (long blond hair, pointed ears, burgundy velvet coat, silver flute, glowing blue dagger), Arthas (devout paladin, helm of dread, no picture).
+
+## Painted levels (pilot: level 1)
+- Storyboard: `painted/<NN-id>.json` = `style` (shared prompt), `cast` (character descriptions), `shots` [{ id, t, in: cut|fade|ink|black|flash, scene, who, move {from,to: [x, y, push]}, fx: embers|sparks|dust|ash|snow|fireflies|fog|smoke, flicker, sway, shake, grade: red|cold|green, focus [x,y] for portrait crops }]. `live: false` keeps the 3D level on the site; `?painted` previews, `?3d` forces 3D.
+- Art: `GEMINI_API_KEY=... node scripts/paint.mjs <NN-id> cast` (character sheets, review them first) then `... shots [ids]` (sheets go in as references). Raw art in `painted/<NN-id>/raw/` (gitignored), cast sheets in `painted/<NN-id>/cast/` (committed).
+- Layers: `python scripts/layers.py <NN-id> --model <depth_anything_v2_vits.onnx>` (from github.com/fabio-sim/Depth-Anything-ONNX releases; pip onnxruntime pillow numpy) -> `public/chronicle/levels/<NN-id>/<shot>.webp` + `_d.png`.
+- Player: `src/w5_painted.js` (displaced plane per shot, particles, fog sprites, post pass: transitions, grade, vignette, grain, letterbox). Shots without art show their storyboard card.
+- Check: `node tools/pshot.cjs <out> "t,t,..."` stills or `node tools/pshot.cjs <out> video t0 t1 24 960 540` (mp4 with the song). Runs offline (CDN scripts served from node_modules), SwiftShader: ~1 min per second of video at 960x540.
 
 ## Roadmap
 - Quality target: "polished stylized" (Journey/Valheim feel), not Skyrim realism. The limit is assets, not WebGL. Steps: upgrade Three.js r128 -> current (ES modules, bundler), post-processing (bloom, vignette, grading), glTF props/characters from asset packs (Quaternius/Kenney free, Synty paid) + Mixamo animations, desktop-only shadows/AO. Keep a mobile low path.

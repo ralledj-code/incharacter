@@ -6,7 +6,7 @@ const ctxStub = new Proxy({}, { get: (t, k) => k === 'measureText' ? () => ({ wi
 global.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ctxStub }) };
 global.THREE = require(path);
 const levels = fs.readdirSync(__dirname + '/../src/levels').filter((f) => /^[^_].*\.js$/.test(f)).sort().map((f) => 'levels/' + f);
-const files = 'w1_core w1b_assets w2b_director w2_engine w3_kit w3b_chars w3c_action w3d_story w4_bar w4_book s1a_well s1b_dragon s1c_camp_cross s1d_city'.split(' ').map((f) => f + '.js').concat(levels, ['s0_stories.js']);
+const files = 'w1_core w1b_assets w2b_director w2_engine w3_kit w3b_chars w3c_action w3d_story w4_bar w4_book w5_painted s1a_well s1b_dragon s1c_camp_cross s1d_city'.split(' ').map((f) => f + '.js').concat(levels, ['s0_stories.js']);
 files.forEach((f) => require('../src/' + f));
 const C = global.__cw;
 const W = C.create({ mobile: false });
