@@ -70,7 +70,7 @@ if (step === 'cast') {
     await sharp(buf).jpeg({ quality: 90 }).toFile(out); console.log('cast', id, '->', out);
   });
 } else {
-  const shots = board.shots.filter((s) => !ids.length || ids.includes(s.id));
+  const shots = board.shots.filter((s) => !s.img && (!ids.length || ids.includes(s.id)));  // img = reuses another shot's painting
   await pool(shots, par, async (s) => {
     const out = `${rawDir}/${s.id}.png`; if (fs.existsSync(out) && !force) { console.log('skip', s.id); return; }
     const who = (s.who || []).filter((w) => fs.existsSync(`${castDir}/${w}.jpg`));

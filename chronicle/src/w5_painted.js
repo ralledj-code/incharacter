@@ -27,7 +27,11 @@ const FX = {
 const PLANE_VS = `uniform sampler2D dMap; uniform float amt, sway, time, drift;
 varying vec2 vUv;
 void main() {
-  vUv = uv; float d = texture2D(dMap, uv).r; vec3 p = position; p.z += d * amt;
+  vUv = uv; vec2 o = vec2(0.008, 0.012);
+  float d = texture2D(dMap, uv).r * 0.36
+    + (texture2D(dMap, uv + vec2(o.x, 0.0)).r + texture2D(dMap, uv - vec2(o.x, 0.0)).r + texture2D(dMap, uv + vec2(0.0, o.y)).r + texture2D(dMap, uv - vec2(0.0, o.y)).r) * 0.11
+    + (texture2D(dMap, uv + o).r + texture2D(dMap, uv - o).r + texture2D(dMap, uv + vec2(o.x, -o.y)).r + texture2D(dMap, uv - vec2(o.x, -o.y)).r) * 0.05;
+  vec3 p = position; p.z += d * amt;
   float nearL = smoothstep(0.45, 0.95, d), farL = 1.0 - smoothstep(0.05, 0.4, d);
   p.x += drift * (nearL * 0.06 * sin(time * 0.23) - farL * 0.05 * sin(time * 0.17 + 1.3));
   p.y += drift * nearL * 0.035 * sin(time * 0.31 + 0.7);
@@ -162,8 +166,8 @@ C.createPainted = function (renderer, opts) {
     let done = 0; const all = shots.length * 2, tick = () => { done++; if (onP) onP(done / all); };
     const B = C.BASE();
     return Promise.all(shots.map((s) => Promise.all([
-      fetchBlob(new URL(base + s.id + '.webp', B)).then((x) => { tick(); return x; }),
-      fetchBlob(new URL(base + s.id + '_d.png', B)).then((x) => { tick(); return x; })
+      fetchBlob(new URL(base + (s.img || s.id) + '.webp', B)).then((x) => { tick(); return x; }),   // img: reuse another shot's painting
+      fetchBlob(new URL(base + (s.img || s.id) + '_d.png', B)).then((x) => { tick(); return x; })
     ]).then(([c, d]) => { blobs[s.id] = { c, d }; })));
   }
   function texFrom(blob) {
@@ -192,8 +196,9 @@ C.createPainted = function (renderer, opts) {
   /* ---- camera for shot s at song time t ---- */
   function placeCam(s, t, i, shake) {
     const t0 = s.t, t1 = i + 1 < shots.length ? shots[i + 1].t : board.end || t0 + 8;
-    const u = clamp((t - t0) / Math.max(0.1, t1 - t0), 0, 1.15), e = lerp(u, 0.5 - 0.5 * Math.cos(Math.PI * Math.min(1, u)), 0.55) + Math.max(0, u - 1) * 0.5;
-    const mv = s.move || { from: [0, 0, 0], to: [0, 0, 0.1] }, a = mv.from, b = mv.to;
+    const dur = Math.max(0.1, t1 - t0), e = clamp((t - t0) / dur, 0, 1.15), amp = Math.min(1, dur / 7);
+    const mv = s.move || { from: [0, 0, 0], to: [0, 0, 0.1] }, sh = (k) => { const m = (mv.from[k] + mv.to[k]) / 2; return [m + (mv.from[k] - m) * amp, m + (mv.to[k] - m) * amp]; };
+    const X0 = sh(0), Y0 = sh(1), Z0 = sh(2), a = [X0[0], Y0[0], Z0[0]], b = [X0[1], Y0[1], Z0[1]];
     const cover = Math.min((PH / 2) / TAN, (PW / 2) / (TAN * aspect)) * 0.95;
     const dist = cover * (1 - lerp(a[2], b[2], e) * 0.5);
     const hh = dist * TAN, hw = hh * aspect;

@@ -45,8 +45,8 @@ const TITLES = [
   { t: 9.0, name: 'Lucien Vale', sub: 'half-elf · wild magic sorcerer · the one singing' },
   { t: 45.4, name: 'The Blackbird', sub: 'a tavern in the township' },
   { t: 62.4, name: 'Silas', sub: 'Lucien’s contact for his drugs' },
-  { t: 133.5, name: 'Arthas', sub: 'devout paladin · Lucien’s half-brother', dur: 3.2 },
-  { t: 136.8, name: 'Cedric', sub: 'monk · Lucien’s half-brother', dur: 3.2 },
+  { t: 131.0, name: 'Arthas', sub: 'devout paladin · Lucien’s half-brother', dur: 3.9 },
+  { t: 135.6, name: 'Cedric', sub: 'monk · Lucien’s half-brother', dur: 4.4 },
   { t: 234.2, name: 'Severin', sub: 'a name that don’t sit right' }
 ];
 
