@@ -162,8 +162,8 @@ C.createPainted = function (renderer, opts) {
     let done = 0; const all = shots.length * 2, tick = () => { done++; if (onP) onP(done / all); };
     const B = C.BASE();
     return Promise.all(shots.map((s) => Promise.all([
-      fetchBlob(new URL(base + s.id + '.webp', B)).then((x) => { tick(); return x; }),
-      fetchBlob(new URL(base + s.id + '_d.png', B)).then((x) => { tick(); return x; })
+      fetchBlob(new URL(base + (s.img || s.id) + '.webp', B)).then((x) => { tick(); return x; }),   // img: reuse another shot's painting
+      fetchBlob(new URL(base + (s.img || s.id) + '_d.png', B)).then((x) => { tick(); return x; })
     ]).then(([c, d]) => { blobs[s.id] = { c, d }; })));
   }
   function texFrom(blob) {
