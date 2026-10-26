@@ -50,7 +50,7 @@ const KEYS = [
 ];
 const TITLES = [
   { t: 138.3, name: 'Stagford', sub: 'sacked by the Pig, its people taken below' },
-  { t: 269.5, name: 'The High Inquisitor', sub: 'the church · Arthas and Cedric’s father' }
+  { t: 269.5, name: 'High Inquisitor Valerys', sub: 'the church · Arthas and Cedric’s father' }
 ];
 
 /* places along the rail (metres) */
