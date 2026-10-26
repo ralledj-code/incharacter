@@ -47,6 +47,7 @@ Inside the InCharacter repo (ralledj-code/incharacter). Source: `chronicle/`. Bu
 - Check: `node tools/pshot.cjs <out> "t,t,..."` stills or `node tools/pshot.cjs <out> video t0 t1 24 960 540` (mp4 with the song). Runs offline (CDN scripts served from node_modules), SwiftShader: ~1 min per second of video at 960x540.
 
 ## Roadmap
+- Song picker (proposed 2026-10-26, not built): replace the walk-to-the-stage tavern hub with an episode list like a series: one card per level with its key painting, title and length, campaign order, unplayed ones dimmed. Tavern stays as an optional ambient backdrop. Map of Alaron with pins is a possible later layer.
 - Quality target: "polished stylized" (Journey/Valheim feel), not Skyrim realism. The limit is assets, not WebGL. Steps: upgrade Three.js r128 -> current (ES modules, bundler), post-processing (bloom, vignette, grading), glTF props/characters from asset packs (Quaternius/Kenney free, Synty paid) + Mixamo animations, desktop-only shadows/AO. Keep a mobile low path.
 - Lives in InCharacter now (login-gated static route, Vercel preview per branch).
 - Next: stories as Supabase rows (cues/keys/lineTimes JSON), audio in Supabase Storage (private bucket, signed URLs) instead of public/. Forge shares InCharacter's Supabase auth.
