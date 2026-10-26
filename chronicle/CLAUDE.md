@@ -2,7 +2,7 @@
 
 Interactive 3D "ride" for Rasmus's D&D campaign (island of Alaron). Player walks into an empty bar, sits at a chair by a lectern, flips a book to pick a story, and the chair rides rails through fog scenes synced to a Suno song. Singer in the songs = Lucien Vale (half-elf Wild Magic Sorcerer, Rasmus's character). Lyrics come from InCharacter session logs.
 
-Status: 3D levels 1, 5, 6, 8 playable. Not yet checked on a real phone or the Legion Go.
+Status (2026-10-26): **painted levels 1, 6 and 8 are live and the default**; every other chapter shows Coming soon in the song list. The 3D rides (1, 5, 6, 8) still play with `?3d`. Checked on a Galaxy Fold 7 by Rasmus; not yet on an iPhone or the Legion Go.
 Direction change 2026-10-26: Rasmus felt nothing cinematically in the 3D rides (low detail, illustration rather than storytelling). New pilot: **painted levels** in the style of Blizzard's Burdens of Shaohao / Lords of War shorts: one painting per shot, depth-map parallax, particles, fog, ink transitions. Level 1 is the pilot (see "Painted levels" below).
 
 ## Where it lives
@@ -39,16 +39,27 @@ Inside the InCharacter repo (ralledj-code/incharacter). Source: `chronicle/`. Bu
 5. Looking: drag direction was reported reversed on mobile; fixed (yaw/pitch signs), unverified.
 6. Characters: Cedric (monk: red leather, bronze dragon pauldrons, green tunic, beads, wooden staff), Lucien (long blond hair, pointed ears, burgundy velvet coat, silver flute, glowing blue dagger), Arthas (devout paladin, helm of dread, no picture).
 
-## Painted levels (pilot: level 1)
-- Storyboard: `painted/<NN-id>.json` = `style` (shared prompt), `cast` (character descriptions), `shots` [{ id, t, in: cut|fade|ink|black|flash, scene, who, move {from,to: [x, y, push]}, fx: embers|sparks|dust|ash|snow|fireflies|fog|smoke, flicker, sway, shake, grade: red|cold|green, img: '<other shot id>' to reuse a painting (e.g. a second chorus) }]. `live: true` makes the painted version the default (level 1 since 2026-10-26); `?painted` previews boards that are not live, `?3d` forces 3D.
-- Art: key = cloud network secret (host generativelanguage.googleapis.com, header x-goog-api-key, no prefix) or GEMINI_API_KEY; `node scripts/paint.mjs <NN-id> cast` (character sheets, review them first) then `... shots [ids]` (sheets go in as references). Raw art in `painted/<NN-id>/raw/` (gitignored), cast sheets in `painted/<NN-id>/cast/` (committed).
-- Layers: `python scripts/layers.py <NN-id> --model <depth_anything_v2_vits.onnx>` (from github.com/fabio-sim/Depth-Anything-ONNX releases; pip onnxruntime pillow numpy) -> `public/chronicle/levels/<NN-id>/<shot>.webp` + `_d.png`.
-- Player: `src/w5_painted.js` (displaced plane per shot, particles, fog sprites, post pass: transitions, grade, vignette, grain, letterbox). Shots without art show their storyboard card.
-- Check: `node tools/pshot.cjs <out> "t,t,..."` stills or `node tools/pshot.cjs <out> video t0 t1 24 960 540` (mp4 with the song). Runs offline (CDN scripts served from node_modules), SwiftShader: ~1 min per second of video at 960x540.
+## Painted levels (the format now; runbook for the next one)
+Look: Warcraft-style painted shorts (Burdens of Shaohao / Lords of War): one painting per shot, cut-out depth layers, slow drift, fog, particles, ink/fade/flash transitions, synced to the song. Rasmus loves it; ~45 paintings per song "works very well".
+- **Files.** Storyboard `painted/<NN-id>.json` = `live`, `cover` (shot id for the song card), `style` (shared prompt, keep it as in 01), `cast` (character descriptions, go into every prompt the character is in), `shots` [{ id, t, in: cut|fade|ink|black|flash, who: [cast ids], fx: embers|sparks|dust|ash|snow|fireflies|fog|smoke, flicker, sway, shake, grade: red|cold|green, move {from,to: [x, y, push]}, scene, img: '<other shot id>' reuses that painting }]. Cast sheets `painted/<NN-id>/cast/*.jpg` (committed; copy existing ones for recurring characters). Raw art `painted/<NN-id>/raw/` (gitignored). Web art `public/chronicle/levels/<NN-id>/<shot>.webp + _d.png`.
+- **Steps** (all in chronicle/):
+  1. Read the level's song data (cues, LINE_TIMES, beats in `src/levels/` or `w1_core`) and scene comments, write back the story as the code tells it, and **ask Rasmus every question that changes a painting** before spending anything. The code and lyrics are often not what happened: level 8's "well" is a lake, Baphomet never rises (only his face in the black water), the morning after is Arthas in makeup / Cedric in furs / Lucien in jail, the song ends mid-fight; level 6: no wolf from the well, Stagford is far away, Severin speaks through the prisoner, Valerys is Arthas and Cedric's father. Unknowns (Ragnar) are left out.
+  2. Storyboard: copy `painted/make/06.py`, write the shot list (one shot per lyric line or two; instrumental gaps get 1 shot per ~8 s; repeated choruses reuse paintings via `img`). It snaps hard cuts to the measured hits/bars/beats. Target ~40-45 paintings for a 5-6 min song.
+  3. `node scripts/paint.mjs <NN-id> cast <new ids> --max N`, look at every sheet (Gemini sometimes paints a scene instead of a sheet, or mixes two people: repaint once with a sharper description). Trim baked bars off sheets.
+  4. Paint 2-3 test shots of the hardest content, look, then `... shots --max <paintings+4>` for the rest.
+  5. Contact sheet of every painting; repaint only clear failures. Typical: **Lucien off-model in group shots** (dark hair, no coat: name his blond hair and ears in the scene text), extra or invented people (a shot with people but no `who` gets random strangers: always set `who`), creatures leaving where the story says they stay.
+  6. `python scripts/crop-bars.py <NN-id>` (Gemini paints letterbox bars into ~25% of shots despite the prompt), then `python scripts/layers.py <NN-id> --model <depth_anything_v2_vits.onnx>` (curl it from github.com/fabio-sim/Depth-Anything-ONNX/releases/download/v2.0.0/depth_anything_v2_vits.onnx into the scratchpad). Set `live: true`, `npm run build && npm test`, play it headless from `?song=<id>` and look at frames at key lyric times.
+- **Cost (measured, Google bill):** gemini-3-pro-image ≈ 1.17 DKK per image (picture + hidden thinking + reference images). A level ≈ 3 new cast sheets + ~42 paintings + ~3 repaints ≈ 55 DKK; level 8 with 62 paintings and story fixes ≈ 96 DKK. Always pass `--max`. **The bill lags by hours**: never trust a balance read during or right after a run.
+- **Player** (`src/w5_painted.js`): the whole 16:9 painting is always visible (fitted inside the screen, black bands; no extra cinema bars), depth is flattened into 4 cut-out layers (faces move as one piece; smooth depth warped faces), camera drifts at even speed scaled to shot length (DEPTH 1.7, MOVE 0.9, ORBIT 0.2; eased or strong moves stretched and "looked weird"), haze on every shot, particles/fog/flicker carry the motion. Top bar fades during a song; Android goes fullscreen on Play; portrait phones get a "turn sideways" hint.
+- **Check:** `node tools/pshot.cjs <out> "t,t,..."` stills or `... video t0 t1 24 960 540` (mp4 with the song; SwiftShader ~1 min per second). `LEVEL=<id>` picks the song.
+- **Song list** (start screen): one card per level, cover from `cover`, Play goes straight in, Share = `/chronicle?song=<id>`. Only painted levels are playable; `?3d` brings back the 3D rides; `?painted` previews boards that are not live.
+
+## Deploying
+- Production = master on Vercel (incharacter.cloud). Preview deployments have no env vars and would fail, so `vercel.json` skips every branch but master. Rasmus merges PRs himself (the session's permission rules block merging); after a PR is merged, restart the branch from master (no force push: merge master into the pushed branch instead).
 
 ## Roadmap
 - Quality target: "polished stylized" (Journey/Valheim feel), not Skyrim realism. The limit is assets, not WebGL. Steps: upgrade Three.js r128 -> current (ES modules, bundler), post-processing (bloom, vignette, grading), glTF props/characters from asset packs (Quaternius/Kenney free, Synty paid) + Mixamo animations, desktop-only shadows/AO. Keep a mobile low path.
-- Lives in InCharacter now (login-gated static route, Vercel preview per branch).
+- Next painted levels: 2-5, 7, 9-12 need their songs (mp3) first; 5 has song + timings ready. Per-song share previews (og:image) need a small server route.
 - Next: stories as Supabase rows (cues/keys/lineTimes JSON), audio in Supabase Storage (private bucket, signed URLs) instead of public/. Forge shares InCharacter's Supabase auth.
 - New story = audio file + cue list + scene builders; generic scene library to reduce per-song work.
 - Check Suno licence before making it public (song is embedded).
