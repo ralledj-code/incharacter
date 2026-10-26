@@ -26,7 +26,7 @@ function renderSongs() {
     const s = C.stories[i], key = String(s.level).padStart(2, '0') + '-' + s.id, board = s.painted || (C.boards && C.boards[key]);
     const el = document.createElement('article'); el.className = 'song' + (s.locked ? ' locked' : '') + (i === wi ? ' focus' : ''); el.setAttribute('role', 'listitem');
     const cov = document.createElement('div'); cov.className = 'cover';
-    if (board) cov.style.backgroundImage = 'url("levels/' + key + '/' + (board.cover || board.shots[0].id) + '.webp")';
+    if (board) cov.style.backgroundImage = 'url("' + new URL('levels/' + key + '/' + (board.cover || board.shots[0].id) + '.webp', C.BASE()) + '")';
     cov.innerHTML = '<b>' + s.level + '</b>' + (s.locked ? '<em>Coming soon</em>' : s.painted ? '<em>Painted</em>' : '');
     const tx = document.createElement('div'); tx.className = 'txt';
     tx.innerHTML = '<h3></h3><div class="meta"></div><p class="blurb"></p>';
@@ -110,6 +110,7 @@ booted = (i, btn) => {
   Promise.all([art, waitSong]).then(() => {
     clearInterval(tk); requesting = false; s.packsReady = true; btn.textContent = 'Play';
     if (songState(s) !== 'ready') { btn.textContent = 'Song missing'; return; }
+    if (mobile && document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => { });
     fromList = true; $('start').hidden = true; $('top').hidden = false; $('hud').hidden = false; started = true;
     W.book.setIndex(i, true); mode = 'book'; sitting = false; sitT = 1; begin();
   });
@@ -118,6 +119,7 @@ function toList() {
   audio.pause(); W.endRide(); tavernMusic(false); mode = 'walk'; sitting = false; ended = false; fromList = false; started = false;
   $('fade').style.opacity = 0; $('end').hidden = true; $('lyric').classList.remove('on'); $('stamp').classList.remove('on'); $('title').classList.remove('on'); lastTitle = null;
   $('top').hidden = true; $('hud').hidden = true; $('start').hidden = false; refreshUI();
+  if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => { });
 }
 $('go').onclick = () => {
   tavernMusic(true);
@@ -127,6 +129,8 @@ $('go').onclick = () => {
 
 /* ---------- input ---------- */
 let drag = null;
+let lastTouch = performance.now();
+['pointerdown', 'pointermove', 'keydown'].forEach((n) => addEventListener(n, () => { lastTouch = performance.now(); }, true));
 canvas.addEventListener('pointerdown', (e) => { if (!started) return; canvas.setPointerCapture(e.pointerId); drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t: performance.now() }; idle = 0; });
 canvas.addEventListener('pointermove', (e) => {
   if (!drag) return;
@@ -244,6 +248,7 @@ function begin() {
   audio.currentTime = 0; audio.muted = muted;
   const p = audio.play(); if (p && p.catch) p.catch(() => { $('hint').textContent = 'Tap Begin again to start the sound.'; mode = 'book'; W.endRide(); refreshUI(); });
   $('fade').style.opacity = 0; $('end').hidden = true; refreshUI();
+  if (s.painted && mobile && innerHeight > innerWidth * 1.15) { $('hint').textContent = 'Turn your phone sideways for the full picture.'; setTimeout(() => { if (mode === 'ride') $('hint').textContent = ''; }, 5000); }
 }
 function backToBook() {
   if (fromList) { toList(); return; }
@@ -383,6 +388,7 @@ function frame(now) {
   if (mode !== 'walk') $('rowSit').hidden = true;
   $('flash').style.opacity = W.flash.toFixed(3);
 
+  $('top').classList.toggle('away', mode === 'ride' && !ended && !paused && now - lastTouch > 3500);
   if (mode === 'ride' && story) {
     lyricsAt(t);
     $('prog').firstElementChild.style.width = (t / story.duration * 100).toFixed(2) + '%';
