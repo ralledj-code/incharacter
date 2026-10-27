@@ -5504,6 +5504,27 @@ function pickSong(s) {  // fallback when the file is missing: let the player cho
   $('hint').appendChild(l);
 }
 audio.addEventListener('ended', () => { if (mode === 'ride') finish(); });
+/* ---------- keep the phone awake while a song plays, and tell the OS what is playing ---------- */
+let wake = null;
+function wakeOn() {
+  if (wake || !navigator.wakeLock || document.visibilityState !== 'visible') return;
+  navigator.wakeLock.request('screen').then((w) => { wake = w; w.addEventListener('release', () => { wake = null; }); }).catch(() => { });
+}
+function wakeOff() { if (wake) { wake.release().catch(() => { }); wake = null; } }
+audio.addEventListener('play', () => {
+  wakeOn();
+  if ('mediaSession' in navigator && story) {
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({ title: story.title, artist: 'Lucien Vale', album: 'Alaron Chronicle',
+        artwork: story.painted ? [{ src: new URL(story.paintBase + (story.painted.cover || story.painted.shots[0].id) + '.webp', BASE).href, sizes: '1600x900', type: 'image/webp' }] : [] });
+      navigator.mediaSession.setActionHandler('play', () => { if (paused) togglePause(); });
+      navigator.mediaSession.setActionHandler('pause', () => { if (!paused) togglePause(); });
+    } catch (e) { }
+  }
+});
+['pause', 'ended'].forEach((n) => audio.addEventListener(n, wakeOff));
+// the lock drops when the tab is hidden; take it again on return if the song is still going
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !audio.paused) wakeOn(); });
 
 /* ---------- start ---------- */
 $('go').disabled = false; $('go').textContent = 'Step into the tavern';
