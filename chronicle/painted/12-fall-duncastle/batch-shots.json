@@ -1,0 +1,17 @@
+{
+ "name": "batches/ixwbnmguw9t0b0hg5d6hv5v3uq41ps88g4dv",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-10-27T20:24:01.152Z",
+ "jobs": [
+  {
+   "key": "shot:s14",
+   "id": "s14",
+   "out": "painted/12-fall-duncastle/raw/s14.png"
+  },
+  {
+   "key": "shot:s15",
+   "id": "s15",
+   "out": "painted/12-fall-duncastle/raw/s15.png"
+  }
+ ]
+}
