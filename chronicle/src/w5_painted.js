@@ -10,7 +10,7 @@ const { clamp, lerp } = C;
    storyboard card, so timing can be checked before anything is painted. */
 C.boards = C.boards || {};
 
-const PW = 16, PH = 9, FOV = 36, TAN = Math.tan(FOV * Math.PI / 360), DEPTH = 1.7, MOVE = 0.9, ORBIT = 0.2;  // ORBIT: how far the camera turns back toward the centre while it drifts (parallax)
+const PW = 16, PH = 9, FOV = 36, TAN = Math.tan(FOV * Math.PI / 360), DEPTH = 1.3, MOVE = 0.9, ORBIT = 0.2;  // ORBIT: how far the camera turns back toward the centre while it drifts (parallax)
 const TRANS = { cut: 0, fade: 1.2, ink: 1.5, black: 1.6, flash: 0 };
 const KIND = { cut: 0, fade: 1, ink: 2, black: 3, flash: 0 };
 const GRADE = { red: [1.12, 0.86, 0.84], cold: [0.88, 0.98, 1.14], green: [0.9, 1.06, 0.98], none: [1, 1, 1] };
@@ -34,11 +34,12 @@ void main() {
   float L = 4.0, f = fract(d * L); d = (floor(d * L) + smoothstep(0.35, 0.65, f)) / L;
   vec3 p = position; p.z += d * amt;
   float nearL = smoothstep(0.45, 0.95, d), farL = 1.0 - smoothstep(0.05, 0.4, d);
-  p.x += drift * (nearL * 0.06 * sin(time * 0.23) - farL * 0.05 * sin(time * 0.17 + 1.3));
-  p.y += drift * nearL * 0.035 * sin(time * 0.31 + 0.7);
-  float w = sway * smoothstep(0.55, 1.0, d);
-  p.x += w * 0.035 * sin(time * 1.3 + p.y * 2.1 + p.x * 0.7);
-  p.y += w * 0.02 * sin(time * 1.7 + p.x * 1.9);
+  p.x += drift * (nearL * 0.03 * sin(time * 0.23) - farL * 0.03 * sin(time * 0.17 + 1.3));
+  p.y += drift * nearL * 0.018 * sin(time * 0.31 + 0.7);
+  // sway: the foreground layer rocks as one rigid piece (a wave across the image rippled through faces)
+  float w = sway * nearL;
+  p.x += w * 0.03 * sin(time * 0.9);
+  p.y += w * 0.012 * sin(time * 1.1 + 0.6);
   gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
 }`;
 const PLANE_FS = `uniform sampler2D map; uniform float flick;
@@ -95,6 +96,15 @@ function softTex(dark) {  // a soft cloud for fog and smoke sprites
   }
   const t = new THREE.CanvasTexture(cv); return t;
 }
+function fireTex() {  // soft orange-red blobs: flame glow and licks rising from the bottom of the frame
+  const s = 256, cv = document.createElement('canvas'); cv.width = cv.height = s; const x = cv.getContext('2d');
+  for (let i = 0; i < 18; i++) {
+    const px = s * (0.2 + Math.random() * 0.6), py = s * (0.45 + Math.random() * 0.45), r = s * (0.08 + Math.random() * 0.2);
+    const g = x.createRadialGradient(px, py, 0, px, py, r); const c = Math.random() < 0.5 ? '255,150,50' : '255,90,30';
+    g.addColorStop(0, `rgba(${c},0.35)`); g.addColorStop(1, `rgba(${c},0)`); x.fillStyle = g; x.fillRect(0, 0, s, s);
+  }
+  return new THREE.CanvasTexture(cv);
+}
 function cardTex(shot) {  // storyboard card for a shot that has no painting yet
   const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 576; const x = cv.getContext('2d');
   const g = x.createLinearGradient(0, 0, 0, 576); g.addColorStop(0, '#1a1612'); g.addColorStop(1, '#0a0806'); x.fillStyle = g; x.fillRect(0, 0, 1024, 576);
@@ -110,7 +120,7 @@ C.createPainted = function (renderer, opts) {
   const camera = new THREE.PerspectiveCamera(FOV, 16 / 9, 0.05, 100);
   const planeGeo = new THREE.PlaneGeometry(PW, PH, mobile ? 128 : 220, mobile ? 72 : 124);
   const flatD = (() => { const t = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1, THREE.RGBAFormat); t.needsUpdate = true; return t; })();
-  const fogTex = softTex(false), smokeTex = softTex(true);
+  const fogTex = softTex(false), smokeTex = softTex(true), flameTex = fireTex();
   const aspect = 16 / 9; let W = 2, H = 2, pr = 1;
   const rt = [0, 1].map(() => new THREE.WebGLRenderTarget(2, 2, { depthBuffer: true }));
   const post = new THREE.ShaderMaterial({
@@ -139,11 +149,12 @@ C.createPainted = function (renderer, opts) {
     const s = shots[i]; if (!s) return;
     const fxs = (s.fx || []).slice(); if (!fxs.includes('none')) fxs.push('haze');
     fxs.forEach((name, n) => {
-      if (name === 'fog' || name === 'smoke' || name === 'haze') {
-        const tex = name === 'smoke' ? smokeTex : fogTex, haze = name === 'haze';
-        for (let j = 0; j < (haze ? 3 : mobile ? 4 : 6); j++) {
-          const m = new THREE.Mesh(new THREE.PlaneGeometry(11, 5.5), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: name === 'smoke' ? 0.45 : haze ? 0.1 : 0.3, depthWrite: false, depthTest: false }));
-          m.userData = { z: 1.6 + j * 0.8, x0: (j * 7.3) % 22 - 11, y0: (j % 3 - 1) * 1.6 - (name === 'smoke' ? -0.5 : 2.2), v: (name === 'smoke' ? 0.14 : 0.3) * (j % 2 ? 1 : -0.7), rise: name === 'smoke' ? 0.16 : 0 };
+      if (name === 'fog' || name === 'smoke' || name === 'haze' || name === 'fire') {
+        const fire = name === 'fire', tex = fire ? flameTex : name === 'smoke' ? smokeTex : fogTex, haze = name === 'haze';
+        for (let j = 0; j < (haze ? 3 : fire ? (mobile ? 4 : 6) : name === 'smoke' ? (mobile ? 5 : 8) : mobile ? 4 : 6); j++) {
+          const op = fire ? 0.5 : name === 'smoke' ? 0.55 : haze ? 0.1 : 0.3;
+          const m = new THREE.Mesh(new THREE.PlaneGeometry(fire ? 8 : 11, fire ? 4.5 : 5.5), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: op, depthWrite: false, depthTest: false, blending: fire ? THREE.AdditiveBlending : THREE.NormalBlending }));
+          m.userData = { z: 1.6 + j * 0.8, x0: (j * 7.3) % 22 - 11, y0: fire ? -3.4 + (j % 2) * 0.5 : (j % 3 - 1) * 1.6 - (name === 'smoke' ? -0.5 : 2.2), v: (fire ? 0.05 : name === 'smoke' ? 0.14 : 0.3) * (j % 2 ? 1 : -0.7), rise: fire ? 0 : name === 'smoke' ? 0.16 : 0, fire, op, ph: j * 1.7 };
           m.renderOrder = 2; sl.scene.add(m); sl.fog.push(m);
         }
         return;
@@ -225,6 +236,11 @@ C.createPainted = function (renderer, opts) {
       const d = m.userData, x = ((d.x0 + d.v * (t - s.t) + 30) % 22 + 22) % 22 - 11;
       m.position.set(camera.position.x + x, camera.position.y + d.y0 + d.rise * (t - s.t), camera.position.z - d.z - 0.4);
       m.quaternion.copy(camera.quaternion);
+      if (d.fire) {  // flames lick: flicker and a little lift, on wall time so a held frame still burns
+        const k = 0.55 + 0.25 * Math.sin(time * 7.3 + d.ph) + 0.2 * Math.sin(time * 12.9 + d.ph * 2);
+        m.material.opacity = d.op * k; m.position.y += 0.25 * Math.sin(time * 2.1 + d.ph);
+        m.scale.set(1 + 0.08 * Math.sin(time * 3.7 + d.ph), 1 + 0.18 * k, 1);
+      }
     });
     renderer.setRenderTarget(target); renderer.clear(); renderer.render(sl.scene, camera);
   }

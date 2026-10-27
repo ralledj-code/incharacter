@@ -3,7 +3,8 @@
 //   node scripts/paint.mjs <level> cast            character sheets -> painted/<level>/cast/<name>.jpg (the look every shot copies)
 //   node scripts/paint.mjs <level> shots [ids...]  shots -> painted/<level>/raw/<id>.png (cast sheets of `who` go in as references)
 //   options: --force (repaint existing), --model <name> (default gemini-3.1-flash-image), --n <parallel> (default 3),
-//            --max <images this run> (default 80, a spend cap), --out <dir> (write shots there instead of raw/, e.g. to compare models)
+//            --max <images this run> (default 80, a spend cap), --out <dir> (write shots there instead of raw/, e.g. to compare models),
+//            --keep-look (cast: repaint a sheet with the current one attached, to change only expression or features)
 // Default is BATCH mode (half price; results in minutes to hours, at most 24 h): cast/shots submit one job (cast sheets are
 // uploaded once and referenced), then
 //   node scripts/paint.mjs <level> collect [--wait <minutes>]  saves what the job painted and lists what it did not.
@@ -16,7 +17,7 @@ import sharp from 'sharp';
 
 const args = process.argv.slice(2), flag = (k) => { const i = args.indexOf(k); if (i < 0) return null; const v = args[i + 1]; args.splice(i, 2); return v; };
 const bool = (k) => { const i = args.indexOf(k); if (i < 0) return false; args.splice(i, 1); return true; };
-const force = bool('--force'), now = bool('--now'), batch = !now; bool('--batch');
+const force = bool('--force'), now = bool('--now'), batch = !now, keepLook = bool('--keep-look'); bool('--batch');
 const wantModel = flag('--model'), par = +(flag('--n') || 3), maxImages = +(flag('--max') || 80), outDir = flag('--out'), waitMin = +(flag('--wait') || 0);
 let calls = 0;
 const [level, step, ...ids] = args;
@@ -45,8 +46,11 @@ async function pickModel() {
 
 // what to paint: one job per cast sheet or shot (prompt, reference sheets, where the picture goes)
 function castJob(id) {
-  return { key: 'cast:' + id, id, out: `${castDir}/${id}.jpg`, jpeg: true, refs: [],
-    prompt: `${board.style}\nCharacter reference sheet on a plain dark neutral background: the same character shown three times side by side, full body from the front, full body from the side, and a large head-and-shoulders portrait. Consistent design, even soft light, clear silhouette.\nCharacter: ${board.cast[id]}` };
+  // --keep-look: repaint an existing sheet with it attached, so the design stays and only what the description changes moves
+  const out = `${castDir}/${id}.jpg`, keep = keepLook && fs.existsSync(out);
+  return { key: 'cast:' + id, id, out, jpeg: true, refs: keep ? [out] : [],
+    prompt: `${board.style}\nCharacter reference sheet on a plain dark neutral background: the same character shown three times side by side, full body from the front, full body from the side, and a large head-and-shoulders portrait. Consistent design, even soft light, clear silhouette.\nCharacter: ${board.cast[id]}` +
+      (keep ? '\nThe attached image is this character\'s current sheet: keep his or her design, clothes, colours and proportions exactly; change only what the description above says differently (expression, features).' : '') };
 }
 function shotJob(s) {
   const who = (s.who || []).filter((w) => fs.existsSync(`${castDir}/${w}.jpg`));
