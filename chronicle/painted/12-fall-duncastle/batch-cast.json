@@ -1,0 +1,13 @@
+{
+ "name": "batches/o9c5ved1os1szktz0941vkgo4o915p285ryw",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-10-27T20:21:40.233Z",
+ "jobs": [
+  {
+   "key": "cast:mother",
+   "id": "mother",
+   "out": "painted/12-fall-duncastle/cast/mother.jpg",
+   "jpeg": true
+  }
+ ]
+}
