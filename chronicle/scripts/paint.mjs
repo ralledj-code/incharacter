@@ -50,7 +50,7 @@ function castJob(id) {
 }
 function shotJob(s) {
   const who = (s.who || []).filter((w) => fs.existsSync(`${castDir}/${w}.jpg`));
-  const refNote = who.length ? `\nThe attached images are character reference sheets, in this order: ${who.join(', ')}. Keep each character's face, hair, clothes and colours exactly as in their sheet.` : '';
+  const refNote = who.length ? `\nThe attached images are reference sheets, in this order: ${who.join(', ')}. Keep each character's face, hair, clothes and colours exactly as in their sheet; a place's reference (a photo of a tabletop model) gives its layout and shapes only: paint it as a real place.` : '';
   const castNote = (s.who || []).map((w) => `${w}: ${board.cast[w]}`).join('\n');
   return { key: 'shot:' + s.id, id: s.id, out: `${rawDir}/${s.id}.png`, refs: who.map((w) => `${castDir}/${w}.jpg`),
     prompt: `${board.style}\nWide 16:9 cinematic frame. Keep the important subject inside the central area and leave some calm margin at the edges (the camera will drift slightly).\nScene: ${s.scene}${castNote ? '\nCharacters:\n' + castNote : ''}${refNote}` };
