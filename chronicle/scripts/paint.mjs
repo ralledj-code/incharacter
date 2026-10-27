@@ -2,11 +2,12 @@
 // network secret adds the x-goog-api-key header for generativelanguage.googleapis.com (Claude Code cloud).
 //   node scripts/paint.mjs <level> cast            character sheets -> painted/<level>/cast/<name>.jpg (the look every shot copies)
 //   node scripts/paint.mjs <level> shots [ids...]  shots -> painted/<level>/raw/<id>.png (cast sheets of `who` go in as references)
-//   options: --force (repaint existing), --model <name>, --n <parallel> (default 3), --max <images this run> (default 80, a spend cap),
-//            --out <dir> (write shots there instead of raw/, e.g. to compare models)
-// Batch mode (half price, results in minutes to hours, at most 24 h): add --batch to cast/shots to submit one job
-// (cast sheets are uploaded once and referenced), then
+//   options: --force (repaint existing), --model <name> (default gemini-3.1-flash-image), --n <parallel> (default 3),
+//            --max <images this run> (default 80, a spend cap), --out <dir> (write shots there instead of raw/, e.g. to compare models)
+// Default is BATCH mode (half price; results in minutes to hours, at most 24 h): cast/shots submit one job (cast sheets are
+// uploaded once and referenced), then
 //   node scripts/paint.mjs <level> collect [--wait <minutes>]  saves what the job painted and lists what it did not.
+// --now paints immediately at full price instead (quick single repaints). Modus operandi since 2026-10-27: Flash 3.1 + batch.
 // The job is kept in painted/<level>/batch-<cast|shots>.json until it is collected.
 // Then: python scripts/crop-bars.py <level>, python scripts/layers.py <level> (web images + depth maps for the parallax player).
 import fs from 'node:fs';
@@ -14,12 +15,12 @@ import sharp from 'sharp';
 
 const args = process.argv.slice(2), flag = (k) => { const i = args.indexOf(k); if (i < 0) return null; const v = args[i + 1]; args.splice(i, 2); return v; };
 const bool = (k) => { const i = args.indexOf(k); if (i < 0) return false; args.splice(i, 1); return true; };
-const force = bool('--force'), batch = bool('--batch');
+const force = bool('--force'), now = bool('--now'), batch = !now; bool('--batch');
 const wantModel = flag('--model'), par = +(flag('--n') || 3), maxImages = +(flag('--max') || 80), outDir = flag('--out'), waitMin = +(flag('--wait') || 0);
 let calls = 0;
 const [level, step, ...ids] = args;
 const KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-if (!level || !['cast', 'shots', 'collect'].includes(step)) { console.error('usage: node scripts/paint.mjs <level> cast|shots [ids...] [--force] [--model m] [--n 3] [--max 80] [--out dir] [--batch] | collect [--wait min]'); process.exit(1); }
+if (!level || !['cast', 'shots', 'collect'].includes(step)) { console.error('usage: node scripts/paint.mjs <level> cast|shots [ids...] [--force] [--model m] [--max 80] [--out dir] [--now] | collect [--wait min]'); process.exit(1); }
 const board = JSON.parse(fs.readFileSync(`painted/${level}.json`, 'utf8'));
 const dir = `painted/${level}`, castDir = `${dir}/cast`, rawDir = outDir || `${dir}/raw`;
 fs.mkdirSync(castDir, { recursive: true }); fs.mkdirSync(rawDir, { recursive: true });
@@ -30,6 +31,7 @@ const sleep = (ms) => new Promise((k) => setTimeout(k, ms));
 // pick an image model: --model, GEMINI_IMAGE_MODEL, else the best image-capable model the key can see
 async function pickModel() {
   if (wantModel || process.env.GEMINI_IMAGE_MODEL) return wantModel || process.env.GEMINI_IMAGE_MODEL;
+  return 'gemini-3.1-flash-image';  // about half Pro's price and close in quality (tested 2026-10-27); pass --model for another
   const r = await fetch(`${API}/models?pageSize=200`, { headers: HDR }); const j = await r.json();
   if (!r.ok) throw new Error('list models: ' + JSON.stringify(j).slice(0, 300));
   const names = (j.models || []).filter((m) => (m.supportedGenerationMethods || []).includes('generateContent') && /image/i.test(m.name) && !/imagen/i.test(m.name)).map((m) => m.name.replace('models/', ''));
