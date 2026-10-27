@@ -1,0 +1,82 @@
+{
+ "name": "batches/on6h28zhae5fi32hhi69kqie8y5o34ieocka",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-10-27T20:02:52.871Z",
+ "jobs": [
+  {
+   "key": "shot:s03",
+   "id": "s03",
+   "out": "painted/06-slaying-pig/raw/s03.png"
+  },
+  {
+   "key": "shot:s05",
+   "id": "s05",
+   "out": "painted/06-slaying-pig/raw/s05.png"
+  },
+  {
+   "key": "shot:s07",
+   "id": "s07",
+   "out": "painted/06-slaying-pig/raw/s07.png"
+  },
+  {
+   "key": "shot:s08",
+   "id": "s08",
+   "out": "painted/06-slaying-pig/raw/s08.png"
+  },
+  {
+   "key": "shot:s11",
+   "id": "s11",
+   "out": "painted/06-slaying-pig/raw/s11.png"
+  },
+  {
+   "key": "shot:s18",
+   "id": "s18",
+   "out": "painted/06-slaying-pig/raw/s18.png"
+  },
+  {
+   "key": "shot:s19",
+   "id": "s19",
+   "out": "painted/06-slaying-pig/raw/s19.png"
+  },
+  {
+   "key": "shot:s23",
+   "id": "s23",
+   "out": "painted/06-slaying-pig/raw/s23.png"
+  },
+  {
+   "key": "shot:s24",
+   "id": "s24",
+   "out": "painted/06-slaying-pig/raw/s24.png"
+  },
+  {
+   "key": "shot:s31",
+   "id": "s31",
+   "out": "painted/06-slaying-pig/raw/s31.png"
+  },
+  {
+   "key": "shot:s34",
+   "id": "s34",
+   "out": "painted/06-slaying-pig/raw/s34.png"
+  },
+  {
+   "key": "shot:s35",
+   "id": "s35",
+   "out": "painted/06-slaying-pig/raw/s35.png"
+  },
+  {
+   "key": "shot:s43",
+   "id": "s43",
+   "out": "painted/06-slaying-pig/raw/s43.png"
+  },
+  {
+   "key": "shot:s46",
+   "id": "s46",
+   "out": "painted/06-slaying-pig/raw/s46.png"
+  },
+  {
+   "key": "shot:s49",
+   "id": "s49",
+   "out": "painted/06-slaying-pig/raw/s49.png"
+  }
+ ]
+}

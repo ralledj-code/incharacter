@@ -1,0 +1,147 @@
+{
+ "name": "batches/56kxd2wcepmss65ymjq9gv4w1gfqtwaciozk",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-10-27T20:03:02.158Z",
+ "jobs": [
+  {
+   "key": "shot:s01",
+   "id": "s01",
+   "out": "painted/08-baphomet/raw/s01.png"
+  },
+  {
+   "key": "shot:s02",
+   "id": "s02",
+   "out": "painted/08-baphomet/raw/s02.png"
+  },
+  {
+   "key": "shot:s03",
+   "id": "s03",
+   "out": "painted/08-baphomet/raw/s03.png"
+  },
+  {
+   "key": "shot:s05",
+   "id": "s05",
+   "out": "painted/08-baphomet/raw/s05.png"
+  },
+  {
+   "key": "shot:s10",
+   "id": "s10",
+   "out": "painted/08-baphomet/raw/s10.png"
+  },
+  {
+   "key": "shot:s16",
+   "id": "s16",
+   "out": "painted/08-baphomet/raw/s16.png"
+  },
+  {
+   "key": "shot:s17",
+   "id": "s17",
+   "out": "painted/08-baphomet/raw/s17.png"
+  },
+  {
+   "key": "shot:s20",
+   "id": "s20",
+   "out": "painted/08-baphomet/raw/s20.png"
+  },
+  {
+   "key": "shot:s21",
+   "id": "s21",
+   "out": "painted/08-baphomet/raw/s21.png"
+  },
+  {
+   "key": "shot:s23",
+   "id": "s23",
+   "out": "painted/08-baphomet/raw/s23.png"
+  },
+  {
+   "key": "shot:s25",
+   "id": "s25",
+   "out": "painted/08-baphomet/raw/s25.png"
+  },
+  {
+   "key": "shot:s26",
+   "id": "s26",
+   "out": "painted/08-baphomet/raw/s26.png"
+  },
+  {
+   "key": "shot:s29",
+   "id": "s29",
+   "out": "painted/08-baphomet/raw/s29.png"
+  },
+  {
+   "key": "shot:s31",
+   "id": "s31",
+   "out": "painted/08-baphomet/raw/s31.png"
+  },
+  {
+   "key": "shot:s32",
+   "id": "s32",
+   "out": "painted/08-baphomet/raw/s32.png"
+  },
+  {
+   "key": "shot:s40",
+   "id": "s40",
+   "out": "painted/08-baphomet/raw/s40.png"
+  },
+  {
+   "key": "shot:s41",
+   "id": "s41",
+   "out": "painted/08-baphomet/raw/s41.png"
+  },
+  {
+   "key": "shot:s43",
+   "id": "s43",
+   "out": "painted/08-baphomet/raw/s43.png"
+  },
+  {
+   "key": "shot:s44",
+   "id": "s44",
+   "out": "painted/08-baphomet/raw/s44.png"
+  },
+  {
+   "key": "shot:s46",
+   "id": "s46",
+   "out": "painted/08-baphomet/raw/s46.png"
+  },
+  {
+   "key": "shot:s47",
+   "id": "s47",
+   "out": "painted/08-baphomet/raw/s47.png"
+  },
+  {
+   "key": "shot:s54",
+   "id": "s54",
+   "out": "painted/08-baphomet/raw/s54.png"
+  },
+  {
+   "key": "shot:s56",
+   "id": "s56",
+   "out": "painted/08-baphomet/raw/s56.png"
+  },
+  {
+   "key": "shot:s61",
+   "id": "s61",
+   "out": "painted/08-baphomet/raw/s61.png"
+  },
+  {
+   "key": "shot:s64",
+   "id": "s64",
+   "out": "painted/08-baphomet/raw/s64.png"
+  },
+  {
+   "key": "shot:s65",
+   "id": "s65",
+   "out": "painted/08-baphomet/raw/s65.png"
+  },
+  {
+   "key": "shot:s67",
+   "id": "s67",
+   "out": "painted/08-baphomet/raw/s67.png"
+  },
+  {
+   "key": "shot:s68",
+   "id": "s68",
+   "out": "painted/08-baphomet/raw/s68.png"
+  }
+ ]
+}
