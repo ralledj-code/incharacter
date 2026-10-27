@@ -1,0 +1,37 @@
+{
+ "name": "batches/7kxr1i2t6qqge66n3nmave6vl6250nktgtlw",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-10-27T19:09:52.588Z",
+ "jobs": [
+  {
+   "key": "cast:mara",
+   "id": "mara",
+   "out": "painted/12-fall-duncastle/cast/mara.jpg",
+   "jpeg": true
+  },
+  {
+   "key": "cast:valerys",
+   "id": "valerys",
+   "out": "painted/12-fall-duncastle/cast/valerys.jpg",
+   "jpeg": true
+  },
+  {
+   "key": "cast:wizard",
+   "id": "wizard",
+   "out": "painted/12-fall-duncastle/cast/wizard.jpg",
+   "jpeg": true
+  },
+  {
+   "key": "cast:giant",
+   "id": "giant",
+   "out": "painted/12-fall-duncastle/cast/giant.jpg",
+   "jpeg": true
+  },
+  {
+   "key": "cast:serpent",
+   "id": "serpent",
+   "out": "painted/12-fall-duncastle/cast/serpent.jpg",
+   "jpeg": true
+  }
+ ]
+}
