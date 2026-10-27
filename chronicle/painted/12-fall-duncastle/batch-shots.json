@@ -1,0 +1,307 @@
+{
+ "name": "batches/jg8ea5jx8wzfb6cnmj3yvx9gdutyfhkey81n",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-10-27T19:13:36.990Z",
+ "jobs": [
+  {
+   "key": "shot:s01",
+   "id": "s01",
+   "out": "painted/12-fall-duncastle/raw/s01.png"
+  },
+  {
+   "key": "shot:s02",
+   "id": "s02",
+   "out": "painted/12-fall-duncastle/raw/s02.png"
+  },
+  {
+   "key": "shot:s03",
+   "id": "s03",
+   "out": "painted/12-fall-duncastle/raw/s03.png"
+  },
+  {
+   "key": "shot:s04",
+   "id": "s04",
+   "out": "painted/12-fall-duncastle/raw/s04.png"
+  },
+  {
+   "key": "shot:s05",
+   "id": "s05",
+   "out": "painted/12-fall-duncastle/raw/s05.png"
+  },
+  {
+   "key": "shot:s06",
+   "id": "s06",
+   "out": "painted/12-fall-duncastle/raw/s06.png"
+  },
+  {
+   "key": "shot:s07",
+   "id": "s07",
+   "out": "painted/12-fall-duncastle/raw/s07.png"
+  },
+  {
+   "key": "shot:s08",
+   "id": "s08",
+   "out": "painted/12-fall-duncastle/raw/s08.png"
+  },
+  {
+   "key": "shot:s09",
+   "id": "s09",
+   "out": "painted/12-fall-duncastle/raw/s09.png"
+  },
+  {
+   "key": "shot:s10",
+   "id": "s10",
+   "out": "painted/12-fall-duncastle/raw/s10.png"
+  },
+  {
+   "key": "shot:s11",
+   "id": "s11",
+   "out": "painted/12-fall-duncastle/raw/s11.png"
+  },
+  {
+   "key": "shot:s12",
+   "id": "s12",
+   "out": "painted/12-fall-duncastle/raw/s12.png"
+  },
+  {
+   "key": "shot:s13",
+   "id": "s13",
+   "out": "painted/12-fall-duncastle/raw/s13.png"
+  },
+  {
+   "key": "shot:s14",
+   "id": "s14",
+   "out": "painted/12-fall-duncastle/raw/s14.png"
+  },
+  {
+   "key": "shot:s15",
+   "id": "s15",
+   "out": "painted/12-fall-duncastle/raw/s15.png"
+  },
+  {
+   "key": "shot:s16",
+   "id": "s16",
+   "out": "painted/12-fall-duncastle/raw/s16.png"
+  },
+  {
+   "key": "shot:s17",
+   "id": "s17",
+   "out": "painted/12-fall-duncastle/raw/s17.png"
+  },
+  {
+   "key": "shot:s18",
+   "id": "s18",
+   "out": "painted/12-fall-duncastle/raw/s18.png"
+  },
+  {
+   "key": "shot:s19",
+   "id": "s19",
+   "out": "painted/12-fall-duncastle/raw/s19.png"
+  },
+  {
+   "key": "shot:s20",
+   "id": "s20",
+   "out": "painted/12-fall-duncastle/raw/s20.png"
+  },
+  {
+   "key": "shot:s21",
+   "id": "s21",
+   "out": "painted/12-fall-duncastle/raw/s21.png"
+  },
+  {
+   "key": "shot:s22",
+   "id": "s22",
+   "out": "painted/12-fall-duncastle/raw/s22.png"
+  },
+  {
+   "key": "shot:s23",
+   "id": "s23",
+   "out": "painted/12-fall-duncastle/raw/s23.png"
+  },
+  {
+   "key": "shot:s24",
+   "id": "s24",
+   "out": "painted/12-fall-duncastle/raw/s24.png"
+  },
+  {
+   "key": "shot:s25",
+   "id": "s25",
+   "out": "painted/12-fall-duncastle/raw/s25.png"
+  },
+  {
+   "key": "shot:s26",
+   "id": "s26",
+   "out": "painted/12-fall-duncastle/raw/s26.png"
+  },
+  {
+   "key": "shot:s27",
+   "id": "s27",
+   "out": "painted/12-fall-duncastle/raw/s27.png"
+  },
+  {
+   "key": "shot:s28",
+   "id": "s28",
+   "out": "painted/12-fall-duncastle/raw/s28.png"
+  },
+  {
+   "key": "shot:s29",
+   "id": "s29",
+   "out": "painted/12-fall-duncastle/raw/s29.png"
+  },
+  {
+   "key": "shot:s30",
+   "id": "s30",
+   "out": "painted/12-fall-duncastle/raw/s30.png"
+  },
+  {
+   "key": "shot:s31",
+   "id": "s31",
+   "out": "painted/12-fall-duncastle/raw/s31.png"
+  },
+  {
+   "key": "shot:s32",
+   "id": "s32",
+   "out": "painted/12-fall-duncastle/raw/s32.png"
+  },
+  {
+   "key": "shot:s33",
+   "id": "s33",
+   "out": "painted/12-fall-duncastle/raw/s33.png"
+  },
+  {
+   "key": "shot:s34",
+   "id": "s34",
+   "out": "painted/12-fall-duncastle/raw/s34.png"
+  },
+  {
+   "key": "shot:s35",
+   "id": "s35",
+   "out": "painted/12-fall-duncastle/raw/s35.png"
+  },
+  {
+   "key": "shot:s36",
+   "id": "s36",
+   "out": "painted/12-fall-duncastle/raw/s36.png"
+  },
+  {
+   "key": "shot:s37",
+   "id": "s37",
+   "out": "painted/12-fall-duncastle/raw/s37.png"
+  },
+  {
+   "key": "shot:s38",
+   "id": "s38",
+   "out": "painted/12-fall-duncastle/raw/s38.png"
+  },
+  {
+   "key": "shot:s39",
+   "id": "s39",
+   "out": "painted/12-fall-duncastle/raw/s39.png"
+  },
+  {
+   "key": "shot:s40",
+   "id": "s40",
+   "out": "painted/12-fall-duncastle/raw/s40.png"
+  },
+  {
+   "key": "shot:s41",
+   "id": "s41",
+   "out": "painted/12-fall-duncastle/raw/s41.png"
+  },
+  {
+   "key": "shot:s42",
+   "id": "s42",
+   "out": "painted/12-fall-duncastle/raw/s42.png"
+  },
+  {
+   "key": "shot:s43",
+   "id": "s43",
+   "out": "painted/12-fall-duncastle/raw/s43.png"
+  },
+  {
+   "key": "shot:s44",
+   "id": "s44",
+   "out": "painted/12-fall-duncastle/raw/s44.png"
+  },
+  {
+   "key": "shot:s45",
+   "id": "s45",
+   "out": "painted/12-fall-duncastle/raw/s45.png"
+  },
+  {
+   "key": "shot:s46",
+   "id": "s46",
+   "out": "painted/12-fall-duncastle/raw/s46.png"
+  },
+  {
+   "key": "shot:s47",
+   "id": "s47",
+   "out": "painted/12-fall-duncastle/raw/s47.png"
+  },
+  {
+   "key": "shot:s48",
+   "id": "s48",
+   "out": "painted/12-fall-duncastle/raw/s48.png"
+  },
+  {
+   "key": "shot:s49",
+   "id": "s49",
+   "out": "painted/12-fall-duncastle/raw/s49.png"
+  },
+  {
+   "key": "shot:s50",
+   "id": "s50",
+   "out": "painted/12-fall-duncastle/raw/s50.png"
+  },
+  {
+   "key": "shot:s52",
+   "id": "s52",
+   "out": "painted/12-fall-duncastle/raw/s52.png"
+  },
+  {
+   "key": "shot:s53",
+   "id": "s53",
+   "out": "painted/12-fall-duncastle/raw/s53.png"
+  },
+  {
+   "key": "shot:s54",
+   "id": "s54",
+   "out": "painted/12-fall-duncastle/raw/s54.png"
+  },
+  {
+   "key": "shot:s57",
+   "id": "s57",
+   "out": "painted/12-fall-duncastle/raw/s57.png"
+  },
+  {
+   "key": "shot:s58",
+   "id": "s58",
+   "out": "painted/12-fall-duncastle/raw/s58.png"
+  },
+  {
+   "key": "shot:s59",
+   "id": "s59",
+   "out": "painted/12-fall-duncastle/raw/s59.png"
+  },
+  {
+   "key": "shot:s60",
+   "id": "s60",
+   "out": "painted/12-fall-duncastle/raw/s60.png"
+  },
+  {
+   "key": "shot:s61",
+   "id": "s61",
+   "out": "painted/12-fall-duncastle/raw/s61.png"
+  },
+  {
+   "key": "shot:s62",
+   "id": "s62",
+   "out": "painted/12-fall-duncastle/raw/s62.png"
+  },
+  {
+   "key": "shot:s63",
+   "id": "s63",
+   "out": "painted/12-fall-duncastle/raw/s63.png"
+  }
+ ]
+}
