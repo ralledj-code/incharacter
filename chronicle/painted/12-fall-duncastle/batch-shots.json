@@ -1,0 +1,102 @@
+{
+ "name": "batches/3e5hglysbrmxernf6ywhu8n37q86zaf3ou0q",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-10-27T19:45:03.510Z",
+ "jobs": [
+  {
+   "key": "shot:s01",
+   "id": "s01",
+   "out": "painted/12-fall-duncastle/raw/s01.png"
+  },
+  {
+   "key": "shot:s02",
+   "id": "s02",
+   "out": "painted/12-fall-duncastle/raw/s02.png"
+  },
+  {
+   "key": "shot:s05",
+   "id": "s05",
+   "out": "painted/12-fall-duncastle/raw/s05.png"
+  },
+  {
+   "key": "shot:s07",
+   "id": "s07",
+   "out": "painted/12-fall-duncastle/raw/s07.png"
+  },
+  {
+   "key": "shot:s10",
+   "id": "s10",
+   "out": "painted/12-fall-duncastle/raw/s10.png"
+  },
+  {
+   "key": "shot:s11",
+   "id": "s11",
+   "out": "painted/12-fall-duncastle/raw/s11.png"
+  },
+  {
+   "key": "shot:s13",
+   "id": "s13",
+   "out": "painted/12-fall-duncastle/raw/s13.png"
+  },
+  {
+   "key": "shot:s16",
+   "id": "s16",
+   "out": "painted/12-fall-duncastle/raw/s16.png"
+  },
+  {
+   "key": "shot:s21",
+   "id": "s21",
+   "out": "painted/12-fall-duncastle/raw/s21.png"
+  },
+  {
+   "key": "shot:s24",
+   "id": "s24",
+   "out": "painted/12-fall-duncastle/raw/s24.png"
+  },
+  {
+   "key": "shot:s25",
+   "id": "s25",
+   "out": "painted/12-fall-duncastle/raw/s25.png"
+  },
+  {
+   "key": "shot:s27",
+   "id": "s27",
+   "out": "painted/12-fall-duncastle/raw/s27.png"
+  },
+  {
+   "key": "shot:s31",
+   "id": "s31",
+   "out": "painted/12-fall-duncastle/raw/s31.png"
+  },
+  {
+   "key": "shot:s36",
+   "id": "s36",
+   "out": "painted/12-fall-duncastle/raw/s36.png"
+  },
+  {
+   "key": "shot:s43",
+   "id": "s43",
+   "out": "painted/12-fall-duncastle/raw/s43.png"
+  },
+  {
+   "key": "shot:s46",
+   "id": "s46",
+   "out": "painted/12-fall-duncastle/raw/s46.png"
+  },
+  {
+   "key": "shot:s59",
+   "id": "s59",
+   "out": "painted/12-fall-duncastle/raw/s59.png"
+  },
+  {
+   "key": "shot:s62",
+   "id": "s62",
+   "out": "painted/12-fall-duncastle/raw/s62.png"
+  },
+  {
+   "key": "shot:s63",
+   "id": "s63",
+   "out": "painted/12-fall-duncastle/raw/s63.png"
+  }
+ ]
+}
