@@ -7,7 +7,7 @@ description: Turn a campaign song (mp3 + level number) into a playable Alaron Ch
 
 Rasmus often drops the track and goes to sleep. Do not stop to ask questions: use the defaults in `chronicle/LEVELS.md`, note every assumption, and finish with a short report.
 
-**Since 2026-10-26 levels are painted** (see "Painted levels" in `chronicle/CLAUDE.md`). Do the unattended part (audio in place, Whisper lyric times, beats, cues: the timing steps of LEVELS.md), then write the painted storyboard and STOP before generating any image: painting costs real money (~55 DKK a level, Gemini credits) and the story must be checked. Report the story as you read it plus every question that changes a painting, and the cost estimate. Paint only after Rasmus answers and says go.
+**Since 2026-10-26 levels are painted** (see "Painted levels" in `chronicle/CLAUDE.md`). Do the unattended part (audio in place, Whisper lyric times, beats, cues: the timing steps of LEVELS.md), then write the painted storyboard and STOP before generating any image: painting costs real money (~11 DKK a level with Flash 3.1 in batch mode, the default; Gemini credits) and the story must be checked. Report the story as you read it plus every question that changes a painting, and the cost estimate. Paint only after Rasmus answers and says go.
 
 Inputs: the mp3 (an upload or a path) and the level number 1–12 (playlist order in `chronicle/src/s0_stories.js`). If the number is missing, match the file name / song title against PLAYLIST titles. Lyrics text and the session recap are optional: the Whisper transcript is the fallback for both.
 
