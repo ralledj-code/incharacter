@@ -1,0 +1,13 @@
+{
+ "name": "batches/l95nsfsht428dgd2x5dfqlmywueslfcna8wn",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-10-27T19:41:46.595Z",
+ "jobs": [
+  {
+   "key": "cast:lucien",
+   "id": "lucien",
+   "out": "painted/12-fall-duncastle/cast/lucien.jpg",
+   "jpeg": true
+  }
+ ]
+}
