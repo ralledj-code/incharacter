@@ -105,7 +105,7 @@ cast={'lucien':L1['cast']['lucien'],'arthas':L1['cast']['arthas'],'cedric':L1['c
  'giant':"the chained giant: an enormous ogre-like brute four times a man's height, grey warty skin, small eyes, heavy iron chains and shackles on its limbs and neck, goblins in leather riding on its shoulders holding chain reins",
  'serpent':"the serpent: a colossal pale worm-like serpent rising from the earth, ridged grey-white hide, a huge round mouth ringed with teeth, dirt and stones falling from it",
  'duncastle':"Duncastle, the Church's fortress between the forest and the plains: grey stone curtain walls with crenellations, square towers with ballistae on top, a tall timber-framed tower with a red tiled roof in the courtyard, wooden palisades, stables with a red roof"}
-board={'id':'fall-duncastle','live':False,'cover':imgs['s21'],'style':L1['style'],'cast':cast,'shots':shots}
+board={"id":"fall-duncastle","live":True,'cover':imgs['s21'],'style':L1['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
 json.loads(out);open('painted/12-fall-duncastle.json','w').write(out)
