@@ -56,6 +56,8 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
 #hint { font-size: 1.05rem; color: var(--ink); text-shadow: 0 1px 10px #000; text-align: center; max-width: 28em; text-wrap: balance; }
 .row { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
 #top { top: 0; padding-top: max(10px, env(safe-area-inset-top, 0px)); display: flex; justify-content: flex-end; gap: 8px; z-index: 6; }
+/* Landscape view: the page turned sideways inside a portrait screen (iPhone rotation lock); --sw/--sh = the real screen size */
+body.rot { position: fixed; top: 0; left: 0; width: var(--sh); height: var(--sw); padding: 0; transform-origin: top left; transform: translateX(var(--sw)) rotate(90deg); }
 #top { transition: opacity 0.6s; }
 #top.away { opacity: 0; pointer-events: none; }
 #top.away > * { pointer-events: none; }
@@ -100,6 +102,7 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
   <button id="bPause" title="Pause (Space)" hidden>Pause</button>
   <button id="bSync" title="Tap lyrics to the real vocals" hidden>Sync lyrics</button>
   <button id="bCalm" title="Camera kicks and shake on the beat">Wild camera</button>
+  <button id="bRot" title="Show the picture sideways (for a phone with rotation lock)" hidden>Landscape</button>
   <button id="bClose" title="Close the book" hidden>Close the book</button>
 </div>
 

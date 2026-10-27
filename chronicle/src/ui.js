@@ -64,7 +64,15 @@ const EXPOS = [1.0, 1.35, 1.8, 0.8]; let expI = 0; renderer.toneMappingExposure 
 const W = C.create({ mobile });
 W.book.setStories(C.stories); W.book.setIndex(C.firstStory || 0, true);
 const P = C.createPainted(renderer, { mobile });  // painted levels (w5_painted)
-function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); W.resize(w, h); P.resize(w, h); }
+function resize() {
+  // Landscape view only makes sense on a portrait screen; a real turn to landscape switches it off
+  if (document.body.classList.contains('rot') && innerWidth > innerHeight) document.body.classList.remove('rot');
+  const rot = document.body.classList.contains('rot');
+  document.body.style.setProperty('--sw', innerWidth + 'px'); document.body.style.setProperty('--sh', innerHeight + 'px');
+  const w = rot ? innerHeight : innerWidth, h = rot ? innerWidth : innerHeight;
+  renderer.setSize(w, h, false); W.resize(w, h); P.resize(w, h);
+  const b = $('bRot'); if (b) b.textContent = rot ? 'Upright' : 'Landscape';
+}
 addEventListener('resize', resize); resize();
 
 /* ---------- state ---------- */
@@ -140,6 +148,7 @@ function toList() {
   audio.pause(); W.endRide(); tavernMusic(false); mode = 'walk'; sitting = false; ended = false; fromList = false; started = false;
   $('fade').style.opacity = 0; $('end').hidden = true; $('lyric').classList.remove('on'); $('stamp').classList.remove('on'); $('title').classList.remove('on'); lastTitle = null;
   $('top').hidden = true; $('hud').hidden = true; $('start').hidden = false; refreshUI();
+  if (document.body.classList.contains('rot')) { document.body.classList.remove('rot'); resize(); }
   if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => { });
 }
 $('go').onclick = () => {
@@ -269,7 +278,7 @@ function begin() {
   audio.currentTime = 0; audio.muted = muted;
   const p = audio.play(); if (p && p.catch) p.catch(() => { $('hint').textContent = 'Tap Begin again to start the sound.'; mode = 'book'; W.endRide(); refreshUI(); });
   $('fade').style.opacity = 0; $('end').hidden = true; refreshUI();
-  if (s.painted && mobile && innerHeight > innerWidth * 1.15) { $('hint').textContent = 'Turn your phone sideways for the full picture.'; setTimeout(() => { if (mode === 'ride') $('hint').textContent = ''; }, 5000); }
+  if (s.painted && mobile && innerHeight > innerWidth * 1.15) { $('hint').textContent = 'Turn your phone sideways for the full picture, or tap Landscape if it is rotation-locked.'; setTimeout(() => { if (mode === 'ride') $('hint').textContent = ''; }, 5000); }
 }
 function backToBook() {
   if (fromList) { toList(); return; }
@@ -287,13 +296,15 @@ $('bPrev').onclick = () => flip(-1); $('bNext').onclick = () => flip(1); $('bBeg
 $('bMute').onclick = toggleMute; $('bPause').onclick = togglePause;
 const calmLabel = () => { $('bCalm').textContent = calm ? 'Calm camera' : 'Wild camera'; };
 $('bCalm').onclick = () => { calm = !calm; try { localStorage.setItem('alaron:calm', calm ? '1' : '0'); } catch (e) { } calmLabel(); }; calmLabel();
+$('bRot').onclick = () => { document.body.classList.toggle('rot'); resize(); };
 $('bBright').onclick = () => { expI = (expI + 1) % EXPOS.length; renderer.toneMappingExposure = EXPOS[expI]; $('bBright').textContent = 'Brightness ' + (expI + 1); };
 $('bClose').onclick = () => { if (mode === 'ride') backToBook(); else standUp(); };
 $('bBack').onclick = backToBook;
 $('bAgain').onclick = () => { const fl = fromList; fromList = false; backToBook(); fromList = fl; begin(); };
 $('prog').addEventListener('pointerdown', (e) => {
   if (mode !== 'ride' || !story) return; const r = e.currentTarget.getBoundingClientRect();
-  audio.currentTime = clamp((e.clientX - r.left) / r.width, 0, 1) * story.duration; ended = false; $('fade').style.opacity = 0; $('end').hidden = true;
+  const k = document.body.classList.contains('rot') ? (e.clientY - r.top) / r.height : (e.clientX - r.left) / r.width;  // turned sideways: the bar runs down the screen
+  audio.currentTime = clamp(k, 0, 1) * story.duration; ended = false; $('fade').style.opacity = 0; $('end').hidden = true;
   e.stopPropagation();
 });
 
@@ -338,7 +349,7 @@ let lastNear = null;
 function refreshUI() {
   const walk = mode === 'walk', bk = mode === 'book' && !sitting, ride = mode === 'ride';
   $('rowBook').hidden = !bk; $('hud').classList.toggle('book', mode === 'book'); $('prog').style.display = ride ? 'block' : 'none';
-  $('bPause').hidden = !ride; $('bSync').hidden = !ride; $('bClose').hidden = walk; $('bCalm').hidden = !ride; $('bBright').hidden = ride;  // top bar fits a phone
+  $('bPause').hidden = !ride; $('bRot').hidden = !(ride && mobile && story && story.painted && (innerHeight > innerWidth || document.body.classList.contains('rot'))); $('bSync').hidden = !ride; $('bClose').hidden = walk; $('bCalm').hidden = !ride; $('bBright').hidden = ride;  // top bar fits a phone
   $('bClose').textContent = ride ? (fromList ? (innerWidth < 560 ? 'Songs' : 'Back to the songs') : innerWidth < 560 ? 'Book' : 'Back to the book') : 'Stand up';
   pad.style.display = walk && mobile ? 'block' : 'none';
   if (walk) { $('hint').textContent = W.nearChair ? HINT_NEAR : HINT_FAR; }
