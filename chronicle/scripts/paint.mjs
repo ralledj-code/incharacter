@@ -8,7 +8,8 @@
 // uploaded once and referenced), then
 //   node scripts/paint.mjs <level> collect [--wait <minutes>]  saves what the job painted and lists what it did not.
 // --now paints immediately at full price instead (quick single repaints). Modus operandi since 2026-10-27: Flash 3.1 + batch.
-// The job is kept in painted/<level>/batch-<cast|shots>.json until it is collected.
+// The job is kept in painted/<level>/batch-<cast|shots>.json until it is collected: COMMIT AND PUSH it right after submitting,
+// so a fresh session can collect if this container is gone (no secrets in it; results stay at Google for a while).
 // Then: python scripts/crop-bars.py <level>, python scripts/layers.py <level> (web images + depth maps for the parallax player).
 import fs from 'node:fs';
 import sharp from 'sharp';
@@ -109,7 +110,7 @@ async function submit(model, jobs, kind) {
   const j = await r.json(); if (!r.ok || !j.name) throw new Error('batch submit ' + r.status + ' ' + JSON.stringify(j).slice(0, 400));
   const file = `${dir}/batch-${kind}.json`;
   fs.writeFileSync(file, JSON.stringify({ name: j.name, model, submitted: new Date().toISOString(), jobs: jobs.map(({ key, id, out, jpeg }) => ({ key, id, out, jpeg })) }, null, 1));
-  console.log(`submitted ${jobs.length} images as ${j.name} (${file}); collect with: node scripts/paint.mjs ${level} collect`);
+  console.log(`submitted ${jobs.length} images as ${j.name} (${file}); commit + push that file now, then collect with: node scripts/paint.mjs ${level} collect`);
 }
 async function collect() {
   const files = ['cast', 'shots'].map((k) => `${dir}/batch-${k}.json`).filter((f) => fs.existsSync(f));
