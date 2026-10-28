@@ -10,7 +10,7 @@ const { clamp, lerp } = C;
    storyboard card, so timing can be checked before anything is painted. */
 C.boards = C.boards || {};
 
-const PW = 16, PH = 9, FOV = 36, TAN = Math.tan(FOV * Math.PI / 360), DEPTH = 1.3, MOVE = 0.9, ORBIT = 0.2;  // ORBIT: how far the camera turns back toward the centre while it drifts (parallax)
+const PW = 16, PH = 9, FOV = 36, TAN = Math.tan(FOV * Math.PI / 360), DEPTH = 0, MOVE = 0.9, ORBIT = 0;  // ORBIT: how far the camera turns back toward the centre while it drifts (parallax)
 const TRANS = { cut: 0, fade: 1.2, ink: 1.5, black: 1.6, flash: 0 };
 const KIND = { cut: 0, fade: 1, ink: 2, black: 3, flash: 0 };
 const GRADE = { red: [1.12, 0.86, 0.84], cold: [0.88, 0.98, 1.14], green: [0.9, 1.06, 0.98], none: [1, 1, 1] };
@@ -24,26 +24,11 @@ const FX = {
   fireflies: [0xd2ff86, 0.13, [0.0, 0.03, 0.0], 0.9, 2.4, 1.0, 100]
 };
 
-const PLANE_VS = `uniform sampler2D dMap; uniform float amt, sway, time, drift;
-varying vec2 vUv;
-void main() {
-  vUv = uv; vec2 o = vec2(0.008, 0.012);
-  float d = texture2D(dMap, uv).r * 0.36
-    + (texture2D(dMap, uv + vec2(o.x, 0.0)).r + texture2D(dMap, uv - vec2(o.x, 0.0)).r + texture2D(dMap, uv + vec2(0.0, o.y)).r + texture2D(dMap, uv - vec2(0.0, o.y)).r) * 0.11
-    + (texture2D(dMap, uv + o).r + texture2D(dMap, uv - o).r + texture2D(dMap, uv + vec2(o.x, -o.y)).r + texture2D(dMap, uv - vec2(o.x, -o.y)).r) * 0.05;
-  // theatre flats: everything nearer than the middle distance is ONE rigid plane (people never straddle a depth step, so faces
-  // cannot tear), only the background recedes. Layer steps through heads split faces (Cedric worst) - keep it this way.
-  d = smoothstep(0.18, 0.5, d);
-  vec3 p = position; p.z += d * amt;
-  float nearL = smoothstep(0.45, 0.95, d), farL = 1.0 - smoothstep(0.05, 0.4, d);
-  p.x += drift * (nearL * 0.03 * sin(time * 0.23) - farL * 0.03 * sin(time * 0.17 + 1.3));
-  p.y += drift * nearL * 0.018 * sin(time * 0.31 + 0.7);
-  // sway: the foreground layer rocks as one rigid piece (a wave across the image rippled through faces)
-  float w = sway * nearL;
-  p.x += w * 0.03 * sin(time * 0.9);
-  p.y += w * 0.012 * sin(time * 1.1 + 0.6);
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
-}`;
+// The painting is shown FLAT (2026-10-28): bending one painting by a depth map always tore faces where the depth model put a
+// head behind its body (Cedric worst; blocky on phones' coarser grid). Motion comes from the camera pan/zoom and the atmosphere.
+// Real depth would need separate cut-out layers (a background plate + figures), not a depth map.
+const PLANE_VS = `varying vec2 vUv;
+void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 const PLANE_FS = `uniform sampler2D map; uniform float flick;
 varying vec2 vUv;
 void main() {
@@ -120,7 +105,7 @@ function cardTex(shot) {  // storyboard card for a shot that has no painting yet
 C.createPainted = function (renderer, opts) {
   const mobile = !!(opts && opts.mobile);
   const camera = new THREE.PerspectiveCamera(FOV, 16 / 9, 0.05, 100);
-  const planeGeo = new THREE.PlaneGeometry(PW, PH, mobile ? 128 : 220, mobile ? 72 : 124);
+  const planeGeo = new THREE.PlaneGeometry(PW, PH);  // flat: one quad
   const flatD = (() => { const t = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1, THREE.RGBAFormat); t.needsUpdate = true; return t; })();
   const fogTex = softTex(false), smokeTex = softTex(true), flameTex = fireTex();
   const aspect = 16 / 9; let W = 2, H = 2, pr = 1;
@@ -181,7 +166,7 @@ C.createPainted = function (renderer, opts) {
     const B = C.BASE();
     return Promise.all(shots.map((s) => Promise.all([
       fetchBlob(new URL(base + (s.img || s.id) + '.webp', B)).then((x) => { tick(); return x; }),   // img: reuse another shot's painting
-      fetchBlob(new URL(base + (s.img || s.id) + '_d.png', B)).then((x) => { tick(); return x; })
+      Promise.resolve(null).then((x) => { tick(); return x; })  // depth maps are not used any more (flat paintings)
     ]).then(([c, d]) => { blobs[s.id] = { c, d }; })));
   }
   function texFrom(blob) {
