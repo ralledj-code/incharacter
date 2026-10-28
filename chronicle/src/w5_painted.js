@@ -31,7 +31,9 @@ void main() {
   float d = texture2D(dMap, uv).r * 0.36
     + (texture2D(dMap, uv + vec2(o.x, 0.0)).r + texture2D(dMap, uv - vec2(o.x, 0.0)).r + texture2D(dMap, uv + vec2(0.0, o.y)).r + texture2D(dMap, uv - vec2(0.0, o.y)).r) * 0.11
     + (texture2D(dMap, uv + o).r + texture2D(dMap, uv - o).r + texture2D(dMap, uv + vec2(o.x, -o.y)).r + texture2D(dMap, uv - vec2(o.x, -o.y)).r) * 0.05;
-  float L = 4.0, f = fract(d * L); d = (floor(d * L) + smoothstep(0.35, 0.65, f)) / L;
+  // theatre flats: everything nearer than the middle distance is ONE rigid plane (people never straddle a depth step, so faces
+  // cannot tear), only the background recedes. Layer steps through heads split faces (Cedric worst) - keep it this way.
+  d = smoothstep(0.18, 0.5, d);
   vec3 p = position; p.z += d * amt;
   float nearL = smoothstep(0.45, 0.95, d), farL = 1.0 - smoothstep(0.05, 0.4, d);
   p.x += drift * (nearL * 0.03 * sin(time * 0.23) - farL * 0.03 * sin(time * 0.17 + 1.3));
