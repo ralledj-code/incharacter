@@ -13,14 +13,14 @@ def snap(t,k):
     if k not in ('cut','flash') or t==0: return t
     h,r,e=near(B['hits'],t),near(B['bars'],t),near(B['beats'],t)
     return h if abs(h-t)<=0.25 else r if abs(r-t)<=0.2 else e
-L,A,C,V,M,AL,G,N,MY,LE,CW,CR,FA,KIN='lucien','arthas','cedric','valerys','mara','aldraik','guard','neris','mayor','leify','caroline','crackle','father','kin'
+L,A,C,V,M,AL,G,N,MY,LE,CW,CR,FA,KIN,LK='lucien','arthas','cedric','valerys','mara','aldraik','guard','neris','mayor','leify','caroline','crackle','father','kin','lake'
 MOVES=[([0,0,0.04],[0,0,0.2]),([-0.04,0,0.05],[0.04,0,0.12]),([0,0,0.22],[0,0,0.05]),([0.05,0.02,0.02],[-0.04,0,0.12]),([0,0.04,0.02],[0,0,0.18]),([0.03,0,0.08],[-0.03,0,0.16])]
 LU="Lucien Vale (long blond hair, pointed ears, burgundy coat) "
 MEM="painted like a faded memory, soft haze, muted colours, "
 TAV="in Mara's tavern at night, warm firelight, "
 COBH="in Cobh, a harbour town of grey stone and slate roofs by the sea, "
 PAWS="in Paws and Pints, a cosy tavern full of cats everywhere (on beams, tables, the bar), warm lamplight, "
-LAKE="at the old moonwell of Cobh, a round lake in a forest clearing ringed by tall standing stones with six heavy iron chains running from the stones down into the lakebed, "
+LAKE="at the old moonwell of Cobh, the same place as the reference painting of the moon lake (a round lake in a forest clearing ringed by tall standing stones with six heavy iron chains running from the stones down into it), "
 SWAMP="at the first moonwell (layout as in the reference photo of the tabletop model, painted as a real place at full scale): a vast corrupted dead marsh, a giant gnarled tree on a square raised stone plinth in the middle, straight old cobblestone paths running out from the plinth, two lone square brick gate arches far away on either side of the tree, black goo water and dead reeds, mist, "
 VIL="in the square of a small poor village at dusk, thatched houses, "
 S_=[
@@ -30,7 +30,7 @@ S_=[
 (24.0,'cut',[L,A,C],['fog'],"The three brothers riding out at dawn on horseback along a coastal road, "+LU,{}),
 (31.9,'cut',[V],['dust'],"Close-up of High Inquisitor Valerys with a hand on his heart, swearing, calm and unreadable",{'flicker':0.3}),
 (37.3,'cut',[V],['dust'],"High Inquisitor Valerys pointing at the map toward a distant town by a lake",{'flicker':0.3}),
-(43.1,'cut',[],['fog'],LAKE+"dry and cracked under a pale moon, a vision, no people",{'grade':'cold'}),
+(43.1,'cut',[LK],['fog'],LAKE+"dry and cracked under a pale moon, a vision, no people",{'grade':'cold'}),
 (48.5,'cut',[V],['dust'],"Extreme close-up of Valerys's hard grey eyes, something unsaid",{'flicker':0.3}),
 (53.9,'cut',[A,C],['dust'],"Arthas and Cedric standing side by side in the cathedral, trusting, unknowing",{'flicker':0.3}),
 (59.8,'cut',[KIN,AL],['dust'],"In a dark counting room, well-dressed merchants of the brothers' family shaking hands with Aldraik over a chest of gold",{'grade':'red','flicker':0.4}),
@@ -48,7 +48,7 @@ S_=[
 (107.45,'cut',[L,A,C],['fog'],"The three brothers riding hard on horseback along a cliff road toward the sea",{}),
 (110.3,'cut',[],['fog'],COBH+"seen from a hill at sunset, no people close",{}),
 (116.5,'flash',[L,A,C],['dust'],"The three brothers on horseback on a ridge above the harbour town of Cobh at sunset, "+LU+"heroic, low angle",{}),
-(119.8,'cut',[],['fog'],LAKE+"dry and cracked at dusk, the stones casting long shadows, no people",{'grade':'cold'}),
+(119.8,'cut',[LK],['fog'],LAKE+"dry and cracked at dusk, the stones casting long shadows, no people",{'grade':'cold'}),
 (122.4,'cut',[L],['dust'],LU+"drinking from a cup of water at a town fountain, tasting, testing it",{}),
 (125.4,'cut',[],['fog'],"Under the cracked mud of a dry lakebed, black goo stirring and bubbling up through the cracks",{'grade':'green'}),
 (127.7,'cut',[L,A,C],['sparks'],"Close-up of three hands: Arthas's gauntlet on his sword hilt, Cedric's hand on his staff, Lucien's hand with the glowing dagger, crossed together, an oath",{'flicker':0.4}),
@@ -78,17 +78,17 @@ S_=[
 (221.5,'cut',[CR,CW],['sparks'],"Crackle holding up the glowing bottle of lightning in triumph, Caroline staring at it in shock",{'flicker':0.4}),
 (224.5,'cut',[L,CW],['dust'],LU+"grinning and teasing Caroline, who rolls her eyes but can't help a smile",{}),
 (226.8,'cut',[CR,L,A,C],['fog'],"Crackle leading the three brothers through a dark forest at night with a lantern",{}),
-(229.1,'cut',[N],['fog'],LAKE+"the druid Neris waiting among the standing stones at the edge of the dry lakebed, moonlight",{'grade':'cold'}),
+(229.1,'cut',[N,LK],['fog'],LAKE+"the druid Neris waiting among the standing stones at the edge of the dry lakebed, moonlight",{'grade':'cold'}),
 (231.9,'cut',[N],['fog'],"Close-up of Neris, gaunt, amber eyes, a strange smile",{'grade':'cold'}),
-(234.9,'cut',[L,A,C],['fog'],LAKE+"drops of the brothers' blood falling from cut palms onto the cracked dry lakebed",{'grade':'cold'}),
-(237.4,'flash',[],['fog'],LAKE+"black goo surging up through every crack, flooding the lakebed, the slack chains disappearing under it",{'grade':'green','shake':0.5}),
-(243.0,'cut',[],['fog'],LAKE+"filled to the brim with thick black goo under the moon, no people",{'grade':'green'}),
+(234.9,'cut',[L,A,C,LK],['fog'],LAKE+"drops of the brothers' blood falling from cut palms onto the cracked dry lakebed",{'grade':'cold'}),
+(237.4,'flash',[LK],['fog'],LAKE+"black goo surging up through every crack, flooding the lakebed, the slack chains disappearing under it",{'grade':'green','shake':0.5}),
+(243.0,'cut',[LK],['fog'],LAKE+"filled to the brim with thick black goo under the moon, no people",{'grade':'green'}),
 (251.0,'cut',[N],['fog'],"Neris running away into the dark forest, looking back over his shoulder",{'grade':'cold'}),
 (260.65,'cut',[L],['embers'],"Close-up of "+LU+"furious, purple fire flaring in his hands",{'flicker':0.5}),
 (263.7,'cut',[],['fog'],"Close-up of the black goo surface choking the old moonwell, thick and oily",{'grade':'green'}),
 (266.4,'cut',[],['fog'],"A dark forest at night, wide and empty",{'grade':'cold'}),
 (269.1,'cut',[N],['fog'],"Neris disappearing between the trees, only a shape",{'grade':'cold'}),
-(277.5,'fade',[L,A,C],['fog'],LAKE+"the three brothers standing on the shore of the black goo lake under the moon, seen from behind",{'grade':'cold'}),
+(277.5,'fade',[L,A,C,LK],['fog'],LAKE+"the three brothers standing on the shore of the black goo lake under the moon, seen from behind",{'grade':'cold'}),
 (283.2,'cut',[],['fog'],"The black surface of the lake rippling, something stirring deep beneath it, no people",{'grade':'cold'}),
 ]
 shots=[];mv=0
@@ -108,7 +108,7 @@ L10=json.load(open('painted/10-ahm-dynasty.json')); L11=json.load(open('painted/
 L4=json.load(open('painted/04-cleansing-well.json')); L3=json.load(open('painted/03-first-moonwell.json')); L10=json.load(open('painted/10-ahm-dynasty.json'))
 cast={'lucien':L4['cast']['lucien'],'arthas':L4['cast']['arthas'],'cedric':L4['cast']['cedric'],'neris':L4['cast']['neris'],'valerys':L6['cast']['valerys'],
  'mara':L12['cast']['mara'],'aldraik':L3['cast']['aldraik'],'guard':L10['cast']['guard']}
-cast.update({'mayor':"the mayor of Cobh: an older lady in her late sixties, small and upright, deeply lined stern face, thin pressed lips, sharp pale eyes, silver-white hair in a severe tight bun, a high-collared dark blue coat with silver buttons and a heavy silver chain of office, a walking cane; strict, proud, unamused",
+cast.update({'lake':"the moon lake of Cobh, as in the reference painting",'mayor':"the mayor of Cobh: an older lady in her late sixties, small and upright, deeply lined stern face, thin pressed lips, sharp pale eyes, silver-white hair in a severe tight bun, a high-collared dark blue coat with silver buttons and a heavy silver chain of office, a walking cane; strict, proud, unamused",
  'leify':"Leify, Lucien's old fling: a very beautiful young woman in her twenties, long wavy chestnut hair, green eyes, freckles, a tavern waitress's laced bodice and apron, a cool, unimpressed look",
  'caroline':"Caroline, Lucien's old girlfriend: a strikingly beautiful, elegant young woman, long sleek raven-black hair, dark eyes, a fitted deep-blue dress, a teasing, confident smile, far out of most men's league",
  'crackle':"Crackle, an eccentric young professor in his late twenties: very tall, slim and skinny with long limbs, a big shock of wild frizzy ginger hair standing up as if struck by lightning, a thin ginger moustache, a brass pince-nez on a chain, a long patched tweed coat with bulging pockets of brass instruments and copper wire, scorch marks on his sleeves, an eager, nervous, hopelessly-in-love face",
