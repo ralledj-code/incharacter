@@ -25,8 +25,8 @@ ROOM="in a sacked, rummaged room, furniture torn apart, black goo smeared on the
 S_=[
 (0,'black',[SE],['fog'],"A misty dark pine forest at night, far away between the trees a tall pale woman with silver-white hair, only a silhouette and two faint green eyes",{'grade':'green'}),
 (6.5,'fade',[],['fog'],"A thin moon over a sleeping harbour town, fog on the roofs, no people",{'grade':'cold'}),
-(12.5,'fade',[SE],['fog'],"Severin in a poor town street by day, handing small glass potion vials to sick, coughing townsfolk wrapped in blankets, soft green light around her, kind smile",{'grade':'green'}),
-(16.8,'cut',[SE],['fog'],"Close-up of Severin's pale hand placing a glowing green vial into a sick mother's shaking hands, gentle, too gentle",{'grade':'green'}),
+(12.5,'fade',[S],['fog'],"Silas the lean dock smuggler in his patched grey-olive coat in a poor town street by day, handing out small glass potion vials for free to sick, coughing townsfolk wrapped in blankets, a sickly green glow in the vials",{'grade':'green'}),
+(16.8,'cut',[S],['fog'],"Close-up of Silas's ink-stained hand placing a glowing green vial into a sick old woman's shaking hands, his tired, kind face behind",{'grade':'green'}),
 (22.4,'cut',[],['dust'],"Inside a crowded sickhouse, sick townsfolk on cots drinking from small glass vials, candlelight, relief on their faces",{}),
 (26.5,'cut',[],['fog'],"Close-up of a sick man's hand on a blanket, coarse dark fur starting to sprout at his wrist, his nails lengthening into claws",{'grade':'cold'}),
 (32.2,'fade',[],['fog'],DOCK+"a crooked shack in the alley, its door ajar, black water lapping at the pier, no people",{'grade':'cold'}),
