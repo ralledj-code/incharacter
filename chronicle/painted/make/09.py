@@ -26,7 +26,7 @@ VIL="in the square of a small poor village at dusk, thatched houses, "
 S_=[
 (0,'black',[],['fire','smoke','embers'],COBH+"burning at night, fire on the rooftops, smoke across the moon, no people close",{'grade':'red','flicker':0.6}),
 (9.6,'fade',[CO],['smoke','embers'],"On a burning rooftop above Cobh, the enemy commander raising a great curved war horn to his lips",{'grade':'red','flicker':0.5}),
-(19.3,'cut',[],['smoke','embers'],COBH+"hunched shadowy werewolves fleeing back through the burning streets toward the gate",{'grade':'red','flicker':0.5}),
+(19.3,'cut',[],['smoke','embers'],COBH+"a mixed horde of orcs, hulking hairy bugbears and human soldiers in red sashes fleeing back through the burning streets toward the gate",{'grade':'red','flicker':0.5}),
 (23.2,'flash',[TR],['smoke','embers'],COBH+"the huge war troll still stomping through a burning street, a club in its fist, hunting",{'grade':'red','shake':0.5,'flicker':0.5}),
 (26.3,'cut',[TR,CR,CW],['smoke','embers'],COBH+"Crackle and Caroline trapped against a wall as the troll's shadow falls over them",{'grade':'red','flicker':0.5}),
 (30.4,'cut',[L],['smoke','embers'],COBH+LU+"sprinting through the burning street toward them",{'flicker':0.5}),
@@ -78,8 +78,8 @@ S_=[
 (220.0,'cut',[],['ash'],COBH+"townsfolk carrying the wounded and the dead through the ash-grey street",{}),
 (226.4,'fade',[OM],['dust'],"A cramped little arcane shop full of trinkets and candles, an old shopkeeper weeping over a brass lantern on the counter",{'flicker':0.4}),
 (229.1,'cut',[L,OM],['dust'],"In the arcane shop, "+LU+"handing the brass lantern of revealing across the counter to the old man",{'flicker':0.4}),
-(232.8,'cut',[L,OM],['smoke'],"In the arcane shop, "+LU+"passing the old man a pipe, smoke curling",{'flicker':0.4}),
-(235.6,'cut',[OM],['smoke'],"The old shopkeeper slumped blissfully in his chair, smoke around him, high as a kite, smiling",{'flicker':0.4}),
+(232.8,'cut',[L,OM],['smoke'],"In the arcane shop, "+LU+"passing the old man a long carved pipe with a little pouch of herbs, a sly smile",{'flicker':0.4}),
+(235.6,'cut',[OM],['smoke'],"The old shopkeeper puffing on a long pipe in his chair, eyes glazed and drifting, a dreamy silly grin, lazy smoke rings floating around his head, high as a kite",{'flicker':0.4}),
 (239.2,'cut',[L,A,C],['dust'],COBH+"by day the three brothers helping the townsfolk rebuild a burned house, lifting beams, "+LU,{}),
 (241.9,'cut',[],['dust'],"A road sign pointing inland toward the capital, a long road through hills",{}),
 (244.8,'cut',[M],['dust'],"Mara alone behind her bar at night, counting the last of her coins, worried",{'flicker':0.4}),
@@ -110,9 +110,9 @@ assert sid('s22')['scene'].startswith(COBH+'the three brothers standing together
 L10=json.load(open('painted/10-ahm-dynasty.json')); L11=json.load(open('painted/11-hunger-grows.json'))
 L7=json.load(open('painted/07-journey-cobh.json'))
 cast={k:L7['cast'][k] for k in ['lucien','arthas','cedric','mara','aldraik','crackle','caroline','mayor']}
-cast.update({'troll':"a huge war troll three times a man's height: grey-green warty hide, long arms, a tree-trunk club, tusks, small mean eyes, crude iron armour plates and chains",
- 'commander':"the enemy commander: a tall lean man in dark blackened armour with a long red cloak and a scarlet sash, a cruel narrow face, short black beard, a curved war horn at his belt",
- 'archers':"the commander's archers: soldiers in dark leather and red hoods with longbows",
+cast.update({'troll':"a blood troll as in the reference sheet but much bigger, three times a man's height: dark red blood-slick skin, hunched, long arms with claws, a jutting tusked jaw, small burning eyes, ragged black hair, a crude spiked club",
+ 'commander':"the enemy commander, an orc warlord serving the Scarlet Wizards: a huge grey-green orc with tusks and a scarred face, a topknot of black hair, blackened plate armour with a blood-red Scarlet cloak and sash, a curved war horn at his belt",
+ 'archers':"the commander's archers, a mixed band of orcs and human soldiers in dark leather with red hoods and sashes, longbows",
  'oldman':"an old shopkeeper of an arcane curio shop: frail, bald with long white side-whiskers, half-moon spectacles, a faded purple robe, grief in his eyes"})
 board={"id":"saving-cobh","live":False,'cover':'s22','style':L12['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
