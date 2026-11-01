@@ -1,0 +1,19 @@
+{
+ "name": "batches/qcdtncdd5aoqlyn6rnxnenum2hctqw3ovltu",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-11-01T15:19:45.388Z",
+ "jobs": [
+  {
+   "key": "cast:assassin",
+   "id": "assassin",
+   "out": "painted/10-ahm-dynasty/cast/assassin.jpg",
+   "jpeg": true
+  },
+  {
+   "key": "cast:guard",
+   "id": "guard",
+   "out": "painted/10-ahm-dynasty/cast/guard.jpg",
+   "jpeg": true
+  }
+ ]
+}

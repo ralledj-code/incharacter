@@ -111,6 +111,6 @@ cast={'lucien':L12['cast']['lucien'],'arthas':L12['cast']['arthas'],'cedric':L12
 board={"id":"ahm-dynasty","live":False,'cover':'s22','style':L12['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
-json.loads(out);open('painted/11-hunger-grows.json','w').write(out)
+json.loads(out);open('painted/10-ahm-dynasty.json','w').write(out)
 ts=[s['t'] for s in shots]
 print(len(shots),'shots',sum(1 for s in shots if 'img' not in s),'new','mono',all(a<b for a,b in zip(ts,ts[1:])),'maxhold',round(max(b-a for a,b in zip(ts,ts[1:]+[295.5])),1))
