@@ -1,0 +1,19 @@
+{
+ "name": "batches/0hf1fx2tsrsm6smks6suln0u8yse4jir1c0i",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-11-01T15:46:08.767Z",
+ "jobs": [
+  {
+   "key": "cast:wife",
+   "id": "wife",
+   "out": "painted/02-finding-silas/cast/wife.jpg",
+   "jpeg": true
+  },
+  {
+   "key": "cast:kids",
+   "id": "kids",
+   "out": "painted/02-finding-silas/cast/kids.jpg",
+   "jpeg": true
+  }
+ ]
+}
