@@ -1,0 +1,52 @@
+{
+ "name": "batches/b7p99emn586fjtxfyp7hyh31a7t6c0t4ikfv",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-11-01T19:09:38.615Z",
+ "jobs": [
+  {
+   "key": "shot:s02",
+   "id": "s02",
+   "out": "painted/05-hunt-pig/raw/s02.png"
+  },
+  {
+   "key": "shot:s03",
+   "id": "s03",
+   "out": "painted/05-hunt-pig/raw/s03.png"
+  },
+  {
+   "key": "shot:s12",
+   "id": "s12",
+   "out": "painted/05-hunt-pig/raw/s12.png"
+  },
+  {
+   "key": "shot:s13",
+   "id": "s13",
+   "out": "painted/05-hunt-pig/raw/s13.png"
+  },
+  {
+   "key": "shot:s14",
+   "id": "s14",
+   "out": "painted/05-hunt-pig/raw/s14.png"
+  },
+  {
+   "key": "shot:s16",
+   "id": "s16",
+   "out": "painted/05-hunt-pig/raw/s16.png"
+  },
+  {
+   "key": "shot:s17",
+   "id": "s17",
+   "out": "painted/05-hunt-pig/raw/s17.png"
+  },
+  {
+   "key": "shot:s18",
+   "id": "s18",
+   "out": "painted/05-hunt-pig/raw/s18.png"
+  },
+  {
+   "key": "shot:s19",
+   "id": "s19",
+   "out": "painted/05-hunt-pig/raw/s19.png"
+  }
+ ]
+}
