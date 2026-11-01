@@ -14,8 +14,8 @@ def snap(t,k):
     h,r,e=near(B['hits'],t),near(B['bars'],t),near(B['beats'],t)
     return h if abs(h-t)<=0.25 else r if abs(r-t)<=0.2 else e
 L,A,C,SE,P,MW,CA,TR,WB,PO,WW='lucien','arthas','cedric','severin','pig','moonwell','carius','troll','werebear','poles','wolves'
-TWELVE="in the middle of the town square (as in the reference painting of the poles): exactly twelve thick wooden poles standing in one wide circle, one villager chained upright to each pole with iron chains around waist and wrists, feet on the ground, ordinary poor villagers in rough clothes; "
-TURN=" The ones turning become werewolves (fur, wolf snouts, fangs, claws, yellow eyes), never zombies, never undead."
+TWELVE="in the middle of the town square (the ring of poles exactly as in the reference painting): exactly twelve thick wooden poles evenly spaced in one ring, no other poles anywhere, one villager chained upright to each pole with iron chains around waist and wrists, feet on the ground, ordinary poor villagers in rough clothes; "
+TURN=" The ones turning become werewolves (fur, wolf snouts, fangs, claws, yellow eyes) that stay chained to their poles, no torches in their hands, never zombies, never undead."
 MOVES=[([0,0,0.04],[0,0,0.2]),([-0.04,0,0.05],[0.04,0,0.12]),([0,0,0.22],[0,0,0.05]),([0.05,0.02,0.02],[-0.04,0,0.12]),([0,0.04,0.02],[0,0,0.18]),([0.03,0,0.08],[-0.03,0,0.16])]
 LU="Lucien Vale (long blond hair, pointed ears, burgundy coat) "
 MEM="painted like a faded memory, soft haze, muted colours, "
@@ -25,8 +25,8 @@ SWAMP="at the first moonwell (layout as in the reference photo of the tabletop m
 VIL="in the square of a small poor village at dusk, thatched houses, "
 S_=[
 (0,'black',[L],['fog'],VIL+"night, seen from behind: "+LU+"crouched on the edge of a thatched rooftop, rose petals in the wind, the square far below",{'grade':'cold'}),
-(9.0,'fade',[PO],['fog','embers'],VIL+"night, seen from high above: "+TWELVE+"torches, a panicking crowd around the circle",{'grade':'red','flicker':0.4}),
-(18.0,'cut',[A,C,PO,WW],['embers'],VIL+"night: "+TWELVE+"Arthas and Cedric inside the circle holding back chained villagers who are starting to turn"+TURN,{'shake':0.3,'flicker':0.4}),
+(9.0,'fade',[],['fog','embers'],VIL+"night, a high bird's-eye view looking straight down on the town square: a ring of exactly twelve thick wooden poles evenly spaced in one circle like the hours on a clock face, one villager chained upright to each pole, an empty patch of cobbles in the middle of the ring, torches and a crowd outside the ring",{'grade':'red','flicker':0.4}),
+(18.0,'cut',[A,C,PO],['embers'],VIL+"night: "+TWELVE+"Arthas and Cedric inside the circle holding back chained villagers who are starting to turn"+TURN,{'shake':0.3,'flicker':0.4}),
 (27.0,'cut',[],['fog'],"Close-up of a villager's hands in iron chains on a wooden pole, fingers stretching into claws, coarse fur breaking through the skin",{'grade':'red'}),
 (36.0,'cut',[SE],['fog'],VIL+"night: Severin standing calm and still in the middle of the fleeing crowd, red rose petals drifting around her, faint green glow",{'grade':'green'}),
 (45.0,'cut',[SE],['fog'],VIL+"night: the crowd parting away from Severin in fear, leaving her alone in a ring of empty cobbles",{'grade':'green'}),
@@ -37,11 +37,11 @@ S_=[
 (74.5,'cut',[SE],['fog'],"Close-up of Severin's face, real and close, silver-white hair, mint-green eyes, calm, a faint smile",{'grade':'green'}),
 (78.2,'cut',[SE,L,PO],['fog'],VIL+"night, "+TWELVE+"in front of the circle: Severin holding out her open hand to "+LU+", asking for his glowing dagger, inviting him home",{'grade':'green'}),
 (81.5,'cut',[L,PO],['fog'],VIL+"night: "+TWELVE+LU+"in front of the circle pleading, pointing back at the chained villagers",{}),
-(84.2,'cut',[PO,WW],['fog','embers'],VIL+"night: "+TWELVE+"the villagers half turned, howling, not knowing what they are becoming"+TURN,{'grade':'red'}),
+(84.2,'cut',[PO],['fog','embers'],VIL+"night: "+TWELVE+"the villagers half turned, howling, not knowing what they are becoming"+TURN,{'grade':'red'}),
 (87.1,'cut',[SE],['fog'],"Close-up of Severin, cold now: we are already dead, all of us are",{'grade':'green'}),
 (90.4,'cut',[L,SE,PO],['fog'],VIL+"night, "+TWELVE+"in front of the circle: "+LU+"stepping back from Severin, shaking his head, refusing",{'grade':'cold'}),
-(93.3,'cut',[PO,WW],['fog','embers'],VIL+"night: "+TWELVE+"eight of the twelve fully turned into werewolves straining at their chains, the other four still human and terrified"+TURN,{'grade':'red','flicker':0.4}),
-(96.2,'cut',[A,C,PO,WW],['embers'],VIL+"night: "+TWELVE+"Arthas and Cedric inside the circle holding the line against the chained werewolves, grim"+TURN,{'shake':0.3,'flicker':0.4}),
+(93.3,'cut',[PO],['fog','embers'],VIL+"night: "+TWELVE+"eight of the twelve fully turned into werewolves straining at their chains, the other four still human and terrified"+TURN,{'grade':'red','flicker':0.4}),
+(96.2,'cut',[A,C,PO],['embers'],VIL+"night: "+TWELVE+"Arthas and Cedric inside the circle holding the line against the chained werewolves, grim"+TURN,{'shake':0.3,'flicker':0.4}),
 (99.1,'cut',[L,PO],['fog'],VIL+"night: "+TWELVE+LU+"turning his back on Severin and walking toward the circle of chained villagers, torches",{'grade':'cold'}),
 (103.1,'cut',[L],['fog'],"Close-up of "+LU+"with his eyes closed, the weight of the choice",{}),
 (108.5,'flash',[],['embers','fire'],"Eight funeral pyres burning in a row under a full moon outside the village, no people close",{'flicker':0.7}),

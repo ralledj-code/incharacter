@@ -1,13 +1,8 @@
 {
- "name": "batches/b7p99emn586fjtxfyp7hyh31a7t6c0t4ikfv",
+ "name": "batches/snnj0d1gnh8drnk7xdolw84speoelx4b4ere",
  "model": "gemini-3.1-flash-image",
- "submitted": "2026-11-01T19:09:38.615Z",
+ "submitted": "2026-11-01T19:13:32.213Z",
  "jobs": [
-  {
-   "key": "shot:s02",
-   "id": "s02",
-   "out": "painted/05-hunt-pig/raw/s02.png"
-  },
   {
    "key": "shot:s03",
    "id": "s03",
