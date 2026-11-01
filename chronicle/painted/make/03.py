@@ -19,7 +19,7 @@ LU="Lucien Vale (long blond hair, pointed ears, burgundy coat) "
 MEM="painted like a faded memory, soft haze, muted colours, "
 TAV="in Mara's tavern at night, warm firelight, "
 BASE="in the stone basement under Mara's tavern, candlelight, "
-SWAMP="in a dark misty swamp forest, twisted trees, hanging moss, "
+SWAMP="in a vast corrupted swamp around the first moonwell, a huge open dead marsh: a giant half-dead ancient tree in the middle, old cobblestone paths winding through parts of it, everything else drowned under black goo water, dead reeds, mist, "
 S_=[
 (0,'black',[],['fog'],"Mara's tavern on a wet cobbled street at night, a warm window, no people",{'flicker':0.3}),
 (7.0,'fade',[],['fog'],"Close-up of a small glass vial of glowing silver moonwell water standing on a scarred tavern table, candlelight",{'flicker':0.3}),
@@ -54,14 +54,14 @@ S_=[
 (201.6,'cut',[],[],None,{'img':'s18'}),
 (208.3,'cut',[],[],None,{'img':'s19'}),
 (214.6,'cut',[],[],None,{'img':'s20'}),
-(221.3,'fade',[],['fog'],SWAMP+"an ancient stone moonwell basin choked with thick black goo, dead trees around it, no people",{'grade':'green'}),
+(221.3,'fade',[],['fog'],SWAMP+"very wide shot: the whole corrupted swamp with the huge dying tree in the middle, black goo water everywhere, broken cobblestone paths, two enormous stone overhang pillars far away on either side of the tree, no people",{'grade':'green'}),
 (224.6,'cut',[SE],['fog'],MEM+SWAMP+"the faint pale shadow of Severin passing through the swamp days ago, green light trailing",{'grade':'green'}),
-(227.9,'cut',[AB],['fog'],SWAMP+"a monstrous aberration rising out of the black goo, tendrils and too many eyes",{'grade':'green','shake':0.3}),
-(231.0,'cut',[AB,CA],['fog'],SWAMP+"the aberration clutching Carius, a screaming village man, in its black tendrils",{'grade':'green','shake':0.3}),
+(227.9,'cut',[AB],['fog'],SWAMP+"a monstrous aberration rising out of the black goo water, tendrils and too many eyes, a man's body merged into its underside",{'grade':'green','shake':0.3}),
+(231.0,'cut',[AB,CA],['fog'],SWAMP+"close on the aberration's underside: Carius, a village man, fused into the black mass up to his chest, part of it, screaming in pain, reaching out",{'grade':'green','shake':0.3}),
 (234.45,'flash',[L,A,C,AB],['sparks','embers'],SWAMP+"the three brothers fighting the aberration, "+LU+"hurling fire, Arthas slashing, Cedric striking with his staff",{'shake':0.5,'flicker':0.5}),
-(237.55,'cut',[],['sparks','fireflies'],SWAMP+"two ancient carved stone pillars waking, silver runes blazing up their length, moonlight pouring between them",{'grade':'cold'}),
+(237.55,'cut',[],['sparks','fireflies'],SWAMP+"very wide shot: two colossal ancient stone pillars curving over like overhangs, one on each side of the giant tree, each about fifty metres from it, silver runes blazing up their length, beams of moonlight pouring from them toward the tree",{'grade':'cold'}),
 (240.65,'cut',[],['fireflies','fog'],SWAMP+"the great old tree in the middle of the swamp glowing silver, black goo around its roots turning back into clean shining moonwater",{'grade':'cold'}),
-(244.1,'cut',[L,A,C,CA],['fireflies'],SWAMP+"the exhausted brothers in the silver light, Carius rescued and kneeling, victory",{'grade':'cold'}),
+(244.1,'cut',[L,A,C,CA],['fireflies'],SWAMP+"the exhausted brothers standing on a cobblestone path in the silver light, Carius freed from the dead monster, collapsed and alive, victory",{'grade':'cold'}),
 (252.65,'fade',[L,CU],['fireflies','fog'],SWAMP+LU+"standing alone in the silver glow, and behind him a huge transparent cube of jelly sliding silently closer",{'grade':'cold'}),
 (259.45,'cut',[L,CU],['fog'],SWAMP+LU+"engulfed inside the transparent gelatinous cube, suspended, bubbles around him",{'grade':'green'}),
 (265.85,'cut',[L,CU],['fog'],"Close-up of "+LU+"'s face pressed against the inside of the jelly, unable to breathe, eyes wide",{'grade':'green'}),
@@ -85,8 +85,8 @@ L10=json.load(open('painted/10-ahm-dynasty.json')); L11=json.load(open('painted/
 L2=json.load(open('painted/02-finding-silas.json'))
 cast={k:L2['cast'][k] for k in ['lucien','arthas','cedric','mara','severin','wolfsilas','kids','guard']}
 cast.update({'aldraik':"Aldraik, the Ahm Dynasty's merchant master: a short, very fat human man, barely chest-high to the brothers, round belly straining a gaudy gold-embroidered black waistcoat, a big bald head, a huge bushy moustache and mutton chops, a gold tooth in a wide greedy grin, small shrewd scheming eyes, fat fingers covered in jeweled rings, a gold monocle on a chain, a fur-trimmed coat with the golden winged lion crest, a cigar; a loud, cocky, scheming boss of a villain",
- 'carius':"Carius, a man from the small village of Lehai: a farmer in his forties, plain brown tunic, muddy, terrified",
- 'aberration':"a monstrous aberration born of black goo: a dripping mass of black slime with long grasping tendrils, a ring of many pale eyes and a gaping toothed maw, as big as a cart",
+ 'carius':"Carius, a man from the small village of Lehai: a farmer in his forties, plain brown tunic, muddy, terrified, half of him fused into the black goo monster",
+ 'aberration':"a monstrous aberration born of black goo: a dripping mass of black slime as big as a cart with long grasping tendrils, a ring of many pale eyes and a gaping toothed maw; fused into its underside is Carius, a village man in a plain brown tunic, merged into the black mass up to his chest underneath the creature, unarmed with empty clawing hands, his anguished face and arms sticking out, the monster far bigger than him looming over him, part of the creature",
  'cube':"a gelatinous cube: a huge transparent, faintly green block of jelly in the exact shape of a perfect cube with flat sides and straight edges, taller than a man, almost invisible, bones and coins floating inside it, never shaped like a person or creature"})
 board={"id":"first-moonwell","live":False,'cover':'s17','style':L12['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
