@@ -20,6 +20,7 @@ MEM="painted like a faded memory, soft haze, muted colours, "
 DOCK="behind a tavern on Norwich dock at night, a cold fog off the water, "
 SHACK="inside a dark dockside shack behind the tavern, one lantern, "
 BASE="in the stone basement under Mara's tavern, candlelight, "
+KROOM="in a small bare bedroom behind the tavern, glowing runes carved all around the door frame, two narrow beds, one lantern, "
 ROOM="in a sacked, rummaged room, furniture torn apart, black goo smeared on the walls, "
 S_=[
 (0,'black',[SE],['fog'],"A misty dark pine forest at night, far away between the trees a tall pale woman with silver-white hair, only a silhouette and two faint green eyes",{'grade':'green'}),
@@ -29,7 +30,7 @@ S_=[
 (22.4,'cut',[],['dust'],"Inside a crowded sickhouse, sick townsfolk on cots drinking from small glass vials, candlelight, relief on their faces",{}),
 (26.5,'cut',[],['fog'],"Close-up of a sick man's hand on a blanket, coarse dark fur starting to sprout at his wrist, his nails lengthening into claws",{'grade':'cold'}),
 (32.2,'fade',[],['fog'],DOCK+"a crooked shack in the alley, its door ajar, black water lapping at the pier, no people",{'grade':'cold'}),
-(36.5,'cut',[WI,K],['fog'],"Through a dirty window of a dark shack: a thin woman holding two small children close, their eyes glinting yellow in the dark",{'grade':'cold'}),
+(36.5,'cut',[WI],['fog'],"Through a dirty window of a dark dockside shack: a thin woman alone in the dark, hunched, her eyes glinting yellow",{'grade':'cold'}),
 (41.3,'cut',[L,WS],['dust'],BASE+LU+"kneeling before the chained werewolf Silas, one hand on his heart, making a promise",{'flicker':0.4}),
 (45.2,'cut',[WS],['dust'],BASE+"the werewolf Silas chained to the stone wall with heavy iron chains, head bowed, a single candle, quiet as a prayer",{'flicker':0.4}),
 (53.3,'cut',[L,M],['dust'],"In Mara's tavern, "+LU+"leaning over the bar persuading Mara, she has her arms crossed, unconvinced, then softening",{'flicker':0.3}),
@@ -50,21 +51,21 @@ S_=[
 (125.3,'cut',[L,A,C],['embers','sparks'],"The three brothers standing together inside a ring of dark purple flame, defiant",{'flicker':0.6}),
 (130.5,'fade',[A,C,L],['fog'],DOCK+"the three brothers creeping down the fog-bound alley toward the shack, Arthas first",{'grade':'cold'}),
 (137.2,'cut',[L],['dust'],SHACK+LU+"picking up an empty glass vial from the floor, recognising it, dread",{'flicker':0.3}),
-(141.8,'cut',[WI,K],['fog'],SHACK+"the wife and two children half-turned, crouched in the dark corner, fur and yellow eyes, fangs, the family changed",{'grade':'cold'}),
+(141.8,'cut',[WI],['fog'],SHACK+"Silas's wife alone, turned, crouched in the dark corner, fur and yellow eyes, fangs, the family changed",{'grade':'cold'}),
 (146.5,'flash',[A,WI],['dust','sparks'],SHACK+"Arthas blocking the lunging half-wolf wife with his steel arm, furniture flying",{'shake':0.5}),
 (150.7,'cut',[L,WI],['dust'],SHACK+"the half-wolf wife's teeth sinking into "+LU+"'s neck from behind, his face twisted in pain, leave the blood to imagination",{'shake':0.4,'grade':'red'}),
 (155.5,'cut',[L],['sparks'],LU+"suddenly floating in a white, cold, silent astral void, stars and drifting stone, alone",{'grade':'cold'}),
 (160.2,'cut',[L],['fog'],"Close-up of "+LU+"with his eyes shut, a thin curl of dark mist winding into his ear, whispering",{'grade':'cold'}),
 (164.5,'cut',[],['fog'],"In swirling dark mist, two huge yellow wolf eyes and the faint shape of a wolf muzzle, ominous, absolutely no letters, words or text anywhere",{'grade':'cold'}),
 (169.2,'cut',[L],['sparks'],"Close-up of Lucien's dagger in his hand humming, its blue glow flickering darker, a faint shadow curling around the blade",{}),
-(174.6,'fade',[K],['fog'],SHACK+"two small children tied with rope in a corner, half-turned, frightened yellow eyes, small fangs, still children",{'grade':'cold'}),
-(178.7,'cut',[L],['fog'],SHACK+LU+"kneeling alone in the frame with one hand raised, begging the others to wait, no one else visible",{}),
-(183.6,'cut',[C],['dust'],SHACK+"Cedric stepping past with his staff swinging, his face cold, the children out of frame in shadow",{'shake':0.3}),
-(187.6,'cut',[A,L],['dust'],SHACK+"Arthas striding past "+LU+"without looking at him, not waiting, not hearing",{}),
-(192.4,'cut',[K],['dust'],SHACK+"the two children lying still and unconscious on the floor, still tied, only the lantern light",{}),
-(196.8,'cut',[L],['dust'],SHACK+LU+"standing with empty hands, appalled, staring, the lantern swinging",{}),
+(174.6,'fade',[K],['fog'],KROOM+"two small ordinary human children chained to their beds by the ankles, alone, frightened, wide normal eyes, not turned",{'grade':'cold'}),
+(178.7,'cut',[L],['fog'],KROOM+LU+"kneeling alone in the frame with one hand raised, begging the others to wait, no one else visible",{}),
+(183.6,'cut',[C],['dust'],KROOM+"Cedric stepping toward the beds with his staff swinging, his face cold, the children out of frame in shadow",{'shake':0.3}),
+(187.6,'cut',[A,L],['dust'],KROOM+"Arthas striding past "+LU+"without looking at him, not waiting, not hearing",{}),
+(192.4,'cut',[K],['dust'],KROOM+"the two children lying still and unconscious on their beds, still chained by the ankles, only the lantern light",{}),
+(196.8,'cut',[L],['dust'],KROOM+LU+"standing with empty hands, appalled, staring, the lantern swinging",{}),
 (201.3,'fade',[],['fireflies','fog'],"A sacred Moonwell deep in the forest, a pool of glowing silver water among white stones, druids in green robes in the distance",{'grade':'green'}),
-(205.8,'cut',[L],['fog'],DOCK+LU+"alone on the pier looking out into the dark, uncertain",{'grade':'cold'}),
+(205.8,'fade',[L,A,C],['fog'],"The three brothers carrying the two unconscious children wrapped in blankets through the dark streets at night toward a church with lit windows, "+LU+"Arthas and Cedric, grim and silent",{'grade':'cold'}),
 (212.8,'flash',[],[],None,{'img':'s21'}),
 (217.6,'cut',[],[],None,{'img':'s22'}),
 (222.2,'cut',[],[],None,{'img':'s23'}),
@@ -107,7 +108,7 @@ cast={'lucien':L12['cast']['lucien'],'arthas':L12['cast']['arthas'],'cedric':L12
  'assassin':L10['cast']['assassin'],'guard':L10['cast']['guard'],'severin':L6['cast']['severin'],'silas':L1['cast']['silas'],
  'wolfsilas':"Silas the werewolf, exactly as in the reference painting: the lean dock smuggler turned, a full wolf snout and fangs, coarse dark brown fur, wild glowing yellow eyes, clawed hands, his drab grey-olive patched coat torn to rags; frightening, not comical",
  'wife':"Silas's wife, half-turned werewolf: a thin poor dockside woman in her thirties in a ragged grey dress and shawl, dark tangled hair, her face stretching toward a wolf snout with fangs, coarse fur on her arms and neck, clawed hands, glowing yellow eyes, wild and frightening",
- 'kids':"Silas's two small children, a boy and a girl about seven and nine, thin and poor in patched clothes, dark hair, half-turned: small fangs, a little fur on their cheeks and hands, glowing yellow eyes, frightened, still children"}
+ 'kids':"Silas's two small children, a boy and a girl about seven and nine, thin and poor in patched clothes, dark hair, ordinary human children with normal brown eyes, no fangs, no fur, frightened"}
 board={"id":"finding-silas","live":False,'cover':'s21','style':L12['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
