@@ -108,7 +108,7 @@ cast={'lucien':L12['cast']['lucien'],'arthas':L12['cast']['arthas'],'cedric':L12
  'mara':L12['cast']['mara'],'mother':L12['cast']['mother']+'; here she wears a dark scarlet hooded cloak over her gown, a spy inside the Scarlet Wizards','valerys':L6['cast']['valerys'],
  'assassin':"a Scarlet assassin: a lean woman in close-fitting dark red leather with a hood and a half mask over her mouth, cold pale eyes, short black hair, a recurve bow and a quiver, knives at her belt",
  'guard':"guards of the Ahm Dynasty, the merchant house: men in black and gold livery with gold-trimmed half-capes, steel breastplates, short swords and crossbows, a golden crest of a winged lion on the chest"}
-board={"id":"ahm-dynasty","live":False,'cover':'s22','style':L12['style'],'cast':cast,'shots':shots}
+board={"id":"ahm-dynasty","live":True,'cover':'s22','style':L12['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
 json.loads(out);open('painted/10-ahm-dynasty.json','w').write(out)
