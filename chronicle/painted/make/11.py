@@ -27,19 +27,19 @@ CELLAR="in the stone cellars deep below the Ahm safehouse, "
 GR="the meat grinder: a huge iron pit under a broken trapdoor in the floor, turning spiked iron rollers and gears at its bottom, "
 HALL="deep underground in the massive tiered cellar hall below the Ahm safehouse, rough stone ledges, plateaus and pillars at many heights around and above, no sky, no windows"
 S_=[
-(0,'black',[],['dust'],"A narrow worn stone stair spiralling down into total darkness, a single torch flame far below",{'flicker':0.4}),
+(0,'black',[],['dust'],"An empty narrow worn stone stair spiralling down into total darkness, a single torch flame far below, no people at all",{'flicker':0.4}),
 (8.4,'fade',[L,A,C],['dust','fog'],"The three brothers descending the narrow stone stair in single file, Arthas first with a torch, "+LU+"in the middle, Cedric last, seen from below, deep shadow",{'flicker':0.5}),
 (17.0,'cut',[L],['dust'],CELLAR+"a cramped study, "+LU+"holding up a report with a charcoal sketch of his own face on it, by candlelight, his face hardening (no readable text)",{'flicker':0.4}),
-(21.9,'cut',[],['dust'],CELLAR+"a heavy door sealed with chains and wax seals, behind it a desk covered in ledgers and letters, names written in ink, candlelight",{'flicker':0.4}),
+(21.9,'cut',[],['dust'],CELLAR+"an empty room: a heavy door sealed with chains and wax seals, beside it a desk covered in ledgers and letters, names written in ink, candlelight, no people at all",{'flicker':0.4}),
 (27.0,'cut',[],['dust'],"Tight close-up of two wax seals pressed side by side on one letter: a golden dynasty crest and a blood-red open hand, candlelight, no readable text",{'flicker':0.3}),
 (32.1,'cut',[A,C,L],['dust'],CELLAR+"Arthas and Cedric reading over the shoulder of "+LU+", grim faces, the proof in his hands, three-quarter view, staggered",{'flicker':0.4}),
 (39.4,'cut',[C],['dust'],CELLAR+"Cedric prying the lid off a barrel stuffed with potion bottles, red and blue glass glinting in torchlight",{'flicker':0.3}),
 (43.0,'cut',[L,A,C],[],CELLAR+"tight close-up of the three brothers exchanging a look in torchlight before a fight, "+LU+"cocky half smile, Cedric's cold eyes, Arthas's burning eye slits",{'flicker':0.4}),
 (46.5,'cut',[A],['dust'],CELLAR+"Arthas pushing open a heavy iron-bound door into blackness, his shoulder against it, torchlight spilling in",{}),
-(50.0,'fade',[],['fog'],"Beyond the door, a massive dark hall carved deep underground below the cellars: many tiers of rough stone ledges, plateaus and galleries at different heights linked by narrow stairs, huge pillars, cold braziers, iron gears and chains hanging from the vaulted rock ceiling, silence",{'grade':'cold'}),
+(50.0,'fade',[],['fog'],"Beyond the door, a massive dark hall carved deep underground below the cellars: many tiers of rough stone ledges, plateaus and galleries at different heights linked by narrow stairs, huge pillars, cold braziers, iron gears and chains hanging from the vaulted rock ceiling, completely empty of people, silence",{'grade':'cold'}),
 (56.5,'cut',[W],['fog'],"Red-robed Scarlet Wizards hiding on the high stone ledges and plateaus and behind pillars of the underground hall, fire just kindling in their hands, waiting, an ambush",{'grade':'red','flicker':0.4}),
 (61.6,'cut',[L,A,C],['fog'],"The three brothers in the middle of the dark hall, surrounded by glowing red hands in the darkness all around them, "+LU,{'flicker':0.3}),
-(66.9,'flash',[L],['smoke'],LU+"smashing a glass bottle at his feet, thick grey smoke billowing out and swallowing the brothers",{'shake':0.2}),
+(66.9,'flash',[L,A,C],['smoke'],LU+"smashing a glass bottle at his feet, Arthas in dark plate and Cedric the monk beside him, thick grey smoke billowing out and swallowing the three of them, no one else",{'shake':0.2}),
 (70.8,'cut',[W],['smoke'],"A Scarlet Wizard at the edge of the smoke, one hand held out in invitation, a sly smile, calling Lucien to join them",{'grade':'red'}),
 (74.3,'cut',[L],['smoke'],"Close-up of "+LU+"in thick smoke, eyes glowing faint purple, he can see through it, defiant and fierce: I will not",{}),
 (77.4,'cut',[L],['smoke','sparks'],LU+"firing a bolt of purple-white fire through the smoke from his fingertips",{'flicker':0.6}),
