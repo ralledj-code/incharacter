@@ -109,7 +109,7 @@ cast={'lucien':L12['cast']['lucien'],'arthas':L12['cast']['arthas'],'cedric':L12
  'wolfsilas':"Silas the werewolf, exactly as in the reference painting: the lean dock smuggler turned, a full wolf snout and fangs, coarse dark brown fur, wild glowing yellow eyes, clawed hands, his drab grey-olive patched coat torn to rags; frightening, not comical",
  'wife':"Silas's wife, half-turned werewolf: a thin poor dockside woman in her thirties in a ragged grey dress and shawl, dark tangled hair, her face stretching toward a wolf snout with fangs, coarse fur on her arms and neck, clawed hands, glowing yellow eyes, wild and frightening",
  'kids':"Silas's two small children, a boy and a girl about seven and nine, thin and poor in patched clothes, dark hair, ordinary human children with normal brown eyes, no fangs, no fur, frightened"}
-board={"id":"finding-silas","live":False,'cover':'s21','style':L12['style'],'cast':cast,'shots':shots}
+board={"id":"finding-silas","live":True,'cover':'s21','style':L12['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
 json.loads(out);open('painted/02-finding-silas.json','w').write(out)
