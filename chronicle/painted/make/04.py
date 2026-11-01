@@ -98,7 +98,7 @@ cast.update({'pig':L6['cast']['pig'].replace('a huge broadaxe','a huge broadaxe,
  'neris':L8['cast']['neeris'].replace('Neeris','Neris'),
  'kalen':"Kalen, a Church paladin the brothers know: a broad young man in his twenties, short brown hair, a square jaw, dented white-and-steel Church plate with a gold sun emblem, torn white tabard, bloodied and bruised, wrists chained",
  'wolves':"werewolves: hulking grey and brown wolf-men with snouts, fangs, glowing yellow eyes, ragged fur and torn clothes, carrying burning torches"})
-board={"id":"cleansing-well","live":False,'cover':'s18','style':L12['style'],'cast':cast,'shots':shots}
+board={"id":"cleansing-well","live":True,'cover':'s18','style':L12['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
 json.loads(out);open('painted/04-cleansing-well.json','w').write(out)
