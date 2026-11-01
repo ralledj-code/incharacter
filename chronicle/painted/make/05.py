@@ -104,7 +104,7 @@ L4=json.load(open('painted/04-cleansing-well.json'))
 cast={k:L4['cast'][k] for k in ['lucien','arthas','cedric','severin','pig','moonwell','carius']}
 cast.update({'troll':"a blood troll: a hulking, hunched cave troll twice a man's height, dark red blood-slick skin, long arms with claws, a jutting jaw with tusks, small burning eyes, ragged hair",
  'werebear':"werebears that control their shape: big bearded men in fur-trimmed leather, and the same men as huge brown bears, or half man half bear, calm and proud"})
-board={"id":"hunt-pig","live":False,'cover':'s21','style':L12['style'],'cast':cast,'shots':shots}
+board={"id":"hunt-pig","live":True,'cover':'s21','style':L12['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
 json.loads(out);open('painted/05-hunt-pig.json','w').write(out)
