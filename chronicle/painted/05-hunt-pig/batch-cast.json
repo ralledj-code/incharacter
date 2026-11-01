@@ -1,0 +1,19 @@
+{
+ "name": "batches/npbjnkf34imbdl34mbqf29qrbxw5j0aobdk4",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-11-01T17:51:25.858Z",
+ "jobs": [
+  {
+   "key": "cast:troll",
+   "id": "troll",
+   "out": "painted/05-hunt-pig/cast/troll.jpg",
+   "jpeg": true
+  },
+  {
+   "key": "cast:werebear",
+   "id": "werebear",
+   "out": "painted/05-hunt-pig/cast/werebear.jpg",
+   "jpeg": true
+  }
+ ]
+}

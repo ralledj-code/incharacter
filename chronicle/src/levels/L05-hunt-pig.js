@@ -4,7 +4,7 @@
    -> eight pyres under the moon -> the frightened man -> the cave under the cleansed tree. From here on everything is one cave system:
    the blood troll, the bones, the carved dungeon, Lucien wearing the Pig's face past two shapeshifting druids, eight candles,
    the Pig's keep built in the bottom cavern, the fireball through the lit window (prisoners inside), the Pig grows, Lucien falls.
-   Lyrics: Whisper transcript (one unclear line: "Two worms turned"). Beats: scripts/beats.py (80 BPM). */
+   Lyrics: Rasmus's Suno text (2026-11-01), on the Whisper line times. Beats: scripts/beats.py (80 BPM). */
 (function (root) {
 'use strict';
 const C = root.__cw, THREE = C.THREE;
@@ -14,19 +14,19 @@ const ID = 'hunt-pig';
 const DURATION = 307.7;
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
-const CHORUS = (played) => ['Oh, Alaron, count the names,', 'Eight small fires, eight small flames,', played ? 'I played them all with a mournful tune,' : 'I play them off with a mournful tune,', played ? 'Sent them home beneath the moon' : 'Send them home beneath the moon', 'Oh, Alaron, hear me now,', 'Loss is a debt, and I don’t know how'];
+const CHORUS = (played) => ['Oh, Alaron, count the names,', 'Eight small fires, eight small flames,', 'I played them off with a mournful tune,', 'Sent them home beneath the moon.', 'Oh, Alaron, hear me now,', 'Loss is a debt, and I don’t know how'];
 const CUES = [
   { id: 'intro', t: 0, v: 0.4, motes: 'dust', stamp: '', lines: [] },
   { id: 'road', t: 26, v: 2.0, motes: 'fireflies', stamp: '21/06/2026', lines: [] },
   { id: 'ruin', t: 55, v: 1.0, motes: 'dust', stamp: 'the city', lines: [] },
-  { id: 'v1', t: 67.5, v: 0.9, motes: 'fireflies', stamp: '', lines: ['I ran the tiles, I fell through air,', 'Landed at her feet, and she was there,', 'Severin, real as blood, real as bone,', 'Asked me home to what I’ve grown', '“Better let the dying go,', 'The ones still turning still don’t know,”', 'She said, “We’re already dead, all of us are,”', 'I would not follow that kind of star', 'Eight souls turning in the dark,', 'My brothers holding back the mark,', 'I chose the innocent, not the crown she wore,', 'That’s a debt I’m answering for'] },
+  { id: 'v1', t: 67.5, v: 0.9, motes: 'fireflies', stamp: '', lines: ['I ran the tiles, I fell through air,', 'Landed at her feet, and she was there,', 'Severin, real as blood, real as bone,', 'Asked me home to what I’ve grown', 'I begged her, let the dying go,', 'The ones still turning, still don’t know.', 'She said, “We’re already dead, all of us are” —', 'I would not follow that kind of star', 'Eight souls turning in the dark,', 'My brothers holding back the mark,', 'I chose the innocent, not the crown she wore,', 'That’s a debt I’m answering for'] },
   { id: 'chorus', t: 108.0, v: 1.0, motes: 'embers', stamp: '', lines: CHORUS(false) },
   { id: 'inst', t: 128.0, v: 2.4, motes: 'dust', stamp: '', lines: [] },
-  { id: 'v2', t: 138.4, v: 1.5, motes: 'dust', stamp: '', lines: ['We bled the truth from a frightened man,', 'His mind cracked open like broken glass,', 'The cave, the tree we’d cleansed before,', 'The pig was waiting past that door', 'A blood troll fell before we passed,', 'We found the bones, the builders passed,', 'A dungeon carved by careful hand,', 'Not nature’s work, no, this was planned'] },
-  { id: 'v2b', t: 162.4, v: 1.0, motes: 'ash', stamp: '', lines: ['I wore his face, I lied my way,', 'Two worms turned and walked away,', 'They chose their shape, they chose their chain,', 'I sent them out, we slipped the pen'] },
+  { id: 'v2', t: 138.4, v: 1.5, motes: 'dust', stamp: '', lines: ['We bled the truth from a frightened man,', 'His mind cracked open like broken glass,', 'The cave, the tree we’d cleansed before,', 'The pig was waiting past that door', 'A blood troll fell before we passed,', 'We found the bones — the builders’ past,', 'A dungeon carved by careful hand,', 'Not nature’s work, no, this was planned'] },
+  { id: 'v2b', t: 162.4, v: 1.0, motes: 'ash', stamp: '', lines: ['I wore his face, I lied my way,', 'Two werebears turned and walked away.', 'They chose their shape, they chose their chain,', 'I sent them out, we slipped the pain.'] },
   { id: 'chorus2', t: 175.8, v: 0.8, motes: 'embers', stamp: '', lines: CHORUS(true) },
   { id: 'deep', t: 196.0, v: 2.2, motes: 'ash', stamp: 'the bottom of the cave', lines: [] },
-  { id: 'bridge', t: 217.9, v: 0.5, motes: 'sparks', stamp: '', lines: ['A window lit, I threw the flame,', 'I didn’t know who bore the blame,', 'Innocence burned where he had bled,', 'Another weight, another dead', 'This is a burden I will carry,', 'This will change me,', 'This will change me'] },
+  { id: 'bridge', t: 217.9, v: 0.5, motes: 'sparks', stamp: '', lines: ['A window lit, I threw the flame,', 'I didn’t know who bore the blame,', 'Innocents burned where he had bled,', 'Another weight, another dead', 'This is a burden I will carry,', 'This will change me,', 'This will change me'] },
   { id: 'v3', t: 248.6, v: 0.35, motes: 'embers', stamp: '', lines: ['He bathes in blood, he grows with every kill,', 'He’s stronger now, and I am standing still,', 'The fire I made, it feeds him more,', 'The pig still stands,', 'This is not the final score'] },
   { id: 'outro', t: 268.3, v: 0.3, motes: 'ash', stamp: '', lines: ['I’m going down,', 'I’m almost gone,', 'The fight is not,', 'The fight’s not won', 'Alaron…', 'Alaron…', 'Alaron…'] },
   { id: 'final', t: 291.0, v: 0.1, motes: 'ash', stamp: '', lines: [] }
