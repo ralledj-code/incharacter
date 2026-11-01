@@ -47,7 +47,7 @@ S_=[
 (89.0,'cut',[A],['smoke','embers'],"Arthas charging out of the smoke, bronze-hilted sword raised, eye slits burning",{'flicker':0.4}),
 (95.1,'cut',[L],['smoke','sparks'],"Wide: "+LU+"standing tall in the parting smoke, arm raised with purple fire, laughing, wizards falling back",{'flicker':0.5}),
 (99.5,'fade',[W],['embers','smoke'],"Scarlet Wizards throwing fire blindly into the smoke from the balconies, red flames streaking through the hall",{'flicker':0.6}),
-(105.5,'cut',[I],['embers'],"Small red-skinned winged imps scuttling across the stone floor out of the dark, claws and teeth, toward the smoke",{'flicker':0.4}),
+(105.5,'cut',[I],['embers'],"Imps with fat glowing bellies scuttling across the stone floor out of the dark, claws and teeth, toward the smoke",{'flicker':0.4}),
 (112.5,'flash',[A,C],['dust'],"The stone floor giving way under Arthas and Cedric, trapdoor boards splintering, both falling, "+GR,{'shake':0.5}),
 (116.6,'cut',[A,C],['dust','sparks'],"Inside "+GR+"Arthas hurling Cedric up and out of the pit with both arms, sparks from the rollers",{'shake':0.3}),
 (120.3,'cut',[A,W],['sparks','dust'],"Looking down into "+GR+"Arthas trapped below between the turning rollers, Scarlet Wizards at the rim above shooting fire down at him",{'flicker':0.5}),
@@ -60,7 +60,7 @@ S_=[
 (142.4,'flash',[L,W],['ash','smoke'],"FESTERING BLAST: a wave of black and sickly yellow-green necrotic energy bursting from the scroll in Lucien's hands, rolling across the hall at a Scarlet Wizard",{'shake':0.7,'grade':'green'}),
 (145.5,'cut',[W],['ash'],"A Scarlet Wizard staggering in the rotting green-black wave, his red robes withering, still on his feet",{'grade':'green','shake':0.3}),
 (150.6,'cut',[C],['ash','dust'],"Cedric dropping out of the air where a spell had held him floating, landing in a crouch, free, furious",{}),
-(156.1,'cut',[C,I],['dust','sparks'],"Cedric whirling his staff through a swarm of imps, knocking them flying",{'shake':0.3}),
+(156.1,'cut',[C,I],['dust','sparks'],"Cedric whirling his staff through a swarm of imps, one imp bursting in a ball of fire from its glowing belly",{'shake':0.3}),
 (162.0,'cut',[A,W],['embers','sparks'],"Arthas fighting two Scarlet Wizards at once, fire breaking on his steel, sword swinging",{'flicker':0.5}),
 (168.0,'fade',[L,A,C,W],['smoke','embers'],"Wide shot of the battle in the underground hall: smoke, fire, imps, wizards on the balconies, the brothers in the middle, the grinder pit glowing",{'flicker':0.5}),
 (174.6,'flash',[A,W],['snow'],"A cone of freezing cold blasting from a wizard's hands into Arthas, frost covering his armour, he falls",{'grade':'cold','shake':0.5}),
@@ -105,8 +105,8 @@ assert [x for x in shots if x['id']=='s17'][0]['scene'].startswith('The three br
 cast={'lucien':L12['cast']['lucien'],'arthas':L12['cast']['arthas'],'cedric':L12['cast']['cedric'],'wizard':L12['cast']['wizard'],
  'duncastle':L12['cast']['duncastle'],'severin':L6['cast']['severin'],'valerys':L6['cast']['valerys'],'baphomet':L6['cast']['baphomet'],
  'silas':L1['cast']['silas'],
- 'wolfsilas':"Silas half-turned werewolf: the lean dock smuggler more wolf than man, a wolf snout and fangs breaking through his face, coarse grey fur over his arms and neck, clawed hands, hunched, his drab grey-olive patched coat and rope belt in tatters, sad human eyes still there",
- 'imp':"an imp: a small red-skinned devil the size of a cat, bat wings, little horns, a barbed tail, clawed hands and feet, yellow eyes, sharp grin"}
+ 'wolfsilas':"Silas the werewolf, exactly as in the reference painting but further gone, more wolf than man: the lean dock smuggler with a full wolf snout and fangs, coarse dark brown fur over his face, arms and back, wild glowing yellow eyes, pointed ears, clawed hands, hunched, his drab grey-olive patched coat and rope belt torn to rags; frightening, not comical",
+ 'imp':"an imp: a nasty little fiend the size of a dog, dark red leathery skin, small torn bat wings, short horns, a barbed tail, long claws, needle teeth, and a fat swollen belly that glows from inside with orange fire through cracks in the skin, about to burst; menacing and grotesque, not cute, no clothes"}
 board={"id":"hunger-grows","live":False,'cover':'s17','style':L12['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
