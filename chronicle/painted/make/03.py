@@ -87,7 +87,7 @@ cast={k:L2['cast'][k] for k in ['lucien','arthas','cedric','mara','severin','wol
 cast.update({'aldraik':"Aldraik, the Ahm Dynasty's merchant master: a heavy-set man in his fifties, oiled black hair and a pointed black beard, rings on every finger, rich black and gold robes with a golden winged lion crest, a smug cruel smile",
  'carius':"Carius, a man from the small village of Lehai: a farmer in his forties, plain brown tunic, muddy, terrified",
  'aberration':"a monstrous aberration born of black goo: a dripping mass of black slime with long grasping tendrils, a ring of many pale eyes and a gaping toothed maw, as big as a cart",
- 'cube':"a gelatinous cube: a huge transparent, faintly green cube of jelly taller than a man, almost invisible, bones and coins floating inside it"})
+ 'cube':"a gelatinous cube: a huge transparent, faintly green block of jelly in the exact shape of a perfect cube with flat sides and straight edges, taller than a man, almost invisible, bones and coins floating inside it, never shaped like a person or creature"})
 board={"id":"first-moonwell","live":False,'cover':'s17','style':L12['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'

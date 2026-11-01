@@ -15,7 +15,7 @@
     "aldraik": "Aldraik, the Ahm Dynasty's merchant master: a heavy-set man in his fifties, oiled black hair and a pointed black beard, rings on every finger, rich black and gold robes with a golden winged lion crest, a smug cruel smile",
     "carius": "Carius, a man from the small village of Lehai: a farmer in his forties, plain brown tunic, muddy, terrified",
     "aberration": "a monstrous aberration born of black goo: a dripping mass of black slime with long grasping tendrils, a ring of many pale eyes and a gaping toothed maw, as big as a cart",
-    "cube": "a gelatinous cube: a huge transparent, faintly green cube of jelly taller than a man, almost invisible, bones and coins floating inside it"
+    "cube": "a gelatinous cube: a huge transparent, faintly green block of jelly in the exact shape of a perfect cube with flat sides and straight edges, taller than a man, almost invisible, bones and coins floating inside it, never shaped like a person or creature"
   },
   "shots": [
     {"id": "s01", "t": 0, "in": "black", "who": [], "fx": ["fog"], "flicker": 0.3, "move": {"from": [0, 0, 0.04], "to": [0, 0, 0.2]}, "scene": "Mara's tavern on a wet cobbled street at night, a warm window, no people"},
