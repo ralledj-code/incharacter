@@ -84,7 +84,7 @@ assert sid('s17')['scene'].startswith('The three half-brothers walking') and sid
 L10=json.load(open('painted/10-ahm-dynasty.json')); L11=json.load(open('painted/11-hunger-grows.json'))
 L2=json.load(open('painted/02-finding-silas.json'))
 cast={k:L2['cast'][k] for k in ['lucien','arthas','cedric','mara','severin','wolfsilas','kids','guard']}
-cast.update({'aldraik':"Aldraik, the Ahm Dynasty's merchant master: a heavy-set man in his fifties, oiled black hair and a pointed black beard, rings on every finger, rich black and gold robes with a golden winged lion crest, a smug cruel smile",
+cast.update({'aldraik':"Aldraik, the Ahm Dynasty's merchant master: a short, very fat human man, barely chest-high to the brothers, round belly straining a gaudy gold-embroidered black waistcoat, a big bald head, a huge bushy moustache and mutton chops, a gold tooth in a wide greedy grin, small shrewd scheming eyes, fat fingers covered in jeweled rings, a gold monocle on a chain, a fur-trimmed coat with the golden winged lion crest, a cigar; a loud, cocky, scheming boss of a villain",
  'carius':"Carius, a man from the small village of Lehai: a farmer in his forties, plain brown tunic, muddy, terrified",
  'aberration':"a monstrous aberration born of black goo: a dripping mass of black slime with long grasping tendrils, a ring of many pale eyes and a gaping toothed maw, as big as a cart",
  'cube':"a gelatinous cube: a huge transparent, faintly green block of jelly in the exact shape of a perfect cube with flat sides and straight edges, taller than a man, almost invisible, bones and coins floating inside it, never shaped like a person or creature"})
