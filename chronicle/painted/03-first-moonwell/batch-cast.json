@@ -1,0 +1,25 @@
+{
+ "name": "batches/xte98xe84ogyrbjauxnai7giwxuaqmu1wwly",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-11-01T16:26:14.416Z",
+ "jobs": [
+  {
+   "key": "cast:aldraik",
+   "id": "aldraik",
+   "out": "painted/03-first-moonwell/cast/aldraik.jpg",
+   "jpeg": true
+  },
+  {
+   "key": "cast:aberration",
+   "id": "aberration",
+   "out": "painted/03-first-moonwell/cast/aberration.jpg",
+   "jpeg": true
+  },
+  {
+   "key": "cast:cube",
+   "id": "cube",
+   "out": "painted/03-first-moonwell/cast/cube.jpg",
+   "jpeg": true
+  }
+ ]
+}
