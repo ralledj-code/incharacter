@@ -71,7 +71,7 @@ S_=[
 (206.0,'cut',[],['dust','embers'],GREAT+"lit orange from inside, establishing shot, no people visible",{'grade':'red','flicker':0.4}),
 (212.0,'cut',[P],['embers'],"Close on the barred window high in the stone wall of the great hall, lit orange, the shadow of the huge Pig moving inside",{'grade':'red','flicker':0.5}),
 (218.4,'flash',[L],['sparks','embers'],GREAT+LU+"by the blood pool hurling a fireball up at the lit barred window, fire roaring from his hand",{'shake':0.4,'flicker':0.7}),
-(222.1,'cut',[],['fire','embers'],"The barred window high in the great hall's wall exploding in fire, thick black smoke pouring out over the empty hall below, no people in the frame",{'shake':0.6,'flicker':0.8}),
+(222.1,'cut',[],['fire','embers'],GREAT+"looking up from the cavern floor: the barred window high in the stone wall exploding in fire, thick black smoke pouring out and rolling along the rock ceiling of the cave, everything enclosed deep inside the mountain, no sky, no daylight, no outdoors, no people in the frame",{'shake':0.6,'flicker':0.8}),
 (225.7,'cut',[],['fire','smoke'],"Silhouettes of prisoners behind the flames of the burning barred window, only shapes in the fire and smoke, leave the rest to imagination",{'grade':'red','flicker':0.8}),
 (228.2,'cut',[L],['embers'],"Close-up of "+LU+"'s face lit by the fire, horror as he understands",{'flicker':0.6}),
 (236.1,'cut',[L],['embers','ash'],GREAT+LU+"on his knees by the blood pool below the burning window, a burden he will carry",{'flicker':0.5}),
