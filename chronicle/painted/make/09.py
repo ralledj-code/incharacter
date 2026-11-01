@@ -81,7 +81,7 @@ S_=[
 (232.8,'cut',[L,OM],['smoke'],"In the arcane shop, "+LU+"passing the old man a long carved pipe with a little pouch of herbs, a sly smile",{'flicker':0.4}),
 (235.6,'cut',[OM],['smoke'],"The old shopkeeper puffing on a long pipe in his chair, eyes glazed and drifting, a dreamy silly grin, lazy smoke rings floating around his head, high as a kite",{'flicker':0.4}),
 (239.2,'cut',[L,A,C],['dust'],COBH+"by day the three brothers helping the townsfolk rebuild a burned house, lifting beams, "+LU,{}),
-(241.9,'cut',[],['dust'],"A long road winding inland through hills toward a distant capital city at dusk, an old wooden waymarker with no writing on it",{}),
+(241.9,'cut',[],['dust'],"A long road winding inland through hills toward a distant capital city at dusk, an old wooden waymarker with no writing on it, an empty road, no people or travellers at all",{}),
 (244.8,'cut',[M],['dust'],"Mara alone behind her bar at night, counting the last of her coins, worried",{'flicker':0.4}),
 (247.6,'cut',[AL],['dust'],"Aldraik in his opulent house, smoking a cigar behind a desk heaped with ledgers and gold",{'flicker':0.4}),
 (254.3,'cut',[M],['dust'],"Mara gripping the edge of her bar, refusing to leave, stubborn",{'flicker':0.4}),
@@ -114,7 +114,7 @@ cast.update({'troll':"a blood troll as in the reference sheet but much bigger, t
  'commander':"the enemy commander, an orc warlord serving the Scarlet Wizards: a huge grey-green orc with tusks and a scarred face, a topknot of black hair, blackened plate armour with a blood-red Scarlet cloak and sash, a curved war horn at his belt",
  'archers':"the commander's archers, a mixed band of orcs and human soldiers in dark leather with red hoods and sashes, longbows",
  'oldman':"an old shopkeeper of an arcane curio shop: frail, bald with long white side-whiskers, half-moon spectacles, a faded purple robe, grief in his eyes"})
-board={"id":"saving-cobh","live":False,'cover':'s22','style':L12['style'],'cast':cast,'shots':shots}
+board={"id":"saving-cobh","live":True,'cover':'s22','style':L12['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
 json.loads(out);open('painted/09-saving-cobh.json','w').write(out)
