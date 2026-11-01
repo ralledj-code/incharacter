@@ -1,0 +1,82 @@
+{
+ "name": "batches/5zuff2ppgv3rsibp10azrr1c8hsg0u16s6gy",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-11-01T16:55:41.762Z",
+ "jobs": [
+  {
+   "key": "shot:s18",
+   "id": "s18",
+   "out": "painted/03-first-moonwell/raw/s18.png"
+  },
+  {
+   "key": "shot:s19",
+   "id": "s19",
+   "out": "painted/03-first-moonwell/raw/s19.png"
+  },
+  {
+   "key": "shot:s29",
+   "id": "s29",
+   "out": "painted/03-first-moonwell/raw/s29.png"
+  },
+  {
+   "key": "shot:s34",
+   "id": "s34",
+   "out": "painted/03-first-moonwell/raw/s34.png"
+  },
+  {
+   "key": "shot:s35",
+   "id": "s35",
+   "out": "painted/03-first-moonwell/raw/s35.png"
+  },
+  {
+   "key": "shot:s36",
+   "id": "s36",
+   "out": "painted/03-first-moonwell/raw/s36.png"
+  },
+  {
+   "key": "shot:s37",
+   "id": "s37",
+   "out": "painted/03-first-moonwell/raw/s37.png"
+  },
+  {
+   "key": "shot:s38",
+   "id": "s38",
+   "out": "painted/03-first-moonwell/raw/s38.png"
+  },
+  {
+   "key": "shot:s39",
+   "id": "s39",
+   "out": "painted/03-first-moonwell/raw/s39.png"
+  },
+  {
+   "key": "shot:s40",
+   "id": "s40",
+   "out": "painted/03-first-moonwell/raw/s40.png"
+  },
+  {
+   "key": "shot:s41",
+   "id": "s41",
+   "out": "painted/03-first-moonwell/raw/s41.png"
+  },
+  {
+   "key": "shot:s42",
+   "id": "s42",
+   "out": "painted/03-first-moonwell/raw/s42.png"
+  },
+  {
+   "key": "shot:s43",
+   "id": "s43",
+   "out": "painted/03-first-moonwell/raw/s43.png"
+  },
+  {
+   "key": "shot:s45",
+   "id": "s45",
+   "out": "painted/03-first-moonwell/raw/s45.png"
+  },
+  {
+   "key": "shot:s46",
+   "id": "s46",
+   "out": "painted/03-first-moonwell/raw/s46.png"
+  }
+ ]
+}
