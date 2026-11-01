@@ -70,13 +70,13 @@ S_=[
 (217.7,'cut',[L],['fog'],"Close-up of "+LU+"looking away, a secret kept",{}),
 (227.5,'fade',[SE],['fog'],VIL+"a crowd of villagers seen from behind, and at the very back of it a tall pale woman with long silver-white hair and faint green eyes, watching",{'grade':'green'}),
 (234.5,'cut',[],['fog'],VIL+"twelve sick villagers roped together before a crowd, a stout mayor in a chain of office beside them, guards with spears",{}),
-(240.0,'cut',[SE,L],['fog'],"Close-up of "+LU+"stunned, and Severin's pale face faintly in the air beside his head, speaking inside his mind",{'grade':'green'}),
+(240.0,'cut',[L],['fog'],VIL+LU+"climbing up the side of a house onto a thatched rooftop as a voice speaks inside his head, urgent",{'grade':'green'}),
 (245.3,'cut',[SE],['fog'],"Close-up of Severin's calm face with mint-green glowing eyes, a faint smile",{'grade':'green'}),
-(250.9,'cut',[L],['fog'],LU+"frozen in the crowd, staring at her, the villagers around him blurred",{'grade':'green'}),
+(250.9,'cut',[L],['fog'],VIL+LU+"standing on the ridge of a thatched rooftop at dusk, scanning the crowd in the square below, searching for her",{'grade':'green'}),
 (255.7,'cut',[SE],['fog'],"Severin blowing red rose petals from her open palm into the wind over the crowd",{'grade':'green'}),
 (262.3,'cut',[],['fog'],VIL+"the twelve roped villagers doubling over as rose petals fall on them, fur and claws starting to break through, the crowd screaming and pulling back",{'grade':'red','shake':0.3}),
-(268.7,'cut',[],['fog'],"Red rose petals drifting through the dusk over the village square, silhouettes of the turning twelve behind them",{'grade':'red'}),
-(277.0,'fade',[SE],['fog'],"Severin walking away into a dark forest, rose petals behind her",{'grade':'green'}),
+(268.7,'cut',[L],['fog'],VIL+LU+"on the rooftop edge, red rose petals blowing past him, searching the dark streets below, the turning twelve far below",{'grade':'red'}),
+(277.0,'fade',[L],['fog'],"Seen from behind: "+LU+"crouched on the edge of a thatched rooftop at nightfall, ready to jump down, rose petals in the wind, the village below",{'grade':'cold'}),
 ]
 shots=[];mv=0
 for i,(t,tr,who,fx,scene,ex) in enumerate(S_):
