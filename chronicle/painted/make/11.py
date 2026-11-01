@@ -25,6 +25,7 @@ MOVES=[([0,0,0.04],[0,0,0.2]),([-0.04,0,0.05],[0.04,0,0.12]),([0,0,0.22],[0,0,0.
 LU="Lucien Vale (long blond hair, pointed ears, burgundy coat) "
 CELLAR="in the stone cellars deep below the Ahm safehouse, "
 GR="the meat grinder: a huge iron pit under a broken trapdoor in the floor, turning spiked iron rollers and gears at its bottom, "
+HALL="deep underground in the massive tiered cellar hall below the Ahm safehouse, rough stone ledges, plateaus and pillars at many heights around and above, no sky, no windows"
 S_=[
 (0,'black',[],['dust'],"A narrow worn stone stair spiralling down into total darkness, a single torch flame far below",{'flicker':0.4}),
 (8.4,'fade',[L,A,C],['dust','fog'],"The three brothers descending the narrow stone stair in single file, Arthas first with a torch, "+LU+"in the middle, Cedric last, seen from below, deep shadow",{'flicker':0.5}),
@@ -33,10 +34,10 @@ S_=[
 (27.0,'cut',[],['dust'],"Tight close-up of two wax seals pressed side by side on one letter: a golden dynasty crest and a blood-red open hand, candlelight, no readable text",{'flicker':0.3}),
 (32.1,'cut',[A,C,L],['dust'],CELLAR+"Arthas and Cedric reading over the shoulder of "+LU+", grim faces, the proof in his hands, three-quarter view, staggered",{'flicker':0.4}),
 (39.4,'cut',[C],['dust'],CELLAR+"Cedric prying the lid off a barrel stuffed with potion bottles, red and blue glass glinting in torchlight",{'flicker':0.3}),
-(43.0,'cut',[L,A,C],[],"Tight close-up of the three brothers exchanging a look in torchlight before a fight, "+LU+"cocky half smile, Cedric's cold eyes, Arthas's burning eye slits",{'flicker':0.4}),
-(46.5,'cut',[A],['dust'],"Arthas pushing open a heavy iron-bound door into blackness, his shoulder against it, torchlight spilling in",{}),
-(50.0,'fade',[],['fog'],"A vast dark underground hall beyond the door: stone pillars, cold braziers, iron gears and chains hanging from the vaulted ceiling, silence",{'grade':'cold'}),
-(56.5,'cut',[W],['fog'],"Red-robed Scarlet Wizards hiding on balconies and behind pillars in the dark hall, fire just kindling in their hands, waiting, an ambush",{'grade':'red','flicker':0.4}),
+(43.0,'cut',[L,A,C],[],CELLAR+"tight close-up of the three brothers exchanging a look in torchlight before a fight, "+LU+"cocky half smile, Cedric's cold eyes, Arthas's burning eye slits",{'flicker':0.4}),
+(46.5,'cut',[A],['dust'],CELLAR+"Arthas pushing open a heavy iron-bound door into blackness, his shoulder against it, torchlight spilling in",{}),
+(50.0,'fade',[],['fog'],"Beyond the door, a massive dark hall carved deep underground below the cellars: many tiers of rough stone ledges, plateaus and galleries at different heights linked by narrow stairs, huge pillars, cold braziers, iron gears and chains hanging from the vaulted rock ceiling, silence",{'grade':'cold'}),
+(56.5,'cut',[W],['fog'],"Red-robed Scarlet Wizards hiding on the high stone ledges and plateaus and behind pillars of the underground hall, fire just kindling in their hands, waiting, an ambush",{'grade':'red','flicker':0.4}),
 (61.6,'cut',[L,A,C],['fog'],"The three brothers in the middle of the dark hall, surrounded by glowing red hands in the darkness all around them, "+LU,{'flicker':0.3}),
 (66.9,'flash',[L],['smoke'],LU+"smashing a glass bottle at his feet, thick grey smoke billowing out and swallowing the brothers",{'shake':0.2}),
 (70.8,'cut',[W],['smoke'],"A Scarlet Wizard at the edge of the smoke, one hand held out in invitation, a sly smile, calling Lucien to join them",{'grade':'red'}),
@@ -46,7 +47,7 @@ S_=[
 (85.1,'cut',[W],['smoke','sparks'],"A Scarlet Wizard blind in the smoke, hit in the chest by a purple bolt out of nowhere",{'shake':0.3}),
 (89.0,'cut',[A],['smoke','embers'],"Arthas charging out of the smoke, bronze-hilted sword raised, eye slits burning",{'flicker':0.4}),
 (95.1,'cut',[L],['smoke','sparks'],"Wide: "+LU+"standing tall in the parting smoke, arm raised with purple fire, laughing, wizards falling back",{'flicker':0.5}),
-(99.5,'fade',[W],['embers','smoke'],"Scarlet Wizards throwing fire blindly into the smoke from the balconies, red flames streaking through the hall",{'flicker':0.6}),
+(99.5,'fade',[W],['embers','smoke'],"Scarlet Wizards throwing fire blindly into the smoke from the high stone ledges, red flames streaking through the hall",{'flicker':0.6}),
 (105.5,'cut',[I],['embers'],"Imps with fat glowing bellies scuttling across the stone floor out of the dark, claws and teeth, toward the smoke",{'flicker':0.4}),
 (112.5,'flash',[A,C],['dust'],"The stone floor giving way under Arthas and Cedric, trapdoor boards splintering, both falling, "+GR,{'shake':0.5}),
 (116.6,'cut',[A,C],['dust','sparks'],"Inside "+GR+"Arthas hurling Cedric up and out of the pit with both arms, sparks from the rollers",{'shake':0.3}),
@@ -62,7 +63,7 @@ S_=[
 (150.6,'cut',[C],['ash','dust'],"Cedric dropping out of the air where a spell had held him floating, landing in a crouch, free, furious",{}),
 (156.1,'cut',[C,I],['dust','sparks'],"Cedric whirling his staff through a swarm of imps, one imp bursting in a ball of fire from its glowing belly",{'shake':0.3}),
 (162.0,'cut',[A,W],['embers','sparks'],"Arthas fighting two Scarlet Wizards at once, fire breaking on his steel, sword swinging",{'flicker':0.5}),
-(168.0,'fade',[L,A,C,W],['smoke','embers'],"Wide shot of the battle in the underground hall: smoke, fire, imps, wizards on the balconies, the brothers in the middle, the grinder pit glowing",{'flicker':0.5}),
+(168.0,'fade',[L,A,C,W],['smoke','embers'],"Wide shot of the battle in the underground hall: smoke, fire, imps, wizards on the high stone ledges, the brothers in the middle, the grinder pit glowing",{'flicker':0.5}),
 (174.6,'flash',[A,W],['snow'],"A cone of freezing cold blasting from a wizard's hands into Arthas, frost covering his armour, he falls",{'grade':'cold','shake':0.5}),
 (176.8,'cut',[L,W],['embers','smoke'],LU+"turning and throwing a fireball at the last wizard, the fire bursting around him but the wizard still standing in it",{'flicker':0.7}),
 (178.9,'cut',[C,A],['snow'],"Cedric kneeling by the frozen Arthas, pouring a red healing potion through his visor",{'grade':'cold'}),
@@ -96,6 +97,7 @@ for i,(t,tr,who,fx,scene,ex) in enumerate(S_):
     if 'img' in ex: m=([-m[0][0],m[0][1],m[0][2]],[-m[1][0],m[1][1],m[1][2]])
     d={'id':'s%02d'%(i+1),'t':round(snap(t,tr),2),'in':tr,'who':who,'fx':fx}; d.update(ex); d['move']={'from':m[0],'to':m[1]}
     if scene: d['scene']=scene
+    if 50<=t<225 and 'img' not in ex and 'underground' not in scene: d['scene']=scene+', '+HALL
     shots.append(d)
 # chorus reuse: copy fx/who of the original
 for s in shots:
