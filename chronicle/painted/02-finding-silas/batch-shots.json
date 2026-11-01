@@ -1,0 +1,17 @@
+{
+ "name": "batches/bop7oe97m9g65b7a0lqkz52fcez2uhqgrt6l",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-11-01T16:12:10.736Z",
+ "jobs": [
+  {
+   "key": "shot:s03",
+   "id": "s03",
+   "out": "painted/02-finding-silas/raw/s03.png"
+  },
+  {
+   "key": "shot:s04",
+   "id": "s04",
+   "out": "painted/02-finding-silas/raw/s04.png"
+  }
+ ]
+}
