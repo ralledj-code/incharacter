@@ -109,7 +109,7 @@ cast={'lucien':L12['cast']['lucien'],'arthas':L12['cast']['arthas'],'cedric':L12
  'silas':L1['cast']['silas'],
  'wolfsilas':"Silas the werewolf, exactly as in the reference painting but further gone, more wolf than man: the lean dock smuggler with a full wolf snout and fangs, coarse dark brown fur over his face, arms and back, wild glowing yellow eyes, pointed ears, clawed hands, hunched, his drab grey-olive patched coat and rope belt torn to rags; frightening, not comical",
  'imp':"an imp: a nasty little fiend the size of a dog, dark red leathery skin, small torn bat wings, short horns, a barbed tail, long claws, needle teeth, and a fat swollen belly that glows from inside with orange fire through cracks in the skin, about to burst; menacing and grotesque, not cute, no clothes"}
-board={"id":"hunger-grows","live":False,'cover':'s17','style':L12['style'],'cast':cast,'shots':shots}
+board={"id":"hunger-grows","live":True,'cover':'s17','style':L12['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
 json.loads(out);open('painted/11-hunger-grows.json','w').write(out)
