@@ -88,8 +88,8 @@ S_=[
 (263.7,'cut',[],['fog'],"Close-up of the black goo surface choking the old moonwell, thick and oily",{'grade':'green'}),
 (266.4,'cut',[],['fog'],"A dark forest at night, wide and empty",{'grade':'cold'}),
 (269.1,'cut',[N],['fog'],"Neris disappearing between the trees, only a shape",{'grade':'cold'}),
-(277.5,'fade',[L,A,C,LK],['fog'],LAKE+"the three brothers standing on the shore of the black goo lake under the moon, seen from behind",{'grade':'cold'}),
-(283.2,'cut',[],['fog'],"The black surface of the lake rippling, something stirring deep beneath it, no people",{'grade':'cold'}),
+(277.5,'fade',[L,A,C,LK],['fog'],LAKE+"the three brothers standing on the shore of the black goo lake under the moon, seen from behind: "+LU+"Arthas in dark hooded plate, and bald Cedric the monk",{'grade':'cold'}),
+(283.2,'cut',[LK],['fog'],LAKE+"close on the black goo surface of the lake between two of the standing stones, rippling, something stirring deep beneath it, no people",{'grade':'cold'}),
 ]
 shots=[];mv=0
 for i,(t,tr,who,fx,scene,ex) in enumerate(S_):
@@ -114,7 +114,7 @@ cast.update({'lake':"the moon lake of Cobh, as in the reference painting",'mayor
  'crackle':"Crackle, an eccentric young professor in his late twenties: very tall, slim and skinny with long limbs, a big shock of wild frizzy ginger hair standing up as if struck by lightning, a thin ginger moustache, a brass pince-nez on a chain, a long patched tweed coat with bulging pockets of brass instruments and copper wire, scorch marks on his sleeves, an eager, nervous, hopelessly-in-love face",
  'father':"Leify's father: a big, rough, burly man in his fifties with a red face and thick beard, a dock worker's clothes",
  'kin':"well-dressed merchants of Cobh, men and women in rich dark clothes with gold rings, smug"})
-board={"id":"journey-cobh","live":False,'cover':'s24','style':L12['style'],'cast':cast,'shots':shots}
+board={"id":"journey-cobh","live":True,'cover':'s24','style':L12['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
 json.loads(out);open('painted/07-journey-cobh.json','w').write(out)
