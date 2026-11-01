@@ -89,7 +89,7 @@ cast.update({'moonwell':"the first moonwell site, laid out as in the reference p
  'carius':"Carius, a man from the small village of Lehai: a farmer in his forties, plain brown tunic, muddy, terrified, half of him fused into the black goo monster",
  'aberration':"a huge monstrous aberration born of black goo, as big as a house, towering three times taller than a man: a heaving, dripping mass of black slime and tar with long thick grasping tendrils, a ring of many pale clouded eyes and a vast toothed maw; fused into its underside is Carius, a village man in a plain brown tunic, merged into the black mass up to his chest, unarmed, his anguished face and arms sticking out, tiny against the monster. Painted grim, dark and realistic like a horror creature, wet and heavy, not cartoony",
  'cube':"a gelatinous cube: a huge transparent, faintly green block of jelly in the exact shape of a perfect cube with flat sides and straight edges, taller than a man, almost invisible, bones and coins floating inside it, never shaped like a person or creature"})
-board={"id":"first-moonwell","live":False,'cover':'s17','style':L12['style'],'cast':cast,'shots':shots}
+board={"id":"first-moonwell","live":True,'cover':'s17','style':L12['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
 json.loads(out);open('painted/03-first-moonwell.json','w').write(out)
