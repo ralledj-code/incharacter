@@ -17,6 +17,8 @@ L,A,C,SE,P,MW,CA,TR,WB='lucien','arthas','cedric','severin','pig','moonwell','ca
 MOVES=[([0,0,0.04],[0,0,0.2]),([-0.04,0,0.05],[0.04,0,0.12]),([0,0,0.22],[0,0,0.05]),([0.05,0.02,0.02],[-0.04,0,0.12]),([0,0.04,0.02],[0,0,0.18]),([0.03,0,0.08],[-0.03,0,0.16])]
 LU="Lucien Vale (long blond hair, pointed ears, burgundy coat) "
 MEM="painted like a faded memory, soft haze, muted colours, "
+HALL="deep inside the mountain in the Pig's slaughterhouse (the same place as the next chapter): vast halls of cut stone blocks, meat hooks and chains hanging, braziers, smoke hanging in the air, "
+GREAT=HALL+"the great hall with a massive pool of blood glowing dark red in the middle, and high in the hall's wall a barred window, "
 SWAMP="at the first moonwell (layout as in the reference photo of the tabletop model, painted as a real place at full scale): a vast corrupted dead marsh, a giant gnarled tree on a square raised stone plinth in the middle, straight old cobblestone paths running out from the plinth, two lone square brick gate arches far away on either side of the tree, black goo water and dead reeds, mist, "
 VIL="in the square of a small poor village at dusk, thatched houses, "
 S_=[
@@ -53,8 +55,8 @@ S_=[
 (147.7,'cut',[L,A,C],['fog'],"The three brothers at a dark cave entrance among roots at dusk, torches lit, "+LU,{'flicker':0.4}),
 (151.0,'flash',[A,C,TR],['sparks'],"Inside a dark cave, Arthas and Cedric fighting a blood troll, sword and staff, sparks",{'shake':0.5,'flicker':0.4}),
 (154.0,'cut',[L,A,C],['dust'],"A huge pile of human bones and druid antler crowns in a cave chamber, the brothers' torches lighting it, "+LU,{'flicker':0.4}),
-(156.8,'cut',[],['dust'],"A dungeon corridor inside the cave built of fitted stone blocks and iron doors, made by hands, torchlight, no people",{'flicker':0.4}),
-(159.9,'cut',[A],['dust'],"Arthas running a gauntlet over fitted stone blocks in the cave wall, realising it was built",{'flicker':0.3}),
+(156.8,'cut',[],['dust'],HALL+"a long corridor of fitted cut stone blocks and iron doors going deeper into the mountain, made by hands, torchlight, no people",{'flicker':0.4}),
+(159.9,'cut',[A],['dust'],HALL+"Arthas running a gauntlet over the fitted stone blocks of the wall, realising it was built",{'flicker':0.3}),
 (162.9,'cut',[L],['sparks'],LU+"wrapped in a shimmering illusion that makes him look like the huge pig-headed butcher with a broadaxe, his own blond hair faintly visible through it",{'grade':'red'}),
 (166.0,'cut',[WB],['dust'],"Two werebears in a torchlit cave hall bowing to someone off-screen",{'flicker':0.4}),
 (168.8,'cut',[WB],['dust'],"A werebear calmly changing between man and bear at will, half of each",{'flicker':0.3}),
@@ -65,24 +67,24 @@ S_=[
 (185.5,'cut',[],[],None,{'img':'s24'}),
 (188.4,'cut',[],[],None,{'img':'s25'}),
 (191.5,'cut',[],[],None,{'img':'s26'}),
-(199.0,'fade',[L,A,C],['dust'],"The three brothers descending into the deepest cavern of the cave, torches small in the dark",{'flicker':0.3}),
-(206.0,'cut',[],['dust','embers'],"In a vast cavern, a built stone keep and torture chamber with iron cages, one window lit orange, no people visible",{'grade':'red','flicker':0.4}),
-(212.0,'cut',[P],['embers'],"Close on the lit window of the keep: the shadow of the huge Pig moving inside",{'grade':'red','flicker':0.5}),
-(218.4,'flash',[L],['sparks','embers'],LU+"hurling a fireball at the lit window, fire roaring from his hand",{'shake':0.4,'flicker':0.7}),
-(222.1,'cut',[],['fire','embers'],"The window of the keep exploding in fire, flames pouring out",{'shake':0.6,'flicker':0.8}),
-(225.7,'cut',[],['fire','smoke'],"Inside the burning room, chained prisoners in the flames as dark silhouettes, leave everything to imagination",{'grade':'red','flicker':0.8}),
+(199.0,'fade',[L,A,C],['dust'],HALL+"the three brothers descending a wide cut-stone stair into the depths, torches small in the dark",{'flicker':0.3}),
+(206.0,'cut',[],['dust','embers'],GREAT+"lit orange from inside, establishing shot, no people visible",{'grade':'red','flicker':0.4}),
+(212.0,'cut',[P],['embers'],"Close on the barred window high in the stone wall of the great hall, lit orange, the shadow of the huge Pig moving inside",{'grade':'red','flicker':0.5}),
+(218.4,'flash',[L],['sparks','embers'],GREAT+LU+"by the blood pool hurling a fireball up at the lit barred window, fire roaring from his hand",{'shake':0.4,'flicker':0.7}),
+(222.1,'cut',[],['fire','embers'],"The barred window high in the great hall's wall exploding in fire, thick black smoke pouring out over the hall",{'shake':0.6,'flicker':0.8}),
+(225.7,'cut',[],['fire','smoke'],"Silhouettes of prisoners behind the flames of the burning barred window, only shapes in the fire and smoke, leave the rest to imagination",{'grade':'red','flicker':0.8}),
 (228.2,'cut',[L],['embers'],"Close-up of "+LU+"'s face lit by the fire, horror as he understands",{'flicker':0.6}),
-(236.1,'cut',[L],['embers','ash'],LU+"on his knees on the cave floor before the burning keep, a burden he will carry",{'flicker':0.5}),
+(236.1,'cut',[L],['embers','ash'],GREAT+LU+"on his knees by the blood pool below the burning window, a burden he will carry",{'flicker':0.5}),
 (242.4,'cut',[L],['ash'],"Extreme close-up of "+LU+"'s eyes, something changing in them",{}),
-(249.1,'flash',[P],['fire','embers'],"The Pig in the burning torture chamber, three metres tall, standing in a pool of blood, growing larger, roaring",{'grade':'red','shake':0.4,'flicker':0.7}),
-(252.2,'cut',[P],['fire','embers'],"The Pig raising his broadaxe over chained prisoners in the firelight, only silhouettes, leave the violence to imagination",{'grade':'red','flicker':0.6}),
-(255.1,'cut',[P],['fire','smoke'],"The Pig grown huge, bloated with power, blood glowing on his skin, fire all around",{'grade':'red','shake':0.4}),
+(249.1,'flash',[P],['fire','embers'],GREAT+"the Pig wading in the pool of blood, three metres tall, growing larger, roaring, black smoke above",{'grade':'red','shake':0.4,'flicker':0.7}),
+(252.2,'cut',[P],['fire','embers'],HALL+"the draining hall with stone slabs and iron shackles: the Pig raising his broadaxe over chained prisoners, only silhouettes, leave the violence to imagination",{'grade':'red','flicker':0.6}),
+(255.1,'cut',[P],['fire','smoke'],GREAT+"the Pig grown huge at the edge of the blood pool, bloated with power, blood glowing on his skin, braziers behind him",{'grade':'red','shake':0.4}),
 (258.1,'cut',[L],['ash','embers'],LU+"standing frozen and still, firelight on his face",{'flicker':0.5}),
-(260.4,'cut',[P,A,C],['fire','sparks'],"Arthas and Cedric charging the giant blood-soaked Pig in the burning chamber",{'shake':0.5,'flicker':0.6}),
-(268.8,'cut',[L],['ash','embers'],LU+"down on one knee, bleeding, barely standing",{'grade':'red'}),
-(276.9,'cut',[P,A,C],['fire','smoke'],"Blurred through smoke: the huge Pig swinging his axe at Arthas and Cedric",{'grade':'red','shake':0.4}),
-(281.9,'cut',[L],['ash'],LU+"falling onto the stone floor, the fire blurring above him",{'grade':'red'}),
-(287.8,'fade',[P],['fire','smoke'],"Seen from the floor, blurred and darkening: the giant silhouette of the Pig against the fire",{'grade':'red'}),
+(260.4,'cut',[P,A,C],['fire','sparks'],GREAT+"Arthas and Cedric charging the giant blood-soaked Pig around the pool of blood",{'shake':0.5,'flicker':0.6}),
+(268.8,'cut',[L],['ash','embers'],GREAT+LU+"down on one knee by the blood pool, bleeding, barely standing",{'grade':'red'}),
+(276.9,'cut',[P,A,C],['fire','smoke'],GREAT+"blurred through smoke: the huge Pig swinging his axe at Arthas and Cedric",{'grade':'red','shake':0.4}),
+(281.9,'cut',[L],['ash'],GREAT+LU+"falling onto the stone floor by the blood pool, the burning window blurring above him",{'grade':'red'}),
+(287.8,'fade',[P],['fire','smoke'],GREAT+"seen from the floor, blurred and darkening: the giant silhouette of the Pig against the braziers and the red glow of the pool",{'grade':'red'}),
 ]
 shots=[];mv=0
 for i,(t,tr,who,fx,scene,ex) in enumerate(S_):
