@@ -13,7 +13,7 @@ def snap(t,k):
     if k not in ('cut','flash') or t==0: return t
     h,r,e=near(B['hits'],t),near(B['bars'],t),near(B['beats'],t)
     return h if abs(h-t)<=0.25 else r if abs(r-t)<=0.2 else e
-L,A,C,SE,P,K,N,W,BA,CU,MW='lucien','arthas','cedric','severin','pig','kalen','neris','wolves','baphomet','cube','moonwell'
+L,A,C,SE,P,K,N,W,BA,CU,MW,CA='lucien','arthas','cedric','severin','pig','kalen','neris','wolves','baphomet','cube','moonwell','carius'
 MOVES=[([0,0,0.04],[0,0,0.2]),([-0.04,0,0.05],[0.04,0,0.12]),([0,0,0.22],[0,0,0.05]),([0.05,0.02,0.02],[-0.04,0,0.12]),([0,0.04,0.02],[0,0,0.18]),([0.03,0,0.08],[-0.03,0,0.16])]
 LU="Lucien Vale (long blond hair, pointed ears, burgundy coat) "
 MEM="painted like a faded memory, soft haze, muted colours, "
@@ -24,15 +24,15 @@ S_=[
 (4.7,'fade',[],['fog'],"Pale human skulls half sunk in black swamp water among dead reeds, dozens of them, mist, no living people",{'grade':'cold'}),
 (10.0,'cut',[],['fog'],"Skeletons in rotted green druid robes lying beneath the reeds in shallow black water, antler crowns, moss, no living people",{'grade':'cold'}),
 (15.2,'cut',[L,A,C,CU],['sparks'],"The three brothers bursting a huge transparent gelatinous cube open with sword, staff and fire, jelly splashing, "+LU+"stumbling out of it gasping",{'shake':0.4}),
-(20.6,'cut',[],['fog'],"Faint pale ghostly faces rising out of the black swamp water among dead reeds, whispering, no living people at all",{'grade':'cold'}),
+(20.6,'cut',[CA],['fog'],"Carius, the rescued villager, wrapped in a blanket on a cobblestone path, shaking, staring at the skulls in the water, about to speak",{'grade':'cold'}),
 (28.0,'fade',[L,A,C,MW],['fog'],SWAMP+"the three brothers standing on a cobblestone path looking at the skulls around them, "+LU,{'grade':'cold'}),
-(35.0,'cut',[],['fog'],"Pale ghosts of druids in antler crowns standing in the mist over the swamp, silent",{'grade':'cold'}),
+(35.0,'cut',[C,A],['fog'],"Cedric kneeling in shallow black water lifting a skull with a broken antler crown, Arthas standing behind him, grim, no one else",{'grade':'cold'}),
 (42.0,'cut',[P],['smoke'],"A dark silhouette of a huge pig-headed butcher with a broadaxe on a ridge against a red sky, only a shape, a legend",{'grade':'red'}),
 (46.6,'cut',[],['smoke'],"Rough armed men with torches wading through black goo at night, poisoning a pool from barrels, faces in shadow",{'grade':'red'}),
 (50.2,'cut',[],['fog'],"Close-up of black goo pouring from a barrel into a silver well, the roots of a tree blackening, no people",{'grade':'green'}),
 (53.5,'cut',[P],['fog'],"The huge pig-headed butcher walking among druid graves and skulls, broadaxe over his shoulder",{'grade':'red'}),
-(56.4,'cut',[L],['fog'],LU+"speaking to a pale druid ghost in the mist",{'grade':'cold'}),
-(59.6,'cut',[],['fog'],"A pale druid ghost raising an arm and pointing north into the dark, shadows gathering there",{'grade':'cold'}),
+(56.4,'cut',[L,CA],['fog'],LU+"kneeling beside the shaking Carius in the mist, asking who did this",{'grade':'cold'}),
+(59.6,'cut',[CA],['fog'],"Carius raising a trembling arm and pointing north into the dark swamp, shadows gathering there",{'grade':'cold'}),
 (65.5,'flash',[P,W],['smoke','embers'],SWAMP+"the Pig arriving out of blood-red smoke, three metres tall, pig-headed, covered in blood, broadaxe raised, werewolves behind him",{'grade':'red','shake':0.4}),
 (69.4,'cut',[P,K],['smoke'],"The Pig dragging Kalen behind him on a chain, a bloodied paladin bound and stumbling",{'grade':'red'}),
 (72.7,'cut',[P],['smoke'],"Close-up of the Pig's bloody snout and tusks, small cruel eyes, a beast in flesh",{'grade':'red'}),
@@ -69,12 +69,12 @@ S_=[
 (211.6,'cut',[N,L],['fog'],"Neris watching "+LU+"curiously as Lucien touches the scar on his neck, the druid's amber eyes narrowed",{}),
 (217.7,'cut',[L],['fog'],"Close-up of "+LU+"looking away, a secret kept",{}),
 (227.5,'fade',[SE],['fog'],VIL+"a crowd of villagers seen from behind, and at the very back of it a tall pale woman with long silver-white hair and faint green eyes, watching",{'grade':'green'}),
-(234.5,'cut',[],['fog'],VIL+"twelve sick villagers roped together before a crowd, a stout mayor in a chain of office beside them, guards with spears",{}),
+(234.5,'cut',[],['fog'],VIL+"twelve tall wooden poles standing in a wide circle in the square, a sick villager chained or tied to each pole, a stout mayor in a chain of office and guards with spears, the crowd around the circle",{}),
 (240.0,'cut',[L],['fog'],VIL+LU+"climbing up the side of a house onto a thatched rooftop as a voice speaks inside his head, urgent",{'grade':'green'}),
 (245.3,'cut',[SE],['fog'],"Close-up of Severin's calm face with mint-green glowing eyes, a faint smile",{'grade':'green'}),
-(250.9,'cut',[L],['fog'],VIL+LU+"standing on the ridge of a thatched rooftop at dusk, scanning the crowd in the square below, searching for her",{'grade':'green'}),
+(250.9,'cut',[L],['fog'],VIL+LU+"standing on the ridge of a thatched rooftop at dusk, scanning the square below where twelve villagers are tied to twelve poles in a circle inside the crowd, searching for her",{'grade':'green'}),
 (255.7,'cut',[SE],['fog'],"Severin blowing red rose petals from her open palm into the wind over the crowd",{'grade':'green'}),
-(262.3,'cut',[],['fog'],VIL+"the twelve roped villagers doubling over as rose petals fall on them, fur and claws starting to break through, the crowd screaming and pulling back",{'grade':'red','shake':0.3}),
+(262.3,'cut',[],['fog'],VIL+"the circle of twelve poles: the villagers chained to them straining and doubling over as rose petals fall, fur and claws breaking through, the crowd screaming and pulling back",{'grade':'red','shake':0.3}),
 (268.7,'cut',[L],['fog'],VIL+LU+"on the rooftop edge, red rose petals blowing past him, searching the dark streets below, the turning twelve far below",{'grade':'red'}),
 (277.0,'fade',[L],['fog'],"Seen from behind: "+LU+"crouched on the edge of a thatched rooftop at nightfall, ready to jump down, rose petals in the wind, the village below",{'grade':'cold'}),
 ]
@@ -94,6 +94,7 @@ assert sid('s18')['scene'].startswith(SWAMP+'the three half-brothers') and sid('
 L10=json.load(open('painted/10-ahm-dynasty.json')); L11=json.load(open('painted/11-hunger-grows.json'))
 L3=json.load(open('painted/03-first-moonwell.json')); L8=json.load(open('painted/08-baphomet.json'))
 cast={k:L3['cast'][k] for k in ['lucien','arthas','cedric','severin','cube','moonwell']}
+cast['carius']="Carius, a man from the small village of Lehai: a farmer in his forties, plain brown tunic, muddy, terrified, rescued"
 cast.update({'pig':L6['cast']['pig'].replace('a huge broadaxe','a huge broadaxe, covered head to toe in blood'),'baphomet':L6['cast']['baphomet'],
  'neris':L8['cast']['neeris'].replace('Neeris','Neris'),
  'kalen':"Kalen, a Church paladin the brothers know: a broad young man in his twenties, short brown hair, a square jaw, dented white-and-steel Church plate with a gold sun emblem, torn white tabard, bloodied and bruised, wrists chained",
