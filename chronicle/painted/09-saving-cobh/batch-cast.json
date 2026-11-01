@@ -1,0 +1,25 @@
+{
+ "name": "batches/991od5ir4feifoshbwaun69istk88n35117t",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-11-01T19:33:31.430Z",
+ "jobs": [
+  {
+   "key": "cast:troll",
+   "id": "troll",
+   "out": "painted/09-saving-cobh/cast/troll.jpg",
+   "jpeg": true
+  },
+  {
+   "key": "cast:commander",
+   "id": "commander",
+   "out": "painted/09-saving-cobh/cast/commander.jpg",
+   "jpeg": true
+  },
+  {
+   "key": "cast:oldman",
+   "id": "oldman",
+   "out": "painted/09-saving-cobh/cast/oldman.jpg",
+   "jpeg": true
+  }
+ ]
+}
