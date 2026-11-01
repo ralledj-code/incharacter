@@ -1,0 +1,19 @@
+{
+ "name": "batches/8m8nssmy3vae1tonvlmm8sk973zz2x977e02",
+ "model": "gemini-3.1-flash-image",
+ "submitted": "2026-11-01T13:17:27.791Z",
+ "jobs": [
+  {
+   "key": "cast:wolfsilas",
+   "id": "wolfsilas",
+   "out": "painted/11-hunger-grows/cast/wolfsilas.jpg",
+   "jpeg": true
+  },
+  {
+   "key": "cast:imp",
+   "id": "imp",
+   "out": "painted/11-hunger-grows/cast/imp.jpg",
+   "jpeg": true
+  }
+ ]
+}
