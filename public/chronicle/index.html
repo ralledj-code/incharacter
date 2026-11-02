@@ -37,6 +37,12 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
 .song .btns { display: flex; gap: 8px; padding: 10px 14px 14px; }
 .song .btns .play { flex: 1; }
 .song.locked { opacity: 0.45; }
+body.solo #songsHead, body.solo #tavernRow { display: none; }
+body.solo #start { display: flex; align-items: center; justify-content: center; }
+body.solo #songs { width: min(92vw, 720px, calc((100vh - 170px) * 16 / 9)); margin: 0 auto; display: block; }
+body.solo .song .cover { aspect-ratio: 16 / 9; height: auto; }
+body.solo .song .cover b, body.solo .song .cover em, body.solo .song .meta { display: none; }
+body.solo .song .btns .play { font-size: 1.25rem; padding: 14px 0; width: 100%; }
 #tavernRow { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 26px auto 0; text-align: center; }
 #start h1 { font-family: var(--head); font-weight: 400; letter-spacing: 0.12em; margin: 0; font-size: clamp(1.9rem, 6vw, 3.4rem); text-wrap: balance; color: #f1e6cf; }
 #start p { max-width: 34em; color: var(--dim); font-size: 1.1rem; line-height: 1.5; text-wrap: balance; }
@@ -5647,12 +5653,15 @@ function share(s, btn) {
   if (navigator.share) { navigator.share({ title: s.title + ' · Alaron Chronicle', url }).catch(() => { }); return; }
   try { navigator.clipboard.writeText(url).then(() => done('Link copied'), () => prompt('Copy this link', url)); } catch (e) { prompt('Copy this link', url); }
 }
+const soloStory = C.stories.find((s) => s.id === wantId && s.hidden && !s.locked);
+if (soloStory) { document.body.classList.add('solo'); document.title = soloStory.title; }
 function renderSongs() {
   const order = C.stories.map((s, i) => i);
   const wi = C.stories.findIndex((s) => s.id === wantId); if (wi >= 0) { order.splice(order.indexOf(wi), 1); order.unshift(wi); }
   songList.innerHTML = '';
   order.forEach((i) => {
     if (C.stories[i].hidden && i !== wi) return;  // hidden songs only show up through their own link
+    if (soloStory && C.stories[i] !== soloStory) return;  // ...and their link shows nothing else
     const s = C.stories[i], key = String(s.level).padStart(2, '0') + '-' + s.id, board = s.painted || (C.boards && C.boards[key]);
     const el = document.createElement('article'); el.className = 'song' + (s.locked ? ' locked' : '') + (i === wi ? ' focus' : ''); el.setAttribute('role', 'listitem');
     const cov = document.createElement('div'); cov.className = 'cover';
@@ -5670,7 +5679,7 @@ function renderSongs() {
       const sh = document.createElement('button'); sh.textContent = 'Share';
       play.onclick = () => { if (booted) booted(i, play); else { pendingPlay = [i, play]; play.textContent = 'Getting ready…'; } };
       sh.onclick = () => share(s, sh);
-      b.append(play, sh); el.append(b);
+      b.append(play); if (!soloStory) b.append(sh); el.append(b);
     }
     songList.append(el);
   });
@@ -5762,7 +5771,7 @@ booted = (i, btn) => {
   const s = C.stories[i]; if (!s || s.locked || requesting) return;
   unlockAudio(); requesting = true; wantSong(s);
   let kp = s.packsReady ? 1 : 0;
-  const show = () => { const ka = songState(s) === 'ready' ? 1 : 0.3; btn.textContent = 'Lucien tunes up… ' + Math.round((kp * 0.6 + ka * 0.4) * 100) + '%'; };
+  const show = () => { const ka = songState(s) === 'ready' ? 1 : 0.3; btn.textContent = (s.hidden ? 'Loading… ' : 'Lucien tunes up… ') + Math.round((kp * 0.6 + ka * 0.4) * 100) + '%'; };
   const tk = setInterval(show, 200); show();
   const waitSong = new Promise((res) => { const k = setInterval(() => { if (songState(s) !== 'loading') { clearInterval(k); res(); } }, 100); });
   const art = s.packsReady ? Promise.resolve() : s.painted ? P.preload(s, (k) => { kp = k; }) : C.loadPacks(s.packs || [], (k) => { kp = k; });
@@ -5890,7 +5899,7 @@ function begin() {
     // first request of this song: fetch its level packs and audio (shared packs are cached), then start
     requesting = true; wantSong(s);
     const btn = $('bBegin'); let kp = 0;
-    const show = () => { const ka = songState(s) === 'ready' ? 1 : 0.4; btn.textContent = 'Lucien tunes up… ' + Math.round((kp * 0.5 + ka * 0.5) * 100) + '%'; };
+    const show = () => { const ka = songState(s) === 'ready' ? 1 : 0.4; btn.textContent = (s.hidden ? 'Loading… ' : 'Lucien tunes up… ') + Math.round((kp * 0.5 + ka * 0.5) * 100) + '%'; };
     const tk = setInterval(show, 250); show();
     const waitSong = new Promise((res) => { const k = setInterval(() => { if (songState(s) !== 'loading') { clearInterval(k); res(); } }, 100); });
     const art = s.painted ? P.preload(s, (k) => { kp = k; }) : C.loadPacks(s.packs || [], (k) => { kp = k; });
@@ -5918,7 +5927,10 @@ function backToBook() {
 function togglePause() { if (mode !== 'ride' || ended) return; paused = !paused; if (paused) audio.pause(); else audio.play(); $('bPause').textContent = paused ? 'Resume' : 'Pause'; }
 let muted = false;
 function toggleMute() { muted = !muted; audio.muted = muted; $('bMute').textContent = muted ? 'Sound off' : 'Sound on'; tavernMusic(tavOn); }
-function finish() { if (ended) return; ended = true; $('bBack').textContent = fromList ? 'Back to the songs' : 'Back to the tavern'; $('fade').style.opacity = 1; setTimeout(() => { if (ended && mode === 'ride') $('end').hidden = false; }, 1400); }
+function finish() { if (ended) return; ended = true; $('bBack').textContent = fromList ? 'Back to the songs' : 'Back to the tavern';
+  const plain = !!(story && story.hidden);  // a song outside the campaign ends on its own title, no Lucien, no way back into the book
+  $('end').querySelector('h2').textContent = plain ? story.title : 'Lucien takes a bow.';
+  $('end').querySelector('p').hidden = plain; $('bBack').hidden = plain; $('fade').style.opacity = 1; setTimeout(() => { if (ended && mode === 'ride') $('end').hidden = false; }, 1400); }
 
 $('bSit').onclick = sit;
 $('bAuto').onclick = () => { auto = { t: 0, x: player.x, z: player.z, yaw: player.yaw }; };
