@@ -18,12 +18,15 @@ function share(s, btn) {
   if (navigator.share) { navigator.share({ title: s.title + ' · Alaron Chronicle', url }).catch(() => { }); return; }
   try { navigator.clipboard.writeText(url).then(() => done('Link copied'), () => prompt('Copy this link', url)); } catch (e) { prompt('Copy this link', url); }
 }
+const soloStory = C.stories.find((s) => s.id === wantId && s.hidden && !s.locked);
+if (soloStory) { document.body.classList.add('solo'); document.title = soloStory.title; }
 function renderSongs() {
   const order = C.stories.map((s, i) => i);
   const wi = C.stories.findIndex((s) => s.id === wantId); if (wi >= 0) { order.splice(order.indexOf(wi), 1); order.unshift(wi); }
   songList.innerHTML = '';
   order.forEach((i) => {
     if (C.stories[i].hidden && i !== wi) return;  // hidden songs only show up through their own link
+    if (soloStory && C.stories[i] !== soloStory) return;  // ...and their link shows nothing else
     const s = C.stories[i], key = String(s.level).padStart(2, '0') + '-' + s.id, board = s.painted || (C.boards && C.boards[key]);
     const el = document.createElement('article'); el.className = 'song' + (s.locked ? ' locked' : '') + (i === wi ? ' focus' : ''); el.setAttribute('role', 'listitem');
     const cov = document.createElement('div'); cov.className = 'cover';
@@ -41,7 +44,7 @@ function renderSongs() {
       const sh = document.createElement('button'); sh.textContent = 'Share';
       play.onclick = () => { if (booted) booted(i, play); else { pendingPlay = [i, play]; play.textContent = 'Getting ready…'; } };
       sh.onclick = () => share(s, sh);
-      b.append(play, sh); el.append(b);
+      b.append(play); if (!soloStory) b.append(sh); el.append(b);
     }
     songList.append(el);
   });
@@ -133,7 +136,7 @@ booted = (i, btn) => {
   const s = C.stories[i]; if (!s || s.locked || requesting) return;
   unlockAudio(); requesting = true; wantSong(s);
   let kp = s.packsReady ? 1 : 0;
-  const show = () => { const ka = songState(s) === 'ready' ? 1 : 0.3; btn.textContent = 'Lucien tunes up… ' + Math.round((kp * 0.6 + ka * 0.4) * 100) + '%'; };
+  const show = () => { const ka = songState(s) === 'ready' ? 1 : 0.3; btn.textContent = (s.hidden ? 'Loading… ' : 'Lucien tunes up… ') + Math.round((kp * 0.6 + ka * 0.4) * 100) + '%'; };
   const tk = setInterval(show, 200); show();
   const waitSong = new Promise((res) => { const k = setInterval(() => { if (songState(s) !== 'loading') { clearInterval(k); res(); } }, 100); });
   const art = s.packsReady ? Promise.resolve() : s.painted ? P.preload(s, (k) => { kp = k; }) : C.loadPacks(s.packs || [], (k) => { kp = k; });
@@ -261,7 +264,7 @@ function begin() {
     // first request of this song: fetch its level packs and audio (shared packs are cached), then start
     requesting = true; wantSong(s);
     const btn = $('bBegin'); let kp = 0;
-    const show = () => { const ka = songState(s) === 'ready' ? 1 : 0.4; btn.textContent = 'Lucien tunes up… ' + Math.round((kp * 0.5 + ka * 0.5) * 100) + '%'; };
+    const show = () => { const ka = songState(s) === 'ready' ? 1 : 0.4; btn.textContent = (s.hidden ? 'Loading… ' : 'Lucien tunes up… ') + Math.round((kp * 0.5 + ka * 0.5) * 100) + '%'; };
     const tk = setInterval(show, 250); show();
     const waitSong = new Promise((res) => { const k = setInterval(() => { if (songState(s) !== 'loading') { clearInterval(k); res(); } }, 100); });
     const art = s.painted ? P.preload(s, (k) => { kp = k; }) : C.loadPacks(s.packs || [], (k) => { kp = k; });
@@ -289,7 +292,10 @@ function backToBook() {
 function togglePause() { if (mode !== 'ride' || ended) return; paused = !paused; if (paused) audio.pause(); else audio.play(); $('bPause').textContent = paused ? 'Resume' : 'Pause'; }
 let muted = false;
 function toggleMute() { muted = !muted; audio.muted = muted; $('bMute').textContent = muted ? 'Sound off' : 'Sound on'; tavernMusic(tavOn); }
-function finish() { if (ended) return; ended = true; $('bBack').textContent = fromList ? 'Back to the songs' : 'Back to the tavern'; $('fade').style.opacity = 1; setTimeout(() => { if (ended && mode === 'ride') $('end').hidden = false; }, 1400); }
+function finish() { if (ended) return; ended = true; $('bBack').textContent = fromList ? 'Back to the songs' : 'Back to the tavern';
+  const plain = !!(story && story.hidden);  // a song outside the campaign ends on its own title, no Lucien, no way back into the book
+  $('end').querySelector('h2').textContent = plain ? story.title : 'Lucien takes a bow.';
+  $('end').querySelector('p').hidden = plain; $('bBack').hidden = plain; $('fade').style.opacity = 1; setTimeout(() => { if (ended && mode === 'ride') $('end').hidden = false; }, 1400); }
 
 $('bSit').onclick = sit;
 $('bAuto').onclick = () => { auto = { t: 0, x: player.x, z: player.z, yaw: player.yaw }; };

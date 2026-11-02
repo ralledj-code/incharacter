@@ -35,6 +35,12 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
 .song .btns { display: flex; gap: 8px; padding: 10px 14px 14px; }
 .song .btns .play { flex: 1; }
 .song.locked { opacity: 0.45; }
+body.solo #songsHead, body.solo #tavernRow { display: none; }
+body.solo #start { display: flex; align-items: center; justify-content: center; }
+body.solo #songs { width: min(92vw, 720px, calc((100vh - 170px) * 16 / 9)); margin: 0 auto; display: block; }
+body.solo .song .cover { aspect-ratio: 16 / 9; height: auto; }
+body.solo .song .cover b, body.solo .song .cover em, body.solo .song .meta { display: none; }
+body.solo .song .btns .play { font-size: 1.25rem; padding: 14px 0; width: 100%; }
 #tavernRow { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 26px auto 0; text-align: center; }
 #start h1 { font-family: var(--head); font-weight: 400; letter-spacing: 0.12em; margin: 0; font-size: clamp(1.9rem, 6vw, 3.4rem); text-wrap: balance; color: #f1e6cf; }
 #start p { max-width: 34em; color: var(--dim); font-size: 1.1rem; line-height: 1.5; text-wrap: balance; }
