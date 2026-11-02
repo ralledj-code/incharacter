@@ -38,3 +38,6 @@ next-env.d.ts
 # mobile builds
 android/app/build/
 ios/build/
+
+# private reference photos, never commit
+chronicle/painted/90-tine-max/cast/ref-*

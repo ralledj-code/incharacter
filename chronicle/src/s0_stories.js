@@ -20,6 +20,9 @@ const PLAYLIST = [
   [11, 'hunger-grows', 'The Hunger Grows', '23/09/2026', '4:57'],
   [12, 'fall-duncastle', 'The Fall of Duncastle', '28/09/2026', '6:52']
 ];
+// songs outside the campaign: a level module with hidden: true (plus level, title, len) is playable only through its own
+// link (?song=<id>) and never shows in the song list
+Object.keys(C.levels || {}).forEach((id) => { const l = C.levels[id]; if (l.hidden) PLAYLIST.push([l.level, id, l.title, '', l.len || '']); });
 const LEVELS = {
   baphomet: Object.assign({
     session: 'Level 8 · Session recap · 7:48 – 10:43 PM',
@@ -42,5 +45,5 @@ C.stories = PLAYLIST.map(([level, id, title, date, len]) => {
   return s;
 });
 // the page the book opens on: the latest playable level
-C.firstStory = C.stories.reduce((k, s, i) => (s.locked ? k : i), 0);
+C.firstStory = C.stories.reduce((k, s, i) => (s.locked || s.hidden ? k : i), 0);
 })(typeof window !== 'undefined' ? window : globalThis);

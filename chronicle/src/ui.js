@@ -23,15 +23,16 @@ function renderSongs() {
   const wi = C.stories.findIndex((s) => s.id === wantId); if (wi >= 0) { order.splice(order.indexOf(wi), 1); order.unshift(wi); }
   songList.innerHTML = '';
   order.forEach((i) => {
+    if (C.stories[i].hidden && i !== wi) return;  // hidden songs only show up through their own link
     const s = C.stories[i], key = String(s.level).padStart(2, '0') + '-' + s.id, board = s.painted || (C.boards && C.boards[key]);
     const el = document.createElement('article'); el.className = 'song' + (s.locked ? ' locked' : '') + (i === wi ? ' focus' : ''); el.setAttribute('role', 'listitem');
     const cov = document.createElement('div'); cov.className = 'cover';
     if (board) cov.style.backgroundImage = 'url("' + new URL('levels/' + key + '/' + (board.cover || board.shots[0].id) + '.webp', C.BASE()) + '")';
-    cov.innerHTML = '<b>' + s.level + '</b>' + (s.locked ? '<em>Coming soon</em>' : s.painted ? '<em>Painted</em>' : '');
+    cov.innerHTML = '<b>' + (s.hidden ? '♪' : s.level) + '</b>' + (s.locked ? '<em>Coming soon</em>' : s.painted ? '<em>Painted</em>' : '');
     const tx = document.createElement('div'); tx.className = 'txt';
     tx.innerHTML = '<h3></h3><div class="meta"></div><p class="blurb"></p>';
     tx.querySelector('h3').textContent = s.title;
-    tx.querySelector('.meta').textContent = 'Level ' + s.level + (s.date ? ' · ' + s.date : '') + ' · ' + s.length;
+    tx.querySelector('.meta').textContent = (s.hidden ? '' : 'Level ' + s.level + (s.date ? ' · ' + s.date : '') + ' · ') + s.length;
     tx.querySelector('.blurb').textContent = s.locked ? 'This chapter’s song is waiting to become a story.' : s.blurb;
     el.append(cov, tx);
     if (!s.locked) {
