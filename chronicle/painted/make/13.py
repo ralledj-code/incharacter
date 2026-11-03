@@ -92,7 +92,7 @@ S_=[
 (301.0,'cut',[MB],['fog'],"Far down in the dark, a fortress of dimmed stone and a tall tentacled silhouette waiting",{'grade':'cold'}),
 (305.1,'cut',[],['embers'],TOWN+"a small campfire burning low outside a dark stone doorway, warm, no people at all",{'flicker':0.5}),
 (311.8,'cut',[],[],None,{'img':'s58'}),
-(318.0,'fade',[],['embers'],TOWN+"the last embers of the fire glowing in the dark",{'flicker':0.4}),
+(318.0,'fade',[],[],None,{'img':'s65'}),
 ]
 shots=[];mv=0
 for i,(t,tr,who,fx,scene,ex) in enumerate(S_):

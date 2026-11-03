@@ -88,6 +88,6 @@
     {"id": "s64", "t": 300.91, "in": "cut", "who": ["mindbreaker"], "fx": ["fog"], "grade": "cold", "move": {"from": [0.05, 0.02, 0.02], "to": [-0.04, 0, 0.12]}, "scene": "Far down in the dark, a fortress of dimmed stone and a tall tentacled silhouette waiting"},
     {"id": "s65", "t": 304.83, "in": "cut", "who": [], "fx": ["embers"], "flicker": 0.5, "move": {"from": [0, 0.04, 0.02], "to": [0, 0, 0.18]}, "scene": "deep underground in the Down Deep, a lightless world of caverns, rock ceilings, no sky, in Thorman's camp, a half-abandoned underground town of carved stone houses in a cavern, a few campfires, rock ceiling, no sky, a small campfire burning low outside a dark stone doorway, warm, no people at all"},
     {"id": "s66", "t": 311.98, "in": "cut", "who": ["arthas", "cedric"], "fx": ["embers"], "img": "s58", "move": {"from": [-0.03, 0, 0.08], "to": [0.03, 0, 0.16]}},
-    {"id": "s67", "t": 318.0, "in": "fade", "who": [], "fx": ["embers"], "flicker": 0.4, "move": {"from": [0, 0, 0.04], "to": [0, 0, 0.2]}, "scene": "deep underground in the Down Deep, a lightless world of caverns, rock ceilings, no sky, in Thorman's camp, a half-abandoned underground town of carved stone houses in a cavern, a few campfires, rock ceiling, no sky, the last embers of the fire glowing in the dark"}
+    {"id": "s67", "t": 318.0, "in": "fade", "who": [], "fx": ["embers"], "img": "s65", "move": {"from": [0, 0, 0.04], "to": [0, 0, 0.2]}}
   ]
 }
