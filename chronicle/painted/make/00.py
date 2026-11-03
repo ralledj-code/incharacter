@@ -125,7 +125,7 @@ os.makedirs('../public/chronicle/levels/00-story-so-far',exist_ok=True)
 for sid,(lvdir,s) in src.items(): shutil.copy('../public/chronicle/levels/%s/%s.webp'%(lvdir,s),'../public/chronicle/levels/00-story-so-far/%s.webp'%sid)
 L13=json.load(open('painted/13-down-deep.json'))
 cast={k:L13['cast'][k] for k in ['lucien','drow','arthas','cedric']}
-board={"id":"story-so-far","live":False,'cover':'s01','style':L13['style'],'cast':cast,'shots':shots}
+board={"id":"story-so-far","live":True,'cover':'s01','style':L13['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
 json.loads(out); open('painted/00-story-so-far.json','w').write(out)
