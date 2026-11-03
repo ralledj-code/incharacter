@@ -15,7 +15,7 @@ LUCIEN: It is a very damp cave. And you're wondering what someone this good-look
 DROW: Of course you are.
 
 **2. How it started** [1]
-LUCIEN: It started, as all my best stories do, in a tavern. I was a bard with a small price on my head, buying herbs from a smuggler called Silas.
+LUCIEN: It started, as all my best stories do, in a tavern. I was a wild magic sorcerer with a lute, a lovely singing voice and a small price on my head, buying herbs from a smuggler called Silas.
 DROW: Herbs.
 LUCIEN: Medicinal. Mostly. Then a warehouse door opened, and in walked the two most serious men on Alaron. Arthas, in black plate, who has never once laughed at my jokes.
 DROW: I'm starting to like him.
@@ -51,7 +51,7 @@ LUCIEN: No. We finished him. The black blood still runs. But that window stays w
 LUCIEN: My brothers' father is the High Inquisitor of the Church. Valerys. Stern, cold, always one step ahead. Not my father, thank the gods. And there was something with red eyes under the grate in his floor. I noticed. Nobody else did.
 DROW: You notice things.
 LUCIEN: I noticed you.
-DROW: Keep talking, bard.
+DROW: Keep talking, sorcerer.
 
 **8. Cobh** [7, 8]
 LUCIEN: He sent us to Cobh, to a moonwell that had dried up. A druid there asked for our blood to wake it, and Arthas, ever helpful, gave his. One of the great chains snapped, and in the black water I saw a face. Horns. Burning eyes. Looking right at us.
@@ -69,7 +69,7 @@ LUCIEN: Prove it.
 
 **10. Mother** [10]
 LUCIEN: And then, in a basement, our mother. Alive. All those years inside the Scarlet Wizards, slowing their poison from within. She told me never to look for my father, and if I ever hear his melody, not to listen.
-DROW: And you're a bard.
+DROW: And you sing.
 LUCIEN: Melodies are my whole thing. Then an arrow called her a traitor, and she was gone again.
 DROW: I'm sorry.
 LUCIEN: She's good at leaving. It runs in the family.

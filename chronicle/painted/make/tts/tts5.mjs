@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 const beats=JSON.parse(fs.readFileSync('beats5.json','utf8')); const want=process.argv.slice(2).map(Number);
-const style="TTS the following conversation by a small campfire deep in a cave late at night, intimate and quiet. Lucien is a young half-elf bard and sorcerer, cocky, charming, proud of himself and amused, trying to impress her, lively natural pace, a smile in his voice, quiet and honest only where the story turns serious. Drow is a drow woman: cool, dry, low voice, hard to impress, short deadpan replies, slowly warming to him and finally amused.";
+const style="TTS the following conversation by a small campfire deep in a cave late at night, intimate and quiet. Lucien is a young half-elf wild magic sorcerer who loves to sing, cocky, charming, proud of himself and amused, trying to impress her, lively natural pace, a smile in his voice, quiet and honest only where the story turns serious. Drow is a drow woman: cool, dry, low voice, hard to impress, short deadpan replies, slowly warming to him and finally amused.";
 for(const b of beats){ if(want.length&&!want.includes(b.n)) continue;
   const text=b.turns.map(t=>`${t.sp}: ${t.text}`).join('\n');
   for(let k=0;k<3;k++){
