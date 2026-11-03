@@ -19,7 +19,7 @@ LU="Lucien Vale (long blond hair, pointed ears, burgundy coat) "
 MEM="painted like a faded memory, soft haze, muted colours, "
 TAV="in Mara's tavern at night, warm firelight, "
 DEEP="deep underground in the Down Deep, a lightless world of caverns, rock ceilings, no sky, "
-CAVERN=DEEP+"in the big cavern as in the reference photo of the tabletop (a wide ring of jagged grey rock walls, a giant red spotted toadstool, a wooden mine scaffold tower in the middle, pale cliffs with colourful giant fungus at the edge), "
+CAVERN=DEEP+"in a huge natural cavern painted as a real place in the same painterly style as everything else (not a tabletop, not miniatures, real scale): a wide ring of tall jagged grey rock spires around a sandy cavern floor, a giant red spotted toadstool taller than a man, an old wooden mine scaffold tower in the middle, pale limestone cliffs at the edge overgrown with huge glowing colourful fungus, torchlight and fungus glow, "
 TOWN=DEEP+"in Thorman's camp, a half-abandoned underground town of carved stone houses in a cavern, a few campfires, rock ceiling, no sky, "
 PAWS="in Paws and Pints, a cosy tavern full of cats everywhere (on beams, tables, the bar), warm lamplight, "
 LAKE="at the old moonwell of Cobh, the same place as the reference painting of the moon lake (a round lake in a forest clearing ringed by tall standing stones with six heavy iron chains running from the stones down into it), "
@@ -47,20 +47,20 @@ S_=[
 (96.7,'cut',[L,A,C],['embers'],DEEP+"the three brothers seen from far above, three tiny torches in a vast black cavern",{'flicker':0.4}),
 (101.0,'fade',[DO],['dust'],DEEP+"Dolkan the mad duergar crouched among hiding deep dwellers, wild-eyed, grinning",{'flicker':0.4}),
 (107.5,'cut',[DO,L,A,C],['dust'],DEEP+"Dolkan leading the brothers through a twisting tunnel, cackling",{'flicker':0.4}),
-(114.3,'flash',[BU,CV],['dust'],CAVERN+"a bulette, a land shark, bursting up through the cavern floor, stone flying",{'shake':0.6}),
-(117.4,'cut',[BU,CV],['dust'],CAVERN+"the cavern floor rippling like water around a diving bulette fin",{'shake':0.3}),
-(120.9,'cut',[L,BU,CV],['sparks','embers'],CAVERN+LU+"firing a blazing firebolt into a bulette's armoured head, a critical hit",{'flicker':0.7}),
-(124.4,'cut',[BU,CV],['dust'],CAVERN+"another bulette erupting out of the ground right beneath the soldiers",{'shake':0.6}),
-(127.7,'cut',[BU,SO,CV],['dust'],CAVERN+"the soldiers thrown into the air by the bulette, torches flying, leave the violence to imagination",{'shake':0.5,'grade':'red'}),
-(131.4,'cut',[BU,CV],['dust'],CAVERN+"a bulette sinking back into the stone, only its fin showing",{}),
-(134.9,'cut',[KA,BU,CV],['dust'],CAVERN+"Kaelen drawing his bow and loosing a single arrow",{}),
-(138.3,'cut',[BU,CV],['dust'],CAVERN+"the arrow striking the bulette between the eyes, the beast going still",{'shake':0.3}),
+(114.3,'flash',[BU],['dust'],CAVERN+"a bulette, a land shark, bursting up through the cavern floor, stone flying",{'shake':0.6}),
+(117.4,'cut',[BU],['dust'],CAVERN+"the cavern floor rippling like water around a diving bulette fin",{'shake':0.3}),
+(120.9,'cut',[L,BU],['sparks','embers'],CAVERN+LU+"firing a blazing firebolt into a bulette's armoured head, a critical hit",{'flicker':0.7}),
+(124.4,'cut',[BU],['dust'],CAVERN+"another bulette erupting out of the ground right beneath the soldiers",{'shake':0.6}),
+(127.7,'cut',[BU,SO],['dust'],CAVERN+"the soldiers thrown into the air by the bulette, torches flying, leave the violence to imagination",{'shake':0.5,'grade':'red'}),
+(131.4,'cut',[BU],['dust'],CAVERN+"a bulette sinking back into the stone, only its fin showing",{}),
+(134.9,'cut',[KA,BU],['dust'],CAVERN+"Kaelen drawing his bow and loosing a single arrow",{}),
+(138.3,'cut',[BU],['dust'],CAVERN+"the arrow striking the bulette between the eyes, the beast going still",{'shake':0.3}),
 (140.9,'flash',[L,KA],['dust'],"Close-up of "+LU+"pointing at a smug Kaelen and yelling FRAGSTEALER, outraged",{'shake':0.4}),
-(144.0,'cut',[W1,CV],['dust'],CAVERN+"Wittan the deep gnome on top of the wooden scaffold in the middle of the cavern, yelling a warning",{}),
-(150.0,'cut',[L,BU,CV],['sparks'],CAVERN+LU+"hurling a green vitriolic sphere of acid that bursts over two bulettes",{'grade':'green'}),
-(156.0,'cut',[C,BU,CV],['dust'],CAVERN+"Cedric hammering a bulette that is smashing the scaffolding, poisoned strikes",{'shake':0.4}),
-(162.0,'cut',[A,BU,CV],['fire','embers'],CAVERN+"Arthas swinging his flaming sword and missing, the bulette ducking under it, a look of shock",{'flicker':0.6}),
-(166.0,'cut',[L,BU,CV],['sparks','embers'],CAVERN+LU+"firing three scorching rays into the last bulette's skull, victorious",{'flicker':0.8,'shake':0.4}),
+(144.0,'cut',[W1],['dust'],CAVERN+"Wittan the deep gnome on top of the wooden scaffold in the middle of the cavern, yelling a warning",{}),
+(150.0,'cut',[L,BU],['sparks'],CAVERN+LU+"hurling a green vitriolic sphere of acid that bursts over two bulettes",{'grade':'green'}),
+(156.0,'cut',[C,BU],['dust'],CAVERN+"Cedric hammering a bulette that is smashing the scaffolding, poisoned strikes",{'shake':0.4}),
+(162.0,'cut',[A,BU],['fire','embers'],CAVERN+"Arthas swinging his flaming sword and missing, the bulette ducking under it, a look of shock",{'flicker':0.6}),
+(166.0,'cut',[L,BU],['sparks','embers'],CAVERN+LU+"firing three scorching rays into the last bulette's skull, victorious",{'flicker':0.8,'shake':0.4}),
 (169.8,'fade',[C],['fog'],"Close-up of Cedric clutching his head, eyes wide, a cold voice in his mind",{'grade':'cold'}),
 (173.4,'cut',[MB],['fog'],"In deep shadow, the silhouette of a tall robed figure with a head of writhing tentacles, eyes glowing faintly, only a shape",{'grade':'cold'}),
 (177.2,'cut',[V],['fog'],MEM+"Oathbreaker Valerys chained in the dark, a vision offered like a bargain",{'grade':'cold'}),
@@ -115,7 +115,7 @@ cast.update({'kaelen':L4['cast']['kalen'].replace('Kalen, a Church paladin the b
  'darius':"Darius, a human soldier of the castle from above: a weathered man in his forties, short dark hair and stubble, battered white-and-steel Church soldier armour like the other soldiers, a torch",
  'dolkan':"Dolkan, a mad old duergar: a short, stocky grey-skinned dwarf, bald with a wild white beard, bulging glowing eyes, tattered dark leathers, a lantern on a pole, cackling",
  'wittan':"Wittan, a deep gnome (svirfneblin): small, grey stone-coloured skin, bald, big nose and ears, dark eyes, practical grey leathers and a pick",
- 'bulette':"a bulette, a land shark, exactly as in the reference photo of the miniature: a huge armoured burrowing beast with a grey-green shell of stone-like plates and spiky dorsal plates, a shark-like toothed mouth, clawed forelegs",
+ 'bulette':"a bulette, a land shark, a real living beast painted in the same style as everything else (not a figurine): a huge armoured burrowing beast with a grey-green shell of stone-like plates and spiky dorsal plates, a shark-like toothed mouth, clawed forelegs",
  'cavern':"the cavern from the reference photo of the tabletop, painted as a real underground place at full scale",
  'mindbreaker':"the Mindbreaker, only ever seen as a shadowy silhouette: a tall gaunt robed humanoid with a head of writhing tentacles where the mouth should be, faint glowing eyes",
  'thorman':"Thorman Earthblast, a duergar warlord: short, broad, grey-skinned, a braided iron-grey beard, heavy dark steel armour, a great war hammer, stern",
