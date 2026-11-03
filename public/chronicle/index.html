@@ -44,12 +44,13 @@ body.solo .song .cover { aspect-ratio: 16 / 9; height: auto; }
 body.solo .song .cover b, body.solo .song .cover em, body.solo .song .meta { display: none; }
 body.solo .song .btns .play { font-size: 1.25rem; padding: 14px 0; width: 100%; }
 #songs .song.feature { grid-column: 1 / -1; flex-direction: row; border-color: var(--ember); }
-#songs .song.feature .cover { flex: 0 0 58%; aspect-ratio: 16 / 9; }
+#songs .song.feature .cover { flex: 0 0 55%; aspect-ratio: 16 / 9; }
 #songs .song.feature .txt { justify-content: center; padding: 18px 22px; }
 #songs .song.feature h3 { font-size: clamp(1.4rem, 3vw, 2rem); }
 #songs .song.feature .blurb { -webkit-line-clamp: 5; }
 #songs .song.feature .btns { align-self: flex-end; }
-@media (max-width: 700px) { #songs .song.feature { flex-direction: column; } #songs .song.feature .cover { flex: none; } }
+#songs .song.feature .txt { min-width: 300px; }
+@media (max-width: 1000px) { #songs .song.feature { flex-direction: column; } #songs .song.feature .cover { flex: none; } #songs .song.feature .txt { min-width: 0; } #songs .song.feature .btns { align-self: stretch; } }
 #tavernRow { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 26px auto 0; text-align: center; }
 #start h1 { font-family: var(--head); font-weight: 400; letter-spacing: 0.12em; margin: 0; font-size: clamp(1.9rem, 6vw, 3.4rem); text-wrap: balance; color: #f1e6cf; }
 #start p { max-width: 34em; color: var(--dim); font-size: 1.1rem; line-height: 1.5; text-wrap: balance; }
