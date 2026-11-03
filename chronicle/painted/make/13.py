@@ -36,7 +36,7 @@ S_=[
 (46.8,'cut',[L],['embers'],"Close-up of "+LU+"on the crate, worn thin, blood on his coat, passionate",{'flicker':0.5}),
 (54.4,'cut',[KA,SO],['embers'],"Kaelen Stormshield and five soldiers stepping forward to follow, torches lifted",{'flicker':0.5}),
 (57.9,'cut',[SE],['dust'],MEM+"the colossal pale serpent exactly as in its reference sheet (ridged grey-white hide, huge round toothed mouth) dragging Oathbreaker Valerys in blackened armour down into the cracked courtyard ground",{'grade':'cold'}),
-(61.3,'cut',[DA,L,A,C],['dust'],"In a stone cellar, Darius lifting a secret hatch in the floor, the brothers behind him with torches",{'flicker':0.4}),
+(61.3,'cut',[DA,L,A,C,KA],['dust'],"In a stone cellar of the castle, Darius the human soldier lifting a secret hatch in the floor, the three brothers and Kalen behind him with torches",{'flicker':0.4}),
 (65.1,'cut',[C,A,L,SO],['dust'],"A narrow winding stair carved roughly into the rock spiralling down, Cedric first, Arthas leading a great grey wolf, "+LU+"and soldiers behind, torches",{'flicker':0.4}),
 (72.3,'cut',[L,A,C,SO],['dust'],"Torchlit faces of the silent company descending the stair, no one speaking",{'flicker':0.4}),
 (78.9,'cut',[],['dust'],"A massive ancient stone gate in a cavern wall, barred from this side to keep something in, choked with huge boulders",{'flicker':0.3}),
@@ -110,9 +110,9 @@ assert sid('s16')['scene'].startswith(DEEP+'the three brothers walking') and sid
 L10=json.load(open('painted/10-ahm-dynasty.json')); L11=json.load(open('painted/11-hunger-grows.json'))
 L4=json.load(open('painted/04-cleansing-well.json'))
 cast={k:L12['cast'][k] for k in ['lucien','arthas','cedric','valerys','serpent']}
-cast.update({'kaelen':L4['cast']['kalen'].replace('Kalen, a Church paladin the brothers know','Kaelen Stormshield, a Church paladin the brothers know, now an archer with a longbow').replace(', wrists chained',''),
+cast.update({'kaelen':L4['cast']['kalen'].replace('Kalen, a Church paladin the brothers know','Kalen Stormshield, the human Church paladin the brothers know (the same man as before), carrying a longbow').replace(', wrists chained',''),
  'soldiers':"five Church soldiers in battered white-and-steel armour with spears and torches",
- 'darius':"Darius, a grizzled castle steward in his fifties, grey beard, leather jerkin, a ring of keys",
+ 'darius':"Darius, a human soldier of the castle from above: a weathered man in his forties, short dark hair and stubble, battered white-and-steel Church soldier armour like the other soldiers, a torch",
  'dolkan':"Dolkan, a mad old duergar: a short, stocky grey-skinned dwarf, bald with a wild white beard, bulging glowing eyes, tattered dark leathers, a lantern on a pole, cackling",
  'wittan':"Wittan, a deep gnome (svirfneblin): small, grey stone-coloured skin, bald, big nose and ears, dark eyes, practical grey leathers and a pick",
  'bulette':"a bulette, a land shark, exactly as in the reference photo of the miniature: a huge armoured burrowing beast with a grey-green shell of stone-like plates and spiky dorsal plates, a shark-like toothed mouth, clawed forelegs",
