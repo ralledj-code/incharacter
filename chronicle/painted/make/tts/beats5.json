@@ -43,9 +43,9 @@
   "turns": [
    {
     "sp": "Lucien",
-    "text": "It started, as all my best stories do, in a tavern. I was a bard with a small price on my head, buying herbs from a smuggler called Silas.",
+    "text": "It started, as all my best stories do, in a tavern. I was a wild magic sorcerer with a lute, a lovely singing voice and a small price on my head, buying herbs from a smuggler called Silas.",
     "cues": [],
-    "raw": "It started, as all my best stories do, in a tavern. I was a bard with a small price on my head, buying herbs from a smuggler called Silas."
+    "raw": "It started, as all my best stories do, in a tavern. I was a wild magic sorcerer with a lute, a lovely singing voice and a small price on my head, buying herbs from a smuggler called Silas."
    },
    {
     "sp": "Drow",
@@ -238,9 +238,9 @@
    },
    {
     "sp": "Drow",
-    "text": "Keep talking, bard.",
+    "text": "Keep talking, sorcerer.",
     "cues": [],
-    "raw": "Keep talking, bard."
+    "raw": "Keep talking, sorcerer."
    }
   ]
  },
@@ -333,9 +333,9 @@
    },
    {
     "sp": "Drow",
-    "text": "And you're a bard.",
+    "text": "And you sing.",
     "cues": [],
-    "raw": "And you're a bard."
+    "raw": "And you sing."
    },
    {
     "sp": "Lucien",

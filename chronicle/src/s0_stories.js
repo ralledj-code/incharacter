@@ -7,7 +7,7 @@ const C = root.__cw;
 const SOON = 'Coming soon. This chapter’s song is waiting to become a ride.';
 const PLAYLIST = [
   // [level, id, title, session date, song length]
-  [0, 'story-so-far', 'The Story So Far', '', '7:49'],  // feature: a wide card on top, Lucien tells it all
+  [0, 'story-so-far', 'The Story So Far', '', '9:48'],  // feature: a wide card on top, Lucien tells it all
   [1, 'first-steps', 'Alaron, the First Steps', '', '4:48'],
   [2, 'finding-silas', 'Finding Silas', '14/05/2026', '5:57'],
   [3, 'first-moonwell', 'Finding the First Moonwell', '24/05/2026', '4:57'],

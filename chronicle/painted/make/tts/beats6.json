@@ -1,0 +1,550 @@
+[
+ {
+  "n": 1,
+  "title": "The fire",
+  "levels": "13",
+  "mood": "cold, unimpressed, a little bored with him",
+  "turns": [
+   {
+    "sp": "Drow",
+    "text": "You've been staring at me since you walked into this camp.",
+    "raw": "You've been staring at me since you walked into this camp."
+   },
+   {
+    "sp": "Lucien",
+    "text": "I've been admiring the cave. You just happen to be standing in front of it.",
+    "raw": "I've been admiring the cave. You just happen to be standing in front of it."
+   },
+   {
+    "sp": "Drow",
+    "text": "It's a damp cave.",
+    "raw": "It's a damp cave."
+   },
+   {
+    "sp": "Lucien",
+    "text": "It is a very damp cave. And you're wondering what someone this good-looking is doing in it. Sit. It's a good story. I'm in it.",
+    "raw": "It is a very damp cave. And you're wondering what someone this good-looking is doing in it. Sit. It's a good story. I'm in it."
+   },
+   {
+    "sp": "Drow",
+    "text": "Of course you are.",
+    "raw": "Of course you are."
+   }
+  ]
+ },
+ {
+  "n": 2,
+  "title": "Why I came",
+  "levels": "1",
+  "mood": "cold and dismissive at first; after his last line she is caught off guard, a quiet thoughtful 'Hm'",
+  "turns": [
+   {
+    "sp": "Lucien",
+    "text": "I came to Alaron for one woman. Severin.",
+    "raw": "I came to Alaron for one woman. Severin."
+   },
+   {
+    "sp": "Drow",
+    "text": "Of course you did.",
+    "raw": "Of course you did."
+   },
+   {
+    "sp": "Lucien",
+    "text": "Not like that. She was the first person I ever really loved. Trusted her, too. And one night she put this knife in my chest in the middle of a ritual. I was supposed to die. I didn't. Whatever she pushed through me broke my magic. It's been wild ever since. Then I heard she was on this island.",
+    "raw": "Not like that. She was the first person I ever really loved. Trusted her, too. And one night she put this knife in my chest in the middle of a ritual. I was supposed to die. {the fire crackles} I didn't. Whatever she pushed through me broke my magic. It's been wild ever since. Then I heard she was on this island."
+   },
+   {
+    "sp": "Drow",
+    "text": "So you came to kill her.",
+    "raw": "So you came to kill her."
+   },
+   {
+    "sp": "Lucien",
+    "text": "I came to ask her if she meant it.",
+    "raw": "I came to ask her if she meant it."
+   },
+   {
+    "sp": "Drow",
+    "text": "...Hm.",
+    "raw": "{a pause} ...Hm."
+   }
+  ]
+ },
+ {
+  "n": 3,
+  "title": "The brothers",
+  "levels": "1",
+  "mood": "dry and sardonic; on 'That must have stung' a little quieter, almost kind",
+  "turns": [
+   {
+    "sp": "Lucien",
+    "text": "It started, as all my best stories do, in a tavern. I played the flute for my supper and bought some herbs from a smuggler called Silas. I used to move the good stuff myself, once. Never anything that kills.",
+    "raw": "It started, as all my best stories do, in a tavern. I played the flute for my supper and bought some herbs from a smuggler called Silas. I used to move the good stuff myself, once. Never anything that kills."
+   },
+   {
+    "sp": "Drow",
+    "text": "How noble.",
+    "raw": "How noble."
+   },
+   {
+    "sp": "Lucien",
+    "text": "I have standards. Then a warehouse door opened, and in walked the two most serious men on Alaron. Arthas, in black plate, who has never once laughed at my jokes.",
+    "raw": "I have standards. Then a warehouse door opened, and in walked the two most serious men on Alaron. Arthas, in black plate, who has never once laughed at my jokes."
+   },
+   {
+    "sp": "Drow",
+    "text": "I'm starting to like him.",
+    "raw": "I'm starting to like him."
+   },
+   {
+    "sp": "Lucien",
+    "text": "And Cedric, who looks at you like he's already decided where to hit. My brothers. Same mother, different fathers. They'd had a letter: our mother was alive, somewhere on this island. Nobody wrote to me. I found out from them.",
+    "raw": "And Cedric, who looks at you like he's already decided where to hit. My brothers. Same mother, different fathers. They'd had a letter: our mother was alive, somewhere on this island. Nobody wrote to me. I found out from them."
+   },
+   {
+    "sp": "Drow",
+    "text": "That must have stung.",
+    "raw": "{quieter} That must have stung."
+   },
+   {
+    "sp": "Lucien",
+    "text": "Like a wasp in a boot. I smiled through it.",
+    "raw": "Like a wasp in a boot. I smiled through it."
+   }
+  ]
+ },
+ {
+  "n": 4,
+  "title": "The curse",
+  "levels": "1, 2",
+  "mood": "dry, sardonic, but curious about the whispering knife",
+  "turns": [
+   {
+    "sp": "Lucien",
+    "text": "That same night, Silas turned into a wolf. Rude. And out in the pines, two green eyes were watching us. Her. Severin. A pale woman with silver hair, whose potions Silas had been handing out to the sick, for free.",
+    "raw": "That same night, Silas turned into a wolf. Rude. And out in the pines, two green eyes were watching us. Her. Severin. A pale woman with silver hair, whose potions Silas had been handing out to the sick, for free."
+   },
+   {
+    "sp": "Drow",
+    "text": "Nothing is free.",
+    "raw": "Nothing is free."
+   },
+   {
+    "sp": "Lucien",
+    "text": "Nothing is free. Silas's whole family turned. His wife bit me on the neck. So now I had a curse on top of her knife. It whispers to me, you know. Mostly when I'm sober.",
+    "raw": "Nothing is free. Silas's whole family turned. His wife bit me on the neck. So now I had a curse on top of her knife. It whispers to me, you know. Mostly when I'm sober."
+   },
+   {
+    "sp": "Drow",
+    "text": "Is it whispering now?",
+    "raw": "Is it whispering now?"
+   },
+   {
+    "sp": "Lucien",
+    "text": "...I've had a drink. We're fine.",
+    "raw": "...I've had a drink. We're fine."
+   }
+  ]
+ },
+ {
+  "n": 5,
+  "title": "My little secret",
+  "levels": "3",
+  "mood": "cold and judging, then dry",
+  "turns": [
+   {
+    "sp": "Lucien",
+    "text": "The druids have this water from the moonwells. It heals curses. We had exactly one vial. The children needed it, Silas needed it, I needed it. So I drank it. In a basement. Alone. Then I filled it up with water and put it back.",
+    "raw": "The druids have this water from the moonwells. It heals curses. We had exactly one vial. The children needed it, Silas needed it, I needed it. So I drank it. In a basement. Alone. Then I filled it up with water and put it back."
+   },
+   {
+    "sp": "Drow",
+    "text": "That's terrible.",
+    "raw": "That's terrible."
+   },
+   {
+    "sp": "Lucien",
+    "text": "It was tactical. And here's the funny part. It didn't even work.",
+    "raw": "It was tactical. And here's the funny part. It didn't even work."
+   },
+   {
+    "sp": "Drow",
+    "text": "Good.",
+    "raw": "Good."
+   },
+   {
+    "sp": "Lucien",
+    "text": "I'll come back to that.",
+    "raw": "I'll come back to that."
+   }
+  ]
+ },
+ {
+  "n": 6,
+  "title": "The wells",
+  "levels": "3, 4",
+  "mood": "uneasy at the name, glancing around, then dry again",
+  "turns": [
+   {
+    "sp": "Lucien",
+    "text": "Those moonwells are prison locks. Under this island the moon goddess chained the Lord of Beasts. Baphomet. And someone is pouring black goo into the wells to let him out.",
+    "raw": "Those moonwells are prison locks. Under this island the moon goddess chained the Lord of Beasts. Baphomet. And someone is pouring black goo into the wells to let him out."
+   },
+   {
+    "sp": "Drow",
+    "text": "Everyone down here knows that name. Nobody says it out loud.",
+    "raw": "Everyone down here knows that name. Nobody says it out loud."
+   },
+   {
+    "sp": "Lucien",
+    "text": "I say it all the time. Baphomet. See? Nothing. We cleaned one of the wells. I was briefly eaten by a jelly.",
+    "raw": "I say it all the time. Baphomet. See? Nothing. We cleaned one of the wells. I was briefly eaten by a jelly."
+   },
+   {
+    "sp": "Drow",
+    "text": "Eaten.",
+    "raw": "Eaten."
+   },
+   {
+    "sp": "Lucien",
+    "text": "Briefly. Moving on.",
+    "raw": "Briefly. Moving on."
+   }
+  ]
+ },
+ {
+  "n": 7,
+  "title": "The Pig",
+  "levels": "4, 5, 6",
+  "mood": "she softens: serious, gentle, seeing him for the first time",
+  "turns": [
+   {
+    "sp": "Lucien",
+    "text": "The someone was the Pig. A butcher the size of a barn, sending barrels of black blood across the island, town by town. We found him deep in a mountain. And I threw a fireball through a lit window to smoke him out. There were people behind that window. I didn't know.",
+    "raw": "The someone was the Pig. A butcher the size of a barn, sending barrels of black blood across the island, town by town. We found him deep in a mountain. And I threw a fireball through a lit window to smoke him out. {the fire fades away} There were people behind that window. I didn't know."
+   },
+   {
+    "sp": "Drow",
+    "text": "...You don't joke about that one.",
+    "raw": "{silence, then the fire creeps back} ...You don't joke about that one."
+   },
+   {
+    "sp": "Drow",
+    "text": "Then don't.",
+    "raw": "Then don't."
+   },
+   {
+    "sp": "Lucien",
+    "text": "No. We finished him. The black blood still runs. But that window stays with me.",
+    "raw": "No. We finished him. The black blood still runs. But that window stays with me."
+   }
+  ]
+ },
+ {
+  "n": 8,
+  "title": "Their father",
+  "levels": "6",
+  "mood": "curious now, starting to enjoy him",
+  "turns": [
+   {
+    "sp": "Lucien",
+    "text": "My brothers' father is the High Inquisitor of the Church. Valerys. Stern, cold, always one step ahead. Not my father, thank the gods. I was sure he was hiding something. I watched him for weeks. Turns out he wasn't. Not then, anyway. I notice things.",
+    "raw": "My brothers' father is the High Inquisitor of the Church. Valerys. Stern, cold, always one step ahead. Not my father, thank the gods. I was sure he was hiding something. I watched him for weeks. Turns out he wasn't. Not then, anyway. I notice things."
+   },
+   {
+    "sp": "Drow",
+    "text": "You notice things.",
+    "raw": "You notice things."
+   },
+   {
+    "sp": "Lucien",
+    "text": "I noticed you.",
+    "raw": "I noticed you."
+   },
+   {
+    "sp": "Drow",
+    "text": "Keep talking, sorcerer.",
+    "raw": "Keep talking, sorcerer."
+   }
+  ]
+ },
+ {
+  "n": 9,
+  "title": "Cobh",
+  "levels": "7, 8",
+  "mood": "genuinely interested, leaning in, asking because she wants to know",
+  "turns": [
+   {
+    "sp": "Lucien",
+    "text": "He sent us to Cobh, to a moonwell that had dried up. A druid there asked for our blood to wake it, and Arthas, ever helpful, gave his. One of the great chains snapped, and in the black water I saw a face. Horns. Burning eyes. Looking right at us.",
+    "raw": "He sent us to Cobh, to a moonwell that had dried up. A druid there asked for our blood to wake it, and Arthas, ever helpful, gave his. One of the great chains snapped, and in the black water I saw a face. Horns. Burning eyes. Looking right at us."
+   },
+   {
+    "sp": "Lucien",
+    "text": "Then the druid stabbed himself with my dagger, and his wolf curse simply fell away.",
+    "raw": "Then the druid stabbed himself with my dagger, and his wolf curse simply fell away."
+   },
+   {
+    "sp": "Drow",
+    "text": "Your knife eats curses.",
+    "raw": "Your knife eats curses."
+   },
+   {
+    "sp": "Lucien",
+    "text": "It does.",
+    "raw": "It does."
+   },
+   {
+    "sp": "Drow",
+    "text": "And what does it do to you?",
+    "raw": "And what does it do to you?"
+   },
+   {
+    "sp": "Lucien",
+    "text": "...That's the question, isn't it.",
+    "raw": "...That's the question, isn't it."
+   }
+  ]
+ },
+ {
+  "n": 10,
+  "title": "My talents",
+  "levels": "7, 9",
+  "mood": "amused and teasing, warmer",
+  "turns": [
+   {
+    "sp": "Lucien",
+    "text": "Cobh had its moments. I caught lightning in a bottle so a lovesick professor could marry my ex.",
+    "raw": "Cobh had its moments. I caught lightning in a bottle {thunder} so a lovesick professor could marry my ex."
+   },
+   {
+    "sp": "Drow",
+    "text": "You have an ex in every town.",
+    "raw": "You have an ex in every town."
+   },
+   {
+    "sp": "Lucien",
+    "text": "Two in that one. Then a black dragon came down out of a red sky, and Cedric chased it alone and killed it by himself. He still brags about it to this day. Every. Single. Day. Then a feast. I woke up in a cell. Arthas woke up in lipstick.",
+    "raw": "Two in that one. Then a black dragon came down out of a red sky, and Cedric chased it alone and killed it by himself. He still brags about it to this day. Every. Single. Day. Then a feast. I woke up in a cell. Arthas woke up in lipstick."
+   },
+   {
+    "sp": "Drow",
+    "text": "Were you involved?",
+    "raw": "Were you involved?"
+   },
+   {
+    "sp": "Lucien",
+    "text": "Prove it.",
+    "raw": "Prove it."
+   }
+  ]
+ },
+ {
+  "n": 11,
+  "title": "Mother",
+  "levels": "10",
+  "mood": "warm and gentle, caring, no edge",
+  "turns": [
+   {
+    "sp": "Lucien",
+    "text": "And then, in a basement, our mother. Alive. All those years inside the Scarlet Wizards, slowing their poison from within. The woman who left me, and never wrote. She told me never to look for my father, and if I ever hear his melody, not to listen.",
+    "raw": "And then, in a basement, our mother. Alive. All those years inside the Scarlet Wizards, slowing their poison from within. The woman who left me, and never wrote. She told me never to look for my father, and if I ever hear his melody, not to listen."
+   },
+   {
+    "sp": "Drow",
+    "text": "And you sing.",
+    "raw": "And you sing."
+   },
+   {
+    "sp": "Lucien",
+    "text": "Melodies are my whole thing. Then an arrow called her a traitor, and she was gone again.",
+    "raw": "Melodies are my whole thing. Then an arrow called her a traitor, and she was gone again."
+   },
+   {
+    "sp": "Drow",
+    "text": "Did you ever find out why she left you?",
+    "raw": "Did you ever find out why she left you?"
+   },
+   {
+    "sp": "Lucien",
+    "text": "No. She's good at leaving. It runs in the family.",
+    "raw": "No. She's good at leaving. It runs in the family."
+   },
+   {
+    "sp": "Drow",
+    "text": "You're still here.",
+    "raw": "You're still here."
+   },
+   {
+    "sp": "Lucien",
+    "text": "...So I am.",
+    "raw": "...So I am."
+   }
+  ]
+ },
+ {
+  "n": 12,
+  "title": "The Prince",
+  "levels": "10",
+  "mood": "playful, flirting back a little",
+  "turns": [
+   {
+    "sp": "Lucien",
+    "text": "So I put on another man's face, walked into the Ahm merchants' headquarters, and politely burned it down. Under a bloody altar we found the truth: they hold the king's son, Prince Oswald. And I came out of there with gills.",
+    "raw": "So I put on another man's face, walked into the Ahm merchants' headquarters, and politely burned it down. Under a bloody altar we found the truth: they hold the king's son, Prince Oswald. And I came out of there with gills."
+   },
+   {
+    "sp": "Drow",
+    "text": "Gills.",
+    "raw": "Gills."
+   },
+   {
+    "sp": "Lucien",
+    "text": "Very useful down here. I can see in the dark now, too. You have lovely eyes, by the way.",
+    "raw": "Very useful down here. I can see in the dark now, too. You have lovely eyes, by the way."
+   },
+   {
+    "sp": "Drow",
+    "text": "Everyone down here can see in the dark.",
+    "raw": "Everyone down here can see in the dark."
+   },
+   {
+    "sp": "Lucien",
+    "text": "Then everyone down here knows you have lovely eyes.",
+    "raw": "Then everyone down here knows you have lovely eyes."
+   }
+  ]
+ },
+ {
+  "n": 13,
+  "title": "My title",
+  "levels": "11",
+  "mood": "amused at the title, then concerned, caring",
+  "turns": [
+   {
+    "sp": "Lucien",
+    "text": "Then the Church gave me a title. Officially. I am a Clerical User of Nefarious Tools.",
+    "raw": "Then the Church gave me a title. Officially. I am a Clerical User of Nefarious Tools."
+   },
+   {
+    "sp": "Drow",
+    "text": "That spells...",
+    "raw": "That spells..."
+   },
+   {
+    "sp": "Lucien",
+    "text": "It does. I had it engraved. Then, under a safehouse, we found Silas again, more wolf than man. Her knife spoke to me, in her voice. Severin's voice. \"Give in. Just this once.\" So I did. It drank the curse out of Silas, and then out of me. Remember the moonwater? Didn't work. The knife did.",
+    "raw": "It does. I had it engraved. Then, under a safehouse, we found Silas again, more wolf than man. Her knife spoke to me, in her voice. Severin's voice. \"Give in. Just this once.\" So I did. It drank the curse out of Silas, and then out of me. Remember the moonwater? Didn't work. The knife did."
+   },
+   {
+    "sp": "Drow",
+    "text": "And how did that feel?",
+    "raw": "And how did that feel?"
+   },
+   {
+    "sp": "Lucien",
+    "text": "Honestly? I quite liked it.",
+    "raw": "Honestly? I quite liked it."
+   },
+   {
+    "sp": "Drow",
+    "text": "That should worry you.",
+    "raw": "That should worry you."
+   },
+   {
+    "sp": "Lucien",
+    "text": "It does. When I'm sober. So I try not to be.",
+    "raw": "It does. When I'm sober. So I try not to be."
+   }
+  ]
+ },
+ {
+  "n": 14,
+  "title": "Duncastle",
+  "levels": "12",
+  "mood": "quiet and sympathetic",
+  "turns": [
+   {
+    "sp": "Lucien",
+    "text": "Mara, my oldest friend, I sent away with my last gold. Then Duncastle fell. Mother had warned them days before, and they laughed at her. Arthas called on his father for help, and his father came. But not as the man they knew. An Oathbreaker, burning through friend and enemy alike. And then a giant serpent rose out of the ground and swallowed him whole.",
+    "raw": "Mara, my oldest friend, I sent away with my last gold. Then Duncastle fell. Mother had warned them days before, and they laughed at her. Arthas called on his father for help, and his father came. But not as the man they knew. An Oathbreaker, burning through friend and enemy alike. And then a giant serpent rose out of the ground and swallowed him whole. {a deep rumble}"
+   },
+   {
+    "sp": "Drow",
+    "text": "...The worm.",
+    "raw": "...The worm."
+   },
+   {
+    "sp": "Lucien",
+    "text": "The worm.",
+    "raw": "The worm."
+   }
+  ]
+ },
+ {
+  "n": 15,
+  "title": "Why I'm here",
+  "levels": "13",
+  "mood": "knowing and wise, a little protective of him",
+  "turns": [
+   {
+    "sp": "Lucien",
+    "text": "So I climbed onto a crate and gave the speech of my life, and people followed me down a cellar stair, into the dark, after it. Which brings us here. Arthas's sword keeps missing, and it never misses. And tonight something in these caves spoke into Cedric's head and offered to give them their father back.",
+    "raw": "So I climbed onto a crate and gave the speech of my life, and people followed me down a cellar stair, into the dark, after it. Which brings us here. Arthas's sword keeps missing, and it never misses. And tonight something in these caves spoke into Cedric's head and offered to give them their father back."
+   },
+   {
+    "sp": "Drow",
+    "text": "Down here, nothing is offered. Everything is bought.",
+    "raw": "Down here, nothing is offered. Everything is bought."
+   },
+   {
+    "sp": "Lucien",
+    "text": "Then we'll find out the price.",
+    "raw": "Then we'll find out the price."
+   }
+  ]
+ },
+ {
+  "n": 16,
+  "title": "Tonight",
+  "levels": "13",
+  "mood": "warm and tender, finally charmed, a soft real laugh",
+  "turns": [
+   {
+    "sp": "Drow",
+    "text": "So. A woman you came here to find. A hungry knife that used to be hers. A mother in the shadows. A melody you mustn't hear. A prince to find. And a god of beasts waking up under your feet.",
+    "raw": "So. A woman you came here to find. A hungry knife that used to be hers. A mother in the shadows. A melody you mustn't hear. A prince to find. And a god of beasts waking up under your feet."
+   },
+   {
+    "sp": "Lucien",
+    "text": "When you put it like that, it sounds bad.",
+    "raw": "When you put it like that, it sounds bad."
+   },
+   {
+    "sp": "Drow",
+    "text": "It sounds like you might not live very long. I'd rather you did.",
+    "raw": "It sounds like you might not live very long. {softer} I'd rather you did."
+   },
+   {
+    "sp": "Lucien",
+    "text": "Which is exactly why I shouldn't waste tonight.",
+    "raw": "Which is exactly why I shouldn't waste tonight."
+   },
+   {
+    "sp": "Drow",
+    "text": "That was terrible.",
+    "raw": "{a soft laugh} That was terrible."
+   },
+   {
+    "sp": "Lucien",
+    "text": "But it's working.",
+    "raw": "But it's working."
+   },
+   {
+    "sp": "Drow",
+    "text": "...It's working.",
+    "raw": "...It's working."
+   }
+  ]
+ }
+]
