@@ -49,7 +49,7 @@ LUCIEN: I'll come back to that.
 **6. The wells** [3, 4]
 LUCIEN: Those moonwells are prison locks. Under this island the moon goddess chained the Lord of Beasts. Baphomet. And someone is pouring black goo into the wells to let him out.
 DROW: Everyone down here knows that name. Nobody says it out loud.
-LUCIEN: I say it all the time. Baphomet. Baphomet. See? Nothing. We cleaned one of the wells. I was briefly eaten by a jelly.
+LUCIEN: I say it all the time. Baphomet. See? Nothing. We cleaned one of the wells. I was briefly eaten by a jelly.
 DROW: Eaten.
 LUCIEN: Briefly. Moving on.
 
@@ -67,17 +67,16 @@ DROW: Keep talking, sorcerer.
 
 **9. Cobh** [7, 8]
 LUCIEN: He sent us to Cobh, to a moonwell that had dried up. A druid there asked for our blood to wake it, and Arthas, ever helpful, gave his. One of the great chains snapped, and in the black water I saw a face. Horns. Burning eyes. Looking right at us.
-DROW: The one you say out loud.
-LUCIEN: The very same. Then the druid stabbed himself with my dagger, and his wolf curse simply fell away.
+LUCIEN: Then the druid stabbed himself with my dagger, and his wolf curse simply fell away.
 DROW: Your knife eats curses.
 LUCIEN: It does.
 DROW: And what does it do to you?
 LUCIEN: ...That's the question, isn't it.
 
 **10. My talents** [7, 9]
-LUCIEN: Cobh gave me some of my finest work. I caught lightning in a bottle {thunder} so a lovesick professor could finally marry my ex.
+LUCIEN: Cobh had its moments. I caught lightning in a bottle {thunder} so a lovesick professor could marry my ex.
 DROW: You have an ex in every town.
-LUCIEN: Two in that one. Then a black dragon came down out of a red sky, and Cedric chased it alone and killed it by himself. He still brags about it to this day. Every. Single. Day. Cobh threw us a feast. I woke up in a cell. Arthas woke up in lipstick.
+LUCIEN: Two in that one. Then a black dragon came down out of a red sky, and Cedric chased it alone and killed it by himself. He still brags about it to this day. Every. Single. Day. Then a feast. I woke up in a cell. Arthas woke up in lipstick.
 DROW: Were you involved?
 LUCIEN: Prove it.
 
