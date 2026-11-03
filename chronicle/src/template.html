@@ -41,6 +41,13 @@ body.solo #songs { width: min(92vw, 720px, calc((100vh - 170px) * 16 / 9)); marg
 body.solo .song .cover { aspect-ratio: 16 / 9; height: auto; }
 body.solo .song .cover b, body.solo .song .cover em, body.solo .song .meta { display: none; }
 body.solo .song .btns .play { font-size: 1.25rem; padding: 14px 0; width: 100%; }
+#songs .song.feature { grid-column: 1 / -1; flex-direction: row; border-color: var(--ember); }
+#songs .song.feature .cover { flex: 0 0 58%; aspect-ratio: 16 / 9; }
+#songs .song.feature .txt { justify-content: center; padding: 18px 22px; }
+#songs .song.feature h3 { font-size: clamp(1.4rem, 3vw, 2rem); }
+#songs .song.feature .blurb { -webkit-line-clamp: 5; }
+#songs .song.feature .btns { align-self: flex-end; }
+@media (max-width: 700px) { #songs .song.feature { flex-direction: column; } #songs .song.feature .cover { flex: none; } }
 #tavernRow { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 26px auto 0; text-align: center; }
 #start h1 { font-family: var(--head); font-weight: 400; letter-spacing: 0.12em; margin: 0; font-size: clamp(1.9rem, 6vw, 3.4rem); text-wrap: balance; color: #f1e6cf; }
 #start p { max-width: 34em; color: var(--dim); font-size: 1.1rem; line-height: 1.5; text-wrap: balance; }
@@ -54,6 +61,7 @@ body.solo .song .btns .play { font-size: 1.25rem; padding: 14px 0; width: 100%; 
 #stamp { font-family: var(--head); letter-spacing: 0.18em; color: var(--ember); font-size: 0.95rem; text-transform: uppercase; opacity: 0; transition: opacity 0.8s; min-height: 1.2em; text-shadow: 0 1px 8px #000; }
 #lyric { font-style: italic; font-size: clamp(1.15rem, 3.6vw, 1.7rem); text-align: center; max-width: 30em; text-wrap: balance; line-height: 1.3; min-height: 2.6em; opacity: 0; transition: opacity 0.7s; text-shadow: 0 1px 10px #000, 0 0 24px #000; pointer-events: none; }
 #lyric.on, #stamp.on { opacity: 1; }
+#lyric.b { color: #cdb8ff; }  /* the second voice in a conversation */
 #title { position: fixed; left: max(22px, env(safe-area-inset-left, 0px)); top: 34%; z-index: 4; pointer-events: none; opacity: 0; transform: translateX(-14px); transition: opacity 0.9s, transform 1.2s; max-width: min(70vw, 26em); }
 #title.on { opacity: 1; transform: none; }
 #title b { display: block; font-family: var(--head); font-weight: 400; letter-spacing: 0.16em; text-transform: uppercase; font-size: clamp(1.4rem, 5vw, 2.4rem); color: #f1e6cf; text-shadow: 0 2px 14px #000, 0 0 30px #000; border-bottom: 1px solid var(--ember); padding-bottom: 4px; }
