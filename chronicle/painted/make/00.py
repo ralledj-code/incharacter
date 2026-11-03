@@ -134,7 +134,12 @@ seen={}
 for i,p in enumerate(P):
   b,u=p[0],p[1]; t=0 if i==0 else round(T[b][u]-0.15,2)
   d={'id':'s%02d'%(i+1),'t':t,'in':'fade' if u==0 else 'cut','fx':['embers'] if p[2]=='N' else ['dust'],'move':{'from':MOVES[i%5][0],'to':MOVES[i%5][1]}}
-  if p[2]=='N': d['who']=p[4]; d['scene']=p[3]; d['flicker']=0.4
+  if p[2]=='N':
+    d['who']=p[4]; d['flicker']=0.4; w=set(p[4])
+    only=('exactly two people in the picture, Lucien and the drow woman with white hair and dark grey-purple skin, no one else' if w=={L,DR} else
+          'only Lucien Vale in the picture (long blond hair, burgundy coat), no one else, no silhouettes' if w=={L} else
+          'only the drow woman in the picture (white hair, dark grey-purple skin), no one else, no silhouettes' if w=={DR} else '')
+    d['scene']=p[3]+(', '+only if only and 'BASE' and p[3].startswith(BASE) else '')
   else:
     lv,k=p[3],p[4]; hit=[s for s in B[lv]['shots'] if k.lower() in s.get('scene','').lower() and 'img' not in s]
     assert hit,(lv,k); sid=hit[0]['id']; key=(lv,sid)
@@ -149,7 +154,7 @@ for sid,(lvdir,s) in src.items(): shutil.copy('../public/chronicle/levels/%s/%s.
 L13=json.load(open('painted/13-down-deep.json'))
 cast={k:L13['cast'][k] for k in ['lucien','drow','arthas','cedric']}
 cast['severin']=json.load(open('painted/11-hunger-grows.json'))['cast']['severin']
-board={"id":"story-so-far","live":False,'cover':'s01','style':L13['style'],'cast':cast,'shots':shots}
+board={"id":"story-so-far","live":True,'cover':'s01','style':L13['style'],'cast':cast,'shots':shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
 json.loads(out); open('painted/00-story-so-far.json','w').write(out)
