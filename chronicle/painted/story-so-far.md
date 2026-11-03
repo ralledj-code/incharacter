@@ -1,4 +1,4 @@
-# The Story So Far (draft 3)
+# The Story So Far (draft 4)
 
 Lucien Vale, by Thorman's fire in the Down Deep, the night of episode 13. Proud of himself, not taking any of it very seriously,
 Arthas and Cedric half asleep beside him. Story first, fights only in passing. The question it answers: why am I sitting in this damp cave?
@@ -31,7 +31,7 @@ Up at the church, my brothers' father waits. High Inquisitor Valerys. Stern, col
 He sent us to Cobh, to a moonwell that had dried up. A druid named Neris met us there and asked for our blood to wake it. Arthas, ever helpful, gave his. One of the great chains snapped, {a chain snapping} and in the black water I saw a face. Horns. Burning eyes. Baphomet, looking right at us. Then Neris grabbed my dagger, stabbed himself with it, and his wolf curse simply fell away. So the knife eats curses. Interesting. Filed that away.
 
 **9. My talents** [7, 9]
-Cobh also gave me some of my finest work. I caught lightning in a bottle {a crack of thunder} so a lovesick professor could finally marry my ex, Caroline. You're welcome, Caroline. I rescued another old flame from her horrible father. Cobh threw us a feast. I woke up in a cell. Arthas woke up in lipstick. Some say I was involved. I say prove it.
+Cobh also gave me some of my finest work. I caught lightning in a bottle {a crack of thunder} so a lovesick professor could finally marry my ex, Caroline. You're welcome, Caroline. I rescued another old flame from her horrible father. Then a black dragon came down out of a red sky, and Cedric chased it alone into a crater and killed it by himself. {a dragon's roar, cut short} He still brags about it to this day. Mostly by not mentioning it, very loudly. Cobh threw us a feast. I woke up in a cell. Arthas woke up in lipstick. Some say I was involved. I say prove it.
 
 **10. Mother** [10]
 And then, in Mara's basement, our mother. Alive. All these years, living inside the Scarlet Wizards, slowing their poison from within. She gave me one piece of advice: never look for your father, and if you ever hear his melody, don't listen. I'm a bard. Melodies are my whole thing. Then an arrow {an arrow's whistle} called her a traitor, and she was gone again.
@@ -63,5 +63,6 @@ But tonight? Tonight the fire's warm. And so is she. Goodnight, brothers. Try no
 - **Baphomet:** the wells as prison locks (5), the black blood (6), the face in the water (8), "the thing that started all of it is waking up" (15).
 - **The warm one:** "almost the only one, I'll get to that" (1), paid off in the last lines (15).
 - **The Pig (6):** the black blood spreading across the island and the window he can't forget, the one moment Lucien stops joking; no fight details. The fireball echoes in "politely burned it down" (11) as the version he can laugh at.
-- Fights are one line each: the jelly (5), the Ahm fire (11), the Duncastle siege (13). The dragon, Cobh's siege and the bulettes are left out on purpose.
+- Fights are one line each: the jelly (5), the Ahm fire (11), the Duncastle siege (13). Cobh's siege and the bulettes are left out on purpose.
+- **Cedric's dragon (9):** his moment, one proud line, no fight details.
 - **Sound effects:** quiet, under the voice, never over it. A soft fire crackle all the way, plus about 12 small cues in {braces}.
