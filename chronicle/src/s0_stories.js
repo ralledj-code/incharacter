@@ -18,7 +18,8 @@ const PLAYLIST = [
   [9, 'saving-cobh', 'Saving Cobh', '07/09/2026', '5:03'],
   [10, 'ahm-dynasty', 'The Ahm Dynasty Mystery', '15/09/2026', '5:29'],
   [11, 'hunger-grows', 'The Hunger Grows', '23/09/2026', '4:57'],
-  [12, 'fall-duncastle', 'The Fall of Duncastle', '28/09/2026', '6:52']
+  [12, 'fall-duncastle', 'The Fall of Duncastle', '28/09/2026', '6:52'],
+  [13, 'down-deep', 'Down We Go to the Caves Below', '02/11/2026', '5:33']
 ];
 // songs outside the campaign: a level module with hidden: true (plus level, title, len) is playable only through its own
 // link (?song=<id>) and never shows in the song list
