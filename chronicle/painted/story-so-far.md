@@ -1,7 +1,7 @@
 # The Story So Far (draft 6: a conversation)
 
 Thorman's camp in the Down Deep, the night of episode 13. Lucien has pulled the drow woman away from the others to a small fire of his own
-and is telling her his story to impress her. He flirts and jokes, but he has seen some things and it shows: tired, raspy, honest when it hurts. Never smug. She is cool, dry, hard to impress, and slowly charmed.
+and is telling her his story to impress her. He flirts and jokes, but he has seen some things and it shows: tired, raspy, honest when it hurts. Never smug. She starts cold and dry, hard to impress; every time he stops performing and gets honest (Severin, the window, his mother) she warms a little more, until she is the one asking questions. Sweet voice, but a drow: the sweetness has an edge.
 Canon from Rasmus's dossier (lucien_vale_dossier_v2): he came to Alaron hunting Severin Draik, his first love, who used him as the vessel in an infernal ritual; he should have died, it broke his magic into wild magic; the dagger she used is his focus and it whispers when he is sober; he was a smuggler of the good stuff (never anything that kills); he plays the flute; elves are frowned on in Alaron; nobody told him his mother was alive, he learned it from his brothers' letter.
 Story first, fights in passing. Lines that are not from the sessions (her reactions, his flirting) are invented filler.
 LUCIEN / DROW = who speaks. [Brackets] = which level the pictures come from. {Braces} = sound. The fire crackles the whole way through.
@@ -21,6 +21,7 @@ DROW: Of course you did.
 LUCIEN: Not like that. She was the first person I ever really loved. Trusted her, too. And one night she put this knife in my chest in the middle of a ritual. I was supposed to die. {the fire crackles} I didn't. Whatever she pushed through me broke my magic. It's been wild ever since. Then I heard she was on this island.
 DROW: So you came to kill her.
 LUCIEN: I came to ask her if she meant it.
+DROW: {a pause} ...Hm.
 
 **3. The brothers** [1]
 LUCIEN: It started, as all my best stories do, in a tavern. I played the flute for my supper and bought some herbs from a smuggler called Silas. I used to move the good stuff myself, once. Never anything that kills.
@@ -28,7 +29,7 @@ DROW: How noble.
 LUCIEN: I have standards. Then a warehouse door opened, and in walked the two most serious men on Alaron. Arthas, in black plate, who has never once laughed at my jokes.
 DROW: I'm starting to like him.
 LUCIEN: And Cedric, who looks at you like he's already decided where to hit. My brothers. Same mother, different fathers. They'd had a letter: our mother was alive, somewhere on this island. Nobody wrote to me. I found out from them.
-DROW: That must have stung.
+DROW: {quieter} That must have stung.
 LUCIEN: Like a wasp in a boot. I smiled through it.
 
 **4. The curse** [1, 2]
@@ -55,6 +56,7 @@ LUCIEN: Briefly. Moving on.
 **7. The Pig** [4, 5, 6]
 LUCIEN: The someone was the Pig. A butcher the size of a barn, sending barrels of black blood across the island, town by town. We found him deep in a mountain. And I threw a fireball through a lit window to smoke him out. {the fire fades away} There were people behind that window. I didn't know.
 DROW: {silence, then the fire creeps back} ...You don't joke about that one.
+DROW: Then don't.
 LUCIEN: No. We finished him. The black blood still runs. But that window stays with me.
 
 **8. Their father** [6]
@@ -68,7 +70,9 @@ LUCIEN: He sent us to Cobh, to a moonwell that had dried up. A druid there asked
 DROW: The one you say out loud.
 LUCIEN: The very same. Then the druid stabbed himself with my dagger, and his wolf curse simply fell away.
 DROW: Your knife eats curses.
-LUCIEN: Filed that away.
+LUCIEN: It does.
+DROW: And what does it do to you?
+LUCIEN: ...That's the question, isn't it.
 
 **10. My talents** [7, 9]
 LUCIEN: Cobh gave me some of my finest work. I caught lightning in a bottle {thunder} so a lovesick professor could finally marry my ex.
@@ -81,8 +85,10 @@ LUCIEN: Prove it.
 LUCIEN: And then, in a basement, our mother. Alive. All those years inside the Scarlet Wizards, slowing their poison from within. The woman who left me, and never wrote. She told me never to look for my father, and if I ever hear his melody, not to listen.
 DROW: And you sing.
 LUCIEN: Melodies are my whole thing. Then an arrow called her a traitor, and she was gone again.
-DROW: I'm sorry.
-LUCIEN: She's good at leaving. It runs in the family.
+DROW: Did you ever find out why she left you?
+LUCIEN: No. She's good at leaving. It runs in the family.
+DROW: You're still here.
+LUCIEN: ...So I am.
 
 **12. The Prince** [10]
 LUCIEN: So I put on another man's face, walked into the Ahm merchants' headquarters, and politely burned it down. Under a bloody altar we found the truth: they hold the king's son, Prince Oswald. And I came out of there with gills.
@@ -113,7 +119,7 @@ LUCIEN: Then we'll find out the price.
 **16. Tonight** [13]
 DROW: So. A woman you came here to find. A hungry knife that used to be hers. A mother in the shadows. A melody you mustn't hear. A prince to find. And a god of beasts waking up under your feet.
 LUCIEN: When you put it like that, it sounds bad.
-DROW: It sounds like you might not live very long.
+DROW: It sounds like you might not live very long. {softer} I'd rather you did.
 LUCIEN: Which is exactly why I shouldn't waste tonight.
 DROW: {a soft laugh} That was terrible.
 LUCIEN: But it's working.
