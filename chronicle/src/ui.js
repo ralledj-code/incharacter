@@ -28,14 +28,14 @@ function renderSongs() {
     if (C.stories[i].hidden && i !== wi) return;  // hidden songs only show up through their own link
     if (soloStory && C.stories[i] !== soloStory) return;  // ...and their link shows nothing else
     const s = C.stories[i], key = String(s.level).padStart(2, '0') + '-' + s.id, board = s.painted || (C.boards && C.boards[key]);
-    const el = document.createElement('article'); el.className = 'song' + (s.locked ? ' locked' : '') + (i === wi ? ' focus' : ''); el.setAttribute('role', 'listitem');
+    const el = document.createElement('article'); el.className = 'song' + (s.locked ? ' locked' : '') + (s.feature ? ' feature' : '') + (i === wi ? ' focus' : ''); el.setAttribute('role', 'listitem');
     const cov = document.createElement('div'); cov.className = 'cover';
     if (board) cov.style.backgroundImage = 'url("' + new URL('levels/' + key + '/' + (board.cover || board.shots[0].id) + '.webp', C.BASE()) + '")';
-    cov.innerHTML = '<b>' + (s.hidden ? '♪' : s.level) + '</b>' + (s.locked ? '<em>Coming soon</em>' : s.painted ? '<em>Painted</em>' : '');
+    cov.innerHTML = '<b>' + (s.hidden || s.feature ? (s.feature ? '' : '♪') : s.level) + '</b>' + (s.locked ? '<em>Coming soon</em>' : s.painted ? '<em>Painted</em>' : '');
     const tx = document.createElement('div'); tx.className = 'txt';
     tx.innerHTML = '<h3></h3><div class="meta"></div><p class="blurb"></p>';
     tx.querySelector('h3').textContent = s.title;
-    tx.querySelector('.meta').textContent = (s.hidden ? '' : 'Level ' + s.level + (s.date ? ' · ' + s.date : '') + ' · ') + s.length;
+    tx.querySelector('.meta').textContent = s.feature ? s.meta || s.length : (s.hidden ? '' : 'Level ' + s.level + (s.date ? ' · ' + s.date : '') + ' · ') + s.length;
     tx.querySelector('.blurb').textContent = s.locked ? 'This chapter’s song is waiting to become a story.' : s.blurb;
     el.append(cov, tx);
     if (!s.locked) {
@@ -383,16 +383,16 @@ function lyricsAt(t) {
   // name cards: who someone is, the first time they appear (level `titles: [{ t, name, sub, dur }]`)
   const tc = (story.titles || []).find((x) => t >= x.t && t < x.t + (x.dur || 4.5)) || null;
   if (tc !== lastTitle) { lastTitle = tc; if (tc) { $('title').firstChild.textContent = tc.name; $('title').lastChild.textContent = tc.sub || ''; } $('title').classList.toggle('on', !!tc); }
-  let line = '';
+  let line = '', voice = '';  // voice: a level with `voices` (one per line, e.g. 'b') marks the second speaker's lines
   if (story.times && !syncing) {
     const tm = story.times; let k = -1;
     for (let j = 0; j < tm.length; j++) if (tm[j] != null && tm[j] <= t) k = j; else if (tm[j] != null) break;
-    if (k >= 0) { const nxt = k + 1 < tm.length ? tm[k + 1] : 1e9; if (t < Math.min(nxt - 0.1, tm[k] + 7)) line = story.flat[k].tx; }
+    if (k >= 0) { const nxt = k + 1 < tm.length ? tm[k + 1] : 1e9; if (t < Math.min(nxt - 0.1, tm[k] + 7)) { line = story.flat[k].tx; voice = story.voices ? story.voices[k] || '' : ''; } }
   } else if (c.lines && c.lines.length && t >= c.t) {
     const a = c.t + 0.4, b = end - 0.4, n = c.lines.length, seg = (b - a) / n;
     if (t >= a && t < b) { const k = Math.min(n - 1, Math.floor((t - a) / seg)); const within = (t - a) - k * seg; line = within < seg - 0.5 ? c.lines[k] : ''; }
   }
-  if (line !== lastLine) { lastLine = line; const el = $('lyric'); if (line) { el.textContent = line; el.classList.add('on'); } else el.classList.remove('on'); }
+  if (line !== lastLine) { lastLine = line; const el = $('lyric'); if (line) { el.textContent = line; el.classList.toggle('b', voice === 'b'); el.classList.add('on'); } else el.classList.remove('on'); }
 }
 
 /* ---------- loop ---------- */
