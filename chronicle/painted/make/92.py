@@ -17,20 +17,22 @@ OS="Oskar (blond boy with pirate face paint and a red skull t-shirt) "
 LAKE="at a round storybook forest lake with greenish water, reeds and lily pads, big friendly trees, a grassy bank, summer sun, "
 IN="in the greenish lake water, splashing, heads above water, "
 ONLY=", exactly these people and no one else"
+NP=", no people at all, only the crocodile"
+FB="Full-bleed painting edge to edge, no border, no frame, no white edge: "
 S_=[
 (0,'black',[],['fireflies'],LAKE+"early morning, mist on the green water, dragonflies, no people",{}),
 (8.6,'fade',[T,M,O],['fireflies'],LAKE+TM+"and "+OS+"walking down the grassy path to the lake, seen from behind"+ONLY,{}),
 (16.9,'cut',[O],['fireflies'],LAKE+"Oskar striking a proud pirate pose on a rock by the lake, grinning",{}),
 (21.4,'cut',[T,M],['fireflies'],LAKE+TM+"skipping stones on the water, laughing"+ONLY,{}),
-(25.4,'fade',[],['fireflies'],LAKE+"the still greenish water close up, lily pads, a few bubbles rising, no people",{}),
-(29.4,'cut',[K],['fireflies'],LAKE+"just two round yellow crocodile eyes peeking up out of the green water between the lily pads, the rest hidden",{}),
+(25.4,'fade',[],['fireflies'],FB+LAKE+"the still greenish water close up, lily pads, a few bubbles rising, no people",{}),
+(29.4,'cut',[K],['fireflies'],LAKE+"just two round yellow crocodile eyes peeking up out of the green water between the lily pads, the rest hidden"+NP,{}),
 (32.45,'cut',[T,M],['fireflies'],LAKE+"Tine standing right at the edge of the bank, little Max beside her pointing down at the water"+ONLY,{}),
 (36.6,'cut',[M],['fireflies'],LAKE+"close-up of little Max pointing at the water with big excited eyes, shouting look down there",{}),
 (38.7,'cut',[],['fireflies'],LAKE+"ripples and a big dark shape gliding under the green water, no people",{}),
 (42.3,'cut',[K],['fireflies'],LAKE+"a long bumpy back of hard grey stone plates breaking the surface of the green water like a row of rocks",{}),
 (45.7,'cut',[K],['fireflies'],LAKE+"close-up of the crocodile's big bushy grey-green beard dripping under its jaw, just above the water",{}),
 (52.1,'cut',[T,M],['fireflies'],LAKE+TM+"laughing at the edge of the bank, thinking it is all a game"+ONLY,{}),
-(54.4,'flash',[K],['fireflies'],LAKE+"the green water bulging and opening up in a big swirl, a splash rising",{'shake':0.2}),
+(54.4,'flash',[K],['fireflies'],LAKE+"the green water bulging and opening up in a big swirl, a splash rising"+NP,{'shake':0.2}),
 (56.1,'cut',[T],['fireflies'],LAKE+"Tine taking one step too far on the slippery bank, arms windmilling, surprised face",{}),
 (58.7,'cut',[T,M],['fireflies'],LAKE+"Tine and little Max sliding together down the muddy bank toward the water, a funny shocked face"+ONLY,{}),
 (60.6,'flash',[T,M],['fireflies'],LAKE+"a huge splash as Tine and Max fall into the green lake",{'shake':0.4}),
@@ -51,15 +53,15 @@ S_=[
 (110.4,'cut',[O],['fireflies'],LAKE+"close-up of Oskar smiling a crooked pirate smile, clenching his little hand, a soft glow of power around his fist",{}),
 (114.2,'cut',[T],['fireflies'],LAKE+IN+"close-up of Tine in the water shouting hurry",{}),
 (116.2,'cut',[M],['fireflies'],LAKE+IN+"close-up of little Max in the water shouting now",{}),
-(117.9,'flash',[K],['fireflies','sparks'],LAKE+"a huge fountain of green water spraying high into the sunny air, droplets glittering",{'shake':0.4}),
+(117.9,'flash',[K],['fireflies','sparks'],LAKE+"a huge fountain of green water spraying high into the sunny air, droplets glittering"+NP,{'shake':0.4}),
 (122.5,'cut',[],[],None,{'img':'s19'}),
 (126.3,'cut',[T,M,K],['fireflies'],LAKE+IN+"Tine and Max clinging to a floating log, the crocodile's beard bobbing in the water next to them"+ONLY,{}),
 (129.7,'cut',[],[],None,{'img':'s20'}),
 (133.5,'cut',[O],['fireflies'],LAKE+"Oskar doing a funny pirate dance on the bank, one leg kicked up, laughing",{}),
 (136.45,'cut',[],[],None,{'img':'s23'}),
-(141.15,'fade',[O],['fireflies'],LAKE+"Oskar on a rock at the water's edge slowly raising his hand high like a karate master",{}),
-(144.5,'flash',[O],['sparks'],LAKE+"Oskar's arm crackling with a little golden lightning bolt, sparks around his hand, a storybook flash",{'shake':0.2}),
-(148.05,'flash',[O,K],['sparks'],LAKE+"storybook hero shot: Oskar leaping off the rock and landing a perfect judo chop on the Beard Crocodile's big cheek, a golden starburst, splash"+ONLY,{'shake':0.5}),
+(141.15,'fade',[O],['fireflies'],LAKE+"Oskar alone on a rock at the water's edge slowly raising his hand high like a karate master, nobody else in the picture",{}),
+(144.5,'flash',[O],['sparks'],LAKE+"Oskar's arm crackling with a little golden lightning bolt, sparks around his hand, a storybook flash, Oskar alone, nobody else in the picture",{'shake':0.2}),
+(148.05,'flash',[O,K],['sparks'],LAKE+"storybook hero shot: Oskar leaping off the rock and landing a perfect judo chop on the Beard Crocodile's big cheek, a golden starburst, splash, only Oskar and the crocodile in the picture, nobody on the bank",{'shake':0.5}),
 (151.3,'cut',[K],['sparks'],LAKE+"close-up of the crocodile's wide cheek with a funny cartoon star on it, its eyes crossed, beard puffing out",{}),
 (155.3,'cut',[T,M,K],['fireflies'],LAKE+IN+"the dizzy crocodile letting go and drifting away, Tine and Max free in the water"+ONLY,{}),
 (158.6,'fade',[],['fireflies'],LAKE+"the green lake going calm and still again, gentle rings on the water, lily pads, golden light, no people",{}),
@@ -72,7 +74,7 @@ S_=[
 (187.9,'cut',[O],['fireflies'],LAKE+"close-up of Oskar with a proud pirate grin, giving a thumbs up",{}),
 (192.1,'fade',[T,M,O],['fireflies'],LAKE+"golden afternoon, Tine, Max and Oskar drying in the sun on a blanket on the grass"+ONLY,{}),
 (201.25,'fade',[T,M,O],['fireflies'],"Sunset over the round forest lake, Tine, Max and Oskar walking home hand in hand, seen from behind, the crocodile's eyes watching from the water, friendly"+ONLY,{}),
-(207.0,'fade',[],['fireflies'],LAKE+"evening, a starry sky over the still lake, two round yellow eyes peeking from the water, no people",{}),
+(207.0,'fade',[],['fireflies'],FB+LAKE+"evening, a starry sky over the still lake, two round yellow eyes peeking from the water, no people",{}),
 ]
 shots=[];mv=0
 for i,(t,tr,who,fx,scene,ex) in enumerate(S_):
