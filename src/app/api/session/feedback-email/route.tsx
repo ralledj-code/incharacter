@@ -70,20 +70,25 @@ export async function POST(req: NextRequest) {
     )
 
     if (!process.env.RESEND_API_KEY) {
-      console.log('[feedback-email] no RESEND_API_KEY — skipping send')
-      return NextResponse.json({ ok: true })
+      console.error('[feedback-email] no RESEND_API_KEY, email not sent')
+      return NextResponse.json({ error: 'Email is not configured on the server (RESEND_API_KEY missing)' }, { status: 503 })
     }
 
     const resend = new Resend(process.env.RESEND_API_KEY)
-    await resend.emails.send({
+    // Resend does not throw on a rejected send: it returns { error }
+    const { data: sent, error: sendError } = await resend.emails.send({
       from: 'In Character <noreply@incharacter.cloud>',
       to: dmEmail,
       replyTo: playerEmail || undefined,
       subject: `${characterName} — Session notes, ${sessionDate}`,
       html,
     })
+    if (sendError) {
+      console.error('[feedback-email] resend rejected the email', sendError)
+      return NextResponse.json({ error: `Email provider refused it: ${sendError.message}` }, { status: 502 })
+    }
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, id: sent?.id ?? null, to: dmEmail })
   } catch (error) {
     console.error('[feedback-email]', error)
     return NextResponse.json({ error: String(error) }, { status: 500 })
