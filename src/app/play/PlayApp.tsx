@@ -149,6 +149,7 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
   const [showFeedback, setShowFeedback] = useState(false)
   const [feedbackSession, setFeedbackSession] = useState<SessionWithEntries | null>(null)
   const [sendingFeedback, setSendingFeedback] = useState(false)
+  const [resendingId, setResendingId] = useState<string | null>(null)
 
   // Edit entry
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -356,22 +357,53 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
     setEndingSession(false)
   }
 
+  // Sends the session's saved feedback to the DM; returns null on success, else the reason it failed
+  async function sendFeedbackEmail(sessionId: string): Promise<string | null> {
+    try {
+      const res = await fetch('/api/session/feedback-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      })
+      if (res.ok) return null
+      const data = await res.json().catch(() => ({}))
+      return data.error || `HTTP ${res.status}`
+    } catch (e) {
+      return String(e)
+    }
+  }
+
+  async function handleResendFeedback(session: SessionWithEntries) {
+    if (!session.feedback) {
+      // no feedback saved yet (skipped, or the save failed): open the form for this session
+      setFeedbackSession(session)
+      setShowFeedback(true)
+      return
+    }
+    setResendingId(session.id)
+    const err = await sendFeedbackEmail(session.id)
+    setResendingId(null)
+    alert(err ? `The email to your DM was not sent: ${err}` : `Sent to ${dmEmail}.`)
+  }
+
   async function handleFeedbackSubmit(feedback: FeedbackData) {
     if (!feedbackSession) return
     setSendingFeedback(true)
+    let err: string | null = null
     try {
-      await fetch(`/api/sessions/${feedbackSession.id}`, {
+      const saveRes = await fetch(`/api/sessions/${feedbackSession.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feedback }),
       })
-      await fetch('/api/session/feedback-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: feedbackSession.id }),
-      })
-    } catch {}
+      if (!saveRes.ok) err = `could not save the feedback (HTTP ${saveRes.status})`
+      else {
+        setPastSessions(prev => prev.map(s => s.id === feedbackSession.id ? { ...s, feedback } : s))
+        err = await sendFeedbackEmail(feedbackSession.id)
+      }
+    } catch (e) { err = String(e) }
     setSendingFeedback(false)
+    if (err) alert(`The email to your DM was not sent: ${err}\n\nYour feedback is saved; open the session under Past and press "Send to DM" to try again.`)
     setShowFeedback(false)
     const sid = feedbackSession.id
     setFeedbackSession(null)
@@ -781,7 +813,18 @@ export default function PlayApp({ characterName, campaignName: initCampaignName,
                       {/* Expanded entries */}
                       {isExpanded && (
                         <div style={{ borderTop: '0.5px solid var(--border)', padding: '10px 12px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 2 }}>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 2 }}>
+                            {dmEmail && (
+                              <button
+                                className="btn-ghost"
+                                onClick={() => handleResendFeedback(session)}
+                                disabled={resendingId === session.id}
+                                title={session.feedback ? `Email your feedback for this session to ${dmEmail}` : 'Give feedback on this session and email it to your DM'}
+                                style={{ fontSize: 12, minHeight: 30, padding: '4px 12px' }}
+                              >
+                                {resendingId === session.id ? 'Sending…' : session.feedback ? '✉ Send to DM' : '✉ Feedback to DM'}
+                              </button>
+                            )}
                             <button
                               className="btn-ghost"
                               onClick={() => handleGenerateSong(session)}
