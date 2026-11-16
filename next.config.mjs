@@ -8,7 +8,7 @@ const nextConfig = {
   },
   // Alaron Chronicle: static build in public/chronicle (source in chronicle/). Login-gated by middleware.
   async rewrites() {
-    return [{ source: '/chronicle', destination: '/chronicle/index.html' }]
+    return [{ source: '/chronicle', destination: '/chronicle/index.html' }, { source: '/chronicle/familie', destination: '/chronicle/index.html' }]
   },
   experimental: {
     serverActions: {

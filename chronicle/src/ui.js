@@ -9,7 +9,7 @@ const qs = new URLSearchParams(location.search), wantId = qs.get('song');
 const songList = document.getElementById('songs');
 let booted = null, pendingPlay = null;  // booted = playFromList once the world is ready
 function shareUrl(s) {
-  const u = new URL(location.href); u.search = ''; u.hash = '';
+  const u = new URL(location.href); u.search = ''; u.hash = ''; u.pathname = u.pathname.replace(/\/familie\/?$/, '');
   u.searchParams.set('song', s.id); ['painted', '3d'].forEach((k) => { if (qs.has(k)) u.searchParams.set(k, ''); });
   return u.toString().replace(/=(&|$)/g, '$1');
 }
@@ -19,13 +19,20 @@ function share(s, btn) {
   try { navigator.clipboard.writeText(url).then(() => done('Link copied'), () => prompt('Copy this link', url)); } catch (e) { prompt('Copy this link', url); }
 }
 const soloStory = C.stories.find((s) => s.id === wantId && s.hidden && !s.locked);
+// the family page (/chronicle/familie or ?familie): every family song and nothing from the campaign
+const family = !wantId && (qs.has('familie') || /\/familie\/?$/.test(location.pathname));
+if (family) {
+  document.body.classList.add('family'); document.title = 'Familiens sange';
+  const h = document.getElementById('songsHead'); h.querySelector('h1').textContent = 'Familiens sange';
+  h.querySelector('p').textContent = 'Sange om Oskar, Walter, Max, Tine og hele familien. Tryk Play.';
+}
 if (soloStory) { document.body.classList.add('solo'); document.title = soloStory.title; }
 function renderSongs() {
   const order = C.stories.map((s, i) => i);
   const wi = C.stories.findIndex((s) => s.id === wantId); if (wi >= 0) { order.splice(order.indexOf(wi), 1); order.unshift(wi); }
   songList.innerHTML = '';
   order.forEach((i) => {
-    if (C.stories[i].hidden && i !== wi) return;  // hidden songs only show up through their own link
+    if (family) { if (!C.stories[i].hidden) return; } else if (C.stories[i].hidden && i !== wi) return;  // hidden songs only show up through their own link or the family page
     if (soloStory && C.stories[i] !== soloStory) return;  // ...and their link shows nothing else
     const s = C.stories[i], key = String(s.level).padStart(2, '0') + '-' + s.id, board = s.painted || (C.boards && C.boards[key]);
     const el = document.createElement('article'); el.className = 'song' + (s.locked ? ' locked' : '') + (s.feature ? ' feature' : '') + (i === wi ? ' focus' : ''); el.setAttribute('role', 'listitem');
@@ -292,10 +299,10 @@ function backToBook() {
 function togglePause() { if (mode !== 'ride' || ended) return; paused = !paused; if (paused) audio.pause(); else audio.play(); $('bPause').textContent = paused ? 'Resume' : 'Pause'; }
 let muted = false;
 function toggleMute() { muted = !muted; audio.muted = muted; $('bMute').textContent = muted ? 'Sound off' : 'Sound on'; tavernMusic(tavOn); }
-function finish() { if (ended) return; ended = true; $('bBack').textContent = fromList ? 'Back to the songs' : 'Back to the tavern';
+function finish() { if (ended) return; ended = true; $('bBack').textContent = family ? 'Tilbage til sangene' : fromList ? 'Back to the songs' : 'Back to the tavern';
   const plain = !!(story && story.hidden);  // a song outside the campaign ends on its own title, no Lucien, no way back into the book
   $('end').querySelector('h2').textContent = plain ? story.title : 'Lucien takes a bow.';
-  $('end').querySelector('p').hidden = plain; $('bBack').hidden = plain; $('fade').style.opacity = 1; setTimeout(() => { if (ended && mode === 'ride') $('end').hidden = false; }, 1400); }
+  $('end').querySelector('p').hidden = plain; $('bBack').hidden = plain && !family; $('fade').style.opacity = 1; setTimeout(() => { if (ended && mode === 'ride') $('end').hidden = false; }, 1400); }
 
 $('bSit').onclick = sit;
 $('bAuto').onclick = () => { auto = { t: 0, x: player.x, z: player.z, yaw: player.yaw }; };
