@@ -19,6 +19,7 @@ C.PACKS = PACKS;
 // asset base: next to the page, also when served as /chronicle (no trailing slash)
 C.BASE = function () {
   if (typeof location === 'undefined') return '';
+  if (/\/familie\/?$/.test(location.pathname)) return location.origin + location.pathname.replace(/familie\/?$/, '');  // the family page shares the assets
   return /\/$|\.html$/.test(location.pathname) ? location.href : location.href.replace(/[?#].*$/, '') + '/';
 };
 
