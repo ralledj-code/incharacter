@@ -14,7 +14,7 @@ const TITLES = [];
 C.levels[ID] = {
   session: 'Funky, Flunky og Lonky',
   blurb: 'Tre troldepiger, Oskar, Walter, Max og Chester, en dinosaur, en edderkop-robot, og farmor og farfar der danser med.',
-  length: '4 min', audio: 'levels/93-' + ID + '.mp3',
+  length: '3 min', audio: 'levels/93-' + ID + '.mp3',
   packs: [], paintedOnly: true, hidden: true, level: 93, title: 'Funky, Flunky og Lonky', len: '3:18',
   titles: TITLES,
   cues: CUES, keys: [{ t: -1e6, m: 'bar', b: 0 }], duration: DURATION, silenceT: 197.0, lineTimes: LINE_TIMES, beats: BEATS,
