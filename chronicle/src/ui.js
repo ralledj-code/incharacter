@@ -39,7 +39,7 @@ function renderSongs() {
   songList.innerHTML = '';
   order.forEach((i) => {
     const s = C.stories[i];
-    if (family) { if (!s.hidden) return; } else if (s.hidden && i !== wi) return;  // family songs: only through their own link or the family page
+    if (family) { if (!s.hidden || s.variant) return; }  // variants (e.g. the realistic level 14) are not family songs else if (s.hidden && i !== wi) return;  // family songs: only through their own link or the family page
     if (soloStory && s !== soloStory) return;
     const key = String(s.level).padStart(2, '0') + '-' + s.id, board = s.painted || (C.boards && C.boards[key]);
     const el = document.createElement('article'); el.className = 'song' + (s.locked ? ' locked' : '') + (s.feature ? ' feature' : '') + (i === wi ? ' focus' : ''); el.setAttribute('role', 'listitem');

@@ -4,7 +4,8 @@
 //   node scripts/paint.mjs <level> shots [ids...]  shots -> painted/<level>/raw/<id>.png (cast sheets of `who` go in as references)
 //   options: --force (repaint existing), --model <name> (default gemini-3.1-flash-image), --n <parallel> (default 3),
 //            --max <images this run> (default 80, a spend cap), --out <dir> (write shots there instead of raw/, e.g. to compare models),
-//            --keep-look (cast: repaint a sheet with the current one attached, to change only expression or features)
+//            --keep-look (cast: repaint a sheet with the current one attached, to change only expression or features),
+//            --size 2K|4K (output size; Pro supports it, Flash ignores it)
 // Default is BATCH mode (half price; results in minutes to hours, at most 24 h): cast/shots submit one job (cast sheets are
 // uploaded once and referenced), then
 //   node scripts/paint.mjs <level> collect [--wait <minutes>]  saves what the job painted and lists what it did not.
@@ -18,6 +19,7 @@ import sharp from 'sharp';
 const args = process.argv.slice(2), flag = (k) => { const i = args.indexOf(k); if (i < 0) return null; const v = args[i + 1]; args.splice(i, 2); return v; };
 const bool = (k) => { const i = args.indexOf(k); if (i < 0) return false; args.splice(i, 1); return true; };
 const force = bool('--force'), now = bool('--now'), batch = !now, keepLook = bool('--keep-look'); bool('--batch');
+const imageSize = flag('--size');  // e.g. 2K or 4K (Pro); default: the model's own (1K)
 const wantModel = flag('--model'), par = +(flag('--n') || 3), maxImages = +(flag('--max') || 80), outDir = flag('--out'), waitMin = +(flag('--wait') || 0);
 let calls = 0;
 const [level, step, ...ids] = args;
@@ -59,7 +61,7 @@ function shotJob(s) {
   return { key: 'shot:' + s.id, id: s.id, out: `${rawDir}/${s.id}.png`, refs: who.map((w) => `${castDir}/${w}.jpg`),
     prompt: `${board.style}\nWide 16:9 cinematic frame. Keep the important subject inside the central area and leave some calm margin at the edges (the camera will drift slightly).\nScene: ${s.scene}${castNote ? '\nCharacters:\n' + castNote : ''}${refNote}` };
 }
-const genConfig = { responseModalities: ['IMAGE', 'TEXT'], imageConfig: { aspectRatio: '16:9' } };
+const genConfig = { responseModalities: ['IMAGE', 'TEXT'], imageConfig: Object.assign({ aspectRatio: '16:9' }, imageSize ? { imageSize } : {}) };
 const imageOf = (resp) => { const p = (resp?.candidates?.[0]?.content?.parts || []).find((x) => x.inlineData || x.inline_data); return p ? Buffer.from((p.inlineData || p.inline_data).data, 'base64') : null; };
 async function save(job, buf) {
   if (job.jpeg) await sharp(buf).jpeg({ quality: 90 }).toFile(job.out); else fs.writeFileSync(job.out, buf);
