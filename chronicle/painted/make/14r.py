@@ -35,9 +35,15 @@ for s in P['shots']:
     shots.append(s)
 # Gemini Omni 1.2 Flash image-to-video test clips (2026-11-21): public/chronicle/levels/14-hunt-valerys-real/<id>.mp4; the
 # clip carries the motion, so the camera barely drifts on these shots
-CLIPS=['s12','s32','s44','s60','s69','s77']
+CLIPS=['s44','s60','s69','s77']
+# group clips (method A, 2026-11-21): one 10-15 s clip per verse, made with task reference_to_video from the group's stills
+# plus a prompt with timed beats ("(0-4s) ... (4-8.5s) cut to ..."), so the cuts land on the lyric lines. The first shot of
+# the group carries the clip (<id>.mp4); the shots it covers are dropped from the board (their stills were the references).
+GROUPS={'s10':['s11','s12'],'s13':['s14','s15'],'s32':['s33','s34'],'s64':['s65','s66','s67']}
+covered={c for v in GROUPS.values() for c in v}
+shots=[s for s in shots if s['id'] not in covered]
 for s in shots:
-    if s['id'] in CLIPS: s['clip']=True; s['move']={'from':[0,0,0.0],'to':[0,0,0.02]}
+    if s['id'] in CLIPS or s['id'] in GROUPS: s['clip']=True; s['move']={'from':[0,0,0.0],'to':[0,0,0.02]}
 board={"id":"hunt-valerys-real","live":True,"cover":P['cover'],"style":STYLE,"cast":CAST,"shots":shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
