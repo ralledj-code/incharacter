@@ -24,12 +24,14 @@ rep=[("painted as a real place at full scale (not a tabletop, not miniatures), "
  ("painted like a faded warm memory, soft golden haze, muted colours, ","a flashback, like a faded warm memory on old film, soft golden haze, muted colours, "),
  ("Nerrissa (the drow woman: dark purple-grey skin, long white hair) ","Nerrissa (the drow woman: dark purple-grey skin, long silver hair) "),
  ("heroic shot:","heroic wide shot:")]
+EXTRA={'s06':', no creatures and no animals of any kind, an empty quiet camp'}  # Pro invented a beast here
 shots=[]
 for s in P['shots']:
     s=dict(s)
     if 'scene' in s:
         for a,b in rep: s['scene']=s['scene'].replace(a,b)
         assert 'painted' not in s['scene'], s['id']
+        s['scene']+=EXTRA.get(s['id'],'')
     shots.append(s)
 board={"id":"hunt-valerys-real","live":True,"cover":P['cover'],"style":STYLE,"cast":CAST,"shots":shots}
 head_={k:v for k,v in board.items() if k!='shots'}
