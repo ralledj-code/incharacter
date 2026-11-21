@@ -1,0 +1,541 @@
+[
+ {
+  "id": "s01",
+  "shots": [
+   "s01",
+   "s02",
+   "s03"
+  ],
+  "t0": 0,
+  "t1": 14.35,
+  "dur": "15s",
+  "refs": [
+   "s01",
+   "s02",
+   "s03"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground. Beats: (0.0-3.8s) a vast black cavern, one tiny warm glow far below, no people. (3.8-8.4s) Hard cut to: in a small carved stone room in Thorman's camp, sleeping furs on the floor, a dying ember fire, warm amber light, Lucien (the blond half-elf in the burgundy coat) asleep on the furs with Nerrissa (the drow woman with silver hair) curled against him, ember glow. (8.4-14.3s) Hard cut to: a single glowing amber mushroom blooming in total darkness, a light where no light should grow, no people.",
+  "keep": false
+ },
+ {
+  "id": "s04",
+  "shots": [
+   "s04",
+   "s05"
+  ],
+  "t0": 14.35,
+  "t1": 25.5,
+  "dur": "12s",
+  "refs": [
+   "s04",
+   "s05"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground. Beats: (0.0-6.4s) in a small carved stone room in Thorman's camp, sleeping furs on the floor, a dying ember fire, warm amber light, close-up of Nerrissa's dark purple-grey arms wrapped around Lucien's chest, his hand on hers. (6.4-11.2s) Hard cut to: far away in a colossal cavern the coiled silhouette of the pale worm-like serpent, waiting, foreboding.",
+  "keep": false
+ },
+ {
+  "id": "s06",
+  "shots": [
+   "s06",
+   "s07"
+  ],
+  "t0": 25.5,
+  "t1": 36.4,
+  "dur": "11s",
+  "refs": [
+   "s06",
+   "s07"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground. Beats: (0.0-5.7s) Thorman's camp at night, a half-abandoned underground town of carved stone houses, the last campfires burning low, no people. (5.7-10.9s) Hard cut to: in a small carved stone room in Thorman's camp, sleeping furs on the floor, a dying ember fire, warm amber light, close-up of Nerrissa asleep, peaceful, white hair across the furs, ember light on her face.",
+  "keep": false
+ },
+ {
+  "id": "s08",
+  "shots": [
+   "s08",
+   "s09"
+  ],
+  "t0": 36.4,
+  "t1": 47.63,
+  "dur": "12s",
+  "refs": [
+   "s08",
+   "s09"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground, in a small carved stone room in Thorman's camp, sleeping furs on the floor, a dying ember fire, warm amber light. Beats: (0.0-5.6s) close-up of Lucien (the blond half-elf in the burgundy coat) lying awake, gently watching her, a soft smile. (5.6-11.2s) Hard cut to: the dying embers of a small fire, warm light in the dark, no people.",
+  "keep": false
+ },
+ {
+  "id": "s10",
+  "shots": [
+   "s10",
+   "s11",
+   "s12"
+  ],
+  "t0": 47.63,
+  "t1": 59.82,
+  "dur": "13s",
+  "refs": [
+   "s10",
+   "s11",
+   "s12"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground, in a small carved stone room in Thorman's camp, sleeping furs on the floor, a dying ember fire, warm amber light. Beats: (0.0-4.3s) Lucien (the blond half-elf in the burgundy coat) waking in Nerrissa (the drow woman with silver hair) arms under the furs, both warm and close, tender. (4.3-8.6s) Hard cut to: the first soft light: a glowing amber mushroom lamp brightening in the stone doorway, no people. (8.6-12.2s) Hard cut to: close-up of Lucien (the blond half-elf in the burgundy coat) smiling softly, eyes tender, in love for the first time in years.",
+  "keep": true
+ },
+ {
+  "id": "s13",
+  "shots": [
+   "s13",
+   "s14",
+   "s15"
+  ],
+  "t0": 59.82,
+  "t1": 69.5,
+  "dur": "10s",
+  "refs": [
+   "s13",
+   "s14",
+   "s15"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground, in a small carved stone room in Thorman's camp, sleeping furs on the floor, a dying ember fire, warm amber light. Beats: (0.0-3.3s) Lucien (the blond half-elf in the burgundy coat) holding Nerrissa close, his face in her white hair, his eyes worried. (3.3-6.3s) Hard cut to: Lucien (the blond half-elf in the burgundy coat) sitting up and looking away into the dark doorway, knowing it cannot last. (6.3-9.7s) Hard cut to: Nerrissa tracing Lucien's face with her fingers, he closes his eyes and lets it be.",
+  "keep": true
+ },
+ {
+  "id": "s16",
+  "shots": [
+   "s16",
+   "s17"
+  ],
+  "t0": 69.5,
+  "t1": 80.37,
+  "dur": "11s",
+  "refs": [
+   "s16",
+   "s17"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground. Beats: (0.0-5.3s) in Thorman's camp, the party packing their gear by torchlight: Lucien (the blond half-elf in the burgundy coat) , Arthas, Cedric, Nerrissa and Wittan the deep gnome. (5.3-10.9s) Hard cut to: in a narrow winding rock tunnel lit only by their torches, Wittan the deep gnome holding up a lantern and pointing down a dark tunnel.",
+  "keep": false
+ },
+ {
+  "id": "s18",
+  "shots": [
+   "s18",
+   "s19"
+  ],
+  "t0": 80.37,
+  "t1": 91.52,
+  "dur": "12s",
+  "refs": [
+   "s18",
+   "s19"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground. Beats: (0.0-5.6s) Arthas, hood up, drawing his longsword, its blade glowing orange in the dark. (5.6-11.1s) Hard cut to: Cedric tightening his hand wraps, cold pale eyes, ready.",
+  "keep": false
+ },
+ {
+  "id": "s20",
+  "shots": [
+   "s20",
+   "s21"
+  ],
+  "t0": 91.52,
+  "t1": 100.54,
+  "dur": "9s",
+  "refs": [
+   "s20",
+   "s21"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground. Beats: (0.0-4.3s) Nerrissa the drow testing her two curved silver blades, a sly smile. (4.3-9.0s) Hard cut to: the party stepping into a black tunnel mouth, seen from behind, torches raised.",
+  "keep": false
+ },
+ {
+  "id": "s22",
+  "shots": [
+   "s22",
+   "s23",
+   "s24",
+   "s25"
+  ],
+  "t0": 100.54,
+  "t1": 114.19,
+  "dur": "14s",
+  "refs": [
+   "s22",
+   "s23",
+   "s24",
+   "s25"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Beats: (0.0-3.2s) flashback, a faded warm memory, soft golden haze, the colossal pale serpent dragging Oathbreaker Valerys in blackened armour down into the cracked ground. (3.2-6.8s) Hard cut to: deep underground, in a narrow winding rock tunnel lit only by their torches, the three brothers walking down a long sloping tunnel, torches. (6.8-10.4s) Hard cut to: deep underground, in a narrow winding rock tunnel lit only by their torches, Nerrissa leading, crouched low, scanning the dark, a hunter. (10.4-13.6s) Hard cut to: deep underground, in a narrow winding rock tunnel lit only by their torches, Wittan the deep gnome with his ear to the rock wall, listening to the unseen.",
+  "keep": false
+ },
+ {
+  "id": "s26",
+  "shots": [
+   "s26",
+   "s27",
+   "s28"
+  ],
+  "t0": 114.19,
+  "t1": 127.46,
+  "dur": "14s",
+  "refs": [
+   "s26",
+   "s27",
+   "s28"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground. Beats: (0.0-3.5s) in a narrow winding rock tunnel lit only by their torches, the tunnel narrowing tight, the brothers squeezing through sideways, torches burning thin. (3.5-9.9s) Hard cut to: a long line of tiny torches marching across a huge dark cavern seen from far away. (9.9-13.3s) Hard cut to: heroic shot: the three brothers standing back to back in a dark cavern, Arthas's sword burning orange, purple wild fire in Lucien's hand, Cedric with his staff.",
+  "keep": false
+ },
+ {
+  "id": "s29",
+  "shots": [
+   "s29",
+   "s30",
+   "s31"
+  ],
+  "t0": 127.46,
+  "t1": 141.3,
+  "dur": "14s",
+  "refs": [
+   "s28",
+   "s31"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Beats: (0.0-3.4s) Lucien, Arthas and Cedric stand together as dark silhouettes against a glowing fungus cavern, torchlight behind them. (3.4-6.8s) Hard cut to: close-up of Lucien's hand with purple sparks dancing over it, Arthas's armoured hand on the hilt of his glowing orange sword beside it. (6.8-13.8s) Hard cut to: the three of them on a rock ledge above a vast dark chasm, standing their ground, determined.",
+  "keep": false
+ },
+ {
+  "id": "s32",
+  "shots": [
+   "s32",
+   "s33",
+   "s34"
+  ],
+  "t0": 141.3,
+  "t1": 152.42,
+  "dur": "12s",
+  "refs": [
+   "s32",
+   "s33",
+   "s34"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground, in a cavern of pale limestone ledges overgrown with huge glowing shelf fungi in yellow, purple and orange, tall twisted rock spires, warm amber light from glowing mushroom caps. Beats: (0.0-3.5s) the flower of teeth rising out of the darkness ahead, flames in its four claws, spines bristling. (3.5-6.9s) Hard cut to: close-up of the monster's huge round fanged mouth ringed with fiery yellow-orange petals, grey spines behind. (6.9-11.1s) Hard cut to: the flower of teeth leaning over Lucien (the blond half-elf in the burgundy coat) , speaking to him, its petals trembling.",
+  "keep": false
+ },
+ {
+  "id": "s35",
+  "shots": [
+   "s35",
+   "s36",
+   "s37"
+  ],
+  "t0": 152.42,
+  "t1": 165.14,
+  "dur": "13s",
+  "refs": [
+   "s35",
+   "s36",
+   "s37"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground, in a cavern of pale limestone ledges overgrown with huge glowing shelf fungi in yellow, purple and orange, tall twisted rock spires, warm amber light from glowing mushroom caps. Beats: (0.0-5.7s) close-up of a drop of blood falling from Lucien's cut palm into the glow. (5.7-9.2s) Hard cut to: Lucien (the blond half-elf in the burgundy coat) stepping forward alone, eyes closed, offering himself to the flower of teeth. (9.2-12.7s) Hard cut to: pale threads of light reaching from the monster's mouth into Lucien's head, his face strained.",
+  "keep": false
+ },
+ {
+  "id": "s38",
+  "shots": [
+   "s38",
+   "s39",
+   "s40",
+   "s41"
+  ],
+  "t0": 165.14,
+  "t1": 179.09,
+  "dur": "14s",
+  "refs": [
+   "s38",
+   "s39",
+   "s40",
+   "s41"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Beats: (0.0-3.9s) flashback, a faded warm memory, soft golden haze, a sunlit room long ago, a man seen only from behind playing a silver flute for a small blond half-elf boy, the man's face never shown. (3.9-7.2s) Hard cut to: flashback, a faded warm memory, soft golden haze, close-up of a grown man's hands guiding a small boy's fingers on a silver flute, the man's face out of frame. (7.2-10.6s) Hard cut to: deep underground, in a cavern of pale limestone ledges overgrown with huge glowing shelf fungi in yellow, purple and orange, tall twisted rock spires, warm amber light from glowing mushroom caps, Lucien (the blond half-elf in the burgundy coat) with tears in his eyes, wonder on his face, a glowing memory hanging in the air between him and the monster. (10.6-14.0s) Hard cut to: flashback, a faded warm memory, soft golden haze, golden music notes swirling in the air as the faceless man walks away into bright light, seen from behind.",
+  "keep": false
+ },
+ {
+  "id": "s42",
+  "shots": [
+   "s42",
+   "s43",
+   "s44",
+   "s45"
+  ],
+  "t0": 179.09,
+  "t1": 192.27,
+  "dur": "14s",
+  "refs": [
+   "s42",
+   "s43",
+   "s44",
+   "s45"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground, in a cavern of pale limestone ledges overgrown with huge glowing shelf fungi in yellow, purple and orange, tall twisted rock spires, warm amber light from glowing mushroom caps. Beats: (0.0-3.4s) the threads of light snapping and fraying apart, the flower of teeth recoiling, Lucien free. (3.4-7.7s) Hard cut to: Lucien (the blond half-elf in the burgundy coat) turning to Arthas and Cedric with fierce eyes. (7.7-9.8s) Hard cut to: close-up of Lucien (the blond half-elf in the burgundy coat) shouting with his arm thrust forward, wild purple fire flaring. (9.8-13.2s) Hard cut to: Arthas and Cedric charging the flower of teeth.",
+  "keep": false
+ },
+ {
+  "id": "s46",
+  "shots": [
+   "s46",
+   "s47",
+   "s48"
+  ],
+  "t0": 192.27,
+  "t1": 203.65,
+  "dur": "12s",
+  "refs": [
+   "s46",
+   "s47",
+   "s48"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground, in a cavern of pale limestone ledges overgrown with huge glowing shelf fungi in yellow, purple and orange, tall twisted rock spires, warm amber light from glowing mushroom caps. Beats: (0.0-3.4s) Nerrissa leaping over the monster with her silver blades flashing. (3.4-7.2s) Hard cut to: Lucien (the blond half-elf in the burgundy coat) hurling purple-orange wild fire at the flower of teeth. (7.2-11.4s) Hard cut to: Arthas's burning orange sword slashing across the monster's spines.",
+  "keep": false
+ },
+ {
+  "id": "s49",
+  "shots": [
+   "s49",
+   "s50",
+   "s51"
+  ],
+  "t0": 203.65,
+  "t1": 215.39,
+  "dur": "12s",
+  "refs": [
+   "s49",
+   "s50",
+   "s51"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground, in a cavern of pale limestone ledges overgrown with huge glowing shelf fungi in yellow, purple and orange, tall twisted rock spires, warm amber light from glowing mushroom caps. Beats: (0.0-3.8s) Wittan the deep gnome hiding behind a rock spire, peeking out. (3.8-8.0s) Hard cut to: the flower of teeth whirling its four flaming arms at Arthas and Cedric. (8.0-11.7s) Hard cut to: wide shot of the battle in the fungus cavern, fire and spores in the air.",
+  "keep": false
+ },
+ {
+  "id": "s52",
+  "shots": [
+   "s52",
+   "s53",
+   "s54",
+   "s55"
+  ],
+  "t0": 215.39,
+  "t1": 229.79,
+  "dur": "15s",
+  "refs": [
+   "s52",
+   "s53",
+   "s54",
+   "s55"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Beats: (0.0-3.8s) A pale shimmering beam of light from the creature strikes Lucien and he staggers and falls. (3.8-7.5s) Hard cut to: Arthas kneels beside Lucien, his hands glowing warm gold over him, and Lucien takes a deep breath and opens his eyes. (7.5-10.7s) Hard cut to: Arthas loops a rope around the flower-of-teeth creature and pulls it down toward the ground. (10.7-14.4s) Hard cut to: Cedric stands on top of the defeated creature, arms crossed, smug.",
+  "keep": false
+ },
+ {
+  "id": "s56",
+  "shots": [
+   "s56",
+   "s57"
+  ],
+  "t0": 229.79,
+  "t1": 236.78,
+  "dur": "7s",
+  "refs": [
+   "s56",
+   "s57"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Beats: (0.0-3.3s) deep underground, in a narrow winding rock tunnel lit only by their torches, close-up of Lucien's dagger glowing blue and humming, vibrating in his hand. (3.3-7.0s) Hard cut to: flashback, a faded warm memory, soft golden haze, the shadow of great curved horns falling across a stone floor.",
+  "keep": false
+ },
+ {
+  "id": "s58",
+  "shots": [
+   "s58",
+   "s59",
+   "s60"
+  ],
+  "t0": 236.78,
+  "t1": 248.38,
+  "dur": "12s",
+  "refs": [
+   "s58",
+   "s59",
+   "s60"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground, in a deep cavern around an ancient ruined moonwell of carved stone filled to the brim with black blood, thick grey webs on every wall, cold blue light. Beats: (0.0-2.7s) no people. (2.7-8.2s) Hard cut to: the well-keepers in the webs, single silver eyes glowing in the dark, sickles raised. (8.2-11.6s) Hard cut to: Nerrissa dancing through the well-keepers, her silver blades flashing, graceful and fast.",
+  "keep": false
+ },
+ {
+  "id": "s61",
+  "shots": [
+   "s61",
+   "s62",
+   "s63"
+  ],
+  "t0": 248.38,
+  "t1": 259.33,
+  "dur": "11s",
+  "refs": [
+   "s61",
+   "s62",
+   "s63"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground, in a deep cavern around an ancient ruined moonwell of carved stone filled to the brim with black blood, thick grey webs on every wall, cold blue light. Beats: (0.0-3.5s) close-up of Lucien (the blond half-elf in the burgundy coat) watching her fight, love and sadness in his eyes. (3.5-7.1s) Hard cut to: Cedric cutting down a well-keeper with his staff. (7.1-10.9s) Hard cut to: Lucien (the blond half-elf in the burgundy coat) raising his glowing dagger over a fallen well-keeper, dark smoke flowing into the blade.",
+  "keep": false
+ },
+ {
+  "id": "s64",
+  "shots": [
+   "s64",
+   "s65",
+   "s66",
+   "s67"
+  ],
+  "t0": 259.33,
+  "t1": 273.6,
+  "dur": "15s",
+  "refs": [
+   "s64",
+   "s65",
+   "s66",
+   "s67"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: A vision beyond a torn veil of dark light: a bottomless underground abyss. Beats: (0.0-3.6s) a veil of dark shimmering light tearing open, no people. (3.6-7.3s) Hard cut to: Baphomet, enormous, chained in the abyss, goat head bowed, huge chains in every direction. (7.3-10.6s) Hard cut to: one last glowing chain holding Baphomet, rising up to a moonwell far above. (10.6-14.3s) Hard cut to: far above the chains, bloodied Oathbreaker Valerys with a golden sword fighting the colossal pale serpent on a ledge.",
+  "keep": true
+ },
+ {
+  "id": "s68",
+  "shots": [
+   "s68",
+   "s69"
+  ],
+  "t0": 273.6,
+  "t1": 281.5,
+  "dur": "8s",
+  "refs": [
+   "s68",
+   "s69"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: A vision beyond a torn veil of dark light: a bottomless underground abyss. Beats: (0.0-4.5s) the last chain straining and cracking, sparks. (4.5-7.9s) Hard cut to: close-up of Baphomet's face smiling, burning yellow eyes looking straight at the viewer.",
+  "keep": false
+ },
+ {
+  "id": "s70",
+  "shots": [
+   "s70",
+   "s71"
+  ],
+  "t0": 281.5,
+  "t1": 292.61,
+  "dur": "12s",
+  "refs": [
+   "s70",
+   "s71"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Beats: (0.0-5.6s) Lucien comes out of the vision with a sharp gasp by the black well, Nerrissa steadying him with a hand on his shoulder. (5.6-11.1s) Hard cut to: Wittan the deep gnome nods and points down a dark tunnel, Lucien urging him on.",
+  "keep": false
+ },
+ {
+  "id": "s72",
+  "shots": [
+   "s72",
+   "s73"
+  ],
+  "t0": 292.61,
+  "t1": 303.6,
+  "dur": "11s",
+  "refs": [
+   "s72",
+   "s73"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground, in a narrow winding rock tunnel lit only by their torches. Beats: (0.0-5.5s) the party running through the caves, torches streaming. (5.5-11.0s) Hard cut to: Arthas half carrying an exhausted Lucien, running.",
+  "keep": false
+ },
+ {
+  "id": "s74",
+  "shots": [
+   "s74",
+   "s75",
+   "s76"
+  ],
+  "t0": 303.6,
+  "t1": 315.76,
+  "dur": "13s",
+  "refs": [
+   "s74",
+   "s75",
+   "s76"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground. Beats: (0.0-5.0s) tiny torches crossing a narrow stone bridge over a bottomless chasm, seen from far. (5.0-8.8s) Hard cut to: in a massive cavern, its floor torn and cracked, rubble everywhere, a high rock ceiling lost in darkness, Oathbreaker Valerys, armour torn to pieces, badly wounded, on one knee, his golden sword in the rubble. (8.8-12.2s) Hard cut to: in a massive cavern, its floor torn and cracked, rubble everywhere, a high rock ceiling lost in darkness, the wounded colossal pale serpent rearing overhead, Valerys tiny below.",
+  "keep": false
+ },
+ {
+  "id": "s77",
+  "shots": [
+   "s77",
+   "s78",
+   "s79"
+  ],
+  "t0": 315.76,
+  "t1": 329.44,
+  "dur": "14s",
+  "refs": [
+   "s77",
+   "s78",
+   "s28"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground. Beats: (0.0-3.4s) in a massive cavern, its floor torn and cracked, rubble everywhere, a high rock ceiling lost in darkness, the serpent diving down into the rock floor, rubble exploding, no sound. (3.4-9.9s) Hard cut to: in a massive cavern, its floor torn and cracked, rubble everywhere, a high rock ceiling lost in darkness, six figures in a line: Lucien (the blond half-elf in the burgundy coat) , Arthas in dark plate and hood, Cedric the bald monk, Nerrissa the drow and Wittan the small deep gnome standing guard around the kneeling wounded Valerys, weapons ready, staring at the cracked floor, waiting. (9.9-13.7s) Hard cut to: heroic shot: the three brothers standing back to back in a dark cavern, Arthas's sword burning orange, purple wild fire in Lucien's hand, Cedric with his staff.",
+  "keep": false
+ },
+ {
+  "id": "s80",
+  "shots": [
+   "s80",
+   "s81"
+  ],
+  "t0": 329.44,
+  "t1": 338.94,
+  "dur": "10s",
+  "refs": [
+   "s29",
+   "s81"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Setting: deep underground. Beats: (0.0-2.9s) the three brothers as silhouettes against a glowing fungus cavern, standing together. (2.9-9.5s) Hard cut to: in a massive cavern, its floor torn and cracked, rubble everywhere, a high rock ceiling lost in darkness, Valerys looking at Arthas and Cedric, grim, bloodied.",
+  "keep": false
+ },
+ {
+  "id": "s82",
+  "shots": [
+   "s82",
+   "s83"
+  ],
+  "t0": 338.94,
+  "t1": 351.0,
+  "dur": "13s",
+  "refs": [
+   "s82",
+   "s83"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Beats: (0.0-5.7s) Out of total darkness, only Baphomet's burning yellow eyes, close, watching. (5.7-12.1s) Hard cut to: deep underground, in a massive cavern, its floor torn and cracked, rubble everywhere, a high rock ceiling lost in darkness, the cracked cave floor trembling, dust dancing on the stones, no people.",
+  "keep": false
+ },
+ {
+  "id": "s84",
+  "shots": [
+   "s84"
+  ],
+  "t0": 351.0,
+  "t1": 360.5,
+  "dur": "10s",
+  "refs": [
+   "s84"
+  ],
+  "prompt": "Live-action dark fantasy film, realistic motion and physics, cinematic camera. Keep every face, costume and creature exactly as in the reference images; only the characters described appear, nobody else; no text, no subtitles. The edit follows the music: hard cuts exactly at the times given, each beat fills its slot. Beats: (0.0-9.5s) deep underground, in a massive cavern, its floor torn and cracked, rubble everywhere, a high rock ceiling lost in darkness, the three brothers tiny in the vast dark cavern, one torch, waiting.",
+  "keep": false
+ }
+]

@@ -187,7 +187,7 @@ C.createPainted = function (renderer, opts) {
     return Promise.all(shots.map((s) => Promise.all([
       fetchBlob(urlOf(s)).then((x) => { tick(); return x; }),   // img: reuse another shot's painting
       Promise.resolve(null).then((x) => { tick(); return x; })  // depth maps are not used any more (flat paintings)
-    ]).then(([c, d]) => s.clip ? fetchBlob(new URL(base + s.id + '.mp4', C.BASE())).then((v) => { blobs[s.id] = { c, d, v }; }) : (blobs[s.id] = { c, d }))));
+    ]).then(([c, d]) => { blobs[s.id] = Object.assign(blobs[s.id] || {}, { c, d }); })));  // clips stream later (want), the song starts on the stills
   }
   function texFrom(blob) {
     return new Promise((res) => {
@@ -207,21 +207,28 @@ C.createPainted = function (renderer, opts) {
     e.promise = get().then(texFrom).then((m) => m || (b.c = null, get().then(texFrom))).then((m) => {
       // never show the storyboard card to viewers: without a painting the shot stays dark (the card only with ?painted)
       e.map = m || (preview ? cardTex(s) : darkTex()); e.painted = !!m; e.ready = true;
-      // a shot with `clip: true` also has <id>.mp4 (an image-to-video clip of its painting): it plays muted from the
+      // a shot with `clip: true` also has <id>.mp4 (a video clip made from its painting(s)): it plays muted from the
       // shot's start, synced to song time; the still shows until the video has a frame
-      if (s.clip && b.v) {
-        const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto';
-        v.src = e.vUrl = URL.createObjectURL(b.v); v.load();
-        const vt = new THREE.VideoTexture(v); vt.minFilter = THREE.LinearFilter; vt.magFilter = THREE.LinearFilter; vt.generateMipmaps = false;
-        e.video = v; e.vtex = vt;
-      }
+      if (s.clip) attachClip(i, s, e, b);
       if (!m && !preview) setTimeout(() => { if (cache.get(i) === e) { cache.delete(i); } }, 4000);  // try again in a moment
     });
     return e;
   }
+  // video clip of a shot: fetched when the shot comes near (not in preload: a whole song of clips is ~90 MB), then attached
+  function attachClip(i, s, e, b) {
+    if (!b.v) {
+      if (!b.vp) b.vp = fetchBlob(new URL(base + s.id + '.mp4', C.BASE()), 3).then((x) => { b.vp = null; if (x) b.v = x; return x; });
+      b.vp.then((x) => { if (x && cache.get(i) === e && !e.video) attachClip(i, s, e, b); });
+      return;
+    }
+    const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto';
+    v.src = e.vUrl = URL.createObjectURL(b.v); v.load();
+    const vt = new THREE.VideoTexture(v); vt.minFilter = THREE.LinearFilter; vt.magFilter = THREE.LinearFilter; vt.generateMipmaps = false;
+    e.video = v; e.vtex = vt;
+  }
   function keepAround(i) {
     for (let j = i - 1; j <= i + 2; j++) want(j);
-    cache.forEach((e, j) => { if (j < i - 1 || j > i + 3) { drop(e); cache.delete(j); } });
+    cache.forEach((e, j) => { if (j < i - 1 || j > i + 3) { drop(e); cache.delete(j); if (j < i - 1 && shots[j].clip && blobs[shots[j].id]) blobs[shots[j].id].v = null; } });  // played clips leave memory
   }
   const shotAt = (t) => { let k = 0; for (let i = 0; i < shots.length; i++) if (shots[i].t <= t) k = i; return k; };
   const transOf = (s) => (s ? s.in || 'cut' : 'cut');
