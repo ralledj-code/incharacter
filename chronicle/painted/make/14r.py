@@ -53,8 +53,8 @@ def write(board,path,sh):
     head_={k:v for k,v in board.items() if k!='shots'}
     out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(x,ensure_ascii=False) for x in sh)+'\n  ]\n}\n'
     json.loads(out);open(path,'w').write(out)
-write({"id":"hunt-valerys-motion","live":True,"base":"14-hunt-valerys-real","cover":"s32","style":STYLE,"cast":CAST,"shots":mshots},'painted/14-hunt-valerys-motion.json',mshots)
-board={"id":"hunt-valerys-real","live":True,"cover":P['cover'],"style":STYLE,"cast":CAST,"shots":shots}
+write({"id":"hunt-valerys-motion","live":True,"clean":True,"base":"14-hunt-valerys-real","cover":"s32","style":STYLE,"cast":CAST,"shots":mshots},'painted/14-hunt-valerys-motion.json',mshots)
+board={"id":"hunt-valerys-real","live":True,"clean":True,"cover":P['cover'],"style":STYLE,"cast":CAST,"shots":shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
 json.loads(out);open('painted/14-hunt-valerys-real.json','w').write(out)

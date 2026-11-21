@@ -1,0 +1,658 @@
+[
+ {
+  "id": "s13",
+  "t0": 59.82,
+  "score": 2,
+  "errors": [
+   {
+    "t": 0,
+    "what": "Nerrissa is missing, Lucien is alone"
+   },
+   {
+    "t": 1,
+    "what": "Dagger on ground morphs"
+   },
+   {
+    "t": 6.3,
+    "what": "Woman has wrong skin and hair for Nerrissa"
+   }
+  ],
+  "worst": "Missing and incorrect characters."
+ },
+ {
+  "id": "s16",
+  "t0": 69.5,
+  "score": 2,
+  "errors": [
+   {
+    "t": 0,
+    "what": "Lucien hands morph"
+   },
+   {
+    "t": 4,
+    "what": "Lucien face distorts"
+   },
+   {
+    "t": 7,
+    "what": "Wittan face morphs"
+   }
+  ],
+  "worst": "Wittan face morphs"
+ },
+ {
+  "id": "s06",
+  "t0": 25.5,
+  "score": 2,
+  "errors": [
+   {
+    "t": "6.0-10.9",
+    "what": "Face morphs."
+   }
+  ],
+  "worst": "Face morphs."
+ },
+ {
+  "id": "s58",
+  "t0": 236.78,
+  "score": 2,
+  "errors": [
+   {
+    "t": 2.7,
+    "what": "Nerrissa appears early, missing cut at 8.2"
+   },
+   {
+    "t": 2.7,
+    "what": "Nerrissa has pale skin, not dark purple-grey"
+   },
+   {
+    "t": 2.7,
+    "what": "Keepers have two eyes, not single silver eyes"
+   },
+   {
+    "t": 8.5,
+    "what": "Blades morph during spin"
+   },
+   {
+    "t": 11,
+    "what": "Face morphs at end"
+   }
+  ],
+  "worst": "Nerrissa has wrong skin color and appears early"
+ },
+ {
+  "id": "s49",
+  "t0": 203.65,
+  "score": 2,
+  "errors": [
+   {
+    "t": 1,
+    "what": "Lantern morphs into hand."
+   },
+   {
+    "t": 3.8,
+    "what": "Arthas missing helmet."
+   },
+   {
+    "t": 8,
+    "what": "Character morphs to Nerrissa."
+   },
+   {
+    "t": 8,
+    "what": "Cedric staff becomes flaming sword."
+   },
+   {
+    "t": 9,
+    "what": "Nerrissa has wrong weapons."
+   }
+  ],
+  "worst": "Major character morphing and wrong gear."
+ },
+ {
+  "id": "s29",
+  "t0": 127.46,
+  "score": 2,
+  "errors": [
+   {
+    "t": "0.0-3.4",
+    "what": "Lucien face morphs"
+   },
+   {
+    "t": "3.4-6.8",
+    "what": "Hand morphs"
+   },
+   {
+    "t": "6.8-13.8",
+    "what": "Lucien face morphs"
+   }
+  ],
+  "worst": "Lucien face morphs"
+ },
+ {
+  "id": "s46",
+  "t0": 192.27,
+  "score": 2,
+  "errors": [
+   {
+    "t": "0.0-1.5",
+    "what": "Leg melts into monster."
+   },
+   {
+    "t": "3.4-7.0",
+    "what": "Fingers morph while casting."
+   },
+   {
+    "t": "7.2-8.0",
+    "what": "Head is flaming blob."
+   },
+   {
+    "t": "7.2-11.4",
+    "what": "Wrong dagger on belt."
+   }
+  ],
+  "worst": "Leg melts into monster."
+ },
+ {
+  "id": "s22",
+  "t0": 100.54,
+  "score": 2,
+  "errors": [
+   {
+    "t": 1,
+    "what": "Sword morphs"
+   },
+   {
+    "t": 4,
+    "what": "Missing weapons"
+   },
+   {
+    "t": 7,
+    "what": "Wrong character"
+   },
+   {
+    "t": 11,
+    "what": "Hand melts"
+   }
+  ],
+  "worst": "Wrong character shown"
+ },
+ {
+  "id": "s20",
+  "t0": 91.52,
+  "score": 2,
+  "errors": [
+   {
+    "t": 1,
+    "what": "Hands and blades melt."
+   },
+   {
+    "t": 4.3,
+    "what": "Extra party member."
+   },
+   {
+    "t": 6,
+    "what": "Two figures merge."
+   },
+   {
+    "t": 6,
+    "what": "Sword pops in."
+   },
+   {
+    "t": 8,
+    "what": "Gnome disappears."
+   }
+  ],
+  "worst": "Two characters merge into one."
+ },
+ {
+  "id": "s77",
+  "t0": 315.76,
+  "score": 2,
+  "errors": [
+   {
+    "t": "3.4-9.9",
+    "what": "Faces morph."
+   },
+   {
+    "t": "4.0",
+    "what": "Magic appears."
+   },
+   {
+    "t": "9.9-13.7",
+    "what": "Lucien face distorted."
+   }
+  ],
+  "worst": "Lucien face morphs."
+ },
+ {
+  "id": "s32",
+  "t0": 141.3,
+  "score": 2,
+  "errors": [
+   {
+    "t": 3.5,
+    "what": "Zoom instead of hard cut."
+   },
+   {
+    "t": 6.9,
+    "what": "Lucien missing dagger, has purple magic."
+   },
+   {
+    "t": 6.9,
+    "what": "Monster missing two arms."
+   }
+  ],
+  "worst": "Missing hard cut and dagger."
+ },
+ {
+  "id": "s64",
+  "t0": 259.33,
+  "score": 3,
+  "errors": [
+   {
+    "t": 3.6,
+    "what": "Baphomet head not bowed"
+   },
+   {
+    "t": 12.5,
+    "what": "Sword morphs during swing"
+   }
+  ],
+  "worst": "Sword morphs significantly"
+ },
+ {
+  "id": "s68",
+  "t0": 273.6,
+  "score": 3,
+  "errors": [
+   {
+    "t": 2,
+    "what": "Hands morphing"
+   }
+  ],
+  "worst": "Hands morphing"
+ },
+ {
+  "id": "s18",
+  "t0": 80.37,
+  "score": 3,
+  "errors": [
+   {
+    "t": 2,
+    "what": "Sword morphs"
+   },
+   {
+    "t": 8,
+    "what": "Hands melt"
+   }
+  ],
+  "worst": "Sword morphs"
+ },
+ {
+  "id": "s38",
+  "t0": 165.14,
+  "score": 3,
+  "errors": [
+   {
+    "t": "0.0-3.9",
+    "what": "Hands morph on flute."
+   },
+   {
+    "t": "3.9-7.2",
+    "what": "Boy dirty, hands change."
+   },
+   {
+    "t": "7.2-10.6",
+    "what": "Memory shows wrong people."
+   },
+   {
+    "t": "10.6-14.0",
+    "what": "Man wears wrong clothes."
+   }
+  ],
+  "worst": "Memory shows wrong people."
+ },
+ {
+  "id": "s42",
+  "t0": 179.09,
+  "score": 3,
+  "errors": [
+   {
+    "t": "0.0-3.4",
+    "what": "Lucien's hands morph; missing glowing dagger."
+   },
+   {
+    "t": "3.4-7.7",
+    "what": "Cedric holds a torch instead of a staff."
+   },
+   {
+    "t": "7.7-9.8",
+    "what": "Lucien's fingers morph while casting fire."
+   },
+   {
+    "t": "9.8-13.2",
+    "what": "Cedric's weapons morph; monster's arms multiply."
+   }
+  ],
+  "worst": "Consistent morphing of hands and weapons."
+ },
+ {
+  "id": "s84",
+  "t0": 351,
+  "score": 3,
+  "errors": [
+   {
+    "t": 1,
+    "what": "Lucien holds two torches, missing dagger"
+   },
+   {
+    "t": 4,
+    "what": "Cedric holds torch instead of staff"
+   },
+   {
+    "t": 8,
+    "what": "Cedric's staff morphs into spear"
+   }
+  ],
+  "worst": "Props change between shots"
+ },
+ {
+  "id": "s56",
+  "t0": 229.79,
+  "score": 3,
+  "errors": [
+   {
+    "t": 0,
+    "what": "Dagger morphs"
+   },
+   {
+    "t": 3.3,
+    "what": "Demon visible, not shadow"
+   }
+  ],
+  "worst": "Dagger morphs and demon visible."
+ },
+ {
+  "id": "s82",
+  "t0": 338.94,
+  "score": 3,
+  "errors": [
+   {
+    "t": 0,
+    "what": "Full face visible, not just eyes"
+   },
+   {
+    "t": 7,
+    "what": "Falling rocks vanish on impact"
+   }
+  ],
+  "worst": "Falling rocks vanish on impact"
+ },
+ {
+  "id": "s61",
+  "t0": 248.38,
+  "score": 3,
+  "errors": [
+   {
+    "t": 4.5,
+    "what": "Weapon morphs."
+   },
+   {
+    "t": 8,
+    "what": "Sword morphs to dagger."
+   }
+  ],
+  "worst": "Sword morphs to dagger."
+ },
+ {
+  "id": "s70",
+  "t0": 281.5,
+  "score": 3,
+  "errors": [
+   {
+    "t": 0.5,
+    "what": "Magic rings vanish."
+   },
+   {
+    "t": 5.5,
+    "what": "Nerrissa hand morphs."
+   },
+   {
+    "t": 7,
+    "what": "Gnome hand mangled."
+   },
+   {
+    "t": 11,
+    "what": "Dagger disappears."
+   }
+  ],
+  "worst": "Gnome hand morphs into stump."
+ },
+ {
+  "id": "s35",
+  "t0": 152.42,
+  "score": 3,
+  "errors": [
+   {
+    "t": 1,
+    "what": "Hand morphs."
+   },
+   {
+    "t": 6,
+    "what": "Eyes open."
+   },
+   {
+    "t": 7,
+    "what": "Monster arms glitch."
+   },
+   {
+    "t": 10,
+    "what": "Light hits eyes."
+   }
+  ],
+  "worst": "Prompt action mismatch."
+ },
+ {
+  "id": "s10",
+  "t0": 47.63,
+  "score": 3,
+  "errors": [
+   {
+    "t": 0,
+    "what": "Lucien not in arms"
+   },
+   {
+    "t": 4,
+    "what": "Mushroom morphs shape"
+   },
+   {
+    "t": 9,
+    "what": "Dagger changes color"
+   }
+  ],
+  "worst": "Mushroom morphs shape"
+ },
+ {
+  "id": "s04",
+  "t0": 14.35,
+  "score": 3,
+  "errors": [
+   {
+    "t": "0.0-6.4",
+    "what": "Hands morph."
+   },
+   {
+    "t": "4.0-6.4",
+    "what": "Ear morphs."
+   }
+  ],
+  "worst": "Hands morph."
+ },
+ {
+  "id": "s72",
+  "t0": 292.61,
+  "score": 3,
+  "errors": [
+   {
+    "t": 0,
+    "what": "Nerrissa face distorted"
+   },
+   {
+    "t": 1,
+    "what": "Glow morphs to sword"
+   },
+   {
+    "t": 6,
+    "what": "Walking not running"
+   },
+   {
+    "t": 6,
+    "what": "Dagger appears"
+   },
+   {
+    "t": 8,
+    "what": "Arthas hand morphs"
+   }
+  ],
+  "worst": "Walking instead of running after cut"
+ },
+ {
+  "id": "s52",
+  "t0": 215.39,
+  "score": 3,
+  "errors": [
+   {
+    "t": "0.0-3.8",
+    "what": "Lucien missing blue dagger"
+   },
+   {
+    "t": "3.8-7.5",
+    "what": "Arthas sword not burning"
+   },
+   {
+    "t": "7.5-10.7",
+    "what": "Rope merges into monster face"
+   },
+   {
+    "t": "10.7-14.4",
+    "what": "Cedric holds torch, arms uncrossed"
+   }
+  ],
+  "worst": "Cedric missing staff and crossed arms"
+ },
+ {
+  "id": "s80",
+  "t0": 329.44,
+  "score": 3,
+  "errors": [
+   {
+    "t": 0,
+    "what": "Characters not silhouettes"
+   },
+   {
+    "t": 3,
+    "what": "Valerys sword melts"
+   },
+   {
+    "t": 3,
+    "what": "Arthas extra sword vanishes"
+   },
+   {
+    "t": 4,
+    "what": "Cedric staff vanishes"
+   }
+  ],
+  "worst": "Valerys sword melts"
+ },
+ {
+  "id": "s26",
+  "t0": 114.19,
+  "score": 3,
+  "errors": [
+   {
+    "t": "0.0-3.5",
+    "what": "Characters not squeezing sideways."
+   },
+   {
+    "t": "0.0-3.5",
+    "what": "Arthas missing hood."
+   },
+   {
+    "t": "2.0",
+    "what": "Arthas helmet morphs."
+   },
+   {
+    "t": "10.0-13.3",
+    "what": "Characters superimposed weirdly."
+   },
+   {
+    "t": "11.0",
+    "what": "Lucien hand morphs."
+   }
+  ],
+  "worst": "Characters superimposed weirdly at end."
+ },
+ {
+  "id": "s74",
+  "t0": 303.6,
+  "score": 3,
+  "errors": [
+   {
+    "t": 0,
+    "what": "Shot not from far"
+   },
+   {
+    "t": 0,
+    "what": "Characters slide, no walking"
+   },
+   {
+    "t": 0,
+    "what": "Lucien has sword, not dagger"
+   },
+   {
+    "t": 5,
+    "what": "Valerys sword flaming, not golden"
+   },
+   {
+    "t": 5,
+    "what": "Valerys missing white-crimson robes"
+   },
+   {
+    "t": 8.8,
+    "what": "Valerys standing, not tiny"
+   }
+  ],
+  "worst": "Characters slide instead of walking"
+ },
+ {
+  "id": "s01",
+  "t0": 0,
+  "score": 3,
+  "errors": [
+   {
+    "t": "3.8-8.4",
+    "what": "Nerrissa's hand on chest is mangled"
+   },
+   {
+    "t": "3.8-8.4",
+    "what": "Lucien's hand is a melted blob"
+   }
+  ],
+  "worst": "Mangled hands on characters"
+ },
+ {
+  "id": "s08",
+  "t0": 36.4,
+  "score": 3,
+  "errors": [
+   {
+    "t": 0,
+    "what": "Dagger lacks blue glow"
+   },
+   {
+    "t": 6,
+    "what": "Pot handle vanishes"
+   }
+  ],
+  "worst": "Pot handle vanishes"
+ }
+]

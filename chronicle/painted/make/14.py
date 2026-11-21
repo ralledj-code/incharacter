@@ -51,7 +51,7 @@ S_=[
 (107.39,'cut',[DR],['dust'],TUN+"Nerrissa leading, crouched low, scanning the dark, a hunter",{'flicker':0.3}),
 (110.91,'cut',[W1],['dust'],TUN+"Wittan the deep gnome with his ear to the rock wall, listening to the unseen",{}),
 (114.19,'cut',[L,A,C],['dust'],TUN+"the tunnel narrowing tight, the brothers squeezing through sideways, torches burning thin"+ONLY,{'flicker':0.5}),
-(117.65,'cut',ALL,['dust'],DEEP+"a long line of tiny torches marching across a huge dark cavern seen from far away"+ONLY,{}),
+(117.65,'cut',ALL,['dust'],DEEP+"seen from far away, just the five of them, five small figures in a short line, each carrying one torch, crossing a huge dark cavern, nobody else, no other lights or torches"+ONLY,{}),
 (124.06,'flash',[L,A,C],['embers'],DEEP+"heroic shot: the three brothers standing back to back in a dark cavern, Arthas's sword burning orange, purple wild fire in Lucien's hand, Cedric with his staff"+ONLY,{'shake':0.2}),
 (127.46,'cut',[L,A,C],['embers'],DEEP+"the three brothers as silhouettes against a glowing fungus cavern, standing together"+ONLY,{}),
 (130.86,'cut',[L,A],['embers'],DEEP+"close-up of Lucien's hand crackling with purple-orange sparks next to Arthas's gauntlet gripping his glowing sword"+ONLY,{}),
