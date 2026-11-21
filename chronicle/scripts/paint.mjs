@@ -4,7 +4,8 @@
 //   node scripts/paint.mjs <level> shots [ids...]  shots -> painted/<level>/raw/<id>.png (cast sheets of `who` go in as references)
 //   options: --force (repaint existing), --model <name> (default gemini-3.1-flash-image), --n <parallel> (default 3),
 //            --max <images this run> (default 80, a spend cap), --out <dir> (write shots there instead of raw/, e.g. to compare models),
-//            --keep-look (cast: repaint a sheet with the current one attached, to change only expression or features)
+//            --keep-look (cast: repaint a sheet with the current one attached, to change only expression or features),
+//            --size 2K|4K (output size; Pro supports it, Flash ignores it)
 // Default is BATCH mode (half price; results in minutes to hours, at most 24 h): cast/shots submit one job (cast sheets are
 // uploaded once and referenced), then
 //   node scripts/paint.mjs <level> collect [--wait <minutes>]  saves what the job painted and lists what it did not.
@@ -14,10 +15,13 @@
 // Then: python scripts/crop-bars.py <level>, python scripts/layers.py <level> (web images + depth maps for the parallax player).
 import fs from 'node:fs';
 import sharp from 'sharp';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 
 const args = process.argv.slice(2), flag = (k) => { const i = args.indexOf(k); if (i < 0) return null; const v = args[i + 1]; args.splice(i, 2); return v; };
 const bool = (k) => { const i = args.indexOf(k); if (i < 0) return false; args.splice(i, 1); return true; };
 const force = bool('--force'), now = bool('--now'), batch = !now, keepLook = bool('--keep-look'); bool('--batch');
+const imageSize = flag('--size');  // e.g. 2K or 4K (Pro); default: the model's own (1K)
 const wantModel = flag('--model'), par = +(flag('--n') || 3), maxImages = +(flag('--max') || 80), outDir = flag('--out'), waitMin = +(flag('--wait') || 0);
 let calls = 0;
 const [level, step, ...ids] = args;
@@ -59,7 +63,7 @@ function shotJob(s) {
   return { key: 'shot:' + s.id, id: s.id, out: `${rawDir}/${s.id}.png`, refs: who.map((w) => `${castDir}/${w}.jpg`),
     prompt: `${board.style}\nWide 16:9 cinematic frame. Keep the important subject inside the central area and leave some calm margin at the edges (the camera will drift slightly).\nScene: ${s.scene}${castNote ? '\nCharacters:\n' + castNote : ''}${refNote}` };
 }
-const genConfig = { responseModalities: ['IMAGE', 'TEXT'], imageConfig: { aspectRatio: '16:9' } };
+const genConfig = { responseModalities: ['IMAGE', 'TEXT'], imageConfig: Object.assign({ aspectRatio: '16:9' }, imageSize ? { imageSize } : {}) };
 const imageOf = (resp) => { const p = (resp?.candidates?.[0]?.content?.parts || []).find((x) => x.inlineData || x.inline_data); return p ? Buffer.from((p.inlineData || p.inline_data).data, 'base64') : null; };
 async function save(job, buf) {
   if (job.jpeg) await sharp(buf).jpeg({ quality: 90 }).toFile(job.out); else fs.writeFileSync(job.out, buf);
@@ -122,23 +126,40 @@ async function collect() {
   const until = Date.now() + waitMin * 60000;
   for (const file of files) {
     const job = JSON.parse(fs.readFileSync(file, 'utf8'));
-    let b;
+    // The finished job can be far bigger than a JS string (78 Pro 2K images ~ 600 MB of base64): stream it to disk and
+    // read status and images from the bytes. Each inlined response holds its image(s) as "data": "<base64>" before its
+    // "key"; the last image wins (Pro can send draft "thought" images first).
+    const tmp = `${dir}/.batch-result.json`;
+    let buf = null;
     for (;;) {
-      b = await (await fetch(`${API}/${job.name}`, { headers: HDR })).json();
-      const state = b.metadata?.state || b.state || '?';
-      if (b.done || /SUCCEEDED|FAILED|CANCELLED|EXPIRED/.test(state)) { console.log(job.name, state); break; }
-      if (Date.now() > until) { console.log(job.name, state, `(${job.jobs.length} images, submitted ${job.submitted}); not done yet`); b = null; break; }
+      const r = await fetch(`${API}/${job.name}`, { headers: HDR });
+      await pipeline(Readable.fromWeb(r.body), fs.createWriteStream(tmp));
+      buf = fs.readFileSync(tmp);
+      const m = /"state":\s*"(\w+)"/.exec(buf.toString('latin1', 0, Math.min(buf.length, 20000))) || /"state":\s*"(\w+)"/.exec(buf.toString('latin1', Math.max(0, buf.length - 20000)));
+      const state = m ? m[1] : '?';
+      const head = buf.toString('latin1', 0, Math.min(buf.length, 20000));  // a finished job may carry only its output, no state
+      if (/SUCCEEDED|FAILED|CANCELLED|EXPIRED/.test(state) || /"done":\s*true/.test(head) || /"inlinedResponses"/.test(head)) { console.log(job.name, state === '?' ? 'done' : state); break; }
+      if (Date.now() > until) { console.log(job.name, state, `(${job.jobs.length} images, submitted ${job.submitted}); not done yet`); buf = null; break; }
       await sleep(60000);
     }
-    if (!b) continue;
-    const out = b.response?.inlinedResponses?.inlinedResponses || b.response?.inlinedResponses || b.metadata?.output?.inlinedResponses?.inlinedResponses || [];
-    const byKey = Object.fromEntries(job.jobs.map((j) => [j.key, j]));
-    const done = new Set();
-    for (let i = 0; i < out.length; i++) {
-      const o = out[i], jb = byKey[o.metadata?.key] || job.jobs[i]; if (!jb) continue;
-      const img = imageOf(o.response);
-      if (img) { await save(jb, img); done.add(jb.key); } else console.log('  no image for', jb.key, o.error ? JSON.stringify(o.error).slice(0, 200) : o.response?.candidates?.[0]?.finishReason || '');
+    if (!buf) { fs.unlinkSync(tmp); continue; }
+    const byKey = Object.fromEntries(job.jobs.map((j) => [j.key, j])), done = new Set();
+    let pos = 0, lastImg = null;
+    const DATA = Buffer.from('"data":'), KEY = Buffer.from('"key":');
+    for (;;) {
+      const d = buf.indexOf(DATA, pos), k = buf.indexOf(KEY, pos);
+      if (k < 0) break;
+      if (d >= 0 && d < k) {
+        const q1 = buf.indexOf(34, d + DATA.length), q2 = buf.indexOf(34, q1 + 1);  // 34 = '"'
+        lastImg = [q1 + 1, q2]; pos = q2 + 1; continue;
+      }
+      const q1 = buf.indexOf(34, k + KEY.length), q2 = buf.indexOf(34, q1 + 1), key = buf.toString('utf8', q1 + 1, q2);
+      const jb = byKey[key];
+      if (jb && lastImg) { await save(jb, Buffer.from(buf.toString('latin1', lastImg[0], lastImg[1]), 'base64')); done.add(jb.key); }
+      else if (jb) console.log('  no image for', jb.key);
+      lastImg = null; pos = q2 + 1;
     }
+    fs.unlinkSync(tmp);
     const miss = job.jobs.filter((j) => !done.has(j.key)).map((j) => j.id);
     if (miss.length) console.log('not painted:', miss.join(' '), '(repaint them, batch or not)');
     fs.renameSync(file, file.replace('.json', `-${Date.now()}.done.json`));

@@ -40,6 +40,10 @@ body.solo #songs { width: min(92vw, 720px, calc((100vh - 170px) * 16 / 9)); marg
 body.solo .song .cover { aspect-ratio: 16 / 9; height: auto; }
 body.solo .song .cover b, body.solo .song .cover em, body.solo .song .meta { display: none; }
 body.solo .song .btns .play { font-size: 1.25rem; padding: 14px 0; width: 100%; }
+.song .vers { display: flex; gap: 0; margin-top: 8px; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; align-self: flex-start; }
+.song .vers button { min-height: 34px; padding: 0 12px; font-size: 0.85rem; border: 0; border-radius: 0; background: transparent; color: var(--dim); }
+.song .vers button + button { border-left: 1px solid var(--line); }
+.song .vers button.on { background: rgba(224, 144, 63, 0.18); color: #ffd9a8; }
 #songs .song.feature { grid-column: 1 / -1; flex-direction: row; border-color: var(--ember); }
 #songs .song.feature .cover { flex: 0 0 55%; aspect-ratio: 16 / 9; }
 #songs .song.feature .txt { justify-content: center; padding: 18px 22px; }

@@ -15,7 +15,12 @@ const store = { get(k, d) { try { const v = localStorage.getItem('alaron:' + k);
    ?song=<id> puts that song on top; a hidden (family) song's own link shows only that song; /chronicle/familie or ?familie
    lists every family song and nothing from the campaign; ?painted previews boards that are not live yet. */
 const songList = $('songs');
-const soloStory = C.stories.find((s) => s.id === wantId && s.hidden && !s.locked);
+// versions: a level module with `variant: true, parent: '<id>', vlabel` (e.g. the realistic and motion level 14) is another
+// version of that level; its card gets a version switch and the variant's own link (?song=<variant id>) opens the card on it
+const wantStory = C.stories.find((s) => s.id === wantId);
+const focusId = wantStory && wantStory.variant ? wantStory.parent : wantId;
+const versionsOf = (s) => [s].concat(C.stories.filter((v) => v.variant && v.parent === s.id && !v.locked).sort((a, b) => (a.vorder || 9) - (b.vorder || 9)));
+const soloStory = C.stories.find((s) => s.id === wantId && s.hidden && !s.variant && !s.locked);
 if (soloStory) { document.body.classList.add('solo'); document.title = soloStory.title; }
 const family = !wantId && (qs.has('familie') || /\/familie\/?$/.test(location.pathname));
 if (family) {
@@ -35,16 +40,19 @@ function share(s, btn) {
 }
 function renderSongs() {
   const order = C.stories.map((s, i) => i);
-  const wi = C.stories.findIndex((s) => s.id === wantId); if (wi >= 0) { order.splice(order.indexOf(wi), 1); order.unshift(wi); }
+  const wi = C.stories.findIndex((s) => s.id === focusId); if (wi >= 0) { order.splice(order.indexOf(wi), 1); order.unshift(wi); }
   songList.innerHTML = '';
   order.forEach((i) => {
     const s = C.stories[i];
-    if (family) { if (!s.hidden) return; } else if (s.hidden && i !== wi) return;  // family songs: only through their own link or the family page
+    if (s.variant) return;  // versions show as a switch on their level's card
+    // family page: the hidden family songs; elsewhere hidden songs only via their own link
+    if (family) { if (!s.hidden) return; } else if (s.hidden && i !== wi) return;
     if (soloStory && s !== soloStory) return;
     const key = String(s.level).padStart(2, '0') + '-' + s.id, board = s.painted || (C.boards && C.boards[key]);
     const el = document.createElement('article'); el.className = 'song' + (s.locked ? ' locked' : '') + (s.feature ? ' feature' : '') + (i === wi ? ' focus' : ''); el.setAttribute('role', 'listitem');
     const cov = document.createElement('div'); cov.className = 'cover';
-    if (board) cov.style.backgroundImage = 'url("' + new URL('levels/' + key + '/' + (board.cover || board.shots[0].id) + '.webp', BASE) + '")';
+    const coverOf = (v) => { const bd = v.painted || board; if (bd) cov.style.backgroundImage = 'url("' + new URL((v.paintBase || 'levels/' + key + '/') + (bd.cover || bd.shots[0].id) + '.webp', BASE) + '")'; };
+    coverOf(s);
     cov.innerHTML = '<b>' + (s.hidden || s.feature ? (s.feature ? '' : '♪') : s.level) + '</b>' + (s.locked ? '<em>Coming soon</em>' : '');
     const tx = document.createElement('div'); tx.className = 'txt';
     tx.innerHTML = '<h3></h3><div class="meta"></div><p class="blurb"></p>';
@@ -53,11 +61,23 @@ function renderSongs() {
     tx.querySelector('.blurb').textContent = s.locked ? 'This chapter’s song is waiting to become a story.' : s.blurb;
     el.append(cov, tx);
     if (!s.locked) {
+      const vers = versionsOf(s);
+      let sel = vers.find((v) => v.id === wantId) || s;
+      if (vers.length > 1) {
+        const sw = document.createElement('div'); sw.className = 'vers'; sw.setAttribute('role', 'radiogroup'); sw.setAttribute('aria-label', 'Version');
+        vers.forEach((v) => {
+          const vb = document.createElement('button'); vb.textContent = v.vlabel || 'Painted'; vb.setAttribute('role', 'radio');
+          const mark = () => [...sw.children].forEach((x, k) => { const on = vers[k] === sel; x.classList.toggle('on', on); x.setAttribute('aria-checked', on); });
+          vb.onclick = () => { sel = v; mark(); coverOf(v); };
+          sw.append(vb); if (v === sel) setTimeout(mark);
+        });
+        tx.append(sw); coverOf(sel);
+      }
       const b = document.createElement('div'); b.className = 'btns';
       const play = document.createElement('button'); play.className = 'primary play'; play.textContent = 'Play';
       const sh = document.createElement('button'); sh.textContent = 'Share';
-      play.onclick = () => playFromList(s, play);
-      sh.onclick = () => share(s, sh);
+      play.onclick = () => playFromList(sel, play);
+      sh.onclick = () => share(sel, sh);
       b.append(play); if (!soloStory) b.append(sh); el.append(b);
     }
     songList.append(el);

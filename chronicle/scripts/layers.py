@@ -14,6 +14,9 @@ args = sys.argv[1:]
 model = os.environ.get('DEPTH_ONNX')
 if '--model' in args:
     i = args.index('--model'); model = args[i + 1]; del args[i:i + 2]
+WW, WH, WQ = 1600, 900, 80  # web size and webp quality; --hq gives 1920x1080 at 88 (the realistic level 14 test)
+if '--hq' in args:
+    args.remove('--hq'); WW, WH, WQ = 1920, 1080, 88
 level, ids = args[0], set(args[1:])
 if not model or not os.path.exists(model):
     sys.exit('depth model not found: pass --model <depth_anything_v2_vits.onnx> or set DEPTH_ONNX')
@@ -36,8 +39,8 @@ files = sorted(glob.glob(f'{src}/*.png') + glob.glob(f'{src}/*.jpg'))
 for f in files:
     sid = os.path.splitext(os.path.basename(f))[0]
     if ids and sid not in ids: continue
-    im = cover(Image.open(f).convert('RGB'), 1600, 900)
-    im.save(f'{out}/{sid}.webp', quality=80, method=6)
+    im = cover(Image.open(f).convert('RGB'), WW, WH)
+    im.save(f'{out}/{sid}.webp', quality=WQ, method=6)
     x = np.asarray(im.resize((N, N), Image.BICUBIC), dtype=np.float32) / 255.0
     x = ((x - MEAN) / STD).transpose(2, 0, 1)[None].astype(np.float32)
     d = sess.run(None, {inp.name: x})[0][0]          # relative inverse depth: bigger = nearer

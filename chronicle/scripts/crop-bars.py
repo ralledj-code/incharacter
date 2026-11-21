@@ -15,11 +15,12 @@ for f in sorted(glob.glob(f'{raw}/s*.png')):
     if ids and sid not in ids: continue
     im = Image.open(f); a = np.asarray(im.convert('L'), dtype=np.float32); H, W = a.shape
     dark = lambda r: r.mean() < 14 and r.std() < 8
+    lim, mn = int(H * 0.2), max(20, H // 40)  # scaled to the image (100 rows was tuned for 768-px Flash images; Pro 2K is 1536)
     t = 0
-    while t < 100 and dark(a[t]): t += 1
+    while t < lim and dark(a[t]): t += 1
     b = 0
-    while b < 100 and dark(a[H - 1 - b]): b += 1
-    t = t + 3 if 20 <= t < 100 else 0; b = b + 3 if 20 <= b < 100 else 0
+    while b < lim and dark(a[H - 1 - b]): b += 1
+    t = t + 3 if mn <= t < lim else 0; b = b + 3 if mn <= b < lim else 0
     if t + b:
         os.makedirs(f'{raw}/orig', exist_ok=True)
         if not os.path.exists(f'{raw}/orig/{sid}.png'): im.save(f'{raw}/orig/{sid}.png')
