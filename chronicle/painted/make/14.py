@@ -102,7 +102,7 @@ S_=[
 (308.64,'fade',[V],['dust'],GREAT+"Oathbreaker Valerys, armour torn to pieces, badly wounded, on one knee, his golden sword in the rubble",{}),
 (312.38,'cut',[SE,V],['dust'],GREAT+"the wounded colossal pale serpent rearing overhead, Valerys tiny below"+ONLY,{'shake':0.3}),
 (315.76,'flash',[SE],['dust'],GREAT+"the serpent diving down into the rock floor, rubble exploding, no sound",{'shake':0.5}),
-(319.15,'cut',[L,A,C,DR,W1,V],['dust'],GREAT+"the brothers, Nerrissa and Wittan beside the wounded Valerys, weapons ready, staring at the cracked floor, waiting"+ONLY,{}),
+(319.15,'cut',[L,A,C,DR,W1,V],['dust'],GREAT+"six figures in a line: "+LU+", Arthas in dark plate and hood, Cedric the bald monk, Nerrissa the drow and Wittan the small deep gnome standing guard around the kneeling wounded Valerys, weapons ready, staring at the cracked floor, waiting"+ONLY,{}),
 (325.71,'cut',[],[],None,{'img':'s28'}),
 (329.44,'cut',[],[],None,{'img':'s29'}),
 (332.5,'cut',[V,A,C],['dust'],GREAT+"Valerys looking at Arthas and Cedric, grim, bloodied"+ONLY,{}),
