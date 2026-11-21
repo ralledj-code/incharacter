@@ -7,7 +7,7 @@ def load_beats(path):
 B=load_beats('src/levels/L14-songbird.js')
 near=lambda l,t: min(l,key=lambda x:abs(x-t))
 def snap(t,k):
-    if k not in ('cut','flash') or t==0 or t<52.5: return t  # the spoken part has no beat
+    if k not in ('cut','flash') or t==0 or t<82.8: return t  # the spoken part has no beat
     h,r,e=near(B['hits'],t),near(B['bars'],t),near(B['beats'],t)
     return h if abs(h-t)<=0.25 else r if abs(r-t)<=0.2 else e
 L,DR,BOY,FA,BU='lucien','drow','boy','father','buckle'
@@ -69,25 +69,32 @@ S_=[
 # 2026-11-21 (Rasmus): the scene is right after the flower of teeth (the Mi-Go) is dead, in the fungus cavern, and it opens
 # with a spoken conversation (painted/make/tts/songbird-talk: Lucien Algenib, Nerrissa Sulafat), then the song (OFF later).
 # Existing paintings keep their ids (sNN = index in S_); the well shots s01-s03 are gone, the talk shots are tNN.
-OFF=52.5
-C_,FL='cedric','flower'
-FUN="deep underground in the Down Deep, a lightless world of caverns, rock ceilings, no sky, in a cavern of pale limestone ledges overgrown with huge glowing shelf fungi in yellow, purple and orange, tall twisted rock spires, warm amber light from glowing mushroom caps, just after a fight, smoke and spores hanging in the air, "
+OFF=82.8
+C_,FL,A_='cedric','flower','arthas'
+FUN="deep underground in the Down Deep, a lightless world of caverns, rock ceilings, no sky, in a cavern of pale limestone ledges overgrown with huge glowing shelf fungi in yellow, purple and orange, tall twisted rock spires, warm amber light from glowing mushroom caps, seconds after a brutal fight, smoke and spores hanging in the air, scorch marks, "
 MEMI="painted like a warm, faded memory, golden amber haze, soft edges, a brief glimpse: "
+HOME=MEMI+"long ago, a small humble home at night: a low room with a whitewashed wall, a stone hearth with a fire, a too-big wooden chair, a bowl of blackberries, "
+TA=json.load(open('painted/make/tts/songbird/align.json'))['t']
+def at(k,f=0.0): return round(TA[k]+f*((TA[k+1] if k+1<len(TA) else OFF)-TA[k]),2)
 TALK=[
-('t01',0,'black',[FL,C_],['dust'],FUN+"the flower of teeth lying dead among the glowing fungus, its flames out, Cedric the bald monk sitting on its back, smug, cleaning his staff"+ONLY),
-('t02',3.2,'cut',[L],['dust'],FUN+LU+"sitting on a rock, exhausted, waving a tired hand toward his brother"),
-('t03',4.4,'cut',[DR,L],['dust'],FUN+NE+"crouching beside "+LU+"looking at him, quietly concerned"+ONLY),
-('t04',8.5,'cut',[L],['dust'],FUN+"close-up of "+LU+"eyes far away, a hand pressed to his temple"),
-('t05',16.3,'cut',[DR],['dust'],FUN+"close-up of "+NE+"leaning closer, listening"),
-('t06',17.7,'cut',[L],['embers'],FUN+"close-up of "+LU+"speaking softly, a faint warm golden glow of memory in his eyes"),
-('t07',23.4,'fade',[BOY],['embers'],MEMI+"a big wooden table in an old inn, mead in a clay cup, a bowl of dark blackberries, a small child's hands"),
-('t08',29.3,'cut',[DR],['dust'],FUN+NE+"asking a quiet question, head tilted"),
-('t09',30.7,'cut',[L],['dust'],FUN+LU+"shaking his head slowly, looking down at his empty hands"),
-('t10',35.8,'fade',[FA],['embers'],MEMI+"a tall hooded man on a small inn stage seen from behind, playing a dark lute, firelight, his face never visible"),
-('t11',39.6,'cut',[DR],['dust'],FUN+"close-up of "+NE+"serious now, a warning in her violet eyes"),
-('t12',42.8,'cut',[L],['dust'],FUN+"close-up of "+LU+"a small sad smile"),
-('t13',48.9,'cut',[DR,L],['dust'],FUN+NE+"laying a hand on "+LU+"arm, pleading softly"+ONLY),
-('t14',50.1,'cut',[L],['embers'],FUN+"close-up of "+LU+"closing his eyes, lips parted as if whispering a lullaby, warm golden light beginning to glow around him"),
+('t01',at(0),'black',[FL,C_],['smoke'],FUN+"the flower of teeth lying dead among the glowing fungus, its flames out, Cedric the bald monk sitting on its back, smug, catching his breath"+ONLY),
+('c02',at(1),'cut',[L],['smoke'],FUN+LU+"sitting on the scorched ground, battered and bruised, catching his breath, a torn sleeve, a faint golden glow of healing fading on his chest"),
+('t03',at(2),'cut',[DR,L],['smoke'],FUN+NE+"crouching beside "+LU+"looking at him, quietly concerned"+ONLY),
+('t04',at(3),'cut',[L],['dust'],FUN+"close-up of "+LU+"eyes far away, a hand pressed to his temple"),
+('h01',at(3,0.35),'fade',[BOY,FA],['embers'],HOME+"the small blond boy on the too-big chair, legs dangling, and a tall hooded man in a dark fur-collared cloak standing at the hearth with his back to us, playing a dark lute, his face never visible"),
+('t05',at(4),'cut',[DR],['dust'],FUN+"close-up of "+NE+"leaning closer, listening"),
+('h02',at(5),'cut',[FA],['embers'],HOME+"the music stopped; the tall man's shadow on the whitewashed wall, broader and more hunched than a man, the jagged fur collar like a predator lowering its head; a howl outside"),
+('h03',at(5,0.5),'cut',[FA,BOY],['fireflies'],HOME+"the tall hooded man walking out through the open front door into fog and darkness, seen from behind, the small boy watching from his chair, his face never visible"),
+('t08',at(6),'cut',[DR],['dust'],FUN+NE+"asking a quiet question, head tilted"),
+('t09',at(7),'cut',[L],['dust'],FUN+LU+"shaking his head slowly, looking down at his empty hands"),
+('t11b',at(8),'cut',[DR],['dust'],FUN+"close-up of "+NE+"frowning gently, curious, the glow of fungus on her face"),
+('t06',at(9),'cut',[L],['embers'],FUN+"close-up of "+LU+"speaking softly, a faint warm golden glow of memory in his eyes"),
+('t07',at(9,0.3),'fade',[BOY],['embers'],MEMI+"a big wooden table in an old inn, mead in a clay cup, a bowl of dark blackberries, a small child's hands"),
+('t10',at(9,0.6),'fade',[FA],['embers'],MEMI+"a tall hooded man on a small inn stage seen from behind, playing a dark lute, firelight, his face never visible"),
+('t11',at(10),'cut',[DR],['dust'],FUN+"close-up of "+NE+"serious now, a warning in her violet eyes"),
+('t12',at(11),'cut',[L],['dust'],FUN+"close-up of "+LU+"a small sad smile"),
+('t13',at(12),'cut',[DR,L],['dust'],FUN+NE+"laying a hand on "+LU+"arm, pleading softly"+ONLY),
+('t14',at(13),'cut',[L],['embers'],FUN+"close-up of "+LU+"closing his eyes, lips parted as if whispering a lullaby, warm golden light beginning to glow around him"),
 ]
 SONG=[]
 for i,(t,tr,who,fx,scene,ex) in enumerate(S_):

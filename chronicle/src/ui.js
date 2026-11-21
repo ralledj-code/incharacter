@@ -331,7 +331,7 @@ function lyricsAt(t) {
     if (story.times) {
       const tm = story.times; let k = -1;
       for (let j = 0; j < tm.length; j++) if (tm[j] != null && tm[j] <= t) k = j; else if (tm[j] != null) break;
-      if (k >= 0) { const nxt = k + 1 < tm.length ? tm[k + 1] : 1e9; if (t < Math.min(nxt - 0.1, tm[k] + 7)) { line = story.flat[k].tx; voice = story.voices ? story.voices[k] || '' : ''; } }
+      if (k >= 0) { const nxt = k + 1 < tm.length ? tm[k + 1] : 1e9; if (t < Math.min(nxt - 0.1, tm[k] + (story.voices && story.voices.length ? 20 : 7))) { line = story.flat[k].tx; voice = story.voices ? story.voices[k] || '' : ''; } }
     } else {
       const cues = story.cues, i = cueAt(Math.max(0, t)), c = cues[i], nx = cues[i + 1], end = nx ? nx.t : story.duration;
       if (c.lines && c.lines.length && t >= c.t) {
