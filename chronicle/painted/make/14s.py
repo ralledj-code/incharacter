@@ -7,7 +7,7 @@ def load_beats(path):
 B=load_beats('src/levels/L14-songbird.js')
 near=lambda l,t: min(l,key=lambda x:abs(x-t))
 def snap(t,k):
-    if k not in ('cut','flash') or t==0: return t
+    if k not in ('cut','flash') or t==0 or t<52.5: return t  # the spoken part has no beat
     h,r,e=near(B['hits'],t),near(B['bars'],t),near(B['beats'],t)
     return h if abs(h-t)<=0.25 else r if abs(r-t)<=0.2 else e
 L,DR,BOY,FA,BU='lucien','drow','boy','father','buckle'
@@ -66,13 +66,51 @@ S_=[
 (214.8,'cut',[DR,L],['dust'],WELL+NE+"watching Lucien with quiet concern in the cold blue light"+ONLY,{'grade':'cold'}),
 (219.0,'fade',[],['dust'],WELL+"the black well, still and dark, cold blue light fading, no people",{'grade':'cold'}),
 ]
-shots=[];mv=0
+# 2026-11-21 (Rasmus): the scene is right after the flower of teeth (the Mi-Go) is dead, in the fungus cavern, and it opens
+# with a spoken conversation (painted/make/tts/songbird-talk: Lucien Algenib, Nerrissa Sulafat), then the song (OFF later).
+# Existing paintings keep their ids (sNN = index in S_); the well shots s01-s03 are gone, the talk shots are tNN.
+OFF=52.5
+C_,FL='cedric','flower'
+FUN="deep underground in the Down Deep, a lightless world of caverns, rock ceilings, no sky, in a cavern of pale limestone ledges overgrown with huge glowing shelf fungi in yellow, purple and orange, tall twisted rock spires, warm amber light from glowing mushroom caps, just after a fight, smoke and spores hanging in the air, "
+MEMI="painted like a warm, faded memory, golden amber haze, soft edges, a brief glimpse: "
+TALK=[
+('t01',0,'black',[FL,C_],['dust'],FUN+"the flower of teeth lying dead among the glowing fungus, its flames out, Cedric the bald monk sitting on its back, smug, cleaning his staff"+ONLY),
+('t02',3.2,'cut',[L],['dust'],FUN+LU+"sitting on a rock, exhausted, waving a tired hand toward his brother"),
+('t03',4.4,'cut',[DR,L],['dust'],FUN+NE+"crouching beside "+LU+"looking at him, quietly concerned"+ONLY),
+('t04',8.5,'cut',[L],['dust'],FUN+"close-up of "+LU+"eyes far away, a hand pressed to his temple"),
+('t05',16.3,'cut',[DR],['dust'],FUN+"close-up of "+NE+"leaning closer, listening"),
+('t06',17.7,'cut',[L],['embers'],FUN+"close-up of "+LU+"speaking softly, a faint warm golden glow of memory in his eyes"),
+('t07',23.4,'fade',[BOY],['embers'],MEMI+"a big wooden table in an old inn, mead in a clay cup, a bowl of dark blackberries, a small child's hands"),
+('t08',29.3,'cut',[DR],['dust'],FUN+NE+"asking a quiet question, head tilted"),
+('t09',30.7,'cut',[L],['dust'],FUN+LU+"shaking his head slowly, looking down at his empty hands"),
+('t10',35.8,'fade',[FA],['embers'],MEMI+"a tall hooded man on a small inn stage seen from behind, playing a dark lute, firelight, his face never visible"),
+('t11',39.6,'cut',[DR],['dust'],FUN+"close-up of "+NE+"serious now, a warning in her violet eyes"),
+('t12',42.8,'cut',[L],['dust'],FUN+"close-up of "+LU+"a small sad smile"),
+('t13',48.9,'cut',[DR,L],['dust'],FUN+NE+"laying a hand on "+LU+"arm, pleading softly"+ONLY),
+('t14',50.1,'cut',[L],['embers'],FUN+"close-up of "+LU+"closing his eyes, lips parted as if whispering a lullaby, warm golden light beginning to glow around him"),
+]
+SONG=[]
 for i,(t,tr,who,fx,scene,ex) in enumerate(S_):
+    sid='s%02d'%(i+1)
+    if sid in ('s01','s02','s03'): continue
+    SONG.append((sid,t+OFF,tr,who,fx,scene,ex))
+REPL={'s04':(OFF+0,'fade',[L],['embers'],"Close-up profile of "+LU+"eyes closed, his hands empty and resting, no instrument, the glowing fungus cavern dissolving into warm amber firelight from a memory",{}),
+      's42':None,'s43':None,'s44':None}
+SONG=[x if x[0]!='s04' else ('s04',)+REPL['s04'] for x in SONG]
+SONG.append(('i01',OFF+8.4,'fade',[],['embers'],MEM+"warm golden mist slowly parting to reveal the glow of a hearth fire and the dark shape of a lute leaning by it, no people",{}))
+END={'s42':(FUN+LU+"eyes closed, back in the fungus cavern; the ritual dagger at his hip glowing a cold blue",{}),
+     's43':(FUN+NE+"watching Lucien with quiet concern in the glow of the fungus"+ONLY,{}),
+     's44':(FUN+"the dead flower of teeth among the glowing fungus, the glow slowly fading to darkness, no people",{})}
+SONG=[(x[0],x[1],x[2],x[3] if x[0]!='s43' else [DR,L],x[4],END[x[0]][0] if x[0] in END else x[5],{k:v for k,v in x[6].items() if k!='grade'} if x[0] in END else x[6]) for x in SONG]
+ALL=sorted([(sid,t,tr,who,fx,sc,{}) for sid,t,tr,who,fx,sc in TALK]+SONG,key=lambda x:x[1])
+shots=[];mv=0
+for (sid,t,tr,who,fx,scene,ex) in ALL:
+    i=len(shots)
     m=MOVES[mv%len(MOVES)];mv+=1
-    d={'id':'s%02d'%(i+1),'t':round(snap(t,tr),2),'in':tr,'who':who,'fx':fx}; d.update(ex); d['move']={'from':m[0],'to':m[1]}
+    d={'id':sid,'t':round(snap(t,tr),2),'in':tr,'who':who,'fx':fx}; d.update(ex); d['move']={'from':m[0],'to':m[1]}
     d['scene']=scene; shots.append(d)
 L14=json.load(open('painted/14-hunt-valerys.json'))
-cast={k:L14['cast'][k] for k in ['lucien','drow']}
+cast={k:L14['cast'][k] for k in ['lucien','drow','cedric','flower']}
 cast['boy']="Lucien as a small boy of about six, long ago: messy blond hair, small pointed elf ears, big blue-grey eyes, round cheeks, a plain linen shirt and little brown trousers, barefoot or in small boots"
 cast['father']="Lucien's father, a tall slender man with an almost aristocratic bearing, HIS FACE IS NEVER SHOWN: always seen from behind or with the face lost in deep shadow; a long dark velvet-lined travel cloak with a jagged fur collar falling heavily to the floor, long pale fingers with scars over the knuckles, a heavy silver ring on the little finger, a dark wooden lute, a silver belt buckle shaped like a beast head with two red stone eyes"
 cast['buckle']="AN OBJECT, NOT A PERSON (no people, no body, no wearer): the father's silver belt buckle on its own, shown three times: from the front, at an angle, and a close detail; a stylised wolf-like beast head with open jaws and two small dark red stones set in the eye sockets, old worn silver, on a short strip of dark leather belt"
