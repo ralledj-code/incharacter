@@ -20,7 +20,8 @@ const PLAYLIST = [
   [11, 'hunger-grows', 'The Hunger Grows', '23/09/2026', '4:57'],
   [12, 'fall-duncastle', 'The Fall of Duncastle', '28/09/2026', '6:52'],
   [13, 'down-deep', 'Down We Go to the Caves Below', '02/11/2026', '5:33'],
-  [14, 'hunt-valerys', 'The Hunt for Valerys', '21/11/2026', '6:01']
+  [14, 'hunt-valerys', 'The Hunt for Valerys', '21/11/2026', '6:01'],
+  [14, 'songbird', 'Sing Loud, Little Songbird', '21/11/2026', '3:43']  // Lucien's memory of his father (level 14)
 ];
 // songs outside the campaign: a level module with hidden: true (plus level, title, len) is playable only through its own
 // link (?song=<id>) and never shows in the song list
