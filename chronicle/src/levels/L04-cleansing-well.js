@@ -19,9 +19,7 @@ C.levels[ID] = {
   session: 'Level 4 · Session recap · 14/06/2026',
   blurb: 'The skulls in the swamp are the druids. The Pig rides in with Kalen in chains and wolves with torches; the brothers hold the pillars while the tree burns them. And at the edge of a village crowd, Severin scatters roses.',
   length: '5 min', audio: 'levels/04-' + ID + '.mp3',
-  packs: [], paintedOnly: true,
   titles: TITLES,
-  cues: CUES, keys: [{ t: -1e6, m: 'bar', b: 0 }], duration: DURATION, silenceT: 286.5, lineTimes: LINE_TIMES, beats: BEATS,
-  build() { return []; }
+  cues: CUES, duration: DURATION, silenceT: 286.5, lineTimes: LINE_TIMES, beats: BEATS,
 };
 })(typeof window !== 'undefined' ? window : globalThis);

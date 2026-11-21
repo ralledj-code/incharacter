@@ -1,10 +1,10 @@
-// Concatenates src/*.js into ../public/chronicle/index.html (template + world + ui).
+// Concatenates src/*.js into ../public/chronicle/index.html (template + painted player + levels + ui).
 // InCharacter serves it at /chronicle; level songs live in public/chronicle/levels/.
 import fs from 'node:fs';
 const out = '../public/chronicle';
 // level modules (src/levels/*.js, not starting with _) go after the engine and before the registry
 const levels = fs.readdirSync('src/levels').filter((f) => /^[^_].*\.js$/.test(f)).sort().map((f) => 'levels/' + f.slice(0, -3));
-const order = ['w1_core', 'w1b_assets', 'w2b_director', 'w2_engine', 'w3_kit', 'w3b_chars', 'w3c_action', 'w3d_story', 'w4_bar', 'w4_book', 'w5_painted', 's1a_well', 's1b_dragon', 's1c_camp_cross', 's1d_city', ...levels, 's0_stories'];
+const order = ['w1_core', 'w1b_base', 'w5_painted', ...levels, 's0_stories'];
 // painted storyboards (painted/<NN-id>.json) go in as C.boards before the registry picks them up
 const boards = fs.existsSync('painted') ? fs.readdirSync('painted').filter((f) => /^\d\d-.*\.json$/.test(f)).sort() : [];
 const boardJs = boards.map((f) => `__cw.boards[${JSON.stringify(f.slice(0, -5))}] = ${JSON.stringify(JSON.parse(fs.readFileSync('painted/' + f, 'utf8')))};`).join('\n');

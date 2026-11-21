@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+DW+Pica:ital@0;1&family=IM+Fell+English+SC&display=swap">
 <style>
-/* Layout concept: a full-bleed 3D canvas with quiet chronicle-style overlays. Boldness lives in the scene; the UI stays small and parchment-toned. */
+/* Layout: the song list, then a full-bleed painted player with standard video controls. Boldness lives in the paintings; the UI stays quiet. */
 :root {
   --bg: #07090d; --ink: #e9e0cf; --dim: #a89f8d; --ember: #e0903f; --cold: #8fb4e0; --panel: rgba(10, 12, 16, 0.74); --line: rgba(233, 224, 207, 0.22);
   --head: "IM Fell English SC", Georgia, "Times New Roman", serif; --body: "IM Fell DW Pica", Georgia, "Times New Roman", serif;
@@ -35,8 +35,6 @@ button.primary { border-color: var(--ember); color: #ffd9a8; }
 .song .btns { display: flex; gap: 8px; padding: 10px 14px 14px; }
 .song .btns .play { flex: 1; }
 .song.locked { opacity: 0.45; }
-body.solo #songsHead, body.solo #tavernRow { display: none; }
-body.family #tavernRow { display: none; }
 body.solo #start { display: flex; align-items: center; justify-content: center; }
 body.solo #songs { width: min(92vw, 720px, calc((100vh - 170px) * 16 / 9)); margin: 0 auto; display: block; }
 body.solo .song .cover { aspect-ratio: 16 / 9; height: auto; }
@@ -50,55 +48,79 @@ body.solo .song .btns .play { font-size: 1.25rem; padding: 14px 0; width: 100%; 
 #songs .song.feature .btns { align-self: flex-end; }
 #songs .song.feature .txt { min-width: 300px; }
 @media (max-width: 1000px) { #songs .song.feature { flex-direction: column; } #songs .song.feature .cover { flex: none; } #songs .song.feature .txt { min-width: 0; } #songs .song.feature .btns { align-self: stretch; } }
-#tavernRow { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 26px auto 0; text-align: center; }
 #start h1 { font-family: var(--head); font-weight: 400; letter-spacing: 0.12em; margin: 0; font-size: clamp(1.9rem, 6vw, 3.4rem); text-wrap: balance; color: #f1e6cf; }
 #start p { max-width: 34em; color: var(--dim); font-size: 1.1rem; line-height: 1.5; text-wrap: balance; }
-#start small { color: var(--dim); opacity: 0.8; max-width: 30em; font-size: 0.95rem; }
 #end { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 18px; background: radial-gradient(ellipse at 50% 40%, #151a24 0%, #07090d 70%); z-index: 20; padding: 24px max(16px, env(safe-area-inset-left, 0px)); box-sizing: border-box; }
 #end { background: rgba(3, 4, 6, 0.9); z-index: 18; }
 #end h2 { font-family: var(--head); font-weight: 400; letter-spacing: 0.12em; margin: 0; font-size: clamp(1.9rem, 6vw, 3.4rem); text-wrap: balance; color: #f1e6cf; }
 #end p { max-width: 34em; margin: 0; color: var(--dim); font-size: 1.1rem; line-height: 1.5; text-wrap: balance; }
 #endbtns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 #hud { bottom: 0; padding-bottom: max(18px, env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 5; }
-#stamp { font-family: var(--head); letter-spacing: 0.18em; color: var(--ember); font-size: 0.95rem; text-transform: uppercase; opacity: 0; transition: opacity 0.8s; min-height: 1.2em; text-shadow: 0 1px 8px #000; }
 #lyric { font-style: italic; font-size: clamp(1.15rem, 3.6vw, 1.7rem); text-align: center; max-width: 30em; text-wrap: balance; line-height: 1.3; min-height: 2.6em; opacity: 0; transition: opacity 0.7s; text-shadow: 0 1px 10px #000, 0 0 24px #000; pointer-events: none; }
-#lyric.on, #stamp.on { opacity: 1; }
 #lyric.b { color: #cdb8ff; }  /* the second voice in a conversation */
 #title { position: fixed; left: max(22px, env(safe-area-inset-left, 0px)); top: 34%; z-index: 4; pointer-events: none; opacity: 0; transform: translateX(-14px); transition: opacity 0.9s, transform 1.2s; max-width: min(70vw, 26em); }
 #title.on { opacity: 1; transform: none; }
 #title b { display: block; font-family: var(--head); font-weight: 400; letter-spacing: 0.16em; text-transform: uppercase; font-size: clamp(1.4rem, 5vw, 2.4rem); color: #f1e6cf; text-shadow: 0 2px 14px #000, 0 0 30px #000; border-bottom: 1px solid var(--ember); padding-bottom: 4px; }
 #title span { display: block; margin-top: 6px; font-style: italic; color: var(--ember); font-size: clamp(0.9rem, 2.8vw, 1.1rem); text-shadow: 0 1px 8px #000; }
-#hud.book #hint { background: rgba(10, 8, 6, 0.86); border: 1px solid var(--line); padding: 10px 14px; text-shadow: none; max-width: min(30em, calc(100vw - 32px)); box-sizing: border-box; }
 #hint { font-size: 1.05rem; color: var(--ink); text-shadow: 0 1px 10px #000; text-align: center; max-width: 28em; text-wrap: balance; }
 .row { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
-#top { top: 0; padding-top: max(10px, env(safe-area-inset-top, 0px)); display: flex; justify-content: flex-end; gap: 8px; z-index: 6; }
 /* Landscape view: the page turned sideways inside a portrait screen (iPhone rotation lock); --sw/--sh = the real screen size */
 body.rot { position: fixed; top: 0; left: 0; width: var(--sh); height: var(--sw); padding: 0; transform-origin: top left; transform: translateX(var(--sw)) rotate(90deg); }
-#top { transition: opacity 0.6s; }
-#top.away { opacity: 0; pointer-events: none; }
-#top.away > * { pointer-events: none; }
-#top button { min-height: 40px; padding: 0 12px; font-size: 0.9rem; white-space: nowrap; }
-@media (max-width: 560px) { #top { gap: 6px; } #top button { padding: 0 8px; font-size: 0.78rem; letter-spacing: 0.03em; } #bSync { display: none; } }
-#prog { position: fixed; left: 0; right: 0; bottom: 0; height: 12px; z-index: 7; cursor: pointer; display: none; }
-#prog i { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--ember); box-shadow: 0 0 8px var(--ember); }
-#prog::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(233, 224, 207, 0.12); }
 #sync { display: flex; flex-direction: column; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--ember); padding: 12px; max-width: 34em; width: 100%; box-sizing: border-box; }
 #syncLine { font-style: italic; font-size: 1.2rem; text-align: center; text-wrap: balance; }
 #syncOut { width: 100%; box-sizing: border-box; background: #000; color: var(--ink); font: 12px ui-monospace, Menlo, monospace; border: 1px solid var(--line); }
 #bTap { min-height: 64px; flex: 1 1 14em; }
-#flash, #fade { position: fixed; inset: 0; pointer-events: none; opacity: 0; z-index: 9; }
 #flash { background: #fff3da; } #fade { background: #000; transition: opacity 0.9s; z-index: 10; }
 #dev { position: fixed; left: 8px; bottom: 80px; background: var(--panel); border: 1px solid var(--line); padding: 8px 10px; font: 12px/1.4 ui-monospace, Menlo, monospace; max-width: 320px; z-index: 30; display: none; }
-#walkpad { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(170px, calc(env(safe-area-inset-bottom, 0px) + 150px)); width: 84px; height: 84px; border-radius: 50%; z-index: 6; display: none; touch-action: none; user-select: none; }
-#coach { position: fixed; left: 50%; top: max(64px, calc(env(safe-area-inset-top, 0px) + 56px)); transform: translateX(-50%); max-width: min(30em, calc(100vw - 32px)); box-sizing: border-box;
-  background: var(--panel); border: 1px solid var(--ember); color: #ffd9a8; padding: 10px 16px; font-size: 1rem; line-height: 1.4; text-align: center; z-index: 12; opacity: 0; transition: opacity 0.6s; pointer-events: none; }
-#coach.on { opacity: 1; }
+body.solo #songsHead { display: none; }
+#lyric.on { opacity: 1; }
+#fade { position: fixed; inset: 0; pointer-events: none; opacity: 0; background: #000; transition: opacity 0.9s; z-index: 10; }
+#hint { font-size: 1.05rem; color: var(--ink); text-shadow: 0 1px 10px #000; text-align: center; max-width: 28em; text-wrap: balance; opacity: 0; transition: opacity 0.6s; }
+#hint.on { opacity: 1; }
+#hud { bottom: 0; padding-bottom: max(18px, env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 13; transition: transform 0.25s; }
+body.playing:not(.idle) #hud { transform: translateY(-84px); }
+/* ---------- player: standard video controls ---------- */
+#player { position: fixed; inset: 0; z-index: 12; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: 0; color: #fff; }
+#tapzone { position: absolute; inset: 0; }
+#player.idle { cursor: none; }
+#ptop, #pbot { position: absolute; left: 0; right: 0; transition: opacity 0.3s; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
+#ptop { top: 0; display: flex; align-items: center; gap: 8px; padding-top: max(8px, env(safe-area-inset-top, 0px)); padding-bottom: 28px; background: linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0)); }
+#pbot { bottom: 0; padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)); padding-top: 34px; background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.75)); }
+#player.idle #ptop, #player.idle #pbot, #player.idle #bBig { opacity: 0; pointer-events: none; }
+#pname { display: flex; flex-direction: column; min-width: 0; }
+#ptitle { font-weight: 600; font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#pmeta { font-size: 0.8rem; opacity: 0.75; }
+#player button.ic { background: none; border: 0; border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px; padding: 8px; color: #fff; font-family: inherit; letter-spacing: 0; display: inline-flex; align-items: center; justify-content: center; }
+#player button.ic:hover { background: rgba(255,255,255,0.12); border: 0; }
+#player button.ic svg { width: 28px; height: 28px; fill: currentColor; display: block; }
+#player button.ic svg text { fill: currentColor; }
+#bCC { opacity: 0.55; } #bCC.on { opacity: 1; box-shadow: inset 0 -3px 0 -1px var(--ember); border-radius: 4px !important; }
+#bBig { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 76px !important; height: 76px !important; background: rgba(0,0,0,0.45) !important; transition: opacity 0.3s; }
+#bBig svg { width: 44px !important; height: 44px !important; }
+#player:not(.paused) #bBig { opacity: 0; pointer-events: none; }
+@media (pointer: coarse) { #player:not(.idle) #bBig { opacity: 1; pointer-events: auto; } }
+#pctl { display: flex; align-items: center; gap: 2px; }
+#pctl .grow { flex: 1; }
+#ptime { font-size: 0.9rem; font-variant-numeric: tabular-nums; margin-left: 6px; white-space: nowrap; opacity: 0.9; }
+#seek { position: relative; height: 22px; display: flex; align-items: center; cursor: pointer; touch-action: none; margin: 0 6px; }
+#seekbar { position: relative; flex: 1; height: 4px; background: rgba(255,255,255,0.25); border-radius: 2px; transition: height 0.15s; }
+#seek:hover #seekbar, #seek.drag #seekbar { height: 6px; }
+#seekfill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--ember); border-radius: 2px; }
+#seekknob { position: absolute; top: 50%; left: 0; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--ember); transform: scale(0); transition: transform 0.15s; }
+#seek:hover #seekknob, #seek.drag #seekknob { transform: scale(1); }
+@media (pointer: coarse) { #seekknob { transform: scale(1); } }
+#seektip { position: absolute; bottom: 22px; transform: translateX(-50%); font-size: 0.8rem; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 3px; opacity: 0; pointer-events: none; white-space: nowrap; }
+#seek:hover #seektip { opacity: 1; }
+#menu { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; min-width: 240px; background: rgba(18,18,20,0.94); border-radius: 10px; padding: 6px 0; z-index: 2; }
+#menu button { font-family: inherit; letter-spacing: 0; text-align: left; background: none; border: 0; border-radius: 0; padding: 0 18px; font-size: 0.95rem; color: #fff; }
+#menu button:hover { background: rgba(255,255,255,0.1); }
+@media (max-width: 560px) { #bRew, #bFwd { display: none !important; } #ptime { font-size: 0.8rem; } #player button.ic { width: 40px; height: 40px; min-width: 40px; padding: 7px; } }
 [hidden] { display: none !important; }
-@media (prefers-reduced-motion: reduce) { #lyric, #stamp, #title, #fade { transition: none; } }
+@media (prefers-reduced-motion: reduce) { #lyric, #title, #fade, #ptop, #pbot { transition: none; } }
 </style>
 
 <canvas id="gl"></canvas>
-<div id="flash"></div><div id="fade"></div>
+<div id="fade"></div>
 
 <div id="start">
   <header id="songsHead">
@@ -106,49 +128,55 @@ body.rot { position: fixed; top: 0; left: 0; width: var(--sh); height: var(--sw)
     <p>The songs of Lucien Vale, one for each chapter of the campaign. Pick one and watch the story it tells.</p>
   </header>
   <div id="songs" role="list"></div>
-  <div id="tavernRow">
-    <button id="go" disabled>Loading the world…</button>
-    <small>Or step into the tavern and ask Lucien yourself. Headphones help.</small>
-  </div>
-</div>
-
-<div class="layer" id="top" hidden>
-  <button id="bBright" title="Brightness">Brightness</button>
-  <button id="bMute" title="Mute (M)">Sound on</button>
-  <button id="bPause" title="Pause (Space)" hidden>Pause</button>
-  <button id="bSync" title="Tap lyrics to the real vocals" hidden>Sync lyrics</button>
-  <button id="bCalm" title="Camera kicks and shake on the beat">Wild camera</button>
-  <button id="bRot" title="Show the picture sideways (for a phone with rotation lock)" hidden>Landscape</button>
-  <button id="bClose" title="Close the book" hidden>Close the book</button>
 </div>
 
 <div class="layer" id="hud" hidden>
   <div id="hint"></div>
-  <div class="row" id="rowSit" hidden><button id="bSit" class="primary">Ask Lucien for a song</button><button id="bAuto">Walk me there</button></div>
-  <div class="row" id="rowBook" hidden><button id="bPrev" aria-label="Previous page">◀</button><button id="bBegin" class="primary">Begin this story</button><button id="bNext" aria-label="Next page">▶</button></div>
   <div id="sync" hidden>
     <div id="syncLine"></div>
     <div class="row"><button id="bTap" class="primary">Tap when this line starts</button><button id="bUndo">Undo</button><button id="bSyncDone">Done</button></div>
     <textarea id="syncOut" readonly rows="3" hidden></textarea>
   </div>
-  <div id="stamp"></div>
   <div id="lyric" aria-live="polite"></div>
 </div>
 <div id="title" aria-hidden="true"><b></b><span></span></div>
-<button id="walkpad" aria-label="Hold to walk forward">Walk</button>
-<div id="prog"><i></i></div>
+
+<div id="player" hidden>
+  <div id="tapzone"></div>
+  <div id="ptop">
+    <button id="bExit" class="ic" aria-label="Back to the songs (Esc)"></button>
+    <div id="pname"><b id="ptitle"></b><span id="pmeta"></span></div>
+  </div>
+  <button id="bBig" class="ic" aria-label="Play or pause"></button>
+  <div id="pbot">
+    <div id="seek" role="slider" aria-label="Seek"><div id="seekbar"><i id="seekfill"></i><b id="seekknob"></b></div><span id="seektip"></span></div>
+    <div id="pctl">
+      <button id="bPlay" class="ic"></button>
+      <button id="bRew" class="ic" aria-label="Back 10 seconds (J)"></button>
+      <button id="bFwd" class="ic" aria-label="Forward 10 seconds (L)"></button>
+      <button id="bVol" class="ic"></button>
+      <span id="ptime">0:00 / 0:00</span>
+      <span class="grow"></span>
+      <button id="bCC" class="ic" aria-label="Lyrics on/off (C)"></button>
+      <button id="bSet" class="ic" aria-label="Settings"></button>
+      <button id="bRot" class="ic" aria-label="Show sideways (for a phone with rotation lock)" hidden></button>
+      <button id="bFull" class="ic" aria-label="Fullscreen (F)"></button>
+    </div>
+  </div>
+  <div id="menu" hidden>
+    <button id="mBright"></button>
+    <button id="mCalm"></button>
+    <button id="mSync">Sync lyrics to the vocals</button>
+  </div>
+</div>
 
 <div id="end" hidden>
   <h2>Lucien takes a bow.</h2>
-  <p>The tavern roars for another.</p>
-  <div id="endbtns"><button id="bBack" class="primary">Back to the tavern</button><button id="bAgain">Play it again</button></div>
+  <div id="endbtns"><button id="bBack" class="primary">Back to the songs</button><button id="bAgain">Play it again</button></div>
 </div>
-<div id="coach" role="status" aria-live="polite"></div>
 <div id="dev"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
 /*__WORLD__*/
 </script>

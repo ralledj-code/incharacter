@@ -15,9 +15,8 @@ C.levels[ID] = {
   session: 'Tine og Max',
   blurb: 'Faster Tine og Max: fisk i junglen, lagkage og alt for meget slik, og en sofa til sidst.',
   length: '4 min', audio: 'levels/90-' + ID + '.mp3',
-  packs: [], paintedOnly: true, hidden: true, level: 90, title: 'Tine og Max', len: '3:42',
+  hidden: true, level: 90, title: 'Tine og Max', len: '3:42',
   titles: TITLES,
-  cues: CUES, keys: [{ t: -1e6, m: 'bar', b: 0 }], duration: DURATION, silenceT: 221.0, lineTimes: LINE_TIMES, beats: BEATS,
-  build() { return []; }
+  cues: CUES, duration: DURATION, silenceT: 221.0, lineTimes: LINE_TIMES, beats: BEATS,
 };
 })(typeof window !== 'undefined' ? window : globalThis);

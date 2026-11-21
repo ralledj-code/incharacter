@@ -1,16 +1,31 @@
 (function () {
 'use strict';
+/* Alaron Chronicle: the song list and the painted-song player (2026-11-21: the 3D tavern, songbook and 3D rides are gone).
+   Player controls follow the usual video-player layout: back + title on top, a seek bar and play / skip / volume / time /
+   captions / settings / landscape / fullscreen at the bottom; they fade out while the song plays and come back on any touch. */
 const C = window.__cw;
-const goBtn = document.getElementById('go');
-
-/* ---------- song list (the start screen): one card per level, playable straight away, with a share link ----------
-   ?song=<id> opens with that song on top; the flags ?painted / ?3d are carried into shared links. */
+const $ = (id) => document.getElementById(id);
+const clamp = C.clamp;
 const qs = new URLSearchParams(location.search), wantId = qs.get('song');
-const songList = document.getElementById('songs');
-let booted = null, pendingPlay = null;  // booted = playFromList once the world is ready
+const mobile = !!(window.matchMedia && matchMedia('(pointer:coarse)').matches);
+const BASE = C.BASE();
+const store = { get(k, d) { try { const v = localStorage.getItem('alaron:' + k); return v == null ? d : v; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem('alaron:' + k, v); } catch (e) { } } };
+
+/* ---------- song list (the start screen) ----------
+   ?song=<id> puts that song on top; a hidden (family) song's own link shows only that song; /chronicle/familie or ?familie
+   lists every family song and nothing from the campaign; ?painted previews boards that are not live yet. */
+const songList = $('songs');
+const soloStory = C.stories.find((s) => s.id === wantId && s.hidden && !s.locked);
+if (soloStory) { document.body.classList.add('solo'); document.title = soloStory.title; }
+const family = !wantId && (qs.has('familie') || /\/familie\/?$/.test(location.pathname));
+if (family) {
+  document.body.classList.add('family'); document.title = 'Familiens sange';
+  const h = $('songsHead'); h.querySelector('h1').textContent = 'Familiens sange';
+  h.querySelector('p').textContent = 'Sange om Oskar, Walter, Max, Tine og hele familien. Tryk Play.';
+}
 function shareUrl(s) {
   const u = new URL(location.href); u.search = ''; u.hash = ''; u.pathname = u.pathname.replace(/\/familie\/?$/, '');
-  u.searchParams.set('song', s.id); ['painted', '3d'].forEach((k) => { if (qs.has(k)) u.searchParams.set(k, ''); });
+  u.searchParams.set('song', s.id); if (qs.has('painted')) u.searchParams.set('painted', '');
   return u.toString().replace(/=(&|$)/g, '$1');
 }
 function share(s, btn) {
@@ -18,27 +33,19 @@ function share(s, btn) {
   if (navigator.share) { navigator.share({ title: s.title + ' · Alaron Chronicle', url }).catch(() => { }); return; }
   try { navigator.clipboard.writeText(url).then(() => done('Link copied'), () => prompt('Copy this link', url)); } catch (e) { prompt('Copy this link', url); }
 }
-const soloStory = C.stories.find((s) => s.id === wantId && s.hidden && !s.locked);
-// the family page (/chronicle/familie or ?familie): every family song and nothing from the campaign
-const family = !wantId && (qs.has('familie') || /\/familie\/?$/.test(location.pathname));
-if (family) {
-  document.body.classList.add('family'); document.title = 'Familiens sange';
-  const h = document.getElementById('songsHead'); h.querySelector('h1').textContent = 'Familiens sange';
-  h.querySelector('p').textContent = 'Sange om Oskar, Walter, Max, Tine og hele familien. Tryk Play.';
-}
-if (soloStory) { document.body.classList.add('solo'); document.title = soloStory.title; }
 function renderSongs() {
   const order = C.stories.map((s, i) => i);
   const wi = C.stories.findIndex((s) => s.id === wantId); if (wi >= 0) { order.splice(order.indexOf(wi), 1); order.unshift(wi); }
   songList.innerHTML = '';
   order.forEach((i) => {
-    if (family) { if (!C.stories[i].hidden) return; } else if (C.stories[i].hidden && i !== wi) return;  // hidden songs only show up through their own link or the family page
-    if (soloStory && C.stories[i] !== soloStory) return;  // ...and their link shows nothing else
-    const s = C.stories[i], key = String(s.level).padStart(2, '0') + '-' + s.id, board = s.painted || (C.boards && C.boards[key]);
+    const s = C.stories[i];
+    if (family) { if (!s.hidden) return; } else if (s.hidden && i !== wi) return;  // family songs: only through their own link or the family page
+    if (soloStory && s !== soloStory) return;
+    const key = String(s.level).padStart(2, '0') + '-' + s.id, board = s.painted || (C.boards && C.boards[key]);
     const el = document.createElement('article'); el.className = 'song' + (s.locked ? ' locked' : '') + (s.feature ? ' feature' : '') + (i === wi ? ' focus' : ''); el.setAttribute('role', 'listitem');
     const cov = document.createElement('div'); cov.className = 'cover';
-    if (board) cov.style.backgroundImage = 'url("' + new URL('levels/' + key + '/' + (board.cover || board.shots[0].id) + '.webp', C.BASE()) + '")';
-    cov.innerHTML = '<b>' + (s.hidden || s.feature ? (s.feature ? '' : '♪') : s.level) + '</b>' + (s.locked ? '<em>Coming soon</em>' : s.painted ? '<em>Painted</em>' : '');
+    if (board) cov.style.backgroundImage = 'url("' + new URL('levels/' + key + '/' + (board.cover || board.shots[0].id) + '.webp', BASE) + '")';
+    cov.innerHTML = '<b>' + (s.hidden || s.feature ? (s.feature ? '' : '♪') : s.level) + '</b>' + (s.locked ? '<em>Coming soon</em>' : '');
     const tx = document.createElement('div'); tx.className = 'txt';
     tx.innerHTML = '<h3></h3><div class="meta"></div><p class="blurb"></p>';
     tx.querySelector('h3').textContent = s.title;
@@ -49,7 +56,7 @@ function renderSongs() {
       const b = document.createElement('div'); b.className = 'btns';
       const play = document.createElement('button'); play.className = 'primary play'; play.textContent = 'Play';
       const sh = document.createElement('button'); sh.textContent = 'Share';
-      play.onclick = () => { if (booted) booted(i, play); else { pendingPlay = [i, play]; play.textContent = 'Getting ready…'; } };
+      play.onclick = () => playFromList(s, play);
       sh.onclick = () => share(s, sh);
       b.append(play); if (!soloStory) b.append(sh); el.append(b);
     }
@@ -57,347 +64,261 @@ function renderSongs() {
   });
 }
 renderSongs();
-C.loadAssets((k) => { goBtn.textContent = 'Loading the tavern… ' + Math.round(k * 100) + '%'; }).catch(() => { }).then(boot);
-function boot() {
-const THREE = C.THREE;
-const $ = (id) => document.getElementById(id);
-const clamp = C.clamp;
-const mobile = !!(window.matchMedia && matchMedia('(pointer:coarse)').matches);
 
 /* ---------- renderer ---------- */
-const canvas = $('gl');
-let renderer;
-try { renderer = new THREE.WebGLRenderer({ canvas, antialias: !mobile, powerPreference: 'high-performance' }); }
-catch (e) { $('go').textContent = 'WebGL is not available here'; throw e; }
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2));
-renderer.toneMapping = THREE.LinearToneMapping;
-const EXPOS = [1.0, 1.35, 1.8, 0.8]; let expI = 0; renderer.toneMappingExposure = EXPOS[0];
-const W = C.create({ mobile });
-W.book.setStories(C.stories); W.book.setIndex(C.firstStory || 0, true);
-const P = C.createPainted(renderer, { mobile });  // painted levels (w5_painted)
+const THREE = C.THREE, canvas = $('gl');
+let renderer = null, P = null;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: !mobile, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2));
+  renderer.toneMapping = THREE.LinearToneMapping;
+  P = C.createPainted(renderer, { mobile });
+} catch (e) { songList.insertAdjacentHTML('beforebegin', '<p style="text-align:center;color:var(--ember)">This browser cannot show the paintings (WebGL is off).</p>'); }
+const EXPOS = [1.0, 1.35, 1.8, 0.8]; let expI = 0;
 function resize() {
-  // Landscape view only makes sense on a portrait screen; a real turn to landscape switches it off
+  // the landscape view only makes sense on a portrait screen; a real turn to landscape switches it off
   if (document.body.classList.contains('rot') && innerWidth > innerHeight) document.body.classList.remove('rot');
   const rot = document.body.classList.contains('rot');
   document.body.style.setProperty('--sw', innerWidth + 'px'); document.body.style.setProperty('--sh', innerHeight + 'px');
-  const w = rot ? innerHeight : innerWidth, h = rot ? innerWidth : innerHeight;
-  renderer.setSize(w, h, false); W.resize(w, h); P.resize(w, h);
-  const b = $('bRot'); if (b) b.textContent = rot ? 'Upright' : 'Landscape';
+  if (renderer) { const w = rot ? innerHeight : innerWidth, h = rot ? innerWidth : innerHeight; renderer.setSize(w, h, false); P.resize(w, h); }
+  refreshRot();
 }
-addEventListener('resize', resize); resize();
+addEventListener('resize', resize);
 
 /* ---------- state ---------- */
-const player = { x: 0, z: 4.4, yaw: 0, pitch: 0 };
-const look = { yaw: 0, pitch: 0 };
-let mode = 'walk', sitT = 1, sitting = false, auto = null, time = 0, idle = 0;
-let story = null, started = false, paused = false, ended = false;
-const keys = {}; let padHeld = false;
+let story = null, playing = false, ended = false, requesting = false, time = 0;
+let calm = store.get('calm', '0') === '1', captions = store.get('cc', '1') === '1', muted = false;
 
 /* ---------- audio ---------- */
 const audio = new Audio(); audio.preload = 'auto';
-// each level's song is fetched when its page is first shown (story.audio, relative to the page)
-const BASE = C.BASE(), songs = {};
+const songs = {};  // id -> { state: loading|ready|err, url }
 function wantSong(s) {
   if (!s || s.locked || songs[s.id]) return;
   const e = songs[s.id] = { state: 'loading', url: null };
   fetch(new URL(s.audio, BASE)).then((r) => { if (!r.ok) throw 0; return r.blob(); })
-    .then((b) => { e.url = URL.createObjectURL(b); e.state = 'ready'; refreshBookUI(); })
-    .catch(() => { e.state = 'err'; refreshBookUI(); });
+    .then((b) => { e.url = URL.createObjectURL(b); e.state = 'ready'; })
+    .catch(() => { e.state = 'err'; });
 }
 const songState = (s) => (songs[s.id] ? songs[s.id].state : 'loading');
-function pickSong(s) {  // fallback when the file is missing: let the player choose the mp3
-  const l = document.createElement('label'); l.style.cssText = 'color:var(--dim);font-size:.95rem;pointer-events:auto';
-  l.innerHTML = 'The song did not load. Pick the mp3: <input type="file" accept="audio/*">';
-  l.querySelector('input').onchange = (ev) => { const f = ev.target.files[0]; if (f) { songs[s.id] = { state: 'ready', url: URL.createObjectURL(f) }; l.remove(); refreshBookUI(); } };
-  $('hint').appendChild(l);
-}
-audio.addEventListener('ended', () => { if (mode === 'ride') finish(); });
-/* ---------- keep the phone awake while a song plays, and tell the OS what is playing ---------- */
+function unlockAudio() { try { audio.muted = true; const p = audio.play(); if (p && p.then) p.then(() => { audio.pause(); audio.currentTime = 0; audio.muted = muted; }).catch(() => { audio.muted = muted; }); } catch (e) { } }
+audio.addEventListener('ended', () => { if (story) finish(); });
+audio.addEventListener('play', () => { playing = true; refreshPlay(); wakeOn(); });
+audio.addEventListener('pause', () => { playing = false; refreshPlay(); wakeOff(); showControls(); });
+
+/* keep the phone awake while a song plays, and tell the OS what is playing (lock screen, headset buttons) */
 let wake = null;
 function wakeOn() {
   if (wake || !navigator.wakeLock || document.visibilityState !== 'visible') return;
   navigator.wakeLock.request('screen').then((w) => { wake = w; w.addEventListener('release', () => { wake = null; }); }).catch(() => { });
 }
 function wakeOff() { if (wake) { wake.release().catch(() => { }); wake = null; } }
-audio.addEventListener('play', () => {
-  wakeOn();
-  if ('mediaSession' in navigator && story) {
-    try {
-      navigator.mediaSession.metadata = new MediaMetadata({ title: story.title, artist: 'Lucien Vale', album: 'Alaron Chronicle',
-        artwork: story.painted ? [{ src: new URL(story.paintBase + (story.painted.cover || story.painted.shots[0].id) + '.webp', BASE).href, sizes: '1600x900', type: 'image/webp' }] : [] });
-      navigator.mediaSession.setActionHandler('play', () => { if (paused) togglePause(); });
-      navigator.mediaSession.setActionHandler('pause', () => { if (!paused) togglePause(); });
-    } catch (e) { }
-  }
-});
-['pause', 'ended'].forEach((n) => audio.addEventListener(n, wakeOff));
-// the lock drops when the tab is hidden; take it again on return if the song is still going
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !audio.paused) wakeOn(); });
+function mediaSession(s) {
+  if (!('mediaSession' in navigator)) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({ title: s.title, artist: s.hidden ? '' : 'Lucien Vale', album: 'Alaron Chronicle',
+      artwork: [{ src: new URL(s.paintBase + (s.painted.cover || s.painted.shots[0].id) + '.webp', BASE).href, sizes: '1600x900', type: 'image/webp' }] });
+    const ms = navigator.mediaSession;
+    ms.setActionHandler('play', () => audio.play());
+    ms.setActionHandler('pause', () => audio.pause());
+    ms.setActionHandler('seekbackward', (d) => seekBy(-(d.seekOffset || 10)));
+    ms.setActionHandler('seekforward', (d) => seekBy(d.seekOffset || 10));
+    ms.setActionHandler('seekto', (d) => seekTo(d.seekTime));
+  } catch (e) { }
+}
 
-/* ---------- start ---------- */
-$('go').disabled = false; $('go').textContent = 'Step into the tavern';
-let fromList = false;
-function unlockAudio() { try { audio.muted = true; const p = audio.play(); if (p && p.then) p.then(() => { audio.pause(); audio.currentTime = 0; audio.muted = muted; }).catch(() => { audio.muted = muted; }); } catch (e) { } }
-// play a song straight from the list: fetch its art/packs + song with progress on the card's button, then start the ride
-booted = (i, btn) => {
-  const s = C.stories[i]; if (!s || s.locked || requesting) return;
+/* ---------- play / leave ---------- */
+// fetch the song's paintings and audio with progress on the card's button, then open the player
+function playFromList(s, btn) {
+  if (!s || s.locked || requesting || !P) return;
   unlockAudio(); requesting = true; wantSong(s);
-  let kp = s.packsReady ? 1 : 0;
-  const show = () => { const ka = songState(s) === 'ready' ? 1 : 0.3; btn.textContent = (s.hidden ? 'Loading… ' : 'Lucien tunes up… ') + Math.round((kp * 0.6 + ka * 0.4) * 100) + '%'; };
+  let kp = s.artReady ? 1 : 0;
+  const show = () => { const ka = songState(s) === 'ready' ? 1 : 0.3; btn.textContent = 'Loading… ' + Math.round((kp * 0.6 + ka * 0.4) * 100) + '%'; };
   const tk = setInterval(show, 200); show();
   const waitSong = new Promise((res) => { const k = setInterval(() => { if (songState(s) !== 'loading') { clearInterval(k); res(); } }, 100); });
-  const art = s.packsReady ? Promise.resolve() : s.painted ? P.preload(s, (k) => { kp = k; }) : C.loadPacks(s.packs || [], (k) => { kp = k; });
+  const art = s.artReady ? Promise.resolve() : P.preload(s, (k) => { kp = k; });
   Promise.all([art, waitSong]).then(() => {
-    clearInterval(tk); requesting = false; s.packsReady = true; btn.textContent = 'Play';
+    clearInterval(tk); requesting = false; s.artReady = true; btn.textContent = 'Play';
     if (songState(s) !== 'ready') { btn.textContent = 'Song missing'; return; }
     if (mobile && document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => { });
-    fromList = true; $('start').hidden = true; $('top').hidden = false; $('hud').hidden = false; started = true;
-    W.book.setIndex(i, true); mode = 'book'; sitting = false; sitT = 1; begin();
+    start(s);
   });
-};
+}
+function start(s) {
+  story = s; loadTimes(s); P.start(s); mediaSession(s);
+  if (audio.src !== songs[s.id].url) { audio.src = songs[s.id].url; audio.load(); }
+  $('start').hidden = true; $('player').hidden = false; $('hud').hidden = false; document.body.classList.add('playing');
+  $('ptitle').textContent = s.title; $('pmeta').textContent = s.hidden ? '' : s.feature ? (s.meta || '') : 'Level ' + s.level + (s.date ? ' · ' + s.date : '');
+  ended = false; $('end').hidden = true; $('fade').style.opacity = 0; lastLine = null;
+  audio.currentTime = 0; audio.muted = muted;
+  const p = audio.play(); if (p && p.catch) p.catch(() => showControls());
+  resize(); showControls();
+  if (mobile && innerHeight > innerWidth * 1.15) hint('Turn your phone sideways for the full picture, or tap the rotate button.', 5000);
+}
 function toList() {
-  audio.pause(); W.endRide(); tavernMusic(false); mode = 'walk'; sitting = false; ended = false; fromList = false; started = false;
-  $('fade').style.opacity = 0; $('end').hidden = true; $('lyric').classList.remove('on'); $('stamp').classList.remove('on'); $('title').classList.remove('on'); lastTitle = null;
-  $('top').hidden = true; $('hud').hidden = true; $('start').hidden = false; refreshUI();
+  audio.pause(); story = null; ended = false; closeMenu();
+  $('fade').style.opacity = 0; $('end').hidden = true; $('player').hidden = true; $('hud').hidden = true; $('lyric').classList.remove('on'); $('title').classList.remove('on');
+  $('start').hidden = false; document.body.classList.remove('playing');
   if (document.body.classList.contains('rot')) { document.body.classList.remove('rot'); resize(); }
   if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => { });
 }
-$('go').onclick = () => {
-  tavernMusic(true);
-  $('start').hidden = true; $('top').hidden = false; $('hud').hidden = false; started = true;
-  unlockAudio(); refreshUI();
-};
-
-/* ---------- input ---------- */
-let drag = null;
-let lastTouch = performance.now();
-['pointerdown', 'pointermove', 'keydown'].forEach((n) => addEventListener(n, () => { lastTouch = performance.now(); }, true));
-canvas.addEventListener('pointerdown', (e) => { if (!started) return; canvas.setPointerCapture(e.pointerId); drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t: performance.now() }; idle = 0; });
-canvas.addEventListener('pointermove', (e) => {
-  if (!drag) return;
-  const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; idle = 0;
-  const k = 0.0045;
-  if (mode === 'walk') { player.yaw -= dx * k; player.pitch = clamp(player.pitch - dy * k, -1.2, 1.2); }
-  else if (mode === 'ride') { look.yaw -= dx * k; look.pitch = clamp(look.pitch - dy * k, -1.3, 1.3); }
-  else if (mode === 'book') { look.pitch = clamp(look.pitch - dy * k, -0.6, 0.8); }
-});
-function endDrag(e) {
-  if (!drag) return;
-  const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy, quick = performance.now() - drag.t < 700;
-  if (mode === 'book' && !sitting && quick && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) flip(dx < 0 ? 1 : -1);
-  drag = null;
-}
-canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', () => { drag = null; });
-addEventListener('keydown', (e) => {
-  if (!started || e.repeat && e.code !== 'ArrowLeft' && e.code !== 'ArrowRight') { keys[e.code] = true; return; }
-  keys[e.code] = true; idle = 0;
-  if (e.code === 'KeyE' && mode === 'walk' && W.nearChair) sit();
-  if (mode === 'book') { if (e.code === 'ArrowRight') flip(1); if (e.code === 'ArrowLeft') flip(-1); if (e.code === 'Enter' || e.code === 'Space') begin(); if (e.code === 'Escape') standUp(); }
-  if (mode === 'ride') { if (e.code === 'Space') { e.preventDefault(); togglePause(); } if (e.code === 'Escape') backToBook(); }
-  if (e.code === 'KeyM') toggleMute();
-  if (e.code === 'KeyD') { const d = $('dev'); d.style.display = d.style.display === 'block' ? 'none' : 'block'; }
-  if (e.code === 'KeyK' && mode === 'ride') { marks.push(+audio.currentTime.toFixed(1)); }
-});
-addEventListener('keyup', (e) => { keys[e.code] = false; });
-const marks = [];
-const pad = $('walkpad');
-pad.addEventListener('pointerdown', (e) => { padHeld = true; pad.setPointerCapture(e.pointerId); e.preventDefault(); });
-['pointerup', 'pointercancel'].forEach((n) => pad.addEventListener(n, () => { padHeld = false; }));
-
-const HINT_FAR = 'The tavern is loud tonight. Lucien is on stage, his songbook on the stand in front.';
-const HINT_NEAR = 'Lucien grins at you. Pick a song from his book.';
-
-/* ---------- tavern music: a CC0 loop (The Old Tower Inn, RandomMind), gapless via Web Audio ---------- */
-let actx = null, tavGain = null, tavOn = false;
-function tavernMusic(on) {
-  tavOn = on;
-  if (!actx) {
-    if (!on) return;
-    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
-    tavGain = actx.createGain(); tavGain.gain.value = 0; tavGain.connect(actx.destination);
-    fetch(new URL('tavern-loop.mp3', BASE)).then((r) => r.arrayBuffer()).then((b) => actx.decodeAudioData(b)).then((buf) => {
-      const src = actx.createBufferSource(); src.buffer = buf; src.loop = true;
-      src.loopStart = 0.026; src.loopEnd = Math.min(buf.duration, 0.026 + 49.95);  // skip the mp3 encoder's lead-in so the loop is seamless
-      src.connect(tavGain); src.start(0, 0.026); tavernMusic(tavOn);
-    }).catch(() => { });
-  }
-  if (actx.state === 'suspended') actx.resume();
-  const g = tavGain.gain, now = actx.currentTime;
-  g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(on && !muted ? 0.45 : 0, now + (on ? 2.5 : 0.8));
-}
-/* ---------- first-visit coach: one hint per step, each shown once (remembered on this device) ---------- */
-const COACH = {
-  look: mobile ? 'Drag anywhere to look around.' : 'Drag with the mouse to look around.',
-  walk: mobile ? 'Hold the Walk button to walk. Head for the stage at the back.' : 'Walk with W A S D (or the arrow keys). Head for the stage at the back.',
-  stage: 'You reached Lucien. Ask him for a song.',
-  book: mobile ? 'Swipe the songbook (or tap ◀ ▶) to pick a song, then ask for it.' : 'Turn the pages with ◀ ▶ or the arrow keys, then ask for a song.',
-  ride: 'Sit back: the camera follows the song. Pause and Calm camera are top right; tap the bar at the bottom to jump.'
-};
-let coachSeen = {}; try { coachSeen = JSON.parse(localStorage.getItem('alaron:coach') || '{}'); } catch (e) { }
-let coachKey = null, coachT = 0;
-function coach(key) {
-  if (key === coachKey || (key && coachSeen[key])) return;
-  if (coachKey) { coachSeen[coachKey] = 1; try { localStorage.setItem('alaron:coach', JSON.stringify(coachSeen)); } catch (e) { } }
-  coachKey = key; coachT = 0; const el = $('coach');
-  if (key) { el.textContent = COACH[key]; el.classList.add('on'); } else el.classList.remove('on');
-}
-function coachTick(dt) {
-  if (!started) return;
-  coachT += dt;
-  if (coachKey && coachT > (coachKey === 'ride' ? 9 : 14)) { coach(null); return; }  // never nag
-  if (mode === 'walk') {
-    if (W.nearChair) coach('stage');
-    else if (!coachSeen.look && coachKey !== 'look') coach('look');
-    else if (coachKey === 'look' && (drag || coachT > 5)) coach('walk');
-    else if (!coachKey && !coachSeen.walk) coach('walk');
-  } else if (mode === 'book' && !sitting) coach('book');
-  else if (mode === 'ride' && !(story && story.painted)) coach('ride');
-}
-let calm = false;
-try { calm = localStorage.getItem('alaron:calm') === '1'; } catch (e) { }
-
-/* ---------- actions ---------- */
-function sit() {
-  if (sitting || mode !== 'walk') return;
-  auto = null; mode = 'book'; sitT = 0; sitting = true; look.yaw = 0; look.pitch = 0; refreshUI();
-}
-function standUp() { if (mode !== 'book') return; mode = 'walk'; sitting = false; player.x = W.STAND.x; player.z = W.STAND.z + 0.8; player.yaw = 0; player.pitch = 0; refreshUI(); }
-function flip(d) { const before = W.book.index; if (d > 0) W.book.next(); else W.book.prev(); if (W.book.index !== before) refreshBookUI(); }
-function curStory() { return C.stories[W.book.index]; }
-let requesting = false;
-function begin() {
-  const s = curStory(); if (!s || s.locked || mode !== 'book' || sitting || requesting) return;
-  if (songState(s) !== 'ready' || !s.packsReady) {
-    // first request of this song: fetch its level packs and audio (shared packs are cached), then start
-    requesting = true; wantSong(s);
-    const btn = $('bBegin'); let kp = 0;
-    const show = () => { const ka = songState(s) === 'ready' ? 1 : 0.4; btn.textContent = (s.hidden ? 'Loading… ' : 'Lucien tunes up… ') + Math.round((kp * 0.5 + ka * 0.5) * 100) + '%'; };
-    const tk = setInterval(show, 250); show();
-    const waitSong = new Promise((res) => { const k = setInterval(() => { if (songState(s) !== 'loading') { clearInterval(k); res(); } }, 100); });
-    const art = s.painted ? P.preload(s, (k) => { kp = k; }) : C.loadPacks(s.packs || [], (k) => { kp = k; });
-    Promise.all([art, waitSong]).then(() => {
-      clearInterval(tk); requesting = false; s.packsReady = true;
-      if (songState(s) === 'ready') begin(); else refreshBookUI();
-    });
-    return;
-  }
-  story = s; loadTimes(s); if (s.painted) P.start(s); else W.loadStory(s); tavernMusic(false);
-  if (audio.src !== songs[s.id].url) { audio.src = songs[s.id].url; audio.load(); }
-  mode = 'ride'; ended = false; paused = false;
-  W.beginRide({ x: W.SEAT.x, y: W.SEAT.y, z: W.SEAT.z, yaw: look.yaw * 0.6, pitch: -0.33 + look.pitch * 0.6 });
-  look.yaw = 0; look.pitch = 0;
-  audio.currentTime = 0; audio.muted = muted;
-  const p = audio.play(); if (p && p.catch) p.catch(() => { $('hint').textContent = 'Tap Begin again to start the sound.'; mode = 'book'; W.endRide(); refreshUI(); });
-  $('fade').style.opacity = 0; $('end').hidden = true; refreshUI();
-  if (s.painted && mobile && innerHeight > innerWidth * 1.15) { $('hint').textContent = 'Turn your phone sideways for the full picture, or tap Landscape if it is rotation-locked.'; setTimeout(() => { if (mode === 'ride') $('hint').textContent = ''; }, 5000); }
-}
-function backToBook() {
-  if (fromList) { toList(); return; }
-  audio.pause(); W.endRide(); tavernMusic(true); mode = 'book'; sitting = false; sitT = 1; ended = false; look.yaw = 0; look.pitch = 0;
-  $('fade').style.opacity = 0; $('end').hidden = true; $('lyric').classList.remove('on'); $('stamp').classList.remove('on'); $('title').classList.remove('on'); lastTitle = null; refreshUI();
-}
-function togglePause() { if (mode !== 'ride' || ended) return; paused = !paused; if (paused) audio.pause(); else audio.play(); $('bPause').textContent = paused ? 'Resume' : 'Pause'; }
-let muted = false;
-function toggleMute() { muted = !muted; audio.muted = muted; $('bMute').textContent = muted ? 'Sound off' : 'Sound on'; tavernMusic(tavOn); }
-function finish() { if (ended) return; ended = true; $('bBack').textContent = family ? 'Tilbage til sangene' : fromList ? 'Back to the songs' : 'Back to the tavern';
-  const plain = !!(story && story.hidden);  // a song outside the campaign ends on its own title, no Lucien, no way back into the book
+function finish() {
+  if (ended) return; ended = true; audio.pause();
+  const plain = !!(story && story.hidden);  // a song outside the campaign ends on its own title, without Lucien
   $('end').querySelector('h2').textContent = plain ? story.title : 'Lucien takes a bow.';
-  $('end').querySelector('p').hidden = plain; $('bBack').hidden = plain && !family; $('fade').style.opacity = 1; setTimeout(() => { if (ended && mode === 'ride') $('end').hidden = false; }, 1400); }
+  $('bBack').textContent = family ? 'Tilbage til sangene' : 'Back to the songs'; $('bBack').hidden = plain && !family;
+  $('bAgain').textContent = family || plain ? 'Igen' : 'Play it again';
+  $('fade').style.opacity = 1; setTimeout(() => { if (ended && story) $('end').hidden = false; }, 1400);
+}
+function togglePlay() { if (!story) return; if (ended) { again(); return; } if (audio.paused) audio.play(); else audio.pause(); }
+function seekTo(t) {
+  if (!story) return; audio.currentTime = clamp(t, 0, story.duration - 0.05);
+  if (ended && t < story.silenceT) { ended = false; $('fade').style.opacity = 0; $('end').hidden = true; audio.play(); }
+  showControls();
+}
+const seekBy = (d) => seekTo(audio.currentTime + d);
+function again() { if (!story) return; const s = story; ended = false; $('end').hidden = true; $('fade').style.opacity = 0; start(s); }
+function toggleMute() { muted = !muted; audio.muted = muted; refreshVol(); }
+function toggleCC() { captions = !captions; store.set('cc', captions ? '1' : '0'); $('bCC').classList.toggle('on', captions); if (!captions) $('lyric').classList.remove('on'); lastLine = null; }
+function toggleFull() {
+  const d = document;
+  if (d.fullscreenElement) { if (d.exitFullscreen) d.exitFullscreen().catch(() => { }); }
+  else if (d.documentElement.requestFullscreen) d.documentElement.requestFullscreen().catch(() => { });
+}
+document.addEventListener('fullscreenchange', () => { $('bFull').innerHTML = ICON[document.fullscreenElement ? 'unfull' : 'full']; });
 
-$('bSit').onclick = sit;
-$('bAuto').onclick = () => { auto = { t: 0, x: player.x, z: player.z, yaw: player.yaw }; };
-$('bPrev').onclick = () => flip(-1); $('bNext').onclick = () => flip(1); $('bBegin').onclick = begin;
-$('bMute').onclick = toggleMute; $('bPause').onclick = togglePause;
-const calmLabel = () => { $('bCalm').textContent = calm ? 'Calm camera' : 'Wild camera'; };
-$('bCalm').onclick = () => { calm = !calm; try { localStorage.setItem('alaron:calm', calm ? '1' : '0'); } catch (e) { } calmLabel(); }; calmLabel();
-$('bRot').onclick = () => { document.body.classList.toggle('rot'); resize(); };
-$('bBright').onclick = () => { expI = (expI + 1) % EXPOS.length; renderer.toneMappingExposure = EXPOS[expI]; $('bBright').textContent = 'Brightness ' + (expI + 1); };
-$('bClose').onclick = () => { if (mode === 'ride') backToBook(); else standUp(); };
-$('bBack').onclick = backToBook;
-$('bAgain').onclick = () => { const fl = fromList; fromList = false; backToBook(); fromList = fl; begin(); };
-$('prog').addEventListener('pointerdown', (e) => {
-  if (mode !== 'ride' || !story) return; const r = e.currentTarget.getBoundingClientRect();
-  const k = document.body.classList.contains('rot') ? (e.clientY - r.top) / r.height : (e.clientX - r.left) / r.width;  // turned sideways: the bar runs down the screen
-  audio.currentTime = clamp(k, 0, 1) * story.duration; ended = false; $('fade').style.opacity = 0; $('end').hidden = true;
-  e.stopPropagation();
+/* ---------- controls ---------- */
+const ICON = {
+  play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>',
+  replay: '<svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>',
+  back: '<svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z"/></svg>',
+  rew: '<svg viewBox="0 0 24 24"><path d="M11.99 5V1l-5 5 5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6h-2c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="16.2" text-anchor="middle" font-size="7" font-family="sans-serif" font-weight="700">10</text></svg>',
+  fwd: '<svg viewBox="0 0 24 24"><path d="M12.01 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/><text x="12" y="16.2" text-anchor="middle" font-size="7" font-family="sans-serif" font-weight="700">10</text></svg>',
+  vol: '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>',
+  mute: '<svg viewBox="0 0 24 24"><path d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z"/></svg>',
+  cc: '<svg viewBox="0 0 24 24"><path d="M19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm-8 7H9.5v-.5h-2v3h2V13H11v1a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1zm7 0h-1.5v-.5h-2v3h2V13H18v1a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1z"/></svg>',
+  gear: '<svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.47.47 0 0 0-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.47.47 0 0 0 .12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 0 0-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg>',
+  rot: '<svg viewBox="0 0 24 24"><path d="M16.48 2.52c3.27 1.55 5.61 4.72 5.97 8.48h1.5C23.44 4.84 18.29 0 12 0l-.66.03 3.81 3.81 1.33-1.32zm-6.25-.77a1.49 1.49 0 0 0-2.12 0L1.75 8.11a1.49 1.49 0 0 0 0 2.12l12.02 12.02c.59.59 1.54.59 2.12 0l6.36-6.36a1.49 1.49 0 0 0 0-2.12L10.23 1.75zm4.6 19.44L2.81 9.17l6.36-6.36 12.02 12.02-6.36 6.36zm-7.31.29A10.5 10.5 0 0 1 1.55 13H.05C.56 19.16 5.71 24 12 24l.66-.03-3.81-3.81-1.33 1.32z"/></svg>',
+  full: '<svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>',
+  unfull: '<svg viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>'
+};
+$('bExit').innerHTML = ICON.back; $('bRew').innerHTML = ICON.rew; $('bFwd').innerHTML = ICON.fwd; $('bCC').innerHTML = ICON.cc; $('bSet').innerHTML = ICON.gear;
+$('bRot').innerHTML = ICON.rot; $('bFull').innerHTML = ICON.full; $('bCC').classList.toggle('on', captions);
+function refreshPlay() { const k = ended ? 'replay' : audio.paused ? 'play' : 'pause'; $('bPlay').innerHTML = ICON[k]; $('bBig').innerHTML = ICON[k]; $('bPlay').setAttribute('aria-label', k === 'pause' ? 'Pause (Space)' : 'Play (Space)'); $('player').classList.toggle('paused', audio.paused); }
+function refreshVol() { $('bVol').innerHTML = ICON[muted ? 'mute' : 'vol']; $('bVol').setAttribute('aria-label', muted ? 'Sound on (M)' : 'Mute (M)'); }
+function refreshRot() { const b = $('bRot'); if (b) b.hidden = !(mobile && (innerHeight > innerWidth || document.body.classList.contains('rot'))); }
+refreshPlay(); refreshVol();
+const fmt = (t) => { t = Math.max(0, Math.floor(t)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+
+// controls show on any pointer move / touch and fade out after 3 s while the song plays
+let lastActive = performance.now(), shown = true;
+function showControls() { lastActive = performance.now(); if (!shown) { shown = true; $('player').classList.remove('idle'); document.body.classList.remove('idle'); } }
+function hideControls() { if (!shown || audio.paused || menuOpen || scrubbing) return; shown = false; $('player').classList.add('idle'); document.body.classList.add('idle'); }
+['pointermove', 'pointerdown', 'keydown'].forEach((n) => addEventListener(n, (e) => { if (story && !(n === 'pointermove' && e.pointerType === 'touch')) { if (n !== 'pointerdown' || e.target.closest('#player button, #seek, #menu')) showControls(); else if (e.pointerType === 'mouse') showControls(); } }, true));
+// the picture: mouse click = play/pause, double click = fullscreen; on a touch screen a tap shows or hides the controls
+$('tapzone').addEventListener('click', (e) => {
+  if (!story || ended) return;
+  if (menuOpen) { closeMenu(); return; }
+  if (mobile) { if (shown && !audio.paused) { shown = true; lastActive = 0; hideControls(); } else showControls(); return; }
+  togglePlay();
 });
+$('tapzone').addEventListener('dblclick', (e) => { if (!mobile) { toggleFull(); togglePlay(); } });
+$('bPlay').onclick = togglePlay; $('bBig').onclick = togglePlay;
+$('bRew').onclick = () => seekBy(-10); $('bFwd').onclick = () => seekBy(10);
+$('bVol').onclick = toggleMute; $('bCC').onclick = toggleCC; $('bFull').onclick = toggleFull;
+$('bExit').onclick = toList; $('bBack').onclick = toList; $('bAgain').onclick = again;
+$('bRot').onclick = () => { document.body.classList.toggle('rot'); resize(); };
+// settings menu: brightness, camera, lyric sync
+let menuOpen = false;
+function closeMenu() { menuOpen = false; $('menu').hidden = true; }
+function menuLabels() {
+  $('mBright').textContent = 'Brightness · ' + ['Normal', 'Bright', 'Brighter', 'Dim'][expI];
+  $('mCalm').textContent = 'Camera · ' + (calm ? 'Calm' : 'Lively');
+}
+$('bSet').onclick = (e) => { e.stopPropagation(); menuOpen = !menuOpen; $('menu').hidden = !menuOpen; menuLabels(); showControls(); };
+$('mBright').onclick = () => { expI = (expI + 1) % EXPOS.length; if (renderer) renderer.toneMappingExposure = EXPOS[expI]; menuLabels(); };
+$('mCalm').onclick = () => { calm = !calm; store.set('calm', calm ? '1' : '0'); menuLabels(); };
+$('mSync').onclick = () => { closeMenu(); syncStart(); };
+// seek bar: click or drag anywhere on it (runs down the screen in the turned-sideways view)
+let scrubbing = false;
+function seekFrac(e) {
+  const r = $('seek').getBoundingClientRect(), rot = document.body.classList.contains('rot');
+  return clamp(rot ? (e.clientY - r.top) / r.height : (e.clientX - r.left) / r.width, 0, 1);
+}
+$('seek').addEventListener('pointerdown', (e) => { if (!story) return; scrubbing = true; $('seek').setPointerCapture(e.pointerId); $('seek').classList.add('drag'); seekTo(seekFrac(e) * story.duration); e.stopPropagation(); });
+$('seek').addEventListener('pointermove', (e) => {
+  if (!story) return; const k = seekFrac(e);
+  $('seektip').textContent = fmt(k * story.duration); $('seektip').style.left = (k * 100).toFixed(2) + '%';
+  if (scrubbing) seekTo(k * story.duration);
+});
+['pointerup', 'pointercancel'].forEach((n) => $('seek').addEventListener(n, () => { scrubbing = false; $('seek').classList.remove('drag'); }));
+addEventListener('keydown', (e) => {
+  if (!story || e.target.tagName === 'TEXTAREA') return;
+  const k = e.code;
+  if (syncing && k === 'Space') { e.preventDefault(); tap(); return; }
+  if (k === 'Space' || k === 'KeyK') { e.preventDefault(); togglePlay(); }
+  else if (k === 'ArrowLeft') { e.preventDefault(); seekBy(-5); } else if (k === 'ArrowRight') { e.preventDefault(); seekBy(5); }
+  else if (k === 'KeyJ') seekBy(-10); else if (k === 'KeyL') seekBy(10);
+  else if (k === 'KeyM') toggleMute(); else if (k === 'KeyF') toggleFull(); else if (k === 'KeyC') toggleCC();
+  else if (k === 'Escape') { if (menuOpen) closeMenu(); else if (!document.fullscreenElement) toList(); }
+  else if (k === 'KeyD') { const d = $('dev'); d.style.display = d.style.display === 'block' ? 'none' : 'block'; }
+  else if (/^Digit\d$/.test(k)) seekTo(story.duration * (+k.slice(5)) / 10);
+});
+let hintT = 0;
+function hint(text, ms) { const h = $('hint'); h.textContent = text; h.classList.add('on'); clearTimeout(hintT); hintT = setTimeout(() => h.classList.remove('on'), ms || 4000); }
 
-/* ---------- lyric sync (tap to the real vocals) ---------- */
+/* ---------- lyric sync (settings menu: tap to the real vocals) ---------- */
 let syncing = false, taps = [];
 function syncShow() {
   const f = story.flat, n = taps.length;
   $('syncLine').textContent = n < f.length ? (n + 1) + '/' + f.length + '  ' + f[n].tx : 'All lines tapped.';
   $('bTap').disabled = n >= f.length;
 }
-$('bSync').onclick = () => {
-  if (mode !== 'ride') return; syncing = true; taps = []; story.flat = flatLines(story);
-  audio.currentTime = 0; if (paused) togglePause(); audio.play(); ended = false; $('fade').style.opacity = 0; $('end').hidden = true;
-  $('sync').hidden = false; $('syncOut').hidden = true; $('lyric').classList.remove('on'); lastLine = ''; syncShow();
-};
+function syncStart() {
+  syncing = true; taps = []; story.flat = flatLines(story);
+  seekTo(0); audio.play();
+  $('sync').hidden = false; $('syncOut').hidden = true; $('sync').querySelector('.row').hidden = false; $('lyric').classList.remove('on'); lastLine = null; syncShow();
+}
 function tap() { if (!syncing || taps.length >= story.flat.length) return; taps.push(+Math.max(0, audio.currentTime - 0.2).toFixed(2)); syncShow(); }
 $('bTap').onclick = tap;
 $('bUndo').onclick = () => { taps.pop(); syncShow(); };
 $('bSyncDone').onclick = () => {
   const full = taps.length === story.flat.length;
-  if (full) { story.times = taps.slice(); try { localStorage.setItem('alaron:' + story.id, JSON.stringify(taps)); } catch (e) { } }
+  if (full) { story.times = taps.slice(); store.set(story.id, JSON.stringify(taps)); }
   const o = $('syncOut'); o.value = JSON.stringify(taps); o.hidden = false; o.focus(); o.select();
   try { navigator.clipboard.writeText(o.value).catch(() => { }); } catch (e) { }
   syncing = false; $('sync').querySelector('.row').hidden = true; $('syncLine').textContent = full ? 'Saved on this device and copied. Send me these numbers to bake them in.' : 'Incomplete, so not applied.';
-  setTimeout(() => { $('sync').hidden = true; $('sync').querySelector('.row').hidden = false; }, 9000);
+  setTimeout(() => { $('sync').hidden = true; }, 9000);
 };
-addEventListener('keydown', (e) => { if (syncing && e.code === 'Space') { e.preventDefault(); tap(); } }, true);
-
-/* ---------- UI refresh ---------- */
-function refreshBookUI() {
-  if (mode !== 'book') return;
-  const s = curStory(); if (!s) return;
-  // songs load when requested (begin), not while browsing the book
-  const st = s.locked ? 'locked' : songs[s.id] ? songState(s) : 'idle', meta = s.session + ' · ' + s.length + (st === 'err' ? ' · song missing' : '');
-  $('hint').innerHTML = '<b style="font-family:var(--head);letter-spacing:.1em;font-size:1.25rem">' + s.title + '</b><br><span style="color:var(--ember);font-size:.9rem">' + meta + '</span><br>' + s.blurb;
-  if (!s.locked && st === 'err' && !songs[s.id].asked) { songs[s.id].asked = true; pickSong(s); }
-  $('bBegin').disabled = !!s.locked || requesting;
-  if (!requesting) $('bBegin').textContent = s.locked ? 'Coming soon' : 'Ask for this song';
-  $('bPrev').disabled = W.book.index === 0; $('bNext').disabled = W.book.index >= W.book.count - 1;
-}
-let lastNear = null;
-function refreshUI() {
-  const walk = mode === 'walk', bk = mode === 'book' && !sitting, ride = mode === 'ride';
-  $('rowBook').hidden = !bk; $('hud').classList.toggle('book', mode === 'book'); $('prog').style.display = ride ? 'block' : 'none';
-  $('bPause').hidden = !ride; $('bRot').hidden = !(ride && mobile && story && story.painted && (innerHeight > innerWidth || document.body.classList.contains('rot'))); $('bSync').hidden = !ride; $('bClose').hidden = walk; $('bCalm').hidden = !ride; $('bBright').hidden = ride;  // top bar fits a phone
-  $('bClose').textContent = ride ? (fromList ? (innerWidth < 560 ? 'Songs' : 'Back to the songs') : innerWidth < 560 ? 'Book' : 'Back to the book') : 'Stand up';
-  pad.style.display = walk && mobile ? 'block' : 'none';
-  if (walk) { $('hint').textContent = W.nearChair ? HINT_NEAR : HINT_FAR; }
-  if (bk) refreshBookUI();
-  if (ride) $('hint').textContent = '';
-  if (sitting) $('hint').textContent = '';
-  lastNear = null;
-}
 
 /* ---------- lyrics ---------- */
 const cueAt = (t) => { let k = 0; story.cues.forEach((c, i) => { if (c.t <= t) k = i; }); return k; };
-let lastLine = '', lastStamp = '', lastTitle = null;
+let lastLine = null, lastTitle = null;
 function flatLines(s) { const a = []; s.cues.forEach((c, ci) => (c.lines || []).forEach((tx, k) => a.push({ ci, k, tx }))); return a; }
 function loadTimes(s) {
   s.flat = flatLines(s);
   let tm = s.lineTimes || null;
-  try { const v = JSON.parse(localStorage.getItem('alaron:' + s.id) || 'null'); if (v && v.length === s.flat.length) tm = v; } catch (e) { }
+  try { const v = JSON.parse(store.get(s.id, 'null')); if (v && v.length === s.flat.length) tm = v; } catch (e) { }
   s.times = tm;
 }
 function lyricsAt(t) {
-  const cues = story.cues, i = cueAt(Math.max(0, t)), c = cues[i], nx = cues[i + 1], end = nx ? nx.t : story.duration;
-  const st = c.stamp && t - c.t < 7 && t >= c.t ? c.stamp : '';
-  if (st !== lastStamp) { lastStamp = st; if (st) $('stamp').textContent = st; $('stamp').classList.toggle('on', !!st); }
   // name cards: who someone is, the first time they appear (level `titles: [{ t, name, sub, dur }]`)
   const tc = (story.titles || []).find((x) => t >= x.t && t < x.t + (x.dur || 4.5)) || null;
   if (tc !== lastTitle) { lastTitle = tc; if (tc) { $('title').firstChild.textContent = tc.name; $('title').lastChild.textContent = tc.sub || ''; } $('title').classList.toggle('on', !!tc); }
   let line = '', voice = '';  // voice: a level with `voices` (one per line, e.g. 'b') marks the second speaker's lines
-  if (story.times && !syncing) {
-    const tm = story.times; let k = -1;
-    for (let j = 0; j < tm.length; j++) if (tm[j] != null && tm[j] <= t) k = j; else if (tm[j] != null) break;
-    if (k >= 0) { const nxt = k + 1 < tm.length ? tm[k + 1] : 1e9; if (t < Math.min(nxt - 0.1, tm[k] + 7)) { line = story.flat[k].tx; voice = story.voices ? story.voices[k] || '' : ''; } }
-  } else if (c.lines && c.lines.length && t >= c.t) {
-    const a = c.t + 0.4, b = end - 0.4, n = c.lines.length, seg = (b - a) / n;
-    if (t >= a && t < b) { const k = Math.min(n - 1, Math.floor((t - a) / seg)); const within = (t - a) - k * seg; line = within < seg - 0.5 ? c.lines[k] : ''; }
+  if (captions && !syncing) {
+    if (story.times) {
+      const tm = story.times; let k = -1;
+      for (let j = 0; j < tm.length; j++) if (tm[j] != null && tm[j] <= t) k = j; else if (tm[j] != null) break;
+      if (k >= 0) { const nxt = k + 1 < tm.length ? tm[k + 1] : 1e9; if (t < Math.min(nxt - 0.1, tm[k] + 7)) { line = story.flat[k].tx; voice = story.voices ? story.voices[k] || '' : ''; } }
+    } else {
+      const cues = story.cues, i = cueAt(Math.max(0, t)), c = cues[i], nx = cues[i + 1], end = nx ? nx.t : story.duration;
+      if (c.lines && c.lines.length && t >= c.t) {
+        const a = c.t + 0.4, b = end - 0.4, n = c.lines.length, seg = (b - a) / n;
+        if (t >= a && t < b) { const k = Math.min(n - 1, Math.floor((t - a) / seg)); if ((t - a) - k * seg < seg - 0.5) line = c.lines[k]; }
+      }
+    }
   }
   if (line !== lastLine) { lastLine = line; const el = $('lyric'); if (line) { el.textContent = line; el.classList.toggle('b', voice === 'b'); el.classList.add('on'); } else el.classList.remove('on'); }
 }
@@ -406,52 +327,25 @@ function lyricsAt(t) {
 let last = performance.now(), fpsAcc = 0, fpsN = 0, fps = 0;
 function frame(now) {
   requestAnimationFrame(frame);
-  const dt = Math.min(0.05, (now - last) / 1000); last = now; time += dt; idle += dt;
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; time += dt;
   fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
-
-  if (mode === 'walk' && started) {
-    if (auto) {
-      auto.t = Math.min(1, auto.t + dt / 2.6); const e = C.sm(auto.t);
-      player.x = C.lerp(auto.x, W.STAND.x, e); player.z = C.lerp(auto.z, W.STAND.z, e); player.yaw = C.lerp(auto.yaw, 0, e); player.pitch *= 0.95;
-      if (auto.t >= 1) { auto = null; sit(); }
-    } else {
-      let fwd = 0, side = 0;
-      if (keys.KeyW || keys.ArrowUp || padHeld) fwd += 1; if (keys.KeyS || keys.ArrowDown) fwd -= 1;
-      if (keys.KeyD) side += 1; if (keys.KeyA) side -= 1;
-      if (keys.ArrowLeft) player.yaw += dt * 1.6; if (keys.ArrowRight) player.yaw -= dt * 1.6;
-      if (fwd || side) W.walkStep(player, { fwd, side }, dt);
-    }
-  }
-  if (sitting) { sitT = Math.min(1, sitT + dt / 1.6); if (sitT >= 1) { sitting = false; refreshUI(); } }
-  if (mode === 'ride' && idle > 15 && !drag) { look.yaw *= Math.exp(-dt * 0.5); look.pitch *= Math.exp(-dt * 0.5); }
-
-  const t = mode === 'ride' ? audio.currentTime : -1;
-  const painted = mode === 'ride' && story && story.painted;
   if (dev.hold) { dev.shot(dev.hold); return; }
-  coachTick(dt);
-  if (!painted) W.update({ mode, t, dt, time, player, look, sit: sitT, calm });
-  if (mode === 'walk' && started && W.nearChair !== lastNear) { lastNear = W.nearChair; $('rowSit').hidden = !W.nearChair || !!auto; if (!auto) $('hint').textContent = W.nearChair ? (HINT_NEAR + (mobile ? '' : ' (E)')) : HINT_FAR; }
-  if (mode !== 'walk') $('rowSit').hidden = true;
-  $('flash').style.opacity = W.flash.toFixed(3);
-
-  $('top').classList.toggle('away', mode === 'ride' && !ended && !paused && now - lastTouch > 3500);
-  if (mode === 'ride' && story) {
-    lyricsAt(t);
-    $('prog').firstElementChild.style.width = (t / story.duration * 100).toFixed(2) + '%';
-    if (!ended && t >= story.silenceT) finish();
+  if (!story || !P) return;
+  const t = audio.currentTime;
+  if (shown && now - lastActive > 3000) hideControls();
+  lyricsAt(t);
+  if (!scrubbing || true) {
+    const k = clamp(t / story.duration, 0, 1);
+    $('seekfill').style.width = (k * 100).toFixed(3) + '%'; $('seekknob').style.left = (k * 100).toFixed(3) + '%';
+    $('ptime').textContent = fmt(t) + ' / ' + fmt(story.duration);
   }
-  if ($('dev').style.display === 'block') {
-    $('dev').textContent = 'fps ' + fps.toFixed(0) + '  mode ' + mode + '\nt ' + t.toFixed(1) + '  cue ' + (story && mode === 'ride' ? story.cues[cueAt(Math.max(0, t))].id : '-') + (painted ? '  shot ' + P.info().shot : '\nd ' + W.camD.toFixed(0)) + '\nmarks (K): ' + marks.join(', ');
-  }
-  if (painted) P.render(t, time, calm); else renderer.render(W.scene, W.camera);
+  if (!ended && t >= story.silenceT) finish();
+  if ($('dev').style.display === 'block') $('dev').textContent = 'fps ' + fps.toFixed(0) + '\nt ' + t.toFixed(1) + '  cue ' + story.cues[cueAt(Math.max(0, t))].id + '  shot ' + P.info().shot;
+  P.render(t, time, calm);
 }
-// dev.hold = a fixed W.update state (renders that instead of live input); dev.shot(state) renders one frame now
-const dev = { hold: null, shot(st) {
-  if (st.mode === 'ride' && story && story.painted) { P.render(st.t, st.time, true); return; }
-  W.update(st); renderer.render(W.scene, W.camera);
-}, painted: P, play(s) { story = s; loadTimes(s); P.start(s); mode = 'ride'; } };
+// dev hooks for the headless tools: dev.hold = { t, time } renders that moment instead of the live song
+const dev = { hold: null, painted: P, shot(st) { if (story && P) P.render(st.t, st.time, true); }, play(s) { story = s; loadTimes(s); P.start(s); } };
+resize();
 requestAnimationFrame(frame);
-if (pendingPlay) { const [i, b] = pendingPlay; pendingPlay = null; booted(i, b); }
-window.__alaron = { W, renderer, dev, player, look, audio, get mode() { return mode; }, sit, begin, flip, seek(t) { audio.currentTime = t; } };
-}
+window.__alaron = { renderer, dev, audio, get mode() { return story ? 'ride' : 'list'; }, get story() { return story; }, seek: seekTo, play: (id) => { const s = C.stories.find((x) => x.id === id); if (s) playFromList(s, document.createElement('button')); } };
 })();

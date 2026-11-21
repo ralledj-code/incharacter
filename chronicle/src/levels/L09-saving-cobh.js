@@ -19,9 +19,7 @@ C.levels[ID] = {
   session: 'Level 9 · Session recap · 07/09/2026',
   blurb: 'The horn sounds the retreat but the troll stays. A fireball that burns a brother, a head on the cobbles, an arrow in Cedric’s knee, and a glowing circle behind the walls of a burning Cobh.',
   length: '5 min', audio: 'levels/09-' + ID + '.mp3',
-  packs: [], paintedOnly: true,
   titles: TITLES,
-  cues: CUES, keys: [{ t: -1e6, m: 'bar', b: 0 }], duration: DURATION, silenceT: 302.5, lineTimes: LINE_TIMES, beats: BEATS,
-  build() { return []; }
+  cues: CUES, duration: DURATION, silenceT: 302.5, lineTimes: LINE_TIMES, beats: BEATS,
 };
 })(typeof window !== 'undefined' ? window : globalThis);

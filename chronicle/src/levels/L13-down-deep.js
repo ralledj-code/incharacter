@@ -20,9 +20,7 @@ C.levels[ID] = {
   session: 'Level 13 · Session recap · 02/11/2026',
   blurb: 'Down the cellar stair and into the Down Deep after the worm that took Valerys. Land sharks under the stone, a stolen kill, a cold voice in Cedric’s head, and a drow woman by Thorman’s fire.',
   length: '6 min', audio: 'levels/13-' + ID + '.mp3',
-  packs: [], paintedOnly: true,
   titles: TITLES,
-  cues: CUES, keys: [{ t: -1e6, m: 'bar', b: 0 }], duration: DURATION, silenceT: 332.0, lineTimes: LINE_TIMES, beats: BEATS,
-  build() { return []; }
+  cues: CUES, duration: DURATION, silenceT: 332.0, lineTimes: LINE_TIMES, beats: BEATS,
 };
 })(typeof window !== 'undefined' ? window : globalThis);

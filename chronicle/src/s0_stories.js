@@ -1,10 +1,9 @@
 (function (root) {
 'use strict';
 const C = root.__cw;
-/* Story registry: each page of the book is one level (one song = one ride), in campaign order.
-   A playable level is a module: audio + timeline (storyData) + scene builders (C.scenes[id]).
-   The others are "coming soon" pages until their song is turned into a level (see chronicle/LEVELS.md). */
-const SOON = 'Coming soon. This chapter’s song is waiting to become a ride.';
+/* Song registry: one entry per level, in campaign order. A playable level is a module (audio, cues, line times, beats)
+   with a live painted storyboard; the others show as Coming soon (see chronicle/LEVELS.md). */
+const SOON = 'Coming soon. This chapter’s song is waiting to become a story.';
 const PLAYLIST = [
   // [level, id, title, session date, song length]
   [0, 'story-so-far', 'The Story So Far', '', '9:48'],  // feature: a wide card on top, Lucien tells it all
@@ -30,23 +29,17 @@ const LEVELS = {
   baphomet: Object.assign({
     session: 'Level 8 · Session recap · 7:48 – 10:43 PM',
     blurb: 'Arthas bleeds into a moonwell and Baphomet’s chains break. Cedric kills a black wyrm alone, Cobh throws a feast, and Lucien wakes up in irons with a wraith over the city.',
-    length: '6 min', audio: 'levels/08-baphomet.mp3', packs: ['nature', 'village', 'beasts'], flashAt: 180.1, gaolCue: 'outro',
-    build(X) { return C.scenes.baphomet.map((f) => f(X)).filter(Boolean); }
+    length: '6 min', audio: 'levels/08-baphomet.mp3'
   }, C.storyData.baphomet)
 };
-// a level with a live painted storyboard (C.boards, chronicle/painted/) plays painted; ?3d keeps the 3D ride,
-// ?painted previews boards that are not live yet (art still missing)
-const q = typeof location !== 'undefined' ? location.search : '', classic = /[?&]3d\b/.test(q), preview = /[?&]painted\b/.test(q);
+// a level plays when its painted storyboard is live (C.boards, chronicle/painted/); ?painted previews boards that are not live yet.
+// Everything else shows as Coming soon. (The 3D rides and the tavern were removed 2026-11-21.)
+const q = typeof location !== 'undefined' ? location.search : '', preview = /[?&]painted\b/.test(q);
 C.stories = PLAYLIST.map(([level, id, title, date, len]) => {
-  const s = Object.assign({ id, level, title, date, length: len },
-    LEVELS[id] || (C.levels && C.levels[id]) || { locked: true, session: 'Level ' + level + (date ? ' · ' + date : ''), blurb: SOON });
+  const s = Object.assign({ id, level, title, date, length: len }, LEVELS[id] || (C.levels && C.levels[id]) || {});
   const key = String(level).padStart(2, '0') + '-' + id, board = C.boards && C.boards[key];
-  if (board && !s.locked && !classic && (board.live || preview)) Object.assign(s, { painted: board, paintBase: 'levels/' + key + '/', packs: [] });
-  if (s.paintedOnly && !s.painted) Object.assign(s, { locked: true, session: 'Level ' + level + (date ? ' · ' + date : ''), blurb: SOON });  // no 3D ride behind it
-  // only painted levels are playable; the 3D rides stay reachable with ?3d
-  if (!s.locked && !s.painted && !classic) Object.assign(s, { locked: true, session: 'Level ' + level + (date ? ' · ' + date : ''), blurb: SOON });
+  if (board && s.audio && (board.live || preview)) Object.assign(s, { painted: board, paintBase: 'levels/' + key + '/' });
+  else Object.assign(s, { locked: true, session: 'Level ' + level + (date ? ' · ' + date : ''), blurb: SOON });
   return s;
 });
-// the page the book opens on: the latest playable level
-C.firstStory = C.stories.reduce((k, s, i) => (s.locked || s.hidden || s.feature ? k : i), 0);
 })(typeof window !== 'undefined' ? window : globalThis);
