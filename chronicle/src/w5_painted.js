@@ -92,6 +92,12 @@ function fireTex() {  // soft orange-red blobs: flame glow and licks rising from
   }
   return new THREE.CanvasTexture(cv);
 }
+let dark = null;
+function darkTex() {  // stand-in while a painting is missing: near-black, no text
+  if (dark) return dark;
+  const c = document.createElement('canvas'); c.width = 16; c.height = 9; const x = c.getContext('2d'); x.fillStyle = '#07090d'; x.fillRect(0, 0, 16, 9);
+  dark = new THREE.CanvasTexture(c); return dark;
+}
 function cardTex(shot) {  // storyboard card for a shot that has no painting yet
   const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 576; const x = cv.getContext('2d');
   const g = x.createLinearGradient(0, 0, 0, 576); g.addColorStop(0, '#1a1612'); g.addColorStop(1, '#0a0806'); x.fillStyle = g; x.fillRect(0, 0, 1024, 576);
@@ -158,14 +164,28 @@ C.createPainted = function (renderer, opts) {
   }
 
   /* ---- art: fetched once per visit as blobs, decoded into textures for the shots around the playhead ---- */
-  function fetchBlob(url) { return fetch(url).then((r) => (r.ok ? r.blob() : null)).catch(() => null); }
+  // Paintings download 6 at a time with retries: a tablet on flaky wifi lost some of 55 parallel requests and showed the
+  // storyboard card for the rest of the song (2026-11-21). A 404 is final; network errors are retried with backoff.
+  let active = 0; const queue = [];
+  const pump = () => { while (active < 6 && queue.length) { const job = queue.shift(); active++; job().finally(() => { active--; pump(); }); } };
+  const limited = (fn) => new Promise((res) => { queue.push(() => fn().then(res, () => res(null))); pump(); });
+  function fetchOnce(url) { return fetch(url).then((r) => (r.ok ? r.blob() : r.status === 404 ? 'missing' : null)).catch(() => null); }
+  function fetchBlob(url, tries) {
+    tries = tries || 4;
+    return limited(() => fetchOnce(url)).then((x) => {
+      if (x === 'missing') return null;
+      if (x || tries <= 1) return x;
+      return new Promise((r) => setTimeout(r, 600 * (5 - tries))).then(() => fetchBlob(url, tries - 1));
+    });
+  }
+  const preview = typeof location !== 'undefined' && /[?&]painted\b/.test(location.search);
+  const urlOf = (s) => new URL(base + (s.img || s.id) + '.webp', C.BASE());
   function preload(st, onP) {
     const b = st.painted; if (board === b && Object.keys(blobs).length) return Promise.resolve();
     board = b; base = st.paintBase; shots = b.shots; blobs = {}; cache.forEach(drop); cache.clear(); slots.forEach((sl) => { sl.idx = -1; });
     let done = 0; const all = shots.length * 2, tick = () => { done++; if (onP) onP(done / all); };
-    const B = C.BASE();
     return Promise.all(shots.map((s) => Promise.all([
-      fetchBlob(new URL(base + (s.img || s.id) + '.webp', B)).then((x) => { tick(); return x; }),   // img: reuse another shot's painting
+      fetchBlob(urlOf(s)).then((x) => { tick(); return x; }),   // img: reuse another shot's painting
       Promise.resolve(null).then((x) => { tick(); return x; })  // depth maps are not used any more (flat paintings)
     ]).then(([c, d]) => { blobs[s.id] = { c, d }; })));
   }
@@ -177,12 +197,18 @@ C.createPainted = function (renderer, opts) {
       img.onerror = () => { URL.revokeObjectURL(u); res(null); }; img.src = u;
     });
   }
-  function drop(e) { if (e.map) e.map.dispose(); if (e.dMap && e.dMap !== flatD) e.dMap.dispose(); }
+  function drop(e) { if (e.map && e.map !== dark) e.map.dispose(); if (e.dMap && e.dMap !== flatD) e.dMap.dispose(); }
   function want(i) {
     if (i < 0 || i >= shots.length || cache.has(i)) return cache.get(i);
-    const s = shots[i], b = blobs[s.id] || {}, e = { map: null, dMap: flatD, ready: false };
+    const s = shots[i], b = blobs[s.id] || (blobs[s.id] = {}), e = { map: null, dMap: flatD, ready: false };
     cache.set(i, e);
-    e.promise = Promise.all([texFrom(b.c), texFrom(b.d)]).then(([m, d]) => { e.map = m || cardTex(s); if (d) e.dMap = d; e.painted = !!m; e.ready = true; });
+    // a painting that did not download (or decode) during preload is fetched again when its shot comes near
+    const get = () => (b.c ? Promise.resolve(b.c) : fetchBlob(urlOf(s), 3).then((x) => { if (x) b.c = x; return x; }));
+    e.promise = get().then(texFrom).then((m) => m || (b.c = null, get().then(texFrom))).then((m) => {
+      // never show the storyboard card to viewers: without a painting the shot stays dark (the card only with ?painted)
+      e.map = m || (preview ? cardTex(s) : darkTex()); e.painted = !!m; e.ready = true;
+      if (!m && !preview) setTimeout(() => { if (cache.get(i) === e) { cache.delete(i); } }, 4000);  // try again in a moment
+    });
     return e;
   }
   function keepAround(i) {
