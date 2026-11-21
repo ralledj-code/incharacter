@@ -24,9 +24,7 @@ C.levels[ID] = {
   session: 'Level 12 · Session recap · 28/09/2026',
   blurb: 'Lucien sends Mara away with the last of his gold. At Duncastle the warning came too late: orcs, bugbears and the Scarlet Wizards break against the walls, a ballista and a chained giant fall, and the light that answers Arthas’s prayer is not the man he called.',
   length: '7 min', audio: 'levels/12-' + ID + '.mp3',
-  packs: [], paintedOnly: true,
   titles: TITLES,
-  cues: CUES, keys: [{ t: -1e6, m: 'bar', b: 0 }], duration: DURATION, silenceT: 411.0, lineTimes: LINE_TIMES, beats: BEATS,
-  build() { return []; }
+  cues: CUES, duration: DURATION, silenceT: 411.0, lineTimes: LINE_TIMES, beats: BEATS,
 };
 })(typeof window !== 'undefined' ? window : globalThis);

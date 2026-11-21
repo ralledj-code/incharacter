@@ -16,9 +16,8 @@ C.levels[ID] = {
   session: 'Nutella i grotten',
   blurb: 'En mus og en bjørn skændes om den store krukke, den triller ned i en grotte, og kun sammen kan dyrene få den op igen.',
   length: '4 min', audio: 'levels/91-' + ID + '.mp3',
-  packs: [], paintedOnly: true, hidden: true, level: 91, title: 'Nutella i grotten', len: '3:54',
+  hidden: true, level: 91, title: 'Nutella i grotten', len: '3:54',
   titles: TITLES,
-  cues: CUES, keys: [{ t: -1e6, m: 'bar', b: 0 }], duration: DURATION, silenceT: 232.0, lineTimes: LINE_TIMES, beats: BEATS,
-  build() { return []; }
+  cues: CUES, duration: DURATION, silenceT: 232.0, lineTimes: LINE_TIMES, beats: BEATS,
 };
 })(typeof window !== 'undefined' ? window : globalThis);

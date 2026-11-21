@@ -15,9 +15,8 @@ C.levels[ID] = {
   session: 'Skægkrokodillen',
   blurb: 'Tine og Max falder i søen hos Skægkrokodillen, og Oskar redder dem med et judohug.',
   length: '4 min', audio: 'levels/92-' + ID + '.mp3',
-  packs: [], paintedOnly: true, hidden: true, level: 92, title: 'Skægkrokodillen', len: '3:33',
+  hidden: true, level: 92, title: 'Skægkrokodillen', len: '3:33',
   titles: TITLES,
-  cues: CUES, keys: [{ t: -1e6, m: 'bar', b: 0 }], duration: DURATION, silenceT: 211.0, lineTimes: LINE_TIMES, beats: BEATS,
-  build() { return []; }
+  cues: CUES, duration: DURATION, silenceT: 211.0, lineTimes: LINE_TIMES, beats: BEATS,
 };
 })(typeof window !== 'undefined' ? window : globalThis);

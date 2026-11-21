@@ -10,8 +10,6 @@ const [t0, t1, fps = 24, w = 1280, h = 720] = isVideo ? args.slice(2).map(Number
 const level = process.env.LEVEL || 'first-steps';
 const LOCAL = {
   'three.min.js': 'node_modules/three/build/three.min.js',
-  'GLTFLoader.js': 'node_modules/three/examples/js/loaders/GLTFLoader.js',
-  'SkeletonUtils.js': 'node_modules/three/examples/js/utils/SkeletonUtils.js'
 };
 (async () => {
   fs.mkdirSync(out, { recursive: true });
@@ -21,10 +19,9 @@ const LOCAL = {
   await p.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
   const errs = []; p.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); }); p.on('pageerror', (e) => errs.push('PAGEERR ' + e.message));
   await p.goto('http://localhost:5173/?painted'); await p.waitForFunction(() => window.__alaron, null, { timeout: 120000 });
-  await p.click('#go'); await p.waitForTimeout(200);
   const ok = await p.evaluate(async (id) => {
     const A = __alaron, st = __cw.stories.find((s) => s.id === id); if (!st || !st.painted) return false;
-    await A.dev.painted.preload(st); A.dev.play(st); ['hud', 'top', 'coach'].forEach((k) => { document.getElementById(k).style.display = 'none'; }); return true;
+    await A.dev.painted.preload(st); A.dev.play(st); ['hud', 'player', 'start'].forEach((k) => { document.getElementById(k).style.display = 'none'; }); return true;
   }, level);
   if (!ok) { console.error('level', level, 'is not painted'); process.exit(1); }
   const shoot = async (t, file) => {

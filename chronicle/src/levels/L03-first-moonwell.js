@@ -18,9 +18,7 @@ C.levels[ID] = {
   session: 'Level 3 · Session recap · 24/05/2026',
   blurb: 'Lucien drinks the moonwater meant for others and tells no one. Aldraik takes Silas and drops their mother’s name; in the swamp the first moonwell has turned to black goo, and something crawls out of it.',
   length: '5 min', audio: 'levels/03-' + ID + '.mp3',
-  packs: [], paintedOnly: true,
   titles: TITLES,
-  cues: CUES, keys: [{ t: -1e6, m: 'bar', b: 0 }], duration: DURATION, silenceT: 295.5, lineTimes: LINE_TIMES, beats: BEATS,
-  build() { return []; }
+  cues: CUES, duration: DURATION, silenceT: 295.5, lineTimes: LINE_TIMES, beats: BEATS,
 };
 })(typeof window !== 'undefined' ? window : globalThis);

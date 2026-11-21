@@ -16,9 +16,7 @@ C.levels[ID] = {
   session: 'Level 11 · Session recap · 23/09/2026',
   blurb: 'Below the safehouse the names of Ahm and the Scarlet Wizards wait behind a sealed door. Smoke, a grinder, Silas more wolf than man, and a dagger with Severin’s voice that asks Lucien to give in.',
   length: '5 min', audio: 'levels/11-' + ID + '.mp3',
-  packs: [], paintedOnly: true,
   titles: TITLES,
-  cues: CUES, keys: [{ t: -1e6, m: 'bar', b: 0 }], duration: DURATION, silenceT: 295.5, lineTimes: LINE_TIMES, beats: BEATS,
-  build() { return []; }
+  cues: CUES, duration: DURATION, silenceT: 295.5, lineTimes: LINE_TIMES, beats: BEATS,
 };
 })(typeof window !== 'undefined' ? window : globalThis);

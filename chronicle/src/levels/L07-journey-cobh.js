@@ -19,9 +19,7 @@ C.levels[ID] = {
   session: 'Level 7 · Session recap · 21/07/2026',
   blurb: 'The road to Cobh, where the water is clean and the truth is not. A cat tavern, two old flames, lightning in a bottle, and a druid waiting at a dry moonwell who asks for their blood.',
   length: '5 min', audio: 'levels/07-' + ID + '.mp3',
-  packs: [], paintedOnly: true,
   titles: TITLES,
-  cues: CUES, keys: [{ t: -1e6, m: 'bar', b: 0 }], duration: DURATION, silenceT: 296.5, lineTimes: LINE_TIMES, beats: BEATS,
-  build() { return []; }
+  cues: CUES, duration: DURATION, silenceT: 296.5, lineTimes: LINE_TIMES, beats: BEATS,
 };
 })(typeof window !== 'undefined' ? window : globalThis);

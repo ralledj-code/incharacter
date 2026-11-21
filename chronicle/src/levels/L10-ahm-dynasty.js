@@ -18,9 +18,7 @@ C.levels[ID] = {
   session: 'Level 10 · Session recap · 15/09/2026',
   blurb: 'In Mara’s basement Lucien meets the mother who left him, until an arrow in the dark calls her a traitor. The Church buys his name, a stolen face opens Happiness Street, a fireball ends it, and a bloody altar gives him a gift and the truth: Ahm holds the prince.',
   length: '5 min', audio: 'levels/10-' + ID + '.mp3',
-  packs: [], paintedOnly: true,
   titles: TITLES,
-  cues: CUES, keys: [{ t: -1e6, m: 'bar', b: 0 }], duration: DURATION, silenceT: 329.0, lineTimes: LINE_TIMES, beats: BEATS,
-  build() { return []; }
+  cues: CUES, duration: DURATION, silenceT: 329.0, lineTimes: LINE_TIMES, beats: BEATS,
 };
 })(typeof window !== 'undefined' ? window : globalThis);

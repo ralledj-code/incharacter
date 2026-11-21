@@ -20,9 +20,7 @@ C.levels[ID] = {
   session: 'Level 2 · Session recap · 14/05/2026',
   blurb: 'Severin handed out mercy in a bottle, and Silas’s family drank it. Behind a dockside tavern the brothers find what they became; a bite, a whisper, children tied in the dark, and a Scarlet sigil on the floor.',
   length: '6 min', audio: 'levels/02-' + ID + '.mp3',
-  packs: [], paintedOnly: true,
   titles: TITLES,
-  cues: CUES, keys: [{ t: -1e6, m: 'bar', b: 0 }], duration: DURATION, silenceT: 355.0, lineTimes: LINE_TIMES, beats: BEATS,
-  build() { return []; }
+  cues: CUES, duration: DURATION, silenceT: 355.0, lineTimes: LINE_TIMES, beats: BEATS,
 };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -16,9 +16,8 @@ C.levels[ID] = {
   blurb: 'By Thorman’s fire, Lucien tries to charm a drow woman with the story of why he came to Alaron: a woman named Severin and the knife she put in his chest. The more honest he gets, the closer she sits.',
   meta: 'Told by Lucien · 10 min · no music',
   length: '10 min', audio: 'levels/00-' + ID + '.mp3',
-  packs: [], paintedOnly: true, feature: true,
-  cues: CUES, keys: [{ t: -1e6, m: 'bar', b: 0 }], duration: DURATION, silenceT: 587.3, lineTimes: LINE_TIMES, voices: VOICES,
+  feature: true,
+  cues: CUES, duration: DURATION, silenceT: 587.3, lineTimes: LINE_TIMES, voices: VOICES,
   beats: { bpm: 60, beats: [], bars: [], hits: [] },
-  build() { return []; }
 };
 })(typeof window !== 'undefined' ? window : globalThis);
