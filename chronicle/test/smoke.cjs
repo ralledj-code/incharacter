@@ -25,6 +25,7 @@ playable.forEach((s) => {
     if (i && x.t <= shots[i - 1].t) fail(s, 'shot ' + x.id + ' is not after ' + shots[i - 1].id);
     if (x.img && !ids.has(x.img)) fail(s, 'shot ' + x.id + ' reuses unknown ' + x.img);
     if (!x.img && !fs.existsSync(path.join(pub, s.paintBase, x.id + '.webp'))) fail(s, 'missing painting ' + s.paintBase + x.id + '.webp');
+    if (x.clip && !fs.existsSync(path.join(pub, s.paintBase, x.id + '.mp4'))) fail(s, 'missing clip ' + s.paintBase + x.id + '.mp4');
   });
   console.log('ok', s.id, shots.length, 'shots', lines, 'lines');
 });

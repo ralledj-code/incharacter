@@ -187,7 +187,7 @@ C.createPainted = function (renderer, opts) {
     return Promise.all(shots.map((s) => Promise.all([
       fetchBlob(urlOf(s)).then((x) => { tick(); return x; }),   // img: reuse another shot's painting
       Promise.resolve(null).then((x) => { tick(); return x; })  // depth maps are not used any more (flat paintings)
-    ]).then(([c, d]) => { blobs[s.id] = { c, d }; })));
+    ]).then(([c, d]) => s.clip ? fetchBlob(new URL(base + s.id + '.mp4', C.BASE())).then((v) => { blobs[s.id] = { c, d, v }; }) : (blobs[s.id] = { c, d }))));
   }
   function texFrom(blob) {
     return new Promise((res) => {
@@ -197,7 +197,7 @@ C.createPainted = function (renderer, opts) {
       img.onerror = () => { URL.revokeObjectURL(u); res(null); }; img.src = u;
     });
   }
-  function drop(e) { if (e.map && e.map !== dark) e.map.dispose(); if (e.dMap && e.dMap !== flatD) e.dMap.dispose(); }
+  function drop(e) { if (e.video) { e.video.pause(); e.video.removeAttribute('src'); e.video.load(); URL.revokeObjectURL(e.vUrl); e.vtex.dispose(); } if (e.map && e.map !== dark) e.map.dispose(); if (e.dMap && e.dMap !== flatD) e.dMap.dispose(); }
   function want(i) {
     if (i < 0 || i >= shots.length || cache.has(i)) return cache.get(i);
     const s = shots[i], b = blobs[s.id] || (blobs[s.id] = {}), e = { map: null, dMap: flatD, ready: false };
@@ -207,6 +207,14 @@ C.createPainted = function (renderer, opts) {
     e.promise = get().then(texFrom).then((m) => m || (b.c = null, get().then(texFrom))).then((m) => {
       // never show the storyboard card to viewers: without a painting the shot stays dark (the card only with ?painted)
       e.map = m || (preview ? cardTex(s) : darkTex()); e.painted = !!m; e.ready = true;
+      // a shot with `clip: true` also has <id>.mp4 (an image-to-video clip of its painting): it plays muted from the
+      // shot's start, synced to song time; the still shows until the video has a frame
+      if (s.clip && b.v) {
+        const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto';
+        v.src = e.vUrl = URL.createObjectURL(b.v); v.load();
+        const vt = new THREE.VideoTexture(v); vt.minFilter = THREE.LinearFilter; vt.magFilter = THREE.LinearFilter; vt.generateMipmaps = false;
+        e.video = v; e.vtex = vt;
+      }
       if (!m && !preview) setTimeout(() => { if (cache.get(i) === e) { cache.delete(i); } }, 4000);  // try again in a moment
     });
     return e;
@@ -237,7 +245,18 @@ C.createPainted = function (renderer, opts) {
   }
   function drawSlot(sl, i, t, time, calm, target) {
     const s = shots[i], e = cache.get(i);
-    sl.mat.uniforms.map.value = e && e.ready ? e.map : null;
+    let map = e && e.ready ? e.map : null;
+    if (e && e.video) {
+      const v = e.video, want = Math.max(0, t - s.t), moving = t > lastT && t - lastT < 0.5;
+      if (v.readyState >= 2) {
+        map = e.vtex;
+        const end = (v.duration || 99) - 0.05;
+        if (Math.abs(Math.min(want, end) - v.currentTime) > (moving ? 0.3 : 0.04)) v.currentTime = Math.min(want, end);
+      }
+      if (moving && v.paused && want < (v.duration || 99)) v.play().catch(() => { });
+      if (!moving && !v.paused) v.pause();
+    }
+    sl.mat.uniforms.map.value = map;
     sl.mat.uniforms.dMap.value = e && e.ready ? e.dMap : flatD;
     sl.plane.visible = !!(e && e.ready);
     sl.mat.uniforms.time.value = time; sl.mat.uniforms.sway.value = s.sway || 0;
@@ -280,6 +299,7 @@ C.createPainted = function (renderer, opts) {
       assign(slots[0], i); if (mixing) assign(slots[1], i - 1);
       drawSlot(slots[0], i, t, time, calm, rt[0]);
       if (mixing) drawSlot(slots[1], i - 1, t, time, calm, rt[1]);
+      cache.forEach((e, j) => { if (e.video && !e.video.paused && j !== i && !(mixing && j === i - 1)) e.video.pause(); });  // clips off screen stop
       const U = post.uniforms;
       U.k.value = mixing ? clamp(since / dur, 0, 1) : 1; U.kind.value = mixing ? KIND[tr] : 0;
       // the first shot rises out of black; "black" on the first shot does the same
@@ -292,7 +312,7 @@ C.createPainted = function (renderer, opts) {
       renderer.setRenderTarget(null); renderer.render(postScene, postCam);
       lastT = t;
     },
-    info() { const i = shotAt(Math.max(0, lastT)); const e = cache.get(i); return { shot: shots[i] && shots[i].id, painted: !!(e && e.painted) }; }
+    info() { const i = shotAt(Math.max(0, lastT)); const e = cache.get(i); return { shot: shots[i] && shots[i].id, painted: !!(e && e.painted), clip: e && e.video ? { ready: e.video.readyState, time: +e.video.currentTime.toFixed(2), paused: e.video.paused } : null }; }
   };
   return P;
 };

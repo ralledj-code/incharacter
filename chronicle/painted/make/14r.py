@@ -33,6 +33,11 @@ for s in P['shots']:
         assert 'painted' not in s['scene'], s['id']
         s['scene']+=EXTRA.get(s['id'],'')
     shots.append(s)
+# Gemini Omni 1.2 Flash image-to-video test clips (2026-11-21): public/chronicle/levels/14-hunt-valerys-real/<id>.mp4; the
+# clip carries the motion, so the camera barely drifts on these shots
+CLIPS=['s12','s32','s44','s60','s69','s77']
+for s in shots:
+    if s['id'] in CLIPS: s['clip']=True; s['move']={'from':[0,0,0.0],'to':[0,0,0.02]}
 board={"id":"hunt-valerys-real","live":True,"cover":P['cover'],"style":STYLE,"cast":CAST,"shots":shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
