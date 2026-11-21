@@ -1,6 +1,7 @@
 {
   "id": "hunt-valerys-motion",
   "live": true,
+  "clean": true,
   "base": "14-hunt-valerys-real",
   "cover": "s32",
   "style": "Photorealistic cinematic film still from a big-budget dark fantasy film, the look of a high-end fantasy series shot on an ARRI Alexa with anamorphic lenses: real actors, real caves and practical sets, real costumes with wear, dirt and texture, natural skin with pores and imperfections, physically accurate light from torches, fire, glowing fungus and crystals, deep shadows, atmospheric haze and dust in the light, subtle film grain, shallow depth of field, rich cinematic colour grading. Creatures look like real living animals with real anatomy, wet and heavy and lit like everything else: never CGI-looking, never rubber, never toys, statues or miniatures. Grounded faces with real emotion. Full-bleed 16:9 frame edge to edge: no letterbox bars, no text, no letters, no logos, no borders, no frame, no watermark.",

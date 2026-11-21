@@ -49,7 +49,7 @@ void main() {
 const PART_FS = `uniform vec3 color; uniform float alpha; varying float vA;
 void main() { float r = length(gl_PointCoord - 0.5); gl_FragColor = vec4(color, smoothstep(0.5, 0.0, r) * alpha * vA); }`;
 const POST_VS = 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
-const POST_FS = `uniform sampler2D A, B; uniform float k, kind, time, flash, black, aspect, grain; uniform vec3 tA, tB; uniform vec2 res; uniform vec4 frame;
+const POST_FS = `uniform sampler2D A, B; uniform float k, kind, time, flash, black, aspect, grain, vig, gam; uniform vec3 tA, tB; uniform vec2 res; uniform vec4 frame;
 varying vec2 vUv;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -66,9 +66,9 @@ void main() {
     float edge = clamp(1.0 - abs(n - th) / 0.06, 0.0, 1.0) * step(0.01, k) * step(k, 0.99);
     c = mix(a, b, m) * (1.0 - 0.55 * edge);
   } else if (kind > 2.5) c = k < 0.4 ? b * (1.0 - k / 0.4) : a * smoothstep(0.4, 1.0, k);
-  c = pow(max(c, 0.0), vec3(1.06));
+  c = pow(max(c, 0.0), vec3(gam));
   vec2 q = (uv - 0.5) * vec2(aspect * 0.82, 1.0);
-  c *= mix(1.0, smoothstep(1.05, 0.25, length(q)), 0.6);
+  c *= mix(1.0, smoothstep(1.05, 0.25, length(q)), vig);
   c += (hash(vUv * res + fract(time * 7.13) * 91.0) - 0.5) * grain;
   c = mix(c, vec3(1.0, 0.96, 0.9), flash) * (1.0 - black);
   gl_FragColor = vec4(c, 1.0);
@@ -119,7 +119,7 @@ C.createPainted = function (renderer, opts) {
   const post = new THREE.ShaderMaterial({
     vertexShader: POST_VS, fragmentShader: POST_FS, depthTest: false, depthWrite: false,
     uniforms: { A: { value: rt[0].texture }, B: { value: rt[1].texture }, k: { value: 1 }, kind: { value: 0 }, time: { value: 0 }, flash: { value: 0 }, black: { value: 0 },
-      aspect: { value: aspect }, frame: { value: new THREE.Vector4(0, 0, 1, 1) }, grain: { value: 0.045 }, tA: { value: new THREE.Vector3(1, 1, 1) }, tB: { value: new THREE.Vector3(1, 1, 1) }, res: { value: new THREE.Vector2(2, 2) } }
+      aspect: { value: aspect }, frame: { value: new THREE.Vector4(0, 0, 1, 1) }, grain: { value: 0.045 }, vig: { value: 0.6 }, gam: { value: 1.06 }, tA: { value: new THREE.Vector3(1, 1, 1) }, tB: { value: new THREE.Vector3(1, 1, 1) }, res: { value: new THREE.Vector2(2, 2) } }
   });
   const postScene = new THREE.Scene(), postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), post));
@@ -140,7 +140,8 @@ C.createPainted = function (renderer, opts) {
   function assign(sl, i) {
     if (sl.idx === i) return; sl.idx = i; clearFx(sl);
     const s = shots[i]; if (!s) return;
-    const fxs = (s.fx || []).slice(); if (!fxs.includes('none')) fxs.push('haze');
+    // board.clean (the realistic versions): the picture as painted/filmed, no particles, haze, fog or fire overlays
+    const fxs = board.clean ? [] : (s.fx || []).slice(); if (!board.clean && !fxs.includes('none')) fxs.push('haze');
     fxs.forEach((name, n) => {
       if (name === 'fog' || name === 'smoke' || name === 'haze' || name === 'fire') {
         const fire = name === 'fire', tex = fire ? flameTex : name === 'smoke' ? smokeTex : fogTex, haze = name === 'haze';
@@ -267,8 +268,8 @@ C.createPainted = function (renderer, opts) {
     sl.mat.uniforms.dMap.value = e && e.ready ? e.dMap : flatD;
     sl.plane.visible = !!(e && e.ready);
     sl.mat.uniforms.time.value = time; sl.mat.uniforms.sway.value = s.sway || 0;
-    const fl = s.flicker || 0; sl.mat.uniforms.flick.value = fl * 0.26 * (Math.sin(time * 9.1) * 0.5 + Math.sin(time * 15.3 + 1.7) * 0.3 + Math.sin(time * 4.3) * 0.4);
-    const sk = !calm && s.shake ? s.shake * Math.exp(-(t - s.t) * 2.5) : 0;
+    const fl = board.clean ? 0 : s.flicker || 0; sl.mat.uniforms.flick.value = fl * 0.26 * (Math.sin(time * 9.1) * 0.5 + Math.sin(time * 15.3 + 1.7) * 0.3 + Math.sin(time * 4.3) * 0.4);
+    const sk = !calm && !board.clean && s.shake ? s.shake * Math.exp(-(t - s.t) * 2.5) : 0;
     placeCam(s, t, i, sk);
     sl.fx.forEach((p) => { p.material.uniforms.time.value = t - s.t + 20; p.material.uniforms.pr.value = H * 0.9; });
     sl.fog.forEach((m) => {
@@ -312,8 +313,9 @@ C.createPainted = function (renderer, opts) {
       // the first shot rises out of black; "black" on the first shot does the same
       if (i === 0 && (tr === 'black' || tr === 'fade')) { U.kind.value = 0; U.black.value = 1 - clamp(since / 2.2, 0, 1); } else U.black.value = 0;
       const end = board.end || 1e9; if (t > end - 2.5) U.black.value = Math.max(U.black.value, clamp((t - end + 2.5) / 2.5, 0, 1));
-      U.flash.value = tr === 'flash' && since >= 0 ? Math.exp(-since * 5) * 0.85 : 0;
-      const gA = GRADE[s.grade || 'none'] || GRADE.none, gB = GRADE[(shots[i - 1] || {}).grade || 'none'] || GRADE.none;
+      U.flash.value = tr === 'flash' && since >= 0 && !board.clean ? Math.exp(-since * 5) * 0.85 : 0;
+      const gA = board.clean ? GRADE.none : GRADE[s.grade || 'none'] || GRADE.none, gB = board.clean ? GRADE.none : GRADE[(shots[i - 1] || {}).grade || 'none'] || GRADE.none;
+      U.grain.value = board.clean ? 0 : 0.045; U.vig.value = board.clean ? 0 : 0.6; U.gam.value = board.clean ? 1 : 1.06;  // clean: no grain, vignette or contrast curve
       U.tA.value.set(...gA); U.tB.value.set(...gB);
       U.time.value = time;
       renderer.setRenderTarget(null); renderer.render(postScene, postCam);
