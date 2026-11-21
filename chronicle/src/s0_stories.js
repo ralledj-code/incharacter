@@ -38,7 +38,7 @@ const q = typeof location !== 'undefined' ? location.search : '', preview = /[?&
 C.stories = PLAYLIST.map(([level, id, title, date, len]) => {
   const s = Object.assign({ id, level, title, date, length: len }, LEVELS[id] || (C.levels && C.levels[id]) || {});
   const key = String(level).padStart(2, '0') + '-' + id, board = C.boards && C.boards[key];
-  if (board && s.audio && (board.live || preview)) Object.assign(s, { painted: board, paintBase: 'levels/' + key + '/' });
+  if (board && s.audio && (board.live || preview)) Object.assign(s, { painted: board, paintBase: 'levels/' + (board.base || key) + '/' });  // base: art shared with another board
   else Object.assign(s, { locked: true, session: 'Level ' + level + (date ? ' · ' + date : ''), blurb: SOON });
   return s;
 });

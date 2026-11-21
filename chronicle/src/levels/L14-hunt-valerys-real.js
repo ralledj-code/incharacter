@@ -1,6 +1,6 @@
-/* Level 14, The Hunt for Valerys, REALISTIC test version (2026-11-21). Hidden: only /chronicle?song=hunt-valerys-real; not on the
-   family page (variant). Same song, cues and line times as L14-hunt-valerys.js (kept in sync by copying); storyboard
-   painted/14-hunt-valerys-real.json from painted/make/14r.py, painted with gemini-3-pro-image at 2K. */
+/* Level 14, The Hunt for Valerys, REALISTIC version (stills; 2026-11-21): ?song=hunt-valerys-real, or the Realistic switch
+   on the level 14 card. A variant of hunt-valerys: same mp3, cues and line times (copied from L14-hunt-valerys.js; keep in
+   sync). Storyboard painted/14-hunt-valerys-real.json from painted/make/14r.py, painted with gemini-3-pro-image at 2K. */
 (function (root) {
 'use strict';
 const C = root.__cw;
@@ -14,7 +14,7 @@ C.levels[ID] = {
   session: 'Level 14 · Session recap · 21/11/2026',
   blurb: 'A warm morning in Nerrissa’s arms, then the hunt for Valerys through the dark: a flower of teeth that eats memories, a black moonwell, a vision of Baphomet in chains, and the wurm waiting below.',
   length: '6 min', audio: 'levels/14-hunt-valerys.mp3',
-  hidden: true, variant: true, level: 14, title: 'The Hunt for Valerys · Realistic', len: '6:01',
+  hidden: true, variant: true, parent: 'hunt-valerys', vlabel: 'Realistic', vorder: 1, level: 14, title: 'The Hunt for Valerys · Realistic', len: '6:01',
   titles: TITLES,
   cues: CUES, duration: DURATION, silenceT: 358.0, lineTimes: LINE_TIMES, beats: BEATS,
 };

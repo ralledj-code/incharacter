@@ -36,17 +36,24 @@ for s in P['shots']:
 # Gemini Omni 1.2 Flash image-to-video test clips (2026-11-21): public/chronicle/levels/14-hunt-valerys-real/<id>.mp4; the
 # clip carries the motion, so the camera barely drifts on these shots
 # verse clips (method A, 2026-11-21): painted/make/14clips.py groups the shots into clips of <= 15 s with timed beats,
-# scripts/omni-verses.mjs makes them (reference_to_video). Every verse whose clip exists collapses into its first shot
-# (clip: true, plays <id>.mp4); a verse without a clip keeps its stills.
+# scripts/omni-verses.mjs makes them (reference_to_video). Two boards come out of this script:
+#   14-hunt-valerys-real.json   realistic stills, all 84 shots          (?song=hunt-valerys-real)
+#   14-hunt-valerys-motion.json the same song in motion: every verse with a clip collapses into its first shot
+#                               (clip: true, plays <id>.mp4); art comes from the real folder (base)   (?song=hunt-valerys-motion)
 import os
 CL=json.load(open('painted/14-hunt-valerys-real/clips.json'))
 have=[g for g in CL if os.path.exists(f"../public/chronicle/levels/14-hunt-valerys-real/{g['id']}.mp4")]
 covered={x for g in have for x in g['shots'][1:]}
 first={g['id'] for g in have}
-shots=[s for s in shots if s['id'] not in covered]
-for s in shots:
+mshots=[dict(s) for s in shots if s['id'] not in covered]
+for s in mshots:
     if s['id'] in first: s['clip']=True; s['move']={'from':[0,0,0.0],'to':[0,0,0.01]}
 print(len(have),'of',len(CL),'verses have clips')
+def write(board,path,sh):
+    head_={k:v for k,v in board.items() if k!='shots'}
+    out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(x,ensure_ascii=False) for x in sh)+'\n  ]\n}\n'
+    json.loads(out);open(path,'w').write(out)
+write({"id":"hunt-valerys-motion","live":True,"base":"14-hunt-valerys-real","cover":"s32","style":STYLE,"cast":CAST,"shots":mshots},'painted/14-hunt-valerys-motion.json',mshots)
 board={"id":"hunt-valerys-real","live":True,"cover":P['cover'],"style":STYLE,"cast":CAST,"shots":shots}
 head_={k:v for k,v in board.items() if k!='shots'}
 out=json.dumps(head_,ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
