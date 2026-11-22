@@ -32,13 +32,14 @@ MARKS = B.get('marks') or {}
 t = lambda sid: MARKS.get(sid, S[sid]['t'] if sid in S else None)  # planned moments survive the storyboard's pacing merges
 BEDS = [  # (file, start, end, gain, fade in, fade out)
     ('sfx/drips.mp3', 0.0, t('s11') + 4, 0.45, 3.0, 6.0),       # the silent cavern
-    ('sfx/drips.mp3', t('s74') - 2, END, 0.45, 6.0, 3.0),           # back in the cavern
+    ('sfx/drips.mp3', t('s74') - 2, END, 0.45, 6.0, 8.0),           # back in the cavern, fading with the last picture
 ]
 MUSIC = [  # (file, file offset, start, end, gain, fade in, fade out)
     ('music/underscore-test.mp3', 0.0, t('s16'), t('s32') + 4, 0.13, 8.0, 7.0),        # memory: cello drone under the sanctum, gone for Valerys's plea
     ('music/choir-sanctum-a.mp3', 0.0, t('s16') + 2, t('s41') - 1, 0.20, 10.0, 7.0),    # the cathedral choir, softly through the memory and the plea, gone before the blades
     ('music/underscore-test.mp3', 70.0, t('s43') + 1, t('s60') + 8, 0.12, 8.0, 8.0),    # Tyr speaks: the drone returns
     ('music/choir-sanctum-b.mp3', 0.0, t('s43') + 2, t('s67') - 30, 0.18, 10.0, 12.0),  # low chant under Tyr and the price, handing over to the swell
+    ('music/underscore-test.mp3', 120.0, END - 17.0, END, 0.28, 5.0, 10.0),  # the close: the drone's own ending under everyone in view, fading with the picture
     ('music/choir-swell.mp3', 0.0, t('s67') + 6 - 79.0, t('s72') + 2.0, 0.30, 8.0, 10.0),    # choir peaks (79 s into the file) as the golden light floods in, gone under 'Let my life be their chain'
 ]
 # heartbeats: (start, end)
@@ -98,7 +99,7 @@ def build():
         k = inp('sfx/thunder.mp3'); ms = int(x * 1000)
         fl.append(f'[{k}:a]aresample={SR},aformat=channel_layouts=stereo,atrim=start=1.4,asetpts=PTS-STARTPTS,lowpass=f=700,afade=t=in:d=0.8,afade=t=out:curve=exp:st=2.0:d=2.6,aecho=0.8:0.7:300|700:0.3|0.2,volume=0.3,adelay={ms}|{ms}[x{k}]'); labels.append(f'[x{k}]')
     # room tone: a faint low air under everything, so no pause is ever digital silence (it read as a dropout)
-    fl.append(f'anoisesrc=color=brown:amplitude=0.02:sample_rate={SR}:duration={END:.2f},lowpass=f=250,highpass=f=30,aformat=channel_layouts=stereo,volume=0.5,afade=t=in:d=3,afade=t=out:st={END - 4:.2f}:d=4[room]'); labels.append('[room]')
+    fl.append(f'anoisesrc=color=brown:amplitude=0.02:sample_rate={SR}:duration={END:.2f},lowpass=f=250,highpass=f=30,aformat=channel_layouts=stereo,volume=0.5,afade=t=in:d=3,afade=t=out:st={END - 8:.2f}:d=8[room]'); labels.append('[room]')
     fl.append(''.join(vlab) + f'amix=inputs={len(vlab)}:normalize=0:dropout_transition=0,asplit=2[vb][vk]')
     fl.append(''.join(mlab) + f'amix=inputs={len(mlab)}:normalize=0:dropout_transition=0[mb]')
     fl.append('[mb][vk]sidechaincompress=threshold=0.015:ratio=6:attack=250:release=1800:makeup=1[md]')  # music dips ~6-8 dB while someone speaks

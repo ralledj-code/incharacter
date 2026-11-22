@@ -114,7 +114,7 @@ S_=[
 ('s79',L(45),'cut',[DO],['dust'],CAVE+"Dolkan with his eyes on the floor, dust jumping on the stones, urgent",{'shake':0.15},'rumble'),
 ('s80',L(45,4.6),'cut',[],['dust'],CAVE+"HERO: cracks racing across the floor toward the black pool, stones lifting, something huge rising beneath"+NP,{'shake':0.4},''),
 ('s81',C('d4b',1)+0.6,'flash',[],['ash'],CAVE+"the floor bursting upward in a spray of rock and dust, darkness"+NP,{'shake':0.8},'boom'),
-('s82',C('d4b',1)+1.4,'black',[],[],CAVE+"near total darkness, only drifting dust in a thin shaft of torchlight"+NP,{},''),
+('s82',C('d4b',1)+2.4,'slow',[DO,AR,CE,LU,NE,WI,VA],['dust'],CAVE+"HERO: the closing picture, wide: the dust slowly settling in the torn cavern after the floor burst, everyone in view: the ancient duergar Dolkan leaning on his crystal staff, Arthas (hood up, helm closed), Cedric, Lucien (blond, in his long coat), Nerrissa the drow and Wittan the deep gnome standing together around the wounded older Valerys who sits against a rock by the black pool, all of them staring at the fresh crack in the floor, torchlight, silence before the storm"+ONLY,{},''),
 ]
 # Pacing (Rasmus 2026-11-22: "images shift too fast"): a shot shorter than MIN_HOLD is merged into the one before it,
 # unless it carries a sound hit, a flash, a hero painting or the opening; then soft transitions: cut -> fade, fade -> slow dissolve.
@@ -149,7 +149,7 @@ cast[YB]=("Valerys twenty years younger, exactly the face, hair and beard of his
  "dark breeches, bare-headed, no armour, no cloak, no emblem; strong, proud, grief-stricken")
 cast[BA]="Arthas as a small boy of six: slight and pale, tousled light brown hair, serious pale grey eyes like his father's, a solemn little face, a plain linen nightshirt"
 cast[BC]="Cedric as a small boy of five: short dark hair (not yet shaved), pale grey eyes, a thin pale face, a plain linen nightshirt"
-board={"id":"tyrs-price","live":True,"secret":True,"cover":"s42","style":L14['style'],"cast":cast,"marks":MARKS,"shots":shots}
+board={"id":"tyrs-price","live":True,"endFade":8,"secret":True,"cover":"s42","style":L14['style'],"cast":cast,"marks":MARKS,"shots":shots}
 out=json.dumps({k:v for k,v in board.items() if k!='shots'},ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
 json.loads(out);open('painted/14-tyrs-price.json','w').write(out)
 print(len(shots),'shots,',sum(1 for s in shots if s.get('hero')),'hero,',sum(1 for s in shots if 'src' not in s),'to paint; end',TL['end'])

@@ -25,7 +25,7 @@ SEQ = [  # (clip id or None, seconds of silence BEFORE it)
     ('d4a', 4.0),    # choir holds and stops, back in the cavern, drip
     ('d4b', 0.9),
 ]
-TAIL = 5.5  # final crack, cut to black, tremor, one drip
+TAIL = 19.0  # final crack, then everyone in view as the dust settles, a slow 8 s fade to black (Rasmus: no hard cut at the end)
 
 def frames(path):
     with wave.open(path) as w: return w.getnframes() / w.getframerate()

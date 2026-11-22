@@ -1,6 +1,7 @@
 {
   "id": "tyrs-price",
   "live": true,
+  "endFade": 8,
   "secret": true,
   "cover": "s42",
   "style": "Stylized heroic fantasy painting in the look of a hand-painted 2D animated fantasy cinematic short: bold simplified shapes, slightly heroic sturdy proportions (broad shoulders, solid armour and props), heavy confident painterly brush strokes, hand-painted textures, rich saturated colour with a limited palette per scene, strong warm rim light against deep cool shadows, big areas of calm empty darkness, atmospheric haze between clear foreground, middle ground and background layers, cinematic widescreen composition. No ink outlines and no comic line art: edges are defined only by paint and light. Grounded anatomy and believable faces with real weight and emotion, semi-realistic like a painted cinematic short, not a cartoon, not a comic, not photorealistic, not a book illustration. Full-bleed image edge to edge: no black bars, no letterbox, no text, no letters, no logos, no borders, no frame, no watermark.",
@@ -100,7 +101,7 @@
     "s79": 397.98,
     "s80": 402.58,
     "s81": 412.11,
-    "s82": 412.91
+    "s82": 413.91
   },
   "shots": [
     {"id": "s01", "t": 0, "in": "black", "who": [], "fx": ["dust"], "move": {"from": [0, 0, 0.04], "to": [0, 0, 0.18]}, "scene": "deep underground in the Down Deep, a lightless world of caverns, rock ceilings, no sky, in a massive cavern, its floor torn and cracked around a fresh crater where a colossal worm dived beneath the stone, rubble everywhere, a still black pool, dust hanging in torchlight, wide, the moment after the dive: dust settling over the fresh crater, no people", "sfx": "rumble"},
@@ -162,6 +163,6 @@
     {"id": "s79", "t": 397.98, "in": "fade", "who": ["dolkan"], "fx": ["dust"], "shake": 0.15, "move": {"from": [0, 0, 0.2], "to": [0, 0, 0.05]}, "scene": "deep underground in the Down Deep, a lightless world of caverns, rock ceilings, no sky, in a massive cavern, its floor torn and cracked around a fresh crater where a colossal worm dived beneath the stone, rubble everywhere, a still black pool, dust hanging in torchlight, Dolkan with his eyes on the floor, dust jumping on the stones, urgent", "sfx": "rumble"},
     {"id": "s80", "t": 402.58, "in": "fade", "who": [], "fx": ["dust"], "shake": 0.4, "move": {"from": [0.05, 0.02, 0.02], "to": [-0.04, 0, 0.12]}, "scene": "deep underground in the Down Deep, a lightless world of caverns, rock ceilings, no sky, in a massive cavern, its floor torn and cracked around a fresh crater where a colossal worm dived beneath the stone, rubble everywhere, a still black pool, dust hanging in torchlight, cracks racing across the floor toward the black pool, stones lifting, something huge rising beneath, no people", "hero": true},
     {"id": "s81", "t": 412.11, "in": "flash", "who": [], "fx": ["ash"], "shake": 0.8, "move": {"from": [0, 0.04, 0.02], "to": [0, 0, 0.16]}, "scene": "deep underground in the Down Deep, a lightless world of caverns, rock ceilings, no sky, in a massive cavern, its floor torn and cracked around a fresh crater where a colossal worm dived beneath the stone, rubble everywhere, a still black pool, dust hanging in torchlight, the floor bursting upward in a spray of rock and dust, darkness, no people", "sfx": "boom"},
-    {"id": "s82", "t": 412.91, "in": "black", "who": [], "fx": [], "move": {"from": [0.03, 0, 0.08], "to": [-0.03, 0, 0.16]}, "scene": "deep underground in the Down Deep, a lightless world of caverns, rock ceilings, no sky, in a massive cavern, its floor torn and cracked around a fresh crater where a colossal worm dived beneath the stone, rubble everywhere, a still black pool, dust hanging in torchlight, near total darkness, only drifting dust in a thin shaft of torchlight, no people"}
+    {"id": "s82", "t": 413.91, "in": "slow", "who": ["dolkan", "arthas", "cedric", "lucien", "drow", "wittan", "valerys"], "fx": ["dust"], "move": {"from": [0.03, 0, 0.08], "to": [-0.03, 0, 0.16]}, "scene": "deep underground in the Down Deep, a lightless world of caverns, rock ceilings, no sky, in a massive cavern, its floor torn and cracked around a fresh crater where a colossal worm dived beneath the stone, rubble everywhere, a still black pool, dust hanging in torchlight, the closing picture, wide: the dust slowly settling in the torn cavern after the floor burst, everyone in view: the ancient duergar Dolkan leaning on his crystal staff, Arthas (hood up, helm closed), Cedric, Lucien (blond, in his long coat), Nerrissa the drow and Wittan the deep gnome standing together around the wounded older Valerys who sits against a rock by the black pool, all of them staring at the fresh crack in the floor, torchlight, silence before the storm, exactly these people and no one else", "hero": true}
   ]
 }
