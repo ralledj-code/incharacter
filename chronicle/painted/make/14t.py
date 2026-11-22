@@ -9,7 +9,7 @@ cast['young_valerys']=("Valerys twenty years younger, about forty: the same face
  "a gold sun emblem; strong, proud, grief-stricken")
 DEEPC=("deep underground in the Down Deep, a lightless world of caverns, rock ceilings, no sky, in a massive cavern, its floor torn and cracked, "
  "rubble everywhere, a still black pool, a high rock ceiling lost in darkness, ")
-SANCT=("the deepest chamber beneath the cathedral of Tyr in the city of Caer Callidyrr at night: a vast shadowy stone sanctum, towering gothic arches, "
+SANCT=("the deepest chamber beneath the cathedral of Tyr in the city of Caer Callidyr at night: a vast shadowy stone sanctum, towering gothic arches, "
  "tall leaded stained-glass windows lashed by night rain, cold stone floor, iron candelabra, ")
 shots=[
  {"id":"ref_sanctum","t":0,"in":"cut","who":[],"fx":[],"scene":SANCT+"wide establishing view, no people, no statue in this view, lightning flickering behind the windows"},
