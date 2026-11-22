@@ -2,7 +2,7 @@
  "context": {
   "dolkan": "You are a great character actor in a dark fantasy film, playing Dolkan: an ANCIENT duergar sorcerer, over four hundred years old. His voice is ruined by centuries in the lightless deep: very deep, dark, dry and raspy like stones grinding together, cracked, with a rattling wheeze in his breath. He speaks SLOWLY, heavily, every word weighed; frail in body but terrifying in will. Normally a cackling madman, right now all the madness has drained out of him. He speaks to three young warriors (brothers) in a huge cavern, seconds after a giant worm dived under the stone; it can burst up again any moment. He is projecting his own memory into their minds with magic. Real breath and tension; never a narrator, never young, never smooth.",
   "valerys": "You are a great actor in a dark fantasy film, playing Valerys, a proud knight of forty and High Inquisitor of Tyr. Night, a rain-lashed stone sanctum. He has thrown off his armour and kneels on cold stone; his two small sons lie dying of black poison beside him; his wife has vanished. He is begging his god, the first time in his life he has begged. Hoarse, cracking, real ragged breath and tears in the throat.",
-  "tyr": "You are playing Tyr, the god of justice, speaking through a colossal stone statue in a vast cathedral sanctum. Your voice is ENORMOUS: a deep, resonant, booming bass that fills the whole cathedral like rolling thunder, full chest and full power held barely in check; slow, measured, every word a pronouncement of law. Cold and absolute, never angry, never warm, never quiet or thin; on the weightiest words the voice swells into a boom. Not a narrator, not a man: a god pronouncing judgement."
+  "tyr": "You are playing Tyr, the god of justice, speaking through a colossal stone statue in a vast cathedral. You are SHOUTING with the full force of a god: loud, thunderous, booming, a huge deep chest voice projected to fill the whole cathedral, every sentence hurled down from on high like a thunderclap. Overwhelming, commanding, absolute; furious power, not cold whispering, not slow murmuring, never quiet. Each line is a roared pronouncement of law. Not a narrator, not a man: a god roaring judgement."
  },
  "clips": [
   {
@@ -84,7 +84,7 @@
   {
    "id": "t1",
    "sp": "tyr",
-   "dir": "(slow, cold, immense) The Law demands balance, Valerys.\n(a pause; each word weighed) No life is given without a price.\n(colder still) These boys carry blood that the darkness already hunts.\n(absolute, final) If I am to pull them from the grave... you must become the wall that keeps the shadow out.",
+   "dir": "(a thunderous roar from on high) The Law demands balance, Valerys!\n(booming, every word a hammer blow) No life is given without a price!\n(shouting, overwhelming) These boys carry blood that the darkness already hunts!\n(roaring the command) If I am to pull them from the grave... you must become the wall that keeps the shadow out!",
    "sub": [
     "The Law demands balance, Valerys. No life is given without a price.",
     "These boys carry blood that the darkness already hunts.",
@@ -102,7 +102,7 @@
   {
    "id": "t2a",
    "sp": "tyr",
-   "dir": "(slow, cold, pronouncing law) Your sword and your oath belong to Caer Callidyr.\n(heavier) You will never cross this city's gates again...\n(each word a stone) neither to hunt their mother, nor to ride to their aid.",
+   "dir": "(booming, shouted down at him) Your sword and your oath belong to Caer Callidyr!\n(louder, a hammer blow) You will never cross this city's gates again...\n(roaring) neither to hunt their mother, nor to ride to their aid!",
    "sub": [
     "Your sword and your oath belong to Caer Callidyr.",
     "You will never cross this city's gates again—",
@@ -112,7 +112,7 @@
   {
    "id": "t2b",
    "sp": "tyr",
-   "dir": "(immense, slow) You will be the city's shield for as long as your heart beats.\n(a long pause, then lower, a warning) The day you place your own blood above your post and step beyond these walls... the contract is shattered.\n(final, terrible, absolute) And the very oath you swore will consume you.",
+   "dir": "(a huge booming shout) You will be the city's shield for as long as your heart beats!\n(a terrible warning, shouted) The day you place your own blood above your post and step beyond these walls... the contract is shattered!\n(the loudest roar of all, final) And the very oath you swore will consume you!",
    "sub": [
     "You will be the city's shield for as long as your heart beats.",
     "The day you place your own blood above your post and step beyond these walls, the contract is shattered—",

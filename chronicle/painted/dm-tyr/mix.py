@@ -11,9 +11,9 @@ SCRIPT = {c['id']: c['sp'] for c in json.load(open('voice/script.json'))['clips'
 # Rasmus 2026-11-22 (2nd listen): voices far too quiet, music too loud with hard cuts, effects end abruptly; more choir in the church.
 # So: voices +4 dB, music -4 dB and every music/bed fade at least 6 s, smooth (slow) ducking, effects decay out, a sacred choir bed.
 VOICE_FX = {  # per speaker
-    'tyr': 'volume=1.45',  # the god treatment is baked into best/t*.wav (voice/process.py)
-    'dolkan': 'aecho=0.8:0.85:60|140:0.10|0.06,volume=1.65',  # a little cave / memory space (age treatment baked in by voice/process.py)
-    'valerys': 'aecho=0.8:0.85:90|200:0.14|0.08,volume=1.6',  # stone sanctum
+    'tyr': 'volume=2.0',  # the god treatment is baked into best/t*.wav (voice/process.py)
+    'dolkan': 'aecho=0.8:0.85:60|140:0.10|0.06,volume=2.2',  # a little cave / memory space (age treatment baked in by voice/process.py)
+    'valerys': 'volume=1.6',  # dry (Rasmus: no reverb on Valerys)
 }
 # 3rd listen: effects still too loud (all about -5 dB again), the looped rain/drips audibly loop -> no rain (occasional distant
 # thunder instead), drips and heartbeats laid as separate overlapping copies instead of a loop.
