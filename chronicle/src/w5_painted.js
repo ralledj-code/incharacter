@@ -11,8 +11,8 @@ const { clamp, lerp } = C;
 C.boards = C.boards || {};
 
 const PW = 16, PH = 9, FOV = 36, TAN = Math.tan(FOV * Math.PI / 360), DEPTH = 0, MOVE = 0.9, ORBIT = 0;  // ORBIT: how far the camera turns back toward the centre while it drifts (parallax)
-const TRANS = { cut: 0, fade: 1.2, ink: 1.5, black: 1.6, flash: 0 };
-const KIND = { cut: 0, fade: 1, ink: 2, black: 3, flash: 0 };
+const TRANS = { cut: 0, fade: 1.2, slow: 2.6, ink: 1.5, black: 1.6, flash: 0 };  // slow: a long dissolve (spoken scenes)
+const KIND = { cut: 0, fade: 1, slow: 1, ink: 2, black: 3, flash: 0 };
 const GRADE = { red: [1.12, 0.86, 0.84], cold: [0.88, 0.98, 1.14], green: [0.9, 1.06, 0.98], none: [1, 1, 1] };
 // particle looks: colour, size (world units at 1 m), velocity, wobble, twinkle rate, alpha, count
 const FX = {

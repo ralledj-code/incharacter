@@ -116,6 +116,17 @@ S_=[
 ('s81',C('d4b',1)+0.6,'flash',[],['ash'],CAVE+"the floor bursting upward in a spray of rock and dust, darkness"+NP,{'shake':0.8},'boom'),
 ('s82',C('d4b',1)+1.4,'black',[],[],CAVE+"near total darkness, only drifting dust in a thin shaft of torchlight"+NP,{},''),
 ]
+# Pacing (Rasmus 2026-11-22: "images shift too fast"): a shot shorter than MIN_HOLD is merged into the one before it,
+# unless it carries a sound hit, a flash, a hero painting or the opening; then soft transitions: cut -> fade, fade -> slow dissolve.
+MIN_HOLD=6.0; MAX_HOLD=12.0
+MARKS={x[0]:round(x[1],2) for x in S_}  # every planned moment, also the merged ones (painted/dm-tyr/mix.py places sound by these)
+def _protected(x): return x[2] in ('flash','black') or x[7] or 'HERO' in (x[5] or '') or x[0]=='s01'
+while True:
+    ends=[S_[i+1][1] for i in range(len(S_)-1)]+[TL['end']]
+    cand=[(ends[i]-S_[i][1],i) for i in range(1,len(S_)) if not _protected(S_[i]) and ends[i]-S_[i][1]<MIN_HOLD and ends[i]-S_[i-1][1]<=MAX_HOLD]
+    if not cand: break
+    S_.pop(min(cand)[1])
+S_=[(x[0],x[1],{'cut':'fade','fade':'slow'}.get(x[2],x[2]))+tuple(x[3:]) for x in S_]
 MOVES=[([0,0,0.04],[0,0,0.18]),([-0.04,0,0.05],[0.04,0,0.12]),([0,0,0.2],[0,0,0.05]),([0.05,0.02,0.02],[-0.04,0,0.12]),([0,0.04,0.02],[0,0,0.16]),([0.03,0,0.08],[-0.03,0,0.16])]
 shots=[]
 for k,(sid,t,tr,who,fx,scene,ex,sfx) in enumerate(S_):
@@ -138,7 +149,7 @@ cast[YB]=("Valerys twenty years younger, exactly the face, hair and beard of his
  "dark breeches, bare-headed, no armour, no cloak, no emblem; strong, proud, grief-stricken")
 cast[BA]="Arthas as a small boy of six: slight and pale, tousled light brown hair, serious pale grey eyes like his father's, a solemn little face, a plain linen nightshirt"
 cast[BC]="Cedric as a small boy of five: short dark hair (not yet shaved), pale grey eyes, a thin pale face, a plain linen nightshirt"
-board={"id":"tyrs-price","live":True,"secret":True,"cover":"s42","style":L14['style'],"cast":cast,"shots":shots}
+board={"id":"tyrs-price","live":True,"secret":True,"cover":"s42","style":L14['style'],"cast":cast,"marks":MARKS,"shots":shots}
 out=json.dumps({k:v for k,v in board.items() if k!='shots'},ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
 json.loads(out);open('painted/14-tyrs-price.json','w').write(out)
 print(len(shots),'shots,',sum(1 for s in shots if s.get('hero')),'hero,',sum(1 for s in shots if 'src' not in s),'to paint; end',TL['end'])
