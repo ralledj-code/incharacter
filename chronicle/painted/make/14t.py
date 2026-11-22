@@ -22,7 +22,7 @@ TYR=("a colossal stone statue of Tyr, the one-handed god of justice, towering ov
      "a blindfold carved across his eyes, his right arm ending at the wrist with no right hand, his left hand raising a great stone longsword, "
      "a set of stone scales hanging from the sword's crossguard, weathered pale stone")
 BOYS=("two small boys of five and six lying side by side on wool blankets on the cold stone floor, pale as chalk, drenched in sweat, "
-      "black unnatural veins creeping up their necks; the boy with short dark hair is Cedric; Arthas lies turned away with his face hidden under the blanket and his hair, his face never visible")
+      "black unnatural veins creeping up their necks; the boy with short dark hair is Cedric, the slightly older boy with light brown hair is Arthas")
 FWD='a flash-forward vision in a cold blue-grey palette, '
 COLD={'grade':'cold'}
 S_=[
@@ -52,7 +52,7 @@ S_=[
 ('s22',L(7),'fade',[BA,BC],[],SANCT+"HERO: "+BOYS+", candlelight, a vast dark space around them"+ONLY,{'flicker':0.3},'heart'),
 ('s23',L(7,4.3),'cut',[BC],[],SANCT+"close-up of little Cedric (short dark hair) feverish and pale, sweat on his brow, eyes half closed",{'flicker':0.2},''),
 ('s24',L(8),'cut',[],[],SANCT+"extreme close-up of black unnatural poison veins creeping up a small child's neck and arm, pulsing, the face out of frame",{'flicker':0.2},''),
-('s25',L(8,5.0),'cut',[BA],[],SANCT+"little Arthas curled under a wool blanket, his face hidden, only a small pale hand gripping the blanket, black veins on the wrist",{'flicker':0.2},''),
+('s25',L(8,5.0),'cut',[BA],[],SANCT+"close-up of little Arthas (light brown hair) curled under a wool blanket, feverish and pale, eyes squeezed shut, black veins on his neck and wrist",{'flicker':0.2},''),
 ('s26',L(8,8.6),'cut',[],[],SANCT+"a healer's bag abandoned on the stone, potion bottles shattered, cold candles"+NP,{},''),
 ('s27',L(9),'cut',[BA,BC],[],SANCT+"wide: the two small boys tiny on the floor, and the dark looming shape of "+TYR+" above them in shadow"+ONLY,COLD,''),
 ('s28',L(10),'fade',[YV],[],SANCT+"HERO: young Valerys (black hair, about forty) kneeling on the cold stone before the statue, seen from behind, his armour thrown aside around him",{'flicker':0.2},''),
@@ -92,8 +92,8 @@ S_=[
 ('s59',L(32),'cut',[YV],[],SANCT+"young Valerys turning away from the empty chair with the woman's cloak, rain on the glass behind",{'flicker':0.2},''),
 ('s60',L(33),'fade',[BC],['dust'],FWD+"HERO: little Cedric (short dark hair, a small bundle) led by two hooded monks through rain toward the gate of a mountain monastery",COLD,''),
 ('s61',L(33,4.8),'cut',[BC],['dust'],FWD+"little Cedric looking back over his shoulder in the rain, alone",COLD,''),
-('s62',L(34),'fade',[BA,YV],[],FWD+"a boy of about eight seen from behind (Arthas, his face never visible) reaching up toward his father, who turns away in his white and crimson robes"+ONLY,COLD,''),
-('s63',L(35),'cut',[YV,BA],[],FWD+"Valerys alone at a tall cathedral window, cold and distant, a small boy watching him from a doorway behind, seen from behind"+ONLY,COLD,''),
+('s62',L(34),'fade',[BA,YV],[],FWD+"young Arthas, a boy of about eight with light brown hair, reaching up toward his father with hurt in his eyes, his father, who turns away in his white and crimson robes"+ONLY,COLD,''),
+('s63',L(35),'cut',[YV,BA],[],FWD+"Valerys alone at a tall cathedral window, cold and distant, young Arthas (light brown hair) watching him sadly from a doorway behind"+ONLY,COLD,''),
 ('s64',L(35,6.4),'cut',[],[],FWD+"the great gates of Caer Callidyr swinging shut"+NP,COLD,'gate'),
 ('s65',L(36),'cut',[YV],[],SANCT+"young Valerys rising to his feet, steady, resolved",{'flicker':0.2},''),
 ('s66',L(37),'cut',[YV],[],SANCT+"HERO: young Valerys laying his longsword at the foot of the stone altar beneath the statue",{'flicker':0.2},'sword'),
@@ -132,8 +132,7 @@ cast[DO]=L13['cast']['dolkan'].replace('; usually hunched, grinning and mutterin
 cast[YV]=("Valerys twenty years younger, about forty: the same face as in his reference (hard pale grey eyes, strong jaw, short beard) "
  "but jet-black close-cropped hair and a short black beard, no grey; a High Inquisitor of Tyr: white and crimson robes over plate armour, "
  "a gold sun emblem; strong, proud, grief-stricken")
-cast[BA]=("Arthas as a small boy of six: slight, pale, light brown hair; HIS FACE IS NEVER SHOWN: always turned away, hidden under a blanket, "
- "in shadow or seen from behind; a plain linen nightshirt")
+cast[BA]="Arthas as a small boy of six: slight and pale, tousled light brown hair, serious pale grey eyes like his father's, a solemn little face, a plain linen nightshirt"
 cast[BC]="Cedric as a small boy of five: short dark hair (not yet shaved), pale grey eyes, a thin pale face, a plain linen nightshirt"
 board={"id":"tyrs-price","live":True,"secret":True,"cover":"s42","style":L14['style'],"cast":cast,"shots":shots}
 out=json.dumps({k:v for k,v in board.items() if k!='shots'},ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
