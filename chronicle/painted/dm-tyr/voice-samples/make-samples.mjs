@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+const ROLES={
+ dolkan:{voices:['Gacrux','Enceladus','Rasalgethi','Algieba'],style:"Read as Dolkan, a very old duergar sorcerer from the deep dark: his usual mad cackle is gone; low, tight, dead-serious rasp, quietly intense, urgent, every word weighed; an ancient, gravelly, slightly cracked old voice.",line:"Listen closely, boys... there's no time before it surfaces again. Drop the jokes. I know that man. I stood beneath the towering arches of Kair Kal-ih-deer before he cast me into the dark!"},
+ valerys:{voices:['Orus','Iapetus','Schedar','Sadachbia'],style:"Read as Valerys, a knight in his forties kneeling before his god, his two small sons dying beside him: hoarse, cracking, desperate, on the edge of tears, pleading with everything he has.",line:"Their mother is gone, Tyr... do not take them from me too! Take me instead! Strip my title, take my honor... just burn this poison from my boys... let them live!"},
+ tyr:{voices:['Charon','Alnilam','Umbriel','Zubenelgenubi'],style:"Read as Tyr, the god of justice, speaking from a stone statue: very deep, slow, cold and absolute, every word final, no warmth, measured pauses.",line:"The Law demands balance, Valerys. No life is given without a price. These boys carry blood that the darkness already hunts."}};
+const jobs=Object.entries(ROLES).flatMap(([r,o])=>o.voices.map(v=>[r,v,o]));
+await Promise.all(jobs.map(async([r,v,o])=>{for(let k=0;k<3;k++){
+ const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-tts:generateContent',{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':process.env.GEMINI_API_KEY},body:JSON.stringify({contents:[{parts:[{text:o.style+"\n\n"+o.line}]}],generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:v}}}}})});
+ const j=await res.json();const p=j.candidates?.[0]?.content?.parts?.find(x=>x.inlineData);if(!p){await new Promise(z=>setTimeout(z,5000));continue}
+ fs.writeFileSync(`${r}-${v}.pcm`,Buffer.from(p.inlineData.data,'base64'));console.log(r,v,'ok');break}}));

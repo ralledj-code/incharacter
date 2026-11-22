@@ -29,3 +29,14 @@ Paint as a living duergar at full size (not a miniature, no base): short, stocky
 - ~90-100 paintings (≈ one per 3 s, rapid cuts at peaks). Hero frames (10-12) in gemini-3-pro-image 2K: Dolkan's face hardening, the staff strike, the boys with black veins, kneeling Valerys, Tyr's blindfolded statue in white fire, the golden light, the gates closing, the final cracked floor. Rest Flash batch. Est. total ≈ 55 DKK (calibrated rates).
 - Every SFX hit = a cut or flash on the same frame: staff strike (hard cut, white flash frame, violet shockwave; crack + boom on the frame), lightning (white frame + cut to a new sanctum shot, thunder on the frame, roll ~0.5 s later), torches freeze (flame turns white on a cut, cold hiss starts there), thousand blades (swell ends on a hard cut to Tyr, then silence), sword on altar and city gates (own cuts, ring / clang), golden light (slow swell + choir), final crack (cut to black on the boom), heartbeats (subtle light pulse per beat, no cuts).
 - Order: voices recorded and timed first, then the storyboard locked to them, then SFX placed frame-exact, then render.
+
+## Rasmus 2026-11-22: also in the Chronicle, hidden
+Link-only song (e.g. ?song=tyrs-price), not in the song list AND not on the family page (needs a `secret: true` flag: today every hidden non-variant song shows on /chronicle/familie). MP4 still delivered. Same mixed audio file in both, so SFX timing carries over; the white flash frames in the MP4 should match the player's 'flash' transitions on the same cuts.
+
+## Rasmus 2026-11-22: NO MP4. Chronicle only (hidden, `secret: true`, link-only). Supersedes the MP4/.srt items above.
+Done while waiting for the DM:
+- `secret` flag in ui.js (hidden songs with secret: true never show on the family page).
+- SFX: Lyria (music model) cannot do effects (everything came out as music). Gemini Omni text_to_video at 360p gives real effect audio (~0.15 DKK/s): sfx/*.mp3 (staff, thunder, rain, hiss, blades, heart, sword, gate, rumble, drips, spores), all rated 4-5 realistic except hiss (3). Script sfx/make-sfx.mjs.
+- Music: music/underscore-test.mp3 (Lyria 3 Pro, 3 min, dark cello + choir drone; usable).
+- Voice candidates: voice-samples/ (Dolkan: Algieba, Enceladus, Gacrux, Rasalgethi; Valerys: Iapetus, Orus, Sadachbia, Schedar; Tyr with depth + echo: Alnilam, Charon, Umbriel, Zubenelgenubi).
+- Board painted/14-tyrs-price.json (make/14t.py): cast copied from level 14 + new Dolkan + young_valerys (Pro); place references ref_sanctum (rain falls inside the hall: fix in real shots) and ref_cavern (Pro).
