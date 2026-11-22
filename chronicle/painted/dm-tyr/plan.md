@@ -21,3 +21,6 @@ Music + SFX: try Lyria; drop anything fake. Underscore only inside the memory.
 Render: the Chronicle painted player offline (tools/pshot.cjs video) + ffmpeg mix. Est. ~25 DKK.
 
 ## Open questions (see chat): 1-3 voices, 5-12 look, 15-17 output, A-E present scene.
+
+## Dolkan (decided 2026-11-22, from Rasmus's miniature photo cast/dolkan-miniature.jpg)
+Paint as a living duergar at full size (not a miniature, no base): short, stocky, grey stone-like skin, bald with a single tuft, enormous wild bushy beard and eyebrows braided with beads, long drooping moustache, glowing white eyes, a scarred face (script), heavy hooded cloak (hood down) with a round sigil clasp, layered robes, wide belt with a round studded buckle, a dagger, rings, curled-toe boots, a twisted gnarled wooden staff crowned with a cluster of crystals; magic as violet spores swirling from his left hand. Replaces the level 13 lantern look from this video on (level 13 itself unchanged unless asked).
