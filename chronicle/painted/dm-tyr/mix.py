@@ -100,7 +100,7 @@ def build():
         fl.append(f'[{k}:a]aresample={SR},aformat=channel_layouts=stereo,atrim=start=1.4,asetpts=PTS-STARTPTS,lowpass=f=700,afade=t=in:d=0.8,afade=t=out:curve=exp:st=2.0:d=2.6,aecho=0.8:0.7:300|700:0.3|0.2,volume=0.3,adelay={ms}|{ms}[x{k}]'); labels.append(f'[x{k}]')
     # room tone: a faint low air under everything, so no pause is ever digital silence (it read as a dropout)
     fl.append(f'anoisesrc=color=brown:amplitude=0.02:sample_rate={SR}:duration={END:.2f},lowpass=f=250,highpass=f=30,aformat=channel_layouts=stereo,volume=0.5,afade=t=in:d=3,afade=t=out:st={END - 8:.2f}:d=8[room]'); labels.append('[room]')
-    fl.append(''.join(vlab) + f'amix=inputs={len(vlab)}:normalize=0:dropout_transition=0,asplit=2[vb][vk]')
+    fl.append(''.join(vlab) + f'amix=inputs={len(vlab)}:normalize=0:dropout_transition=0,apad=whole_dur={END:.2f},asplit=2[vb][vk]')  # padded: the ducker stops when its key ends, which cut every note after the last word
     fl.append(''.join(mlab) + f'amix=inputs={len(mlab)}:normalize=0:dropout_transition=0[mb]')
     fl.append('[mb][vk]sidechaincompress=threshold=0.015:ratio=6:attack=250:release=1800:makeup=1[md]')  # music dips ~6-8 dB while someone speaks
     labels += ['[vb]', '[md]']
