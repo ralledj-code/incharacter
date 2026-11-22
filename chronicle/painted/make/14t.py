@@ -34,7 +34,7 @@ S_=[
 ('s05',16.0,'cut',PARTY,['dust'],CAVE+"Lucien (long blond hair, burgundy coat), Arthas in dark plate and hood, Cedric the bald monk, Nerrissa the drow and Wittan the deep gnome frozen in a loose ring, weapons ready, staring at the cracked floor"+ONLY,{},''),
 ('s06',20.0,'cut',[DO],['fireflies'],CAVE+"among jagged rocks in deep shadow: Dolkan's glowing white eyes, hunched, muttering to a few glowing violet spores in his palm",{'flicker':0.2},''),
 ('s07',23.5,'cut',[DO],['dust'],CAVE+"Dolkan stepping out from the jagged rocks, his mad grin fading, staring at the bleeding Valerys",{},''),
-('s08',26.5,'cut',[DO],['dust'],CAVE+"close-up of Dolkan's scarred face going hard and grim, all madness gone, standing straight, glowing white eyes",{},''),
+('s08',26.5,'cut',[DO],['dust'],CAVE+"tight head-and-shoulders close-up of Dolkan alone, his scarred face going hard and grim, all madness gone, glowing white eyes, the dark cavern blurred behind him, only one figure in the picture, Dolkan appears once"+ONLY,{},''),
 ('s09',29.4,'flash',[DO],['sparks'],CAVE+"HERO: Dolkan slamming his crystal-crowned staff into the stone floor, the crystals flaring, a ring of violet light and spores bursting outward",{'shake':0.6},'staff'),
 ('s10',30.25,'cut',PARTY,['fireflies'],CAVE+"a wave of glowing violet spores rushing over Lucien, Arthas, Cedric, Nerrissa and Wittan, their eyes going wide"+ONLY,{'shake':0.2},'spores'),
 # ---------- II. "Listen closely, boys" ----------
