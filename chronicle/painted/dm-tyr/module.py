@@ -26,8 +26,8 @@ const TITLES = [];
 C.levels[ID] = {{
   session: 'Level 14 · After the wurm · from the DM',
   blurb: 'The wurm is gone. Dolkan steps out of the dark with a crystal staff and a memory: twenty years ago, beneath the cathedral of Tyr, a young paladin named Valerys bargained with his god for two dying boys.',
-  length: '6 min', audio: 'levels/14-' + ID + '.mp3',
-  hidden: true, secret: true, level: 14, title: 'Tyr\\u2019s Price', len: '6:19',
+  length: '{round(TL["end"] / 60)} min', audio: 'levels/14-' + ID + '.mp3',
+  hidden: true, secret: true, level: 14, title: 'Tyr\\u2019s Price', len: '{int(TL["end"] // 60)}:{int(TL["end"] % 60):02d}',
   titles: TITLES,
   cues: CUES, duration: DURATION, silenceT: {round(last + 0.5, 2)}, lineTimes: LINE_TIMES, voices: VOICES,
 }};

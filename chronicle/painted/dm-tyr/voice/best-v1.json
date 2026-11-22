@@ -1,0 +1,492 @@
+{
+ "d1b": {
+  "take": "takes/d1b-Rasalgethi-1",
+  "voice": "Rasalgethi",
+  "life": 3,
+  "words_ok": true,
+  "note": "Dramatic delivery. Homophone used for Tyr's. Words match.",
+  "all": [
+   [
+    "takes/d1b-Rasalgethi-1",
+    true,
+    3
+   ],
+   [
+    "takes/d1b-Rasalgethi-2",
+    true,
+    3
+   ],
+   [
+    "takes/d1b-Rasalgethi-3",
+    true,
+    3
+   ],
+   [
+    "takes/d1b-Rasalgethi-4",
+    true,
+    3
+   ]
+  ]
+ },
+ "d1c": {
+  "take": "takes/d1c-Rasalgethi-1",
+  "voice": "Rasalgethi",
+  "life": 3,
+  "words_ok": false,
+  "note": "Dramatic tone. Missing place name.",
+  "all": [
+   [
+    "takes/d1c-Rasalgethi-1",
+    false,
+    3
+   ],
+   [
+    "takes/d1c-Rasalgethi-2",
+    false,
+    3
+   ],
+   [
+    "takes/d1c-Rasalgethi-3",
+    false,
+    3
+   ],
+   [
+    "takes/d1c-Rasalgethi-4",
+    false,
+    3
+   ]
+  ]
+ },
+ "d1a": {
+  "take": "takes/d1a-Rasalgethi-1",
+  "voice": "Rasalgethi",
+  "life": 5,
+  "words_ok": true,
+  "note": "Excellent dramatic delivery, great pacing and emotion.",
+  "all": [
+   [
+    "takes/d1a-Rasalgethi-1",
+    true,
+    5
+   ],
+   [
+    "takes/d1a-Rasalgethi-2",
+    true,
+    5
+   ]
+  ]
+ },
+ "d1d": {
+  "take": "takes/d1d-Rasalgethi-1",
+  "voice": "Rasalgethi",
+  "life": 5,
+  "words_ok": true,
+  "note": "Excellent dramatic reading, very expressive with great pacing and emotion.",
+  "all": [
+   [
+    "takes/d1d-Rasalgethi-1",
+    true,
+    5
+   ],
+   [
+    "takes/d1d-Rasalgethi-2",
+    true,
+    5
+   ]
+  ]
+ },
+ "d1e": {
+  "take": "takes/d1e-Rasalgethi-1",
+  "voice": "Rasalgethi",
+  "life": 3,
+  "words_ok": true,
+  "note": "Good emotion and pacing, matches text.",
+  "all": [
+   [
+    "takes/d1e-Rasalgethi-1",
+    true,
+    3
+   ],
+   [
+    "takes/d1e-Rasalgethi-2",
+    true,
+    3
+   ],
+   [
+    "takes/d1e-Rasalgethi-3",
+    true,
+    3
+   ],
+   [
+    "takes/d1e-Rasalgethi-4",
+    true,
+    3
+   ]
+  ]
+ },
+ "d2a": {
+  "take": "takes/d2a-Rasalgethi-1",
+  "voice": "Rasalgethi",
+  "life": 3,
+  "words_ok": true,
+  "note": "Dramatic reading, good pacing.",
+  "all": [
+   [
+    "takes/d2a-Rasalgethi-1",
+    true,
+    3
+   ],
+   [
+    "takes/d2a-Rasalgethi-2",
+    true,
+    3
+   ],
+   [
+    "takes/d2a-Rasalgethi-3",
+    true,
+    3
+   ],
+   [
+    "takes/d2a-Rasalgethi-4",
+    true,
+    3
+   ]
+  ]
+ },
+ "v1": {
+  "take": "takes/v1-Orus-1",
+  "voice": "Orus",
+  "life": 5,
+  "words_ok": true,
+  "note": "Excellent emotional delivery, perfectly matches the text.",
+  "all": [
+   [
+    "takes/v1-Orus-1",
+    true,
+    5
+   ],
+   [
+    "takes/v1-Orus-2",
+    true,
+    5
+   ]
+  ]
+ },
+ "d2b": {
+  "take": "takes/d2b-Rasalgethi-1",
+  "voice": "Rasalgethi",
+  "life": 3,
+  "words_ok": true,
+  "note": "Good drama.",
+  "all": [
+   [
+    "takes/d2b-Rasalgethi-1",
+    true,
+    3
+   ],
+   [
+    "takes/d2b-Rasalgethi-2",
+    true,
+    3
+   ],
+   [
+    "takes/d2b-Rasalgethi-3",
+    true,
+    3
+   ],
+   [
+    "takes/d2b-Rasalgethi-4",
+    true,
+    3
+   ]
+  ]
+ },
+ "v2": {
+  "take": "takes/v2-Orus-1",
+  "voice": "Orus",
+  "life": 3,
+  "words_ok": true,
+  "note": "Accurate delivery with dramatic breathing.",
+  "all": [
+   [
+    "takes/v2-Orus-1",
+    true,
+    3
+   ],
+   [
+    "takes/v2-Orus-2",
+    true,
+    3
+   ],
+   [
+    "takes/v2-Orus-3",
+    true,
+    3
+   ],
+   [
+    "takes/v2-Orus-4",
+    true,
+    3
+   ]
+  ]
+ },
+ "d3a": {
+  "take": "takes/d3a-Rasalgethi-1",
+  "voice": "Rasalgethi",
+  "life": 3,
+  "words_ok": true,
+  "note": "Dramatic delivery with good pacing. Words match perfectly.",
+  "all": [
+   [
+    "takes/d3a-Rasalgethi-1",
+    true,
+    3
+   ],
+   [
+    "takes/d3a-Rasalgethi-2",
+    true,
+    3
+   ],
+   [
+    "takes/d3a-Rasalgethi-3",
+    true,
+    3
+   ],
+   [
+    "takes/d3a-Rasalgethi-4",
+    true,
+    3
+   ]
+  ]
+ },
+ "t2a": {
+  "take": "takes/t2a-Charon-1",
+  "voice": "Charon",
+  "life": 5,
+  "words_ok": true,
+  "note": "Deep, resonant, and dramatic delivery with excellent pacing and authoritative emotion.",
+  "all": [
+   [
+    "takes/t2a-Charon-1",
+    true,
+    5
+   ],
+   [
+    "takes/t2a-Charon-2",
+    true,
+    3
+   ],
+   [
+    "takes/t2a-Alnilam-1",
+    true,
+    3
+   ],
+   [
+    "takes/t2a-Alnilam-2",
+    true,
+    3
+   ]
+  ]
+ },
+ "t1": {
+  "take": "takes/t1-Charon-2",
+  "voice": "Charon",
+  "life": 5,
+  "words_ok": true,
+  "note": "Excellent dramatic delivery with a deep, resonant voice and perfect pacing.",
+  "all": [
+   [
+    "takes/t1-Charon-2",
+    true,
+    5
+   ],
+   [
+    "takes/t1-Alnilam-1",
+    true,
+    5
+   ],
+   [
+    "takes/t1-Alnilam-2",
+    true,
+    5
+   ],
+   [
+    "takes/t1-Charon-1",
+    true,
+    4
+   ]
+  ]
+ },
+ "d3b": {
+  "take": "takes/d3b-Rasalgethi-1",
+  "voice": "Rasalgethi",
+  "life": 5,
+  "words_ok": true,
+  "note": "short",
+  "all": [
+   [
+    "takes/d3b-Rasalgethi-1",
+    true,
+    5
+   ],
+   [
+    "takes/d3b-Rasalgethi-2",
+    true,
+    5
+   ]
+  ]
+ },
+ "d3c": {
+  "take": "takes/d3c-Rasalgethi-1",
+  "voice": "Rasalgethi",
+  "life": 5,
+  "words_ok": true,
+  "note": "Excellent dramatic delivery, full of emotion and intensity.",
+  "all": [
+   [
+    "takes/d3c-Rasalgethi-1",
+    true,
+    5
+   ],
+   [
+    "takes/d3c-Rasalgethi-2",
+    true,
+    5
+   ]
+  ]
+ },
+ "d3d": {
+  "take": "takes/d3d-Rasalgethi-1",
+  "voice": "Rasalgethi",
+  "life": 3,
+  "words_ok": true,
+  "note": "Dramatic and well-paced reading.",
+  "all": [
+   [
+    "takes/d3d-Rasalgethi-1",
+    true,
+    3
+   ],
+   [
+    "takes/d3d-Rasalgethi-2",
+    true,
+    3
+   ],
+   [
+    "takes/d3d-Rasalgethi-3",
+    true,
+    3
+   ],
+   [
+    "takes/d3d-Rasalgethi-4",
+    false,
+    3
+   ]
+  ]
+ },
+ "v3": {
+  "take": "takes/v3-Orus-1",
+  "voice": "Orus",
+  "life": 5,
+  "words_ok": true,
+  "note": "short",
+  "all": [
+   [
+    "takes/v3-Orus-1",
+    true,
+    5
+   ],
+   [
+    "takes/v3-Orus-2",
+    true,
+    5
+   ]
+  ]
+ },
+ "d3e": {
+  "take": "takes/d3e-Rasalgethi-1",
+  "voice": "Rasalgethi",
+  "life": 5,
+  "words_ok": true,
+  "note": "Matches text perfectly, very dramatic delivery.",
+  "all": [
+   [
+    "takes/d3e-Rasalgethi-1",
+    true,
+    5
+   ],
+   [
+    "takes/d3e-Rasalgethi-2",
+    true,
+    5
+   ]
+  ]
+ },
+ "d4a": {
+  "take": "takes/d4a-Rasalgethi-1",
+  "voice": "Rasalgethi",
+  "life": 5,
+  "words_ok": true,
+  "note": "The audio matches the text exactly, saying 'Duncastle' despite the prompt's note about 'Caer Callidyr'.",
+  "all": [
+   [
+    "takes/d4a-Rasalgethi-1",
+    true,
+    5
+   ],
+   [
+    "takes/d4a-Rasalgethi-2",
+    true,
+    5
+   ]
+  ]
+ },
+ "d4b": {
+  "take": "takes/d4b-Rasalgethi-1",
+  "voice": "Rasalgethi",
+  "life": 5,
+  "words_ok": true,
+  "note": "short",
+  "all": [
+   [
+    "takes/d4b-Rasalgethi-1",
+    true,
+    5
+   ],
+   [
+    "takes/d4b-Rasalgethi-2",
+    true,
+    5
+   ]
+  ]
+ },
+ "t2b": {
+  "take": "takes/t2b-Charon-1",
+  "voice": "Charon",
+  "life": 5,
+  "words_ok": true,
+  "note": "Excellent dramatic delivery, deep and resonant voice, perfect pacing and emotion.",
+  "all": [
+   [
+    "takes/t2b-Charon-1",
+    true,
+    5
+   ],
+   [
+    "takes/t2b-Charon-2",
+    true,
+    5
+   ],
+   [
+    "takes/t2b-Alnilam-1",
+    true,
+    5
+   ],
+   [
+    "takes/t2b-Alnilam-2",
+    true,
+    4
+   ]
+  ]
+ }
+}

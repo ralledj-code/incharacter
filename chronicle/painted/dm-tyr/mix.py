@@ -11,8 +11,8 @@ SCRIPT = {c['id']: c['sp'] for c in json.load(open('voice/script.json'))['clips'
 # Rasmus 2026-11-22 (2nd listen): voices far too quiet, music too loud with hard cuts, effects end abruptly; more choir in the church.
 # So: voices +4 dB, music -4 dB and every music/bed fade at least 6 s, smooth (slow) ducking, effects decay out, a sacred choir bed.
 VOICE_FX = {  # per speaker
-    'tyr': 'asetrate=48000*0.92,aresample=48000,aecho=0.8:0.7:110|240|400:0.32|0.22|0.14,volume=3.0',
-    'dolkan': 'aecho=0.8:0.85:60|140:0.10|0.06,volume=1.6',  # a little cave / memory space
+    'tyr': 'volume=1.45',  # the god treatment is baked into best/t*.wav (voice/process.py)
+    'dolkan': 'aecho=0.8:0.85:60|140:0.10|0.06,volume=1.65',  # a little cave / memory space (age treatment baked in by voice/process.py)
     'valerys': 'aecho=0.8:0.85:90|200:0.14|0.08,volume=1.6',  # stone sanctum
 }
 SFX_GAIN = {'staff': 1.0, 'spores': 0.7, 'thunder': 0.9, 'rain': 0.8, 'heart': 0.55, 'hiss': 0.8, 'blades': 0.85,
