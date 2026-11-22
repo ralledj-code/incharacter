@@ -46,7 +46,7 @@ S_=[
 (93.2,'cut',[A,C],['dust'],DEEP+"Arthas and Cedric back to back in the tunnel dark, wary",{'flicker':0.4}),
 (96.7,'cut',[L,A,C],['embers'],DEEP+"the three brothers seen from far above, three tiny torches in a vast black cavern",{'flicker':0.4}),
 (101.0,'fade',[DO],['dust'],DEEP+"Dolkan the mad duergar crouched among hiding deep dwellers, wild-eyed, grinning",{'flicker':0.4}),
-(107.5,'cut',[DO,L,A,C],['dust'],DEEP+"Dolkan leading the brothers through a twisting tunnel, cackling",{'flicker':0.4}),
+(107.5,'cut',[DO,L,A,C],['dust'],DEEP+"Dolkan leading the brothers through a twisting tunnel, cackling; Arthas carries only his longsword, no shield",{'flicker':0.4}),
 (114.3,'flash',[BU],['dust'],CAVERN+"a bulette, a land shark, bursting up through the cavern floor, stone flying",{'shake':0.6}),
 (117.4,'cut',[BU],['dust'],CAVERN+"the cavern floor rippling like water around a diving bulette fin",{'shake':0.3}),
 (120.9,'cut',[L,BU],['sparks','embers'],CAVERN+LU+"firing a blazing firebolt into a bulette's armoured head, a critical hit",{'flicker':0.7}),
