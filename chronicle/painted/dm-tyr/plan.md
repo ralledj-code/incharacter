@@ -32,3 +32,11 @@ Paint as a living duergar at full size (not a miniature, no base): short, stocky
 
 ## Rasmus 2026-11-22: also in the Chronicle, hidden
 Link-only song (e.g. ?song=tyrs-price), not in the song list AND not on the family page (needs a `secret: true` flag: today every hidden non-variant song shows on /chronicle/familie). MP4 still delivered. Same mixed audio file in both, so SFX timing carries over; the white flash frames in the MP4 should match the player's 'flash' transitions on the same cuts.
+
+## Rasmus 2026-11-22: NO MP4. Chronicle only (hidden, `secret: true`, link-only). Supersedes the MP4/.srt items above.
+Done while waiting for the DM:
+- `secret` flag in ui.js (hidden songs with secret: true never show on the family page).
+- SFX: Lyria (music model) cannot do effects (everything came out as music). Gemini Omni text_to_video at 360p gives real effect audio (~0.15 DKK/s): sfx/*.mp3 (staff, thunder, rain, hiss, blades, heart, sword, gate, rumble, drips, spores), all rated 4-5 realistic except hiss (3). Script sfx/make-sfx.mjs.
+- Music: music/underscore-test.mp3 (Lyria 3 Pro, 3 min, dark cello + choir drone; usable).
+- Voice candidates: voice-samples/ (Dolkan: Algieba, Enceladus, Gacrux, Rasalgethi; Valerys: Iapetus, Orus, Sadachbia, Schedar; Tyr with depth + echo: Alnilam, Charon, Umbriel, Zubenelgenubi).
+- Board painted/14-tyrs-price.json (make/14t.py): cast copied from level 14 + new Dolkan + young_valerys (Pro); place references ref_sanctum (rain falls inside the hall: fix in real shots) and ref_cavern (Pro).

@@ -46,7 +46,8 @@ function renderSongs() {
     const s = C.stories[i];
     if (s.variant) return;  // versions show as a switch on their level's card
     // family page: the hidden family songs; elsewhere hidden songs only via their own link
-    if (family) { if (!s.hidden) return; } else if (s.hidden && i !== wi) return;
+    if (family) { if (!s.hidden || s.secret) return; }  // secret: hidden songs that are not family songs (link only)
+    else if (s.hidden && i !== wi) return;
     if (soloStory && s !== soloStory) return;
     const key = String(s.level).padStart(2, '0') + '-' + s.id, board = s.painted || (C.boards && C.boards[key]);
     const el = document.createElement('article'); el.className = 'song' + (s.locked ? ' locked' : '') + (s.feature ? ' feature' : '') + (i === wi ? ' focus' : ''); el.setAttribute('role', 'listitem');
