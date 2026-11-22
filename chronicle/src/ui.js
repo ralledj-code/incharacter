@@ -341,7 +341,7 @@ function lyricsAt(t) {
       }
     }
   }
-  if (line !== lastLine) { lastLine = line; const el = $('lyric'); if (line) { el.textContent = line; el.classList.toggle('b', voice === 'b'); el.classList.add('on'); } else el.classList.remove('on'); }
+  if (line !== lastLine) { lastLine = line; const el = $('lyric'); if (line) { el.textContent = line; ['b', 'g', 'w'].forEach((v) => el.classList.toggle(v, voice === v)); el.classList.add('on'); } else el.classList.remove('on'); }
 }
 
 /* ---------- loop ---------- */
