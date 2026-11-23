@@ -1,25 +1,43 @@
 {
  "context": {
-  "dolkan": "You are a great character actor in a dark fantasy film, playing Dolkan: an ANCIENT duergar sorcerer, over four hundred years old. His voice is ruined by centuries in the lightless deep: very deep, dark, dry and raspy like stones grinding together, cracked, with a rattling wheeze in his breath. He speaks SLOWLY, heavily, every word weighed; frail in body but terrifying in will. Normally a cackling madman, right now all the madness has drained out of him. He speaks to three young warriors (brothers) in a huge cavern, seconds after a giant worm dived under the stone; it can burst up again any moment. He is projecting his own memory into their minds with magic. Real breath and tension; never a narrator, never young, never smooth.",
+  "dolkan": "You are a great character actor in a dark fantasy film, playing Dolkan: an ANCIENT duergar sorcerer, over four hundred years old, with a voice ruined by centuries in the lightless deep: deep, dark, dry and raspy like stones grinding together, cracked. Until now he has always been a goofy, cackling madman; right now every trace of that is gone: he is tight, dead serious, intensely focused and lucid, speaking low and fast with urgency, like a man who knows the clarity will not last. He speaks to three young warriors (brothers) in a huge cavern, seconds after a giant worm dived under the stone; it can burst up again any moment. He is projecting his own memory into their minds with magic. Keep a brisk, urgent pace: never slow, never drawn out, never a narrator, never young, never smooth.",
   "valerys": "You are a great actor in a dark fantasy film, playing Valerys, a proud knight of forty and High Inquisitor of Tyr. Night, a rain-lashed stone sanctum. He has thrown off his armour and kneels on cold stone; his two small sons lie dying of black poison beside him; his wife has vanished. He is begging his god, the first time in his life he has begged. Hoarse, cracking, real ragged breath and tears in the throat.",
-  "tyr": "You are playing Tyr, the god of justice, speaking through a colossal stone statue in a vast cathedral. You are SHOUTING with the full force of a god: loud, thunderous, booming, a huge deep chest voice projected to fill the whole cathedral, every sentence hurled down from on high like a thunderclap. Overwhelming, commanding, absolute; furious power, not cold whispering, not slow murmuring, never quiet. Each line is a roared pronouncement of law. Not a narrator, not a man: a god roaring judgement."
+  "tyr": "You are playing Tyr, the god of justice, speaking through a colossal stone statue in a vast cathedral. You are SHOUTING with the full force of a god: loud, thunderous, booming, a huge deep chest voice projected to fill the whole cathedral, every sentence hurled down from on high like a thunderclap. Overwhelming, commanding, absolute; furious power, not cold whispering, not slow murmuring, never quiet. Each line is a roared pronouncement of law. Not a narrator, not a man: a god roaring judgement.",
+  "narrator": "You are the Dungeon Master of a dark fantasy campaign, narrating to your players at the table: a dramatic, gripping storyteller's voice, low and intense in the sudden silence, building tension, painting the scene; measured but never slow, with real breath and suspense. A storyteller, not a character."
  },
  "clips": [
   {
+   "id": "n1",
+   "sp": "narrator",
+   "dir": "(dramatic, then hushed into the sudden silence) With a deafening rumble, the beast dives beneath the stone floor, leaving the cavern in a sudden, heavy silence... broken only by shallow breathing and the drip of dark water.\n(low, building) Into that quiet, Dolkan steps out from the jagged rocks.\n(a hint of the old familiar madness in the description) Usually hunched, grinning, and muttering nonsense to his fungal spores, the old duergar goes dead still.\n(tension rising) His glowing white eyes lock onto the bleeding paladin by the pool...\n(sharper) and in an instant, every trace of his usual madness vanishes.\n(intense, deliberate) His scarred face pulls tight into a hard, grim mask, his posture straightens, and the erratic, goofy cackle in his voice drops into a low, dead-serious rasp.\n(sudden, forceful) He slams his crystal staff into the stone,\n(rushing) sending a wave of violet spores straight into your minds...\n(a breath, then hushed) and suddenly, the cavern disappears.",
+   "sub": [
+    "With a deafening rumble, the beast dives beneath the stone floor, leaving the cavern in a sudden, heavy silence—broken only by shallow breathing and the drip of dark water.",
+    "Into that quiet, Dolkan steps out from the jagged rocks.",
+    "Usually hunched, grinning, and muttering nonsense to his fungal spores, the old duergar goes dead still.",
+    "His glowing white eyes lock onto the bleeding paladin by the pool—",
+    "and in an instant, every trace of his usual madness vanishes.",
+    "His scarred face pulls tight into a hard, grim mask, his posture straightens, and the erratic, goofy cackle in his voice drops into a low, dead-serious rasp.",
+    "He slams his crystal staff into the stone,",
+    "sending a wave of violet spores straight into your minds—",
+    "and suddenly, the cavern disappears."
+   ]
+  },
+  {
    "id": "d1a",
    "sp": "dolkan",
-   "dir": "(low, urgent, barely above a whisper, eyes on the cracked floor) Listen closely, boys... there's no time before it surfaces again.\n(sharp, cutting) Drop the jokes.\n(a heavy pause, then slow, haunted) I know that man.\n(bitter, old anger rising, voice cracking) I stood beneath the towering arches of Caer Callidyr... before he cast me into the dark!",
+   "dir": "(tight, dead serious, low and intense) Listen closely, boys... there's no time before it surfaces again.\n(fast, urgent, a hand pressed to his temple) The tremors of this beast just cracked the forced trance Tyr's Order chained around my mind...\n(almost disbelieving, fierce) and through the haze, I can temporarily see clearly!\n(hard, low) I know that man.\n(bitter, old anger rising) I once advised Valerys as Head Advisor of Caer Callidyr... before he cast me into the dark!",
    "sub": [
-    "Listen closely, boys... there's no time before it surfaces again.",
-    "Drop the jokes.",
+    "Listen closely, boys—there's no time before it surfaces again.",
+    "The tremors of this beast just cracked the forced trance Tyr's Order chained around my mind—",
+    "and through the haze, I can temporarily see clearly!",
     "I know that man.",
-    "I stood beneath the towering arches of Caer Callidyr... before he cast me into the dark!"
+    "I once advised Valerys as Head Advisor of Caer Callidyr before he cast me into the dark!"
    ]
   },
   {
    "id": "d1b",
    "sp": "dolkan",
-   "dir": "(commanding, the magic taking hold, a slow intake of breath) Look through my memory!\n(quieter, seeing it again, hushed) Rain lashes the stained glass of Tyr's sanctum.",
+   "dir": "(commanding, the magic taking hold, a intake of breath) Look through my memory!\n(quieter, seeing it again, hushed) Rain lashes the stained glass of Tyr's sanctum.",
    "sub": [
     "Look through my memory!",
     "Rain lashes the stained glass of Tyr's sanctum."
@@ -28,17 +46,18 @@
   {
    "id": "d1c",
    "sp": "dolkan",
-   "dir": "(low, grave) Your mother has vanished into the dark... leaving no trace behind...",
+   "dir": "(low, grave, quick) Only days before, Valerys had cast your mother out...\n(bitter, cutting) unable to stomach her defiance of the Church's rigid methods, choosing duty over his own heart.",
    "sub": [
-    "Your mother has vanished into the dark... leaving no trace behind..."
+    "Only days before, Valerys had cast your mother out—",
+    "unable to stomach her defiance of the Church's rigid methods, choosing duty over his own heart."
    ]
   },
   {
    "id": "d1d",
    "sp": "dolkan",
-   "dir": "(the voice tightening, pained) and upon the cold stone lie two small boys...\n(sudden, pointed, almost accusing) you!\n(faster, horror creeping in) Pale as chalk, drowning in sweat, with a black, unnatural poison creeping through your veins toward your hearts!\n(flat, grim, final) No healer in the realm could break it.",
+   "dir": "(the voice tightening, pained) Now, upon the cold stone lie two small boys...\n(sudden, pointed, almost accusing) you!\n(fast, horror creeping in) Pale as chalk, drowning in sweat, with a black, unnatural poison creeping through your veins toward your hearts!\n(flat, grim, final) No healer in the realm could break it.",
    "sub": [
-    "and upon the cold stone lie two small boys... you!",
+    "Now, upon the cold stone lie two small boys—you!",
     "Pale as chalk, drowning in sweat, with a black, unnatural poison creeping through your veins toward your hearts!",
     "No healer in the realm could break it."
    ]
@@ -46,18 +65,18 @@
   {
    "id": "d1e",
    "sp": "dolkan",
-   "dir": "(slower, something like pity creeping into the hard voice) And there, stripped of his armor and pride, kneels a younger Valerys...\n(quiet, heavy) terrified of losing the only pieces of her he has left.",
+   "dir": "(something like pity creeping into the hard voice) And there, stripped of his armor and pride, kneels a younger Valerys...\n(quiet, heavy) terrified that his devotion to the Law is about to cost him the only pieces of her he has left!",
    "sub": [
-    "And there, stripped of his armor and pride, kneels a younger Valerys...",
-    "terrified of losing the only pieces of her he has left!"
+    "And there, stripped of his armor and pride, kneels a younger Valerys—",
+    "terrified that his devotion to the Law is about to cost him the only pieces of her he has left!"
    ]
   },
   {
    "id": "v1",
    "sp": "valerys",
-   "dir": "(barely holding together, a shaky breath) Their mother is gone, Tyr...\n(voice breaking, pleading) do not take them from me too!\n(rising, desperate, almost a shout) Take me instead!\n(faster, frantic, each phrase more raw) Strip my title, take my honor, take every breath left in my lungs!\n(collapsing, a sob caught in the throat, a whisper) Just burn this poison from my boys... let them live.",
+   "dir": "(barely holding together, a shaky breath, guilt in every word) I already gave up their mother for the Order, Tyr...\n(voice breaking, pleading) do not take them from me too!\n(rising, desperate, almost a shout) Take me instead!\n(faster, frantic, each phrase more raw) Strip my title, take my honor, take every breath left in my lungs!\n(collapsing, a sob caught in the throat, a whisper) Just burn this poison from my boys... let them live.",
    "sub": [
-    "Their mother is gone, Tyr... do not take them from me too!",
+    "I already gave up their mother for the Order, Tyr... do not take them from me too!",
     "Take me instead!",
     "Strip my title, take my honor, take every breath left in my lungs!",
     "Just burn this poison from my boys... let them live!"
@@ -66,7 +85,7 @@
   {
    "id": "d2a",
    "sp": "dolkan",
-   "dir": "(hushed, almost reverent, uneasy) The torches freeze into blinding white fire... without heat.\n(slow, ominous) Shadows stretch like iron bars across the stone.",
+   "dir": "(hushed, almost reverent, uneasy) The torches freeze into blinding white fire... without heat.\n(ominous) Shadows stretch like iron bars across the stone.",
    "sub": [
     "The torches freeze into blinding white fire without heat.",
     "Shadows stretch like iron bars across the stone."
@@ -102,11 +121,11 @@
   {
    "id": "t2a",
    "sp": "tyr",
-   "dir": "(booming, shouted down at him) Your sword and your oath belong to Caer Callidyr!\n(louder, a hammer blow) You will never cross this city's gates again...\n(roaring) neither to hunt their mother, nor to ride to their aid!",
+   "dir": "(booming, shouted down at him) Your sword and your oath belong to Caer Callidyr!\n(louder, a hammer blow) You will never cross this city's gates again...\n(roaring) neither to seek their mother's forgiveness, nor to ride to their aid!",
    "sub": [
     "Your sword and your oath belong to Caer Callidyr.",
     "You will never cross this city's gates again—",
-    "neither to hunt their mother, nor to ride to their aid."
+    "neither to seek their mother's forgiveness, nor to ride to their aid."
    ]
   },
   {
@@ -122,11 +141,11 @@
   {
    "id": "d3a",
    "sp": "dolkan",
-   "dir": "(heavy, grave, relentless) See the agony in his eyes!\n(slower) In that single heartbeat, he realizes the terrible choice:\n(bitter, quiet) to keep you breathing, he must abandon the search for your mother... forever.",
+   "dir": "(heavy, grave, relentless) See the agony in his eyes!\n(hard) In that single heartbeat, he realizes the terrible price:\n(bitter, fast) he can never undo his pride, never ride out to bring your mother back!",
    "sub": [
     "See the agony in his eyes!",
-    "In that single heartbeat, he realizes the terrible choice:",
-    "to keep you breathing, he must abandon the search for your mother forever!"
+    "In that single heartbeat, he realizes the terrible price:",
+    "he can never undo his pride, never ride out to bring your mother back!"
    ]
   },
   {
@@ -149,7 +168,7 @@
   {
    "id": "d3d",
    "sp": "dolkan",
-   "dir": "(slow, a kind of awe) Still... he doesn't flinch.\n(quiet, deliberate) He lays his sword at the foot of the altar...",
+   "dir": "(a kind of awe) Still... he doesn't flinch.\n(quiet, deliberate) He lays his sword at the foot of the altar...",
    "sub": [
     "Still, he doesn't flinch.",
     "He lays his sword at the foot of the altar"
@@ -158,7 +177,7 @@
   {
    "id": "d3e",
    "sp": "dolkan",
-   "dir": "(rising, building with the light, voice swelling) and opens his arms to Tyr's blinding judgment... letting the god's searing golden light wash over you,\n(fervent) burning the poison from your veins...\n(slower, heavy, terrible) while forging his own soul to the city's stone.",
+   "dir": "(rising, building with the light, voice swelling) and opens his arms to Tyr's blinding judgment... letting the god's searing golden light wash over you,\n(fervent) burning the poison from your veins...\n(heavy, terrible) while forging his own soul to the city's stone.",
    "sub": [
     "and opens his arms to Tyr's blinding judgment—letting the god's searing golden light wash over you,",
     "burning the poison from your veins while forging his own soul to the city's stone!"

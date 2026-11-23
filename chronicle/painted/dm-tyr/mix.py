@@ -14,12 +14,14 @@ VOICE_FX = {  # per speaker
     'tyr': 'volume=2.0',  # the god treatment is baked into best/t*.wav (voice/process.py)
     'dolkan': 'aecho=0.8:0.85:60|140:0.10|0.06,volume=2.2',  # a little cave / memory space (age treatment baked in by voice/process.py)
     'valerys': 'volume=1.6',  # dry (Rasmus: no reverb on Valerys)
+    'narrator': 'volume=1.7',  # the DM's narration over the opening (Schedar), dry
 }
 # 3rd listen: effects still too loud (all about -5 dB again), the looped rain/drips audibly loop -> no rain (occasional distant
 # thunder instead), drips and heartbeats laid as separate overlapping copies instead of a loop.
 SFX_GAIN = {'staff': 0.55, 'spores': 0.4, 'thunder': 0.32, 'rain': 0.0, 'heart': 0.3, 'hiss': 0.3, 'blades': 0.36,
             'sword': 0.3, 'gate': 0.22, 'rumble': 0.3, 'drips': 0.3, 'boom': 0.45}
-DISTANT_THUNDER = [71.0, 131.0, 225.0, 271.5, 336.0]  # far-off rolls in the pauses of the memory (seconds; see timeline.json gaps)
+_prev = {b: a for a, b in zip(list(TL['clips']), list(TL['clips'])[1:])}
+DISTANT_THUNDER = [TL['clips'][_prev[c]][1] + 0.3 for c in ('d1c', 'v1', 'v2', 'd3a', 'd3d')]  # far-off rolls in pauses of the memory (follows the timeline)
 SFX_TONE = {'rumble': 'lowpass=f=1800,', 'gate': 'lowpass=f=6000,', 'boom': 'lowpass=f=5000,'}  # Omni audio can be crunchy up top; a rumble is all low end
 SHOT_GAIN = {'s01': 0.6, 's79': 0.6}  # per-shot trim on top of SFX_GAIN: the opening rumble is the wurm far below, under speech level
 # where the hit is inside each Omni clip (measured: 25 % energy onset; gate = its slam), trimmed so it lands on the cut

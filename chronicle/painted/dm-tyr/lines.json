@@ -1,278 +1,344 @@
 [
  {
-  "clip": "d1a",
-  "sp": "dolkan",
-  "t": 31.0,
-  "text": "Listen closely, boys... there's no time before it surfaces again."
+  "clip": "n1",
+  "sp": "narrator",
+  "t": 2.5,
+  "text": "With a deafening rumble, the beast dives beneath the stone floor, leaving the cavern in a sudden, heavy silence—broken only by shallow breathing and the drip of dark water."
+ },
+ {
+  "clip": "n1",
+  "sp": "narrator",
+  "t": 17.3,
+  "text": "Into that quiet, Dolkan steps out from the jagged rocks."
+ },
+ {
+  "clip": "n1",
+  "sp": "narrator",
+  "t": 22.5,
+  "text": "Usually hunched, grinning, and muttering nonsense to his fungal spores, the old duergar goes dead still."
+ },
+ {
+  "clip": "n1",
+  "sp": "narrator",
+  "t": 32.3,
+  "text": "His glowing white eyes lock onto the bleeding paladin by the pool—"
+ },
+ {
+  "clip": "n1",
+  "sp": "narrator",
+  "t": 36.7,
+  "text": "and in an instant, every trace of his usual madness vanishes."
+ },
+ {
+  "clip": "n1",
+  "sp": "narrator",
+  "t": 42.3,
+  "text": "His scarred face pulls tight into a hard, grim mask, his posture straightens, and the erratic, goofy cackle in his voice drops into a low, dead-serious rasp."
+ },
+ {
+  "clip": "n1",
+  "sp": "narrator",
+  "t": 56.5,
+  "text": "He slams his crystal staff into the stone,"
+ },
+ {
+  "clip": "n1",
+  "sp": "narrator",
+  "t": 60.3,
+  "text": "sending a wave of violet spores straight into your minds—"
+ },
+ {
+  "clip": "n1",
+  "sp": "narrator",
+  "t": 65.3,
+  "text": "and suddenly, the cavern disappears."
  },
  {
   "clip": "d1a",
   "sp": "dolkan",
-  "t": 38.7,
-  "text": "Drop the jokes."
+  "t": 71.15,
+  "text": "Listen closely, boys—there's no time before it surfaces again."
  },
  {
   "clip": "d1a",
   "sp": "dolkan",
-  "t": 41.6,
+  "t": 77.65,
+  "text": "The tremors of this beast just cracked the forced trance Tyr's Order chained around my mind—"
+ },
+ {
+  "clip": "d1a",
+  "sp": "dolkan",
+  "t": 86.35,
+  "text": "and through the haze, I can temporarily see clearly!"
+ },
+ {
+  "clip": "d1a",
+  "sp": "dolkan",
+  "t": 91.65,
   "text": "I know that man."
  },
  {
   "clip": "d1a",
   "sp": "dolkan",
-  "t": 44.8,
-  "text": "I stood beneath the towering arches of Caer Callidyr... before he cast me into the dark!"
+  "t": 93.65,
+  "text": "I once advised Valerys as Head Advisor of Caer Callidyr before he cast me into the dark!"
  },
  {
   "clip": "d1b",
   "sp": "dolkan",
-  "t": 55.26,
+  "t": 103.41,
   "text": "Look through my memory!"
  },
  {
   "clip": "d1b",
   "sp": "dolkan",
-  "t": 61.06,
+  "t": 106.5,
   "text": "Rain lashes the stained glass of Tyr's sanctum."
  },
  {
   "clip": "d1c",
   "sp": "dolkan",
-  "t": 73.06,
-  "text": "Your mother has vanished into the dark... leaving no trace behind..."
+  "t": 116.01,
+  "text": "Only days before, Valerys had cast your mother out—"
+ },
+ {
+  "clip": "d1c",
+  "sp": "dolkan",
+  "t": 120.81,
+  "text": "unable to stomach her defiance of the Church's rigid methods, choosing duty over his own heart."
  },
  {
   "clip": "d1d",
   "sp": "dolkan",
-  "t": 83.3,
-  "text": "and upon the cold stone lie two small boys... you!"
+  "t": 131.7,
+  "text": "Now, upon the cold stone lie two small boys—you!"
  },
  {
   "clip": "d1d",
   "sp": "dolkan",
-  "t": 93.3,
+  "t": 138.9,
   "text": "Pale as chalk, drowning in sweat, with a black, unnatural poison creeping through your veins toward your hearts!"
  },
  {
   "clip": "d1d",
   "sp": "dolkan",
-  "t": 105.3,
+  "t": 148.2,
   "text": "No healer in the realm could break it."
  },
  {
   "clip": "d1e",
   "sp": "dolkan",
-  "t": 111.3,
-  "text": "And there, stripped of his armor and pride, kneels a younger Valerys..."
+  "t": 153.48,
+  "text": "And there, stripped of his armor and pride, kneels a younger Valerys—"
  },
  {
   "clip": "d1e",
   "sp": "dolkan",
-  "t": 120.3,
-  "text": "terrified of losing the only pieces of her he has left!"
+  "t": 161.48,
+  "text": "terrified that his devotion to the Law is about to cost him the only pieces of her he has left!"
  },
  {
   "clip": "v1",
   "sp": "valerys",
-  "t": 130.97,
-  "text": "Their mother is gone, Tyr... do not take them from me too!"
+  "t": 174.79,
+  "text": "I already gave up their mother for the Order, Tyr... do not take them from me too!"
  },
  {
   "clip": "v1",
   "sp": "valerys",
-  "t": 137.47,
+  "t": 185.69,
   "text": "Take me instead!"
  },
  {
   "clip": "v1",
   "sp": "valerys",
-  "t": 139.47,
+  "t": 188.29,
   "text": "Strip my title, take my honor, take every breath left in my lungs!"
  },
  {
   "clip": "v1",
   "sp": "valerys",
-  "t": 145.47,
+  "t": 195.59,
   "text": "Just burn this poison from my boys... let them live!"
  },
  {
   "clip": "d2a",
   "sp": "dolkan",
-  "t": 154.94,
+  "t": 205.04,
   "text": "The torches freeze into blinding white fire without heat."
  },
  {
   "clip": "d2a",
   "sp": "dolkan",
-  "t": 164.44,
+  "t": 211.84,
   "text": "Shadows stretch like iron bars across the stone."
  },
  {
   "clip": "d2b",
   "sp": "dolkan",
-  "t": 172.39,
+  "t": 218.66,
   "text": "And the one-handed god answers..."
  },
  {
   "clip": "d2b",
   "sp": "dolkan",
-  "t": 176.69,
+  "t": 222.46,
   "text": "not like thunder, no, like a thousand blades drawn at once:"
  },
  {
   "clip": "t1",
   "sp": "tyr",
-  "t": 186.64,
+  "t": 230.33,
   "text": "The Law demands balance, Valerys. No life is given without a price."
  },
  {
   "clip": "t1",
   "sp": "tyr",
-  "t": 195.64,
+  "t": 239.33,
   "text": "These boys carry blood that the darkness already hunts."
  },
  {
   "clip": "t1",
   "sp": "tyr",
-  "t": 201.64,
+  "t": 245.33,
   "text": "If I am to pull them from the grave, you must become the wall that keeps the shadow out."
  },
  {
   "clip": "v2",
   "sp": "valerys",
-  "t": 212.93,
+  "t": 256.62,
   "text": "Name the price. Anything!"
  },
  {
   "clip": "t2a",
   "sp": "tyr",
-  "t": 218.59,
+  "t": 262.27,
   "text": "Your sword and your oath belong to Caer Callidyr."
  },
  {
   "clip": "t2a",
   "sp": "tyr",
-  "t": 224.09,
+  "t": 268.27,
   "text": "You will never cross this city's gates again—"
  },
  {
   "clip": "t2a",
   "sp": "tyr",
-  "t": 228.59,
-  "text": "neither to hunt their mother, nor to ride to their aid."
+  "t": 273.27,
+  "text": "neither to seek their mother's forgiveness, nor to ride to their aid."
  },
  {
   "clip": "t2b",
   "sp": "tyr",
-  "t": 234.48,
+  "t": 280.68,
   "text": "You will be the city's shield for as long as your heart beats."
  },
  {
   "clip": "t2b",
   "sp": "tyr",
-  "t": 240.48,
+  "t": 286.68,
   "text": "The day you place your own blood above your post and step beyond these walls, the contract is shattered—"
  },
  {
   "clip": "t2b",
   "sp": "tyr",
-  "t": 250.48,
+  "t": 296.68,
   "text": "and the very oath you swore will consume you."
  },
  {
   "clip": "d3a",
   "sp": "dolkan",
-  "t": 258.49,
+  "t": 304.69,
   "text": "See the agony in his eyes!"
  },
  {
   "clip": "d3a",
   "sp": "dolkan",
-  "t": 263.29,
-  "text": "In that single heartbeat, he realizes the terrible choice:"
+  "t": 308.69,
+  "text": "In that single heartbeat, he realizes the terrible price:"
  },
  {
   "clip": "d3a",
   "sp": "dolkan",
-  "t": 270.39,
-  "text": "to keep you breathing, he must abandon the search for your mother forever!"
+  "t": 313.69,
+  "text": "he can never undo his pride, never ride out to bring your mother back!"
  },
  {
   "clip": "d3b",
   "sp": "dolkan",
-  "t": 280.84,
+  "t": 321.66,
   "text": "He knows he must send little Cedric away to the monastery to hide your blood from the cult..."
  },
  {
   "clip": "d3c",
   "sp": "dolkan",
-  "t": 293.67,
+  "t": 331.55,
   "text": "and he must hold Arthas at arm's length, cold and distant,"
  },
  {
   "clip": "d3c",
   "sp": "dolkan",
-  "t": 303.67,
+  "t": 338.55,
   "text": "terrified that if he ever lets himself love you openly, he will grow weak enough to break his vow and doom you all!"
  },
  {
   "clip": "d3d",
   "sp": "dolkan",
-  "t": 320.33,
+  "t": 352.98,
   "text": "Still, he doesn't flinch."
  },
  {
   "clip": "d3d",
   "sp": "dolkan",
-  "t": 324.43,
+  "t": 354.98,
   "text": "He lays his sword at the foot of the altar"
  },
  {
   "clip": "d3e",
   "sp": "dolkan",
-  "t": 331.75,
+  "t": 361.64,
   "text": "and opens his arms to Tyr's blinding judgment—letting the god's searing golden light wash over you,"
  },
  {
   "clip": "d3e",
   "sp": "dolkan",
-  "t": 346.55,
+  "t": 372.44,
   "text": "burning the poison from your veins while forging his own soul to the city's stone!"
  },
  {
   "clip": "v3",
   "sp": "valerys",
-  "t": 361.35,
+  "t": 382.51,
   "text": "Then let it be the law."
  },
  {
   "clip": "v3",
   "sp": "valerys",
-  "t": 365.45,
+  "t": 386.51,
   "text": "Let my life be their chain."
  },
  {
   "clip": "d4a",
   "sp": "dolkan",
-  "t": 373.48,
+  "t": 394.64,
   "text": "Tyr never betrayed him!"
  },
  {
   "clip": "d4a",
   "sp": "dolkan",
-  "t": 377.98,
+  "t": 397.14,
   "text": "Your father bought your lives with his own—and he shattered that chain in Duncastle just to save you!"
  },
  {
   "clip": "d4b",
   "sp": "dolkan",
-  "t": 390.48,
+  "t": 408.62,
   "text": "Stop praying to a god who has already collected his due!"
  },
  {
   "clip": "d4b",
   "sp": "dolkan",
-  "t": 397.98,
+  "t": 414.62,
   "text": "His only chance of survival is to deny his oath to Tyr... before that beast tears through the stone again!"
  }
 ]

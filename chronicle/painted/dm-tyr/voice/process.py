@@ -3,9 +3,9 @@ the real length. Run after record.mjs: python process.py   (Valerys stays raw; h
 import json, subprocess
 CHAIN = {
     # Dolkan, ancient (Rasmus picked sample 4 = Charon, 2026-11-22): slowed and lowered 7 %, chest, edge, a little grit
-    'dolkan': 'asetrate=48000*0.93,aresample=48000,highpass=f=60,equalizer=f=160:t=q:w=1.2:g=3,equalizer=f=3200:t=q:w=1.5:g=2,'
+    'dolkan': 'asetrate=48000*0.95,aresample=48000,highpass=f=60,equalizer=f=160:t=q:w=1.2:g=3,equalizer=f=3200:t=q:w=1.5:g=2,'
               'asoftclip=type=atan:threshold=0.5:output=0.9,acompressor=threshold=0.1:ratio=3:attack=10:release=200:makeup=2,'
-              'atempo=1.03',  # 3rd listen: a couple of % faster (same pitch)
+              'atempo=1.08',  # the DM: Dolkan talks faster (net ~3 % faster than the raw take, pitch -5 %)
     # Tyr, a roaring god (Zubenelgenubi, directed shouting): pitch down 10 % (same tempo), a quiet layer an octave below for size,
     # chest boost, some grit and hard compression for loudness. No reverb (Rasmus, 3rd listen).
     'tyr': 'asplit=2[a][b];[a]rubberband=pitch=0.9:formant=preserved,equalizer=f=110:t=q:w=1:g=5,equalizer=f=2500:t=q:w=1.5:g=2[m];[b]rubberband=pitch=0.45,lowpass=f=900,volume=0.3[o];'

@@ -4,7 +4,8 @@ Pauses are where the story breathes (plan.md); change them here and rerun, every
 import json, subprocess, wave
 SR = 48000
 SEQ = [  # (clip id or None, seconds of silence BEFORE it)
-    ('d1a', 31.0),   # I: the silence after the wurm (rumble, drips, breathing, Dolkan steps out, staff strike ~29.5)
+    ('n1', 2.5),     # I: the DM narrates the wurm diving, the silence, Dolkan stepping out and the staff strike (script v3, 2026-11-23)
+    ('d1a', 2.0),
     ('d1b', 1.2),    # "Look through my memory!" -> the memory opens
     ('d1c', 4.0),    # rain + thunder beat in the sanctum
     ('d1d', 1.4),

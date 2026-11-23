@@ -1,0 +1,407 @@
+{
+ "d1b": {
+  "take": "takes/d1b-Charon-1",
+  "voice": "Charon",
+  "life": 3,
+  "words_ok": true,
+  "note": "Slow, dramatic delivery.",
+  "all": [
+   [
+    "takes/d1b-Charon-1",
+    true,
+    3
+   ],
+   [
+    "takes/d1b-Charon-2",
+    true,
+    3
+   ]
+  ]
+ },
+ "d1c": {
+  "take": "takes/d1c-Charon-1",
+  "voice": "Charon",
+  "life": 3,
+  "words_ok": true,
+  "note": "Dramatic delivery with good pacing.",
+  "all": [
+   [
+    "takes/d1c-Charon-1",
+    true,
+    3
+   ],
+   [
+    "takes/d1c-Charon-2",
+    true,
+    3
+   ]
+  ]
+ },
+ "d1a": {
+  "take": "takes/d1a-Charon-1",
+  "voice": "Charon",
+  "life": 3,
+  "words_ok": true,
+  "note": "Dramatic delivery with good emotion.",
+  "all": [
+   [
+    "takes/d1a-Charon-1",
+    true,
+    3
+   ],
+   [
+    "takes/d1a-Charon-2",
+    true,
+    3
+   ]
+  ]
+ },
+ "d1d": {
+  "take": "takes/d1d-Charon-1",
+  "voice": "Charon",
+  "life": 5,
+  "words_ok": true,
+  "note": "Excellent dramatic performance, very theatrical and emotional.",
+  "all": [
+   [
+    "takes/d1d-Charon-1",
+    true,
+    5
+   ],
+   [
+    "takes/d1d-Charon-2",
+    true,
+    5
+   ]
+  ]
+ },
+ "d1e": {
+  "take": "takes/d1e-Charon-2",
+  "voice": "Charon",
+  "life": 3,
+  "words_ok": true,
+  "note": "Dramatic reading with good pacing.",
+  "all": [
+   [
+    "takes/d1e-Charon-2",
+    true,
+    3
+   ],
+   [
+    "takes/d1e-Charon-1",
+    false,
+    3
+   ]
+  ]
+ },
+ "d2a": {
+  "take": "takes/d2a-Charon-1",
+  "voice": "Charon",
+  "life": 3,
+  "words_ok": true,
+  "note": "Dramatic and atmospheric delivery with a menacing tone.",
+  "all": [
+   [
+    "takes/d2a-Charon-1",
+    true,
+    3
+   ],
+   [
+    "takes/d2a-Charon-2",
+    true,
+    3
+   ]
+  ]
+ },
+ "v1": {
+  "take": "takes/v1-Orus-1",
+  "voice": "Orus",
+  "life": 5,
+  "words_ok": true,
+  "note": "Excellent emotional delivery, perfectly matches the text.",
+  "all": [
+   [
+    "takes/v1-Orus-1",
+    true,
+    5
+   ],
+   [
+    "takes/v1-Orus-2",
+    true,
+    5
+   ]
+  ]
+ },
+ "d2b": {
+  "take": "takes/d2b-Charon-1",
+  "voice": "Charon",
+  "life": 3,
+  "words_ok": true,
+  "note": "Dramatic pacing, matches text.",
+  "all": [
+   [
+    "takes/d2b-Charon-1",
+    true,
+    3
+   ],
+   [
+    "takes/d2b-Charon-2",
+    true,
+    3
+   ]
+  ]
+ },
+ "v2": {
+  "take": "takes/v2-Orus-1",
+  "voice": "Orus",
+  "life": 3,
+  "words_ok": true,
+  "note": "Accurate delivery with dramatic breathing.",
+  "all": [
+   [
+    "takes/v2-Orus-1",
+    true,
+    3
+   ],
+   [
+    "takes/v2-Orus-2",
+    true,
+    3
+   ],
+   [
+    "takes/v2-Orus-3",
+    true,
+    3
+   ],
+   [
+    "takes/v2-Orus-4",
+    true,
+    3
+   ]
+  ]
+ },
+ "d3a": {
+  "take": "takes/d3a-Charon-1",
+  "voice": "Charon",
+  "life": 3,
+  "words_ok": true,
+  "note": "Dramatic and deep delivery with good pacing.",
+  "all": [
+   [
+    "takes/d3a-Charon-1",
+    true,
+    3
+   ],
+   [
+    "takes/d3a-Charon-2",
+    true,
+    3
+   ]
+  ]
+ },
+ "t2a": {
+  "take": "takes/t2a-Zubenelgenubi-1",
+  "voice": "Zubenelgenubi",
+  "life": 5,
+  "words_ok": true,
+  "note": "Excellent dramatic delivery, authoritative and expressive.",
+  "all": [
+   [
+    "takes/t2a-Zubenelgenubi-1",
+    true,
+    5
+   ],
+   [
+    "takes/t2a-Zubenelgenubi-3",
+    true,
+    5
+   ],
+   [
+    "takes/t2a-Zubenelgenubi-2",
+    true,
+    4
+   ]
+  ]
+ },
+ "t1": {
+  "take": "takes/t1-Zubenelgenubi-2",
+  "voice": "Zubenelgenubi",
+  "life": 5,
+  "words_ok": true,
+  "note": "short",
+  "all": [
+   [
+    "takes/t1-Zubenelgenubi-2",
+    true,
+    5
+   ],
+   [
+    "takes/t1-Zubenelgenubi-1",
+    true,
+    4
+   ],
+   [
+    "takes/t1-Zubenelgenubi-3",
+    false,
+    5
+   ]
+  ]
+ },
+ "d3b": {
+  "take": "takes/d3b-Charon-1",
+  "voice": "Charon",
+  "life": 5,
+  "words_ok": true,
+  "note": "short",
+  "all": [
+   [
+    "takes/d3b-Charon-1",
+    true,
+    5
+   ],
+   [
+    "takes/d3b-Charon-2",
+    true,
+    5
+   ]
+  ]
+ },
+ "d3c": {
+  "take": "takes/d3c-Charon-1",
+  "voice": "Charon",
+  "life": 3,
+  "words_ok": true,
+  "note": "Dramatic delivery with clear emotion.",
+  "all": [
+   [
+    "takes/d3c-Charon-1",
+    true,
+    3
+   ],
+   [
+    "takes/d3c-Charon-2",
+    true,
+    3
+   ]
+  ]
+ },
+ "d3d": {
+  "take": "takes/d3d-Charon-1",
+  "voice": "Charon",
+  "life": 3,
+  "words_ok": true,
+  "note": "Dramatic pacing.",
+  "all": [
+   [
+    "takes/d3d-Charon-1",
+    true,
+    3
+   ],
+   [
+    "takes/d3d-Charon-2",
+    true,
+    3
+   ]
+  ]
+ },
+ "v3": {
+  "take": "takes/v3-Orus-1",
+  "voice": "Orus",
+  "life": 5,
+  "words_ok": true,
+  "note": "short",
+  "all": [
+   [
+    "takes/v3-Orus-1",
+    true,
+    5
+   ],
+   [
+    "takes/v3-Orus-2",
+    true,
+    5
+   ]
+  ]
+ },
+ "d3e": {
+  "take": "takes/d3e-Charon-1",
+  "voice": "Charon",
+  "life": 3,
+  "words_ok": true,
+  "note": "Dramatic and slow delivery. Good emotion.",
+  "all": [
+   [
+    "takes/d3e-Charon-1",
+    true,
+    3
+   ],
+   [
+    "takes/d3e-Charon-2",
+    true,
+    3
+   ]
+  ]
+ },
+ "d4a": {
+  "take": "takes/d4a-Charon-1",
+  "voice": "Charon",
+  "life": 5,
+  "words_ok": true,
+  "note": "Excellent dramatic performance, deep resonant voice, great emotion.",
+  "all": [
+   [
+    "takes/d4a-Charon-1",
+    true,
+    5
+   ],
+   [
+    "takes/d4a-Charon-2",
+    true,
+    5
+   ]
+  ]
+ },
+ "d4b": {
+  "take": "takes/d4b-Charon-1",
+  "voice": "Charon",
+  "life": 5,
+  "words_ok": true,
+  "note": "Excellent dramatic performance with deep resonance and great pacing.",
+  "all": [
+   [
+    "takes/d4b-Charon-1",
+    true,
+    5
+   ],
+   [
+    "takes/d4b-Charon-2",
+    true,
+    5
+   ]
+  ]
+ },
+ "t2b": {
+  "take": "takes/t2b-Zubenelgenubi-1",
+  "voice": "Zubenelgenubi",
+  "life": 5,
+  "words_ok": true,
+  "note": "Excellent dramatic delivery, good pacing and emotion.",
+  "all": [
+   [
+    "takes/t2b-Zubenelgenubi-1",
+    true,
+    5
+   ],
+   [
+    "takes/t2b-Zubenelgenubi-2",
+    true,
+    5
+   ],
+   [
+    "takes/t2b-Zubenelgenubi-3",
+    true,
+    5
+   ]
+  ]
+ }
+}
