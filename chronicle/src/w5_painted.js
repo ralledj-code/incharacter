@@ -312,7 +312,7 @@ C.createPainted = function (renderer, opts) {
       U.k.value = mixing ? clamp(since / dur, 0, 1) : 1; U.kind.value = mixing ? KIND[tr] : 0;
       // the first shot rises out of black; "black" on the first shot does the same
       if (i === 0 && (tr === 'black' || tr === 'fade')) { U.kind.value = 0; U.black.value = 1 - clamp(since / 2.2, 0, 1); } else U.black.value = 0;
-      const end = board.end || 1e9; if (t > end - 2.5) U.black.value = Math.max(U.black.value, clamp((t - end + 2.5) / 2.5, 0, 1));
+      const end = board.end || 1e9, ef = board.endFade || 2.5; if (t > end - ef) U.black.value = Math.max(U.black.value, clamp((t - end + ef) / ef, 0, 1));  // endFade: seconds of fade to black at the end
       U.flash.value = tr === 'flash' && since >= 0 && !board.clean ? Math.exp(-since * 5) * 0.85 : 0;
       const gA = board.clean ? GRADE.none : GRADE[s.grade || 'none'] || GRADE.none, gB = board.clean ? GRADE.none : GRADE[(shots[i - 1] || {}).grade || 'none'] || GRADE.none;
       U.grain.value = board.clean ? 0 : 0.045; U.vig.value = board.clean ? 0 : 0.6; U.gam.value = board.clean ? 1 : 1.06;  // clean: no grain, vignette or contrast curve

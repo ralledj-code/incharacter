@@ -204,7 +204,7 @@
   "voice": "Zubenelgenubi",
   "life": 5,
   "words_ok": true,
-  "note": "deep, dramatic, fantasy character voice",
+  "note": "Excellent dramatic delivery, authoritative and expressive.",
   "all": [
    [
     "takes/t2a-Zubenelgenubi-1",
@@ -212,27 +212,37 @@
     5
    ],
    [
-    "takes/t2a-Zubenelgenubi-2",
-    false,
-    3
-   ]
-  ]
- },
- "t1": {
-  "take": "takes/t1-Zubenelgenubi-1",
-  "voice": "Zubenelgenubi",
-  "life": 5,
-  "words_ok": true,
-  "note": "Excellent dramatic performance with a deep, resonant voice and great pacing.",
-  "all": [
-   [
-    "takes/t1-Zubenelgenubi-1",
+    "takes/t2a-Zubenelgenubi-3",
     true,
     5
    ],
    [
+    "takes/t2a-Zubenelgenubi-2",
+    true,
+    4
+   ]
+  ]
+ },
+ "t1": {
+  "take": "takes/t1-Zubenelgenubi-2",
+  "voice": "Zubenelgenubi",
+  "life": 5,
+  "words_ok": true,
+  "note": "short",
+  "all": [
+   [
     "takes/t1-Zubenelgenubi-2",
     true,
+    5
+   ],
+   [
+    "takes/t1-Zubenelgenubi-1",
+    true,
+    4
+   ],
+   [
+    "takes/t1-Zubenelgenubi-3",
+    false,
     5
    ]
   ]
@@ -375,7 +385,7 @@
   "voice": "Zubenelgenubi",
   "life": 5,
   "words_ok": true,
-  "note": "Deep, dramatic, and theatrical delivery. Excellent pacing and emphasis, sounds like a cinematic fantasy character.",
+  "note": "Excellent dramatic delivery, good pacing and emotion.",
   "all": [
    [
     "takes/t2b-Zubenelgenubi-1",
@@ -385,7 +395,12 @@
    [
     "takes/t2b-Zubenelgenubi-2",
     true,
-    4
+    5
+   ],
+   [
+    "takes/t2b-Zubenelgenubi-3",
+    true,
+    5
    ]
   ]
  }

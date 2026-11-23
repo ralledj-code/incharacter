@@ -29,7 +29,7 @@ C.levels[ID] = {{
   length: '{round(TL["end"] / 60)} min', audio: 'levels/14-' + ID + '.mp3',
   hidden: true, secret: true, level: 14, title: 'Tyr\\u2019s Price', len: '{int(TL["end"] // 60)}:{int(TL["end"] % 60):02d}',
   titles: TITLES,
-  cues: CUES, duration: DURATION, silenceT: {round(last + 0.5, 2)}, lineTimes: LINE_TIMES, voices: VOICES,
+  cues: CUES, duration: DURATION, silenceT: {round(TL['end'] - 0.2, 2)}, lineTimes: LINE_TIMES, voices: VOICES,
 }};
 }})(typeof window !== 'undefined' ? window : globalThis);
 """

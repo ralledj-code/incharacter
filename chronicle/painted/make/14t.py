@@ -20,7 +20,7 @@ MEM='a memory from twenty years ago, '
 SANCT=(MEM+"the deepest chamber beneath the cathedral of Tyr in the city of Caer Callidyr at night: a vast shadowy stone sanctum, towering gothic arches, "
        "tall leaded stained-glass windows lashed by rain from outside (the stone floor inside is dry), cold stone floor, iron candelabra with candles, ")
 TYR=("a colossal stone statue of Tyr, the one-handed god of justice, towering over the sanctum: a stern bearded warrior king in stone robes, "
-     "a blindfold carved across his eyes, his right arm ending at the wrist with no right hand, his left hand raising a great stone longsword, "
+     "a blindfold carved across his eyes, his right arm ending at the wrist with no right hand, his left hand gripping a great stone longsword held upright and still at his side, its point resting on the plinth (never raised), "
      "a set of stone scales hanging from the sword's crossguard, weathered pale stone")
 BOYS=("two small boys of five and six lying side by side on wool blankets on the cold stone floor, pale as chalk, drenched in sweat, "
       "black unnatural veins creeping up their necks; the boy with short dark hair is Cedric, the slightly older boy with light brown hair is Arthas")
@@ -71,8 +71,8 @@ S_=[
 ('s38',L(16,3.8),'cut',[],[],SANCT+"close-up of a row of candle flames frozen white and motionless, like crystal"+NP,{},''),
 ('s39',L(17),'cut',[BA,BC],[],SANCT+"long black shadows stretching like iron bars across the stone floor and over the two sleeping boys"+ONLY,COLD,''),
 ('s40',L(18),'cut',[],[],SANCT+TYR+", seen from below, a cold white light beginning to burn behind it"+NP,COLD,''),
-('s41',L(19),'cut',[],[],SANCT+"close-up of the great stone longsword held upright in the single left stone hand of the statue of Tyr (blindfolded stone face just visible above, his right arm a handless stump), stone scales hanging from the crossguard, edges of white light running along the blade like a thousand drawn blades"+NP,{},'blades'),
-('s42',C('d2b',1)+0.15,'flash',[YB],['sparks'],SANCT+"HERO: "+TYR+" blazing with blinding white light that fills the whole sanctum, young Valerys a small kneeling silhouette before it",{'shake':0.3},''),
+('s41',L(19),'cut',[],[],SANCT+"the sanctum seen from the floor: every candle flame frozen tall and burning pure white, and blazing razor-thin lines of brilliant white light cutting along every rib of the vault, every arch and pillar edge, hundreds of glowing white lines like a thousand drawn blades, the hall lit cold white, far in the back the statue of Tyr a dark unmoving silhouette"+NP,{},'blades'),
+('s42',C('d2b',1)+0.15,'flash',[YB],['sparks'],SANCT+"HERO: "+TYR+" standing exactly as before, unmoving, its sword held upright at its side and NOT raised, blinding white light pouring out from behind and around the statue and filling the whole sanctum, young Valerys a small kneeling silhouette before it",{'shake':0.3},''),
 ('s43',L(20),'cut',[],[],SANCT+"close-up from below of the stone face of the statue of Tyr, a stern bearded warrior king, a thick carved stone blindfold covering both his eyes, majestic and cold, white light pouring from behind his head"+NP,{},''),
 ('s44',L(20,4.6),'cut',[],[],SANCT+"the stone scales hanging from the statue's sword, slowly tipping in the white light"+NP,{},''),
 ('s45',L(21),'cut',[BA,BC],[],SANCT+"the black veins on the sleeping boys pulsing, shadowy clawed shapes creeping out of the dark toward them, hunting"+ONLY,COLD,''),
@@ -114,7 +114,7 @@ S_=[
 ('s79',L(45),'cut',[DO],['dust'],CAVE+"Dolkan with his eyes on the floor, dust jumping on the stones, urgent",{'shake':0.15},'rumble'),
 ('s80',L(45,4.6),'cut',[],['dust'],CAVE+"HERO: cracks racing across the floor toward the black pool, stones lifting, something huge rising beneath"+NP,{'shake':0.4},''),
 ('s81',C('d4b',1)+0.6,'flash',[],['ash'],CAVE+"the floor bursting upward in a spray of rock and dust, darkness"+NP,{'shake':0.8},'boom'),
-('s82',C('d4b',1)+1.4,'black',[],[],CAVE+"near total darkness, only drifting dust in a thin shaft of torchlight"+NP,{},''),
+('s82',C('d4b',1)+2.4,'slow',[DO,AR,CE,LU,NE,WI,VA],['dust'],CAVE+"HERO: the closing picture, wide: the dust slowly settling in the torn cavern after the floor burst, everyone in view: the ancient duergar Dolkan leaning on his crystal staff, Arthas (hood up, helm closed), Cedric, Lucien (blond, in his long coat), Nerrissa the drow and Wittan the deep gnome standing together around the wounded older Valerys who sits against a rock by the black pool, all of them staring at the fresh crack in the floor, torchlight, silence before the storm"+ONLY,{},''),
 ]
 # Pacing (Rasmus 2026-11-22: "images shift too fast"): a shot shorter than MIN_HOLD is merged into the one before it,
 # unless it carries a sound hit, a flash, a hero painting or the opening; then soft transitions: cut -> fade, fade -> slow dissolve.
@@ -149,7 +149,7 @@ cast[YB]=("Valerys twenty years younger, exactly the face, hair and beard of his
  "dark breeches, bare-headed, no armour, no cloak, no emblem; strong, proud, grief-stricken")
 cast[BA]="Arthas as a small boy of six: slight and pale, tousled light brown hair, serious pale grey eyes like his father's, a solemn little face, a plain linen nightshirt"
 cast[BC]="Cedric as a small boy of five: short dark hair (not yet shaved), pale grey eyes, a thin pale face, a plain linen nightshirt"
-board={"id":"tyrs-price","live":True,"secret":True,"cover":"s42","style":L14['style'],"cast":cast,"marks":MARKS,"shots":shots}
+board={"id":"tyrs-price","live":True,"endFade":8,"secret":True,"cover":"s42","style":L14['style'],"cast":cast,"marks":MARKS,"shots":shots}
 out=json.dumps({k:v for k,v in board.items() if k!='shots'},ensure_ascii=False,indent=2)[:-2]+',\n  "shots": [\n'+',\n'.join('    '+json.dumps(s,ensure_ascii=False) for s in shots)+'\n  ]\n}\n'
 json.loads(out);open('painted/14-tyrs-price.json','w').write(out)
 print(len(shots),'shots,',sum(1 for s in shots if s.get('hero')),'hero,',sum(1 for s in shots if 'src' not in s),'to paint; end',TL['end'])
