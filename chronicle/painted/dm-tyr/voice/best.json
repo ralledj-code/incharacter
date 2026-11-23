@@ -4,7 +4,7 @@
   "voice": "Charon",
   "life": 3,
   "words_ok": true,
-  "note": "Slow, dramatic delivery.",
+  "note": "Dramatic delivery with slow pacing.",
   "all": [
    [
     "takes/d1b-Charon-1",
@@ -13,7 +13,7 @@
    ],
    [
     "takes/d1b-Charon-2",
-    true,
+    false,
     3
    ]
   ]
@@ -23,7 +23,7 @@
   "voice": "Charon",
   "life": 3,
   "words_ok": true,
-  "note": "Dramatic delivery with good pacing.",
+  "note": "Clear reading, adequate pacing.",
   "all": [
    [
     "takes/d1c-Charon-1",
@@ -40,55 +40,65 @@
  "d1a": {
   "take": "takes/d1a-Charon-1",
   "voice": "Charon",
-  "life": 3,
+  "life": 5,
   "words_ok": true,
-  "note": "Dramatic delivery with good emotion.",
+  "note": "Excellent dramatic performance, good pacing and emotion.",
   "all": [
    [
     "takes/d1a-Charon-1",
     true,
-    3
+    5
    ],
    [
     "takes/d1a-Charon-2",
     true,
-    3
+    5
    ]
   ]
  },
  "d1d": {
   "take": "takes/d1d-Charon-1",
   "voice": "Charon",
-  "life": 5,
+  "life": 3,
   "words_ok": true,
-  "note": "Excellent dramatic performance, very theatrical and emotional.",
+  "note": "Dramatic delivery with good theatrical tone.",
   "all": [
    [
     "takes/d1d-Charon-1",
     true,
-    5
+    3
    ],
    [
     "takes/d1d-Charon-2",
     true,
-    5
+    3
    ]
   ]
  },
  "d1e": {
-  "take": "takes/d1e-Charon-2",
+  "take": "takes/d1e-Charon-4",
   "voice": "Charon",
   "life": 3,
   "words_ok": true,
-  "note": "Dramatic reading with good pacing.",
+  "note": "Accurate reading with good emotion.",
   "all": [
    [
-    "takes/d1e-Charon-2",
+    "takes/d1e-Charon-4",
     true,
     3
    ],
    [
     "takes/d1e-Charon-1",
+    false,
+    3
+   ],
+   [
+    "takes/d1e-Charon-2",
+    false,
+    3
+   ],
+   [
+    "takes/d1e-Charon-3",
     false,
     3
    ]
@@ -99,7 +109,7 @@
   "voice": "Charon",
   "life": 3,
   "words_ok": true,
-  "note": "Dramatic and atmospheric delivery with a menacing tone.",
+  "note": "Dramatic delivery, good pacing.",
   "all": [
    [
     "takes/d2a-Charon-1",
@@ -118,7 +128,7 @@
   "voice": "Orus",
   "life": 5,
   "words_ok": true,
-  "note": "Excellent emotional delivery, perfectly matches the text.",
+  "note": "Highly emotional and desperate performance, excellent voice acting.",
   "all": [
    [
     "takes/v1-Orus-1",
@@ -137,7 +147,7 @@
   "voice": "Charon",
   "life": 3,
   "words_ok": true,
-  "note": "Dramatic pacing, matches text.",
+  "note": "Dramatic delivery fitting the fantasy context.",
   "all": [
    [
     "takes/d2b-Charon-1",
@@ -185,7 +195,7 @@
   "voice": "Charon",
   "life": 3,
   "words_ok": true,
-  "note": "Dramatic and deep delivery with good pacing.",
+  "note": "Dramatic delivery with a deep tone, capturing the character's regret.",
   "all": [
    [
     "takes/d3a-Charon-1",
@@ -204,15 +214,10 @@
   "voice": "Zubenelgenubi",
   "life": 5,
   "words_ok": true,
-  "note": "Excellent dramatic delivery, authoritative and expressive.",
+  "note": "Excellent dramatic delivery, clear and emotional.",
   "all": [
    [
     "takes/t2a-Zubenelgenubi-1",
-    true,
-    5
-   ],
-   [
-    "takes/t2a-Zubenelgenubi-3",
     true,
     5
    ],
@@ -252,7 +257,7 @@
   "voice": "Charon",
   "life": 5,
   "words_ok": true,
-  "note": "short",
+  "note": "Deep, resonant, dramatic delivery.",
   "all": [
    [
     "takes/d3b-Charon-1",
@@ -271,7 +276,7 @@
   "voice": "Charon",
   "life": 3,
   "words_ok": true,
-  "note": "Dramatic delivery with clear emotion.",
+  "note": "Dramatic and emotional delivery with good pacing.",
   "all": [
    [
     "takes/d3c-Charon-1",
@@ -290,7 +295,7 @@
   "voice": "Charon",
   "life": 3,
   "words_ok": true,
-  "note": "Dramatic pacing.",
+  "note": "Dramatic delivery.",
   "all": [
    [
     "takes/d3d-Charon-1",
@@ -326,38 +331,38 @@
  "d3e": {
   "take": "takes/d3e-Charon-1",
   "voice": "Charon",
-  "life": 3,
+  "life": 4,
   "words_ok": true,
-  "note": "Dramatic and slow delivery. Good emotion.",
+  "note": "Dramatic delivery. Good pacing.",
   "all": [
    [
     "takes/d3e-Charon-1",
     true,
-    3
+    4
    ],
    [
     "takes/d3e-Charon-2",
-    true,
+    false,
     3
    ]
   ]
  },
  "d4a": {
-  "take": "takes/d4a-Charon-1",
+  "take": "takes/d4a-Charon-2",
   "voice": "Charon",
   "life": 5,
   "words_ok": true,
-  "note": "Excellent dramatic performance, deep resonant voice, great emotion.",
+  "note": "Excellent dramatic delivery, full of emotion and intensity.",
   "all": [
-   [
-    "takes/d4a-Charon-1",
-    true,
-    5
-   ],
    [
     "takes/d4a-Charon-2",
     true,
     5
+   ],
+   [
+    "takes/d4a-Charon-1",
+    true,
+    3
    ]
   ]
  },
@@ -366,7 +371,7 @@
   "voice": "Charon",
   "life": 5,
   "words_ok": true,
-  "note": "Excellent dramatic performance with deep resonance and great pacing.",
+  "note": "Excellent dramatic performance, intense and well-paced.",
   "all": [
    [
     "takes/d4b-Charon-1",
@@ -400,6 +405,35 @@
    [
     "takes/t2b-Zubenelgenubi-3",
     true,
+    5
+   ]
+  ]
+ },
+ "n1": {
+  "take": "takes/n1-Schedar-2",
+  "voice": "Schedar",
+  "life": 5,
+  "words_ok": true,
+  "note": "Excellent dramatic reading, great pacing and emotion.",
+  "all": [
+   [
+    "takes/n1-Schedar-2",
+    true,
+    5
+   ],
+   [
+    "takes/n1-Iapetus-1",
+    true,
+    5
+   ],
+   [
+    "takes/n1-Iapetus-2",
+    true,
+    5
+   ],
+   [
+    "takes/n1-Schedar-1",
+    false,
     5
    ]
   ]

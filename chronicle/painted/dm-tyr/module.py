@@ -2,8 +2,8 @@
 Hidden + secret: only reachable by /chronicle?song=tyrs-price, not in the song list, not on the family page."""
 import json
 TL = json.load(open('timeline.json')); L = json.load(open('lines.json'))
-VOICE = {'dolkan': '', 'valerys': 'w', 'tyr': 'g'}   # w = Valerys (warm), g = Tyr (pale gold); Dolkan default white
-CAVERN = {'d1a', 'd4a', 'd4b'}
+VOICE = {'dolkan': '', 'valerys': 'w', 'tyr': 'g', 'narrator': 'n'}  # n = the DM's narration (italic, parchment)   # w = Valerys (warm), g = Tyr (pale gold); Dolkan default white
+CAVERN = {'n1', 'd1a', 'd4a', 'd4b'}
 cues = [{'id': 'intro0', 't': 0, 'v': 0.6, 'motes': 'dust', 'stamp': '', 'lines': []}]
 for cid in TL['clips']:
     ls = [l for l in L if l['clip'] == cid]
@@ -21,7 +21,7 @@ const ID = 'tyrs-price';
 const DURATION = {TL['end']};
 const CUES = {json.dumps(cues, ensure_ascii=False)};
 const LINE_TIMES = {json.dumps(times)};
-const VOICES = {json.dumps(voices)};  // '' Dolkan, 'w' Valerys, 'g' Tyr
+const VOICES = {json.dumps(voices)};  // '' Dolkan, 'w' Valerys, 'g' Tyr, 'n' the narrator
 const TITLES = [];
 C.levels[ID] = {{
   session: 'Level 14 · After the wurm · from the DM',

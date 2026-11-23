@@ -2,7 +2,7 @@
 // node record.mjs [ids...]   (takes/ is the raw material; best.json records the choice and the judge's notes)
 import fs from 'node:fs'; import { execFileSync } from 'node:child_process';
 const S=JSON.parse(fs.readFileSync('script.json','utf8'));
-const VOICE={dolkan:['Charon'],valerys:['Orus'],tyr:['Zubenelgenubi']}, TAKES=+(process.env.TAKES||2);  // 2026-11-22 recast: Dolkan ancient (Charon), Tyr booming (Zubenelgenubi)
+const VOICE={dolkan:['Charon'],valerys:['Orus'],tyr:['Zubenelgenubi'],narrator:['Schedar','Iapetus']}, TAKES=+(process.env.TAKES||2);  // 2026-11-22 recast: Dolkan ancient (Charon), Tyr booming (Zubenelgenubi)
 const H={'content-type':'application/json','x-goog-api-key':process.env.GEMINI_API_KEY};
 const want=process.argv.slice(2); fs.mkdirSync('takes',{recursive:true}); fs.mkdirSync('best',{recursive:true});
 const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
