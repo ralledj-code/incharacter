@@ -237,6 +237,14 @@ export default function SettingsPage() {
         </form>
 
         <div style={{ marginTop: 48, paddingTop: 24, borderTop: '0.5px solid var(--border)' }}>
+          <p className="label-caps" style={{ marginBottom: 8 }}>Your data</p>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>Every session and every event you have logged, as one text file.</p>
+          <a className="btn-ghost" href="/api/entries/export" download style={{ display: 'inline-block', textDecoration: 'none' }}>
+            Export all events
+          </a>
+        </div>
+
+        <div style={{ marginTop: 48, paddingTop: 24, borderTop: '0.5px solid var(--border)' }}>
           <p className="label-caps" style={{ marginBottom: 16 }}>Danger zone</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start' }}>
             <button className="btn-danger" onClick={() => setShowResetConfirm(true)}>
