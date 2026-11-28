@@ -1,0 +1,162 @@
+{
+ "shots": [
+  {
+   "id": "s01",
+   "beat": "s01_portrait_sitting",
+   "t": 0.0,
+   "dur": 8,
+   "vo": "intro_01"
+  },
+  {
+   "id": "s02",
+   "beat": "s02_maren_laughs",
+   "t": 8.0,
+   "dur": 10,
+   "vo": "intro_02"
+  },
+  {
+   "id": "s03",
+   "beat": "s03_reading_fire",
+   "t": 18.0,
+   "dur": 12,
+   "vo": "intro_03"
+  },
+  {
+   "id": "s04",
+   "beat": "s04_calm_water",
+   "t": 30.0,
+   "dur": 8,
+   "vo": "intro_04"
+  },
+  {
+   "id": "s05",
+   "beat": "s05_wharf_fire",
+   "t": 38.0,
+   "dur": 12,
+   "vo": "intro_05"
+  },
+  {
+   "id": "s06",
+   "beat": "s06_grey_morning",
+   "t": 50.0,
+   "dur": 14,
+   "vo": "intro_06"
+  },
+  {
+   "id": "s07",
+   "beat": "s07_stamp",
+   "t": 64.0,
+   "dur": 10,
+   "vo": "intro_07"
+  },
+  {
+   "id": "s08",
+   "beat": "s08_villa_party",
+   "t": 74.0,
+   "dur": 14,
+   "vo": "intro_08"
+  },
+  {
+   "id": "s09",
+   "beat": "s09_cross_lantern",
+   "t": 88.0,
+   "dur": 16,
+   "vo": "intro_09"
+  },
+  {
+   "id": "s10",
+   "beat": "s10_lantern_shimmer",
+   "t": 104.0,
+   "dur": 14,
+   "vo": "intro_10"
+  },
+  {
+   "id": "s11",
+   "beat": "s11_ahm_city",
+   "t": 118.0,
+   "dur": 14,
+   "vo": "intro_11"
+  },
+  {
+   "id": "s12",
+   "beat": "s12_temple_elf",
+   "t": 132.0,
+   "dur": 10,
+   "vo": "intro_12"
+  },
+  {
+   "id": "s13",
+   "beat": "s13_brann_pell",
+   "t": 142.0,
+   "dur": 12,
+   "vo": "intro_13"
+  },
+  {
+   "id": "s14",
+   "beat": "s14_attic_now",
+   "t": 154.0,
+   "dur": 10,
+   "vo": "intro_14"
+  }
+ ],
+ "clips": {
+  "intro_01": [
+   2.2,
+   4.68
+  ],
+  "intro_02": [
+   9.0,
+   16.3
+  ],
+  "intro_03": [
+   19.0,
+   28.4
+  ],
+  "intro_04": [
+   31.0,
+   34.6
+  ],
+  "intro_05": [
+   39.0,
+   47.3
+  ],
+  "intro_06": [
+   51.0,
+   56.7
+  ],
+  "intro_07": [
+   65.6,
+   71.9
+  ],
+  "intro_08": [
+   75.0,
+   80.6
+  ],
+  "intro_09": [
+   89.0,
+   101.2
+  ],
+  "intro_10": [
+   105.0,
+   113.1
+  ],
+  "intro_11": [
+   119.0,
+   127.5
+  ],
+  "intro_12": [
+   133.0,
+   139.5
+  ],
+  "intro_13": [
+   143.0,
+   151.4
+  ],
+  "intro_14": [
+   155.0,
+   158.041
+  ]
+ },
+ "shots_end": 164.0,
+ "end": 171.8
+}
