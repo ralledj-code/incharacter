@@ -10,7 +10,7 @@ from PIL import Image
 
 level, ids = sys.argv[1], set(sys.argv[2:])
 raw = f'painted/{level}/raw'
-for f in sorted(glob.glob(f'{raw}/s*.png')):
+for f in sorted(glob.glob(f'{raw}/[a-z]*[0-9]*.png')):  # any shot id (s01, n01, t01 ...)
     sid = os.path.basename(f)[:-4]
     if ids and sid not in ids: continue
     im = Image.open(f); a = np.asarray(im.convert('L'), dtype=np.float32); H, W = a.shape

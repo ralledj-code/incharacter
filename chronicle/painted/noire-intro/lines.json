@@ -1,0 +1,236 @@
+[
+ {
+  "clip": "intro_01",
+  "t": 2.2,
+  "text": "Aurel hated sitting still.",
+  "end": 5.28
+ },
+ {
+  "clip": "intro_02",
+  "t": 9.0,
+  "text": "The painter gave up in the end.",
+  "end": 11.1
+ },
+ {
+  "clip": "intro_02",
+  "t": 11.1,
+  "text": "Painted him about to laugh.",
+  "end": 13.4
+ },
+ {
+  "clip": "intro_02",
+  "t": 13.4,
+  "text": "That's how I remember him. About to.",
+  "end": 16.9
+ },
+ {
+  "clip": "intro_03",
+  "t": 19.0,
+  "text": "Twelve years a fire-warden in the lower wards.",
+  "end": 22.0
+ },
+ {
+  "clip": "intro_03",
+  "t": 22.0,
+  "text": "You learn to read a fire the way clerks read a ledger.",
+  "end": 25.0
+ },
+ {
+  "clip": "intro_03",
+  "t": 25.0,
+  "text": "Where it started. How fast. Who wanted it.",
+  "end": 29.0
+ },
+ {
+  "clip": "intro_04",
+  "t": 31.0,
+  "text": "Corwen's Wharf burned on a calm night.",
+  "end": 35.2
+ },
+ {
+  "clip": "intro_05",
+  "t": 39.0,
+  "text": "No wind. No lightning.",
+  "end": 41.0
+ },
+ {
+  "clip": "intro_05",
+  "t": 41.0,
+  "text": "Fires don't start themselves on calm nights.",
+  "end": 44.0
+ },
+ {
+  "clip": "intro_05",
+  "t": 44.0,
+  "text": "This one started in three places at once.",
+  "end": 47.9
+ },
+ {
+  "clip": "intro_06",
+  "t": 51.0,
+  "text": "Aurel was inside.",
+  "end": 52.6
+ },
+ {
+  "clip": "intro_06",
+  "t": 52.6,
+  "text": "Doing the inventory the owner asked him to do.",
+  "end": 55.1
+ },
+ {
+  "clip": "intro_06",
+  "t": 55.1,
+  "text": "On a Sunday night.",
+  "end": 57.3
+ },
+ {
+  "clip": "intro_07",
+  "t": 65.6,
+  "text": "It was insured for twice what it was worth.",
+  "end": 68.4
+ },
+ {
+  "clip": "intro_07",
+  "t": 68.4,
+  "text": "The magistrate called it an accident.",
+  "end": 70.7
+ },
+ {
+  "clip": "intro_07",
+  "t": 70.7,
+  "text": "Took him a week.",
+  "end": 72.5
+ },
+ {
+  "clip": "intro_08",
+  "t": 75.0,
+  "text": "The owner bought a house in the hills that autumn.",
+  "end": 77.5
+ },
+ {
+  "clip": "intro_08",
+  "t": 77.5,
+  "text": "I went to his party once.",
+  "end": 79.1
+ },
+ {
+  "clip": "intro_08",
+  "t": 79.1,
+  "text": "I wasn't invited.",
+  "end": 81.2
+ },
+ {
+  "clip": "intro_09",
+  "t": 89.0,
+  "text": "The Quiet Office found me the week they closed the case.",
+  "end": 93.3
+ },
+ {
+  "clip": "intro_09",
+  "t": 93.3,
+  "text": "Officially, we're crown auditors.",
+  "end": 95.5
+ },
+ {
+  "clip": "intro_09",
+  "t": 95.5,
+  "text": "Ledgers. Seals. Tariffs.",
+  "end": 97.8
+ },
+ {
+  "clip": "intro_09",
+  "t": 97.8,
+  "text": "Unofficially, we read the numbers nobody wants read.",
+  "end": 101.8
+ },
+ {
+  "clip": "intro_10",
+  "t": 105.0,
+  "text": "The lantern is the Office's.",
+  "end": 106.8
+ },
+ {
+  "clip": "intro_10",
+  "t": 106.8,
+  "text": "It shows what magic leaves behind.",
+  "end": 109.2
+ },
+ {
+  "clip": "intro_10",
+  "t": 109.2,
+  "text": "In this city, magic is something you do quietly, or not at all.",
+  "end": 113.7
+ },
+ {
+  "clip": "intro_11",
+  "t": 119.0,
+  "text": "Half this city belongs to the Ahm now.",
+  "end": 121.3
+ },
+ {
+  "clip": "intro_11",
+  "t": 121.3,
+  "text": "The other half owes them.",
+  "end": 123.0
+ },
+ {
+  "clip": "intro_11",
+  "t": 123.0,
+  "text": "Their master laughs a lot.",
+  "end": 125.0
+ },
+ {
+  "clip": "intro_11",
+  "t": 125.0,
+  "text": "Men who laugh a lot have usually bought the room.",
+  "end": 128.1
+ },
+ {
+  "clip": "intro_12",
+  "t": 133.0,
+  "text": "Tyr watches from the hill.",
+  "end": 135.1
+ },
+ {
+  "clip": "intro_12",
+  "t": 135.1,
+  "text": "The city watches everyone else.",
+  "end": 137.1
+ },
+ {
+  "clip": "intro_12",
+  "t": 137.1,
+  "text": "Especially anyone with pointed ears.",
+  "end": 140.1
+ },
+ {
+  "clip": "intro_13",
+  "t": 143.0,
+  "text": "Brann thinks every case is about money.",
+  "end": 145.5
+ },
+ {
+  "clip": "intro_13",
+  "t": 145.5,
+  "text": "He's usually right.",
+  "end": 147.2
+ },
+ {
+  "clip": "intro_13",
+  "t": 147.2,
+  "text": "Pell draws everything.",
+  "end": 149.0
+ },
+ {
+  "clip": "intro_13",
+  "t": 149.0,
+  "text": "Even me, when he thinks I'm not looking.",
+  "end": 152.0
+ },
+ {
+  "clip": "intro_14",
+  "t": 155.0,
+  "text": "Lately the numbers have started leaving bodies.",
+  "end": 158.64
+ }
+]

@@ -1,0 +1,86 @@
+[
+ {
+  "id": "intro_01",
+  "speaker": "vo",
+  "text": "Aurel hated sitting still.",
+  "mood": "bright"
+ },
+ {
+  "id": "intro_02",
+  "speaker": "vo",
+  "text": "The painter gave up in the end. Painted him about to laugh. That's how I remember him. About to.",
+  "mood": "soft"
+ },
+ {
+  "id": "intro_03",
+  "speaker": "vo",
+  "text": "Twelve years a fire-warden in the lower wards. You learn to read a fire the way clerks read a ledger. Where it started. How fast. Who wanted it.",
+  "mood": "dry"
+ },
+ {
+  "id": "intro_04",
+  "speaker": "vo",
+  "text": "Corwen's Wharf burned on a calm night.",
+  "mood": "soft"
+ },
+ {
+  "id": "intro_05",
+  "speaker": "vo",
+  "text": "No wind. No lightning. Fires don't start themselves on calm nights. This one started in three places at once.",
+  "mood": "hard"
+ },
+ {
+  "id": "intro_06",
+  "speaker": "vo",
+  "text": "Aurel was inside. Doing the inventory the owner asked him to do. On a Sunday night.",
+  "mood": "grief"
+ },
+ {
+  "id": "intro_07",
+  "speaker": "vo",
+  "text": "It was insured for twice what it was worth. The magistrate called it an accident. Took him a week.",
+  "mood": "hard"
+ },
+ {
+  "id": "intro_08",
+  "speaker": "vo",
+  "text": "The owner bought a house in the hills that autumn. I went to his party once. I wasn't invited.",
+  "mood": "dry"
+ },
+ {
+  "id": "intro_09",
+  "speaker": "vo",
+  "text": "The Quiet Office found me the week they closed the case. Officially, we're crown auditors. Ledgers. Seals. Tariffs. Unofficially, we read the numbers nobody wants read.",
+  "mood": "tired"
+ },
+ {
+  "id": "intro_10",
+  "speaker": "vo",
+  "text": "The lantern is the Office's. It shows what magic leaves behind. In this city, magic is something you do quietly, or not at all.",
+  "mood": "dry"
+ },
+ {
+  "id": "intro_11",
+  "speaker": "vo",
+  "text": "Half this city belongs to the Ahm now. The other half owes them. Their master laughs a lot. Men who laugh a lot have usually bought the room.",
+  "mood": "dry"
+ },
+ {
+  "id": "intro_12",
+  "speaker": "vo",
+  "text": "Tyr watches from the hill. The city watches everyone else. Especially anyone with pointed ears.",
+  "mood": "dry"
+ },
+ {
+  "id": "intro_13",
+  "speaker": "vo",
+  "text": "Brann thinks every case is about money. He's usually right. Pell draws everything. Even me, when he thinks I'm not looking.",
+  "mood": "bright"
+ },
+ {
+  "id": "intro_14",
+  "speaker": "vo",
+  "text": "Lately the numbers have started leaving bodies.",
+  "mood": "dry"
+ }
+]
