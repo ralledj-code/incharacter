@@ -1,0 +1,158 @@
+ALARON NOIRE - intro v2 - edit list
+Made 2026-11-28 from AlaronNoire_intro_kit_2026-11-28.zip. Built the Chronicle way: a hidden Chronicle level
+(/chronicle?song=noire-intro, after the PR is merged) recorded frame by frame from the real Chronicle painted player.
+
+FILES
+AlaronNoire_intro_v2.mp4        subtitles burned in (Chronicle style), with the underscore
+AlaronNoire_intro_v2_clean.mp4  no subtitles; audio track 1 with the underscore, track 2 without music (for the game's own music)
+AlaronNoire_intro_v2.srt        the subtitles on their own (39 phrases)
+1920x1080, 30 fps, H.264 + AAC 48 kHz, 2:51.8 (164 s of shots + the title card). Loudness -16 LUFS, peaks -1.5 dBFS.
+
+WHAT CHANGED FROM v1 (Rasmus: too few pictures, too slow, too many effects, no subtitles; it has to feel Chronicle)
+- 39 paintings instead of 14 (about 4.2 s each, quick cuts only at the fire). 10 are the kit's storyboard frames,
+  29 are new paintings of the script's own beats, from the game's cast portraits (Maren, Cross, Brann, Pell, Aldraik),
+  the intro portraits (the mentor, the magistrate) and the storyboard's own Aurel, young Maren and owner, so faces match.
+- The Chronicle player's motion: camera moves scaled to each shot, haze, embers/rain/dust, flicker, fades and slow
+  dissolves, a white flash as the fire hits.
+- Sound: Maren's 14 recorded lines exactly as recorded; an invented, very low underscore (Lyria: warm guitar and cello
+  in Act 1, dark low strings from the fire on), ducked under her voice about 17-20 dB down; only 9 quiet effects, each on
+  its cut (crackle, the fire, rain and a bell, the stamp, rain, the lantern's hum, gulls, the temple bell, the attic rain).
+  No ambience bed under every shot any more.
+- Subtitles: Maren's lines in 39 phrases, aligned to the recording.
+- The script's own beats are now shown: the painter's room and Maren laughing in the doorway, the old fire-warden's
+  finger on the char pattern, the coat round her shoulders, the stamp, the bored magistrate, the carriage to the villa,
+  Maren outside the gate, the owner laughing at his party, the door with no sign, Maren and Cross across the desk, the lantern
+  slid across, the shimmer on the doorframe, banners, coins into a crimson glove, Aldraik ONLY as a gilded portrait,
+  a hooded figure with a pointed ear (anonymous, never one of the three strangers), Brann with his pipe, Pell's sketch
+  of Maren, Maren asleep in the attic with Aurel's small portrait, ending on the portrait.
+
+SHOTS  (id / time / length / transition / source; scene; sound; subtitles)
+n01   0:00.0   5.0s  black  kit storyboard/s01_portrait_sitting.png
+      (as the storyboard frame)
+      subtitle(s): Aurel hated sitting still.
+n02   0:05.0   2.4s  cut    new painting, Gemini Flash 3.1
+      a small sunny room above a shop on a summer evening, close-up: Aurel on a stool pulling a funny face at the painter, cheeks puffed, fidgeting, exactly
+n04   0:07.4   4.7s  fade   new painting, Gemini 3 Pro 2K
+      INDOORS, inside a small sunny room above a shop on a warm summer evening (no rain, no night, no street): young Maren leaning in the open inner door fr
+      subtitle(s): The painter gave up in the end. / Painted him about to laugh.
+n06   0:12.1   5.9s  cut    new painting, Gemini 3 Pro 2K
+      INDOORS in the same small sunny painter's room on a summer evening (no rain, no night, no street): close-up of Aurel on his stool turning toward the d
+      subtitle(s): That's how I remember him. About to.
+n07   0:18.0   4.0s  fade   kit storyboard/s03_reading_fire_b.png
+      (as the storyboard frame)
+      subtitle(s): Twelve years a fire-warden in the lower wards.
+n08   0:22.0   3.0s  cut    new painting, Gemini Flash 3.1
+      daylight in the black ruin of a burned house: close-up of an old fire-warden's thick gloved finger tracing the alligator char pattern on a blackened b
+      subtitle(s): You learn to read a fire the way clerks read a ledger.
+n09   0:25.0   5.0s  cut    new painting, Gemini Flash 3.1
+      in the burned ruin by daylight: young Maren in her soot-streaked leather helmet kneels beside the grizzled old fire-warden, studying the charred beam 
+      subtitle(s): Where it started. How fast. Who wanted it.
+n10   0:30.0   3.6s  slow   kit storyboard/s04_calm_water.png
+      (as the storyboard frame)
+      subtitle(s): Corwen's Wharf burned on a calm night.
+n11   0:33.6   4.4s  cut    new painting, Gemini Flash 3.1
+      night, perfectly still black harbour water like a mirror, close: the orange reflection of a fire spreading across it, no wind, a moored rowing boat's 
+      sound: crackle
+n12   0:38.0   3.0s  flash  new painting, Gemini 3 Pro 2K
+      a dry, clear, windless night (no rain): a huge three-storey timber warehouse on a wooden wharf completely engulfed in towering roaring flames from end
+      sound: fire
+      subtitle(s): No wind. No lightning.
+n13   0:41.0   3.0s  cut    new painting, Gemini Flash 3.1
+      night, fire-wardens in heavy coats and leather helmets running along a wooden wharf toward a burning warehouse with axes and buckets, young Maren in f
+      subtitle(s): Fires don't start themselves on calm nights.
+n14   0:44.0   2.2s  cut    new painting, Gemini Flash 3.1
+      night, the burning timber warehouse seen from across the still harbour: three separate fires burning at three different corners of the building at onc
+      subtitle(s): This one started in three places at once.
+n15   0:46.2   3.8s  cut    kit storyboard/s05_edit.png
+      (as the storyboard frame)
+n16   0:50.0   2.6s  slow   kit storyboard/s06_grey_morning.png
+      (as the storyboard frame)
+      sound: rain
+      subtitle(s): Aurel was inside.
+n17   0:52.6   4.0s  cut    new painting, Gemini Flash 3.1
+      grey dawn in the rain: the black skeleton of the burned warehouse on the wharf, charred beams still smoking, puddles, no bodies, empty, no people
+      subtitle(s): Doing the inventory the owner asked him to do. / On a Sunday night.
+n18   0:56.6   7.4s  slow   new painting, Gemini 3 Pro 2K
+      grey dawn, rain beginning: young Maren, soot-black, sits alone on the wet edge of the wharf with her back to us, staring at the smoking ruin, someone'
+n19   1:04.0   4.4s  slow   kit storyboard/s07_stamp.png
+      (as the storyboard frame)
+      sound: stamp
+      subtitle(s): It was insured for twice what it was worth.
+n21   1:08.4   5.6s  cut    new painting, Gemini Flash 3.1
+      the magistrate at his desk in a dim office, bored, dropping a thin closed file onto a tall stack of other files without looking, exactly these people 
+      subtitle(s): The magistrate called it an accident. / Took him a week.
+n22   1:14.0   5.1s  fade   new painting, Gemini 3 Pro 2K
+      dusk, a dark carriage with two lanterns climbing a winding hill road toward a white villa among tall cypress trees, every villa window blazing with wa
+      subtitle(s): The owner bought a house in the hills that autumn. / I went to his party once.
+n24   1:19.1   3.4s  cut    new painting, Gemini 3 Pro 2K
+      night outside the villa's iron gate: young Maren in a plain dark wool coat stands alone in the dark road, seen from behind, watching the bright window
+      subtitle(s): I wasn't invited.
+n25   1:22.5   5.5s  cut    new painting, Gemini Flash 3.1
+      inside the bright villa party: the well-fed owner in his red velvet coat throws back his head and laughs, glass raised, candles and gilt around him, o
+n26   1:28.0   3.6s  slow   new painting, Gemini Flash 3.1
+      night, a narrow rainy street of old stone houses, wet cobbles shining, one plain wooden door with no sign and no writing, a single oil lantern above i
+      sound: rain
+      subtitle(s): The Quiet Office found me the week they closed the case.
+n27   1:31.6   3.9s  cut    kit storyboard/s09_cross_lantern_b.png
+      (as the storyboard frame)
+      subtitle(s): Officially, we're crown auditors.
+n28   1:35.5   3.5s  cut    new painting, Gemini Flash 3.1
+      inside the Quiet Office by lamplight: over Maren's shoulder (now in her forties, brown leather coat) toward Director Cross behind her desk, studying h
+      subtitle(s): Ledgers. Seals. Tariffs. / Unofficially, we read the numbers nobody wants read.
+n30   1:39.0   5.0s  cut    new painting, Gemini 3 Pro 2K
+      close on the desk: Director Cross's hand sliding a small brass lantern across the wood toward Maren's gloved hand, lamplight, only their hands and sle
+n31   1:44.0   5.2s  fade   kit storyboard/s10_lantern_shimmer.png
+      (as the storyboard frame)
+      subtitle(s): The lantern is the Office's. / It shows what magic leaves behind.
+n33   1:49.2   3.2s  cut    new painting, Gemini 3 Pro 2K
+      lantern light falling on an old wooden doorframe in a dark corridor, and on the wood a faint pale silvery shimmer clinging where no shimmer should be,
+      sound: hum
+      subtitle(s): In this city, magic is something you do quietly, or not at all.
+n34   1:52.4   5.6s  cut    new painting, Gemini Flash 3.1
+      close-up of Maren's eyes narrowing in the lantern light, sharp and tired, exactly these people and no one else
+n35   1:58.0   3.3s  slow   new painting, Gemini 3 Pro 2K
+      Caer Callidyr at dawn from above the harbour: fog over the water, ship masts, slate roofs, long plain crimson banners (no symbols, no letters) unfurli
+      sound: gulls
+      subtitle(s): Half this city belongs to the Ahm now.
+n37   2:01.3   1.7s  cut    new painting, Gemini Flash 3.1
+      close: tired dock workers' rough hands dropping coins into an open crimson-gloved palm, wet cobbles, dawn light, all adults, only hands and arms
+      subtitle(s): The other half owes them.
+n38   2:03.0   2.6s  cut    new painting, Gemini 3 Pro 2K
+      a huge gilded painted portrait of Aldraik laughing, hanging in a marble hall - it is a framed painting on the wall, not a living man, candlelight on t
+      subtitle(s): Their master laughs a lot. / Men who laugh a lot have usually bought the room.
+n39   2:05.6   6.4s  cut    new painting, Gemini Flash 3.1
+      close on the painted portrait's laughing face and the gold of its frame, the brush strokes of the old painting visible, candlelight, no people
+n40   2:12.0   5.1s  fade   kit storyboard/s12_temple_elf.png
+      (as the storyboard frame)
+      sound: bell
+      subtitle(s): Tyr watches from the hill. / The city watches everyone else.
+n42   2:17.1   4.9s  cut    new painting, Gemini Flash 3.1
+      close, from behind and to the side: an anonymous slender adult in a plain grey cloak pulls the hood lower as a guard's shadow passes, only the tip of 
+      subtitle(s): Especially anyone with pointed ears.
+n43   2:22.0   3.5s  slow   kit storyboard/s13_edit.png
+      (as the storyboard frame)
+      subtitle(s): Brann thinks every case is about money.
+n44   2:25.5   1.7s  cut    new painting, Gemini Flash 3.1
+      close-up: Brann leaning in a doorway, puffing his clay pipe, smoke curling, one eyebrow raised, utterly unimpressed, candlelight, exactly these people
+      subtitle(s): He's usually right.
+n45   2:27.2   6.8s  cut    new painting, Gemini Flash 3.1
+      close on Pell's ink-stained fingers sketching on paper with a pencil: the sketch is a quick portrait drawing of Maren's face, candlelight, only his ha
+      subtitle(s): Pell draws everything. / Even me, when he thinks I'm not looking.
+n48   2:34.0   5.6s  slow   new painting, Gemini 3 Pro 2K
+      the attic room before dawn (as in its reference): Maren asleep at her desk with her head on her arm over open ledgers, one candle guttering, grey ligh
+      sound: rain
+      subtitle(s): Lately the numbers have started leaving bodies.
+n49   2:39.6   4.4s  slow   new painting, Gemini Flash 3.1
+      close-up of the small framed painted portrait of Aurel laughing on the cabinet in candlelight, rain light from the window across it, no people
+title 2:44.0  7.8s  hard cut to black: 0.6 s black, 1 s in, hold, 1.6 s fade. reference/title_background.png (darkened)
+      + "ALARON NOIRE" in gold Cinzel + "Level 1 · The Warehouse" (the script's title card). Rain only beneath it.
+
+STORYBOARD FRAMES NOT USED (they contradict the script or broke a rule)
+s02 (Maren on a burning street, not laughing at home; _b has a sign with letters), s08 a/b (replaced by the script's
+carriage, gate and party), s11 a/b (Aldraik as a living man; the script wants a portrait), s12_b (an armoured hooded
+figure too close to the giant in plate), s14 a/b (Maren awake under an electric bulb; the script has her asleep).
+Edited frames kept from v1: s05 (letters off her badge, telegraph poles removed), s13 (Brann with his pipe in the door).
+
+RULES CHECKED: no strangers, no children, no gore (the fire from outside, no bodies), no text in the pictures
+(the sketch, the ledger and the files show only illegible strokes), nothing modern (no bulbs, wires, phones).
+NOT DONE: the 'one low note' under the title (no music bed by brief; the underscore ends at the hard cut).
